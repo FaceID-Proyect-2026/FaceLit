@@ -1,0 +1,26 @@
+=== INSTRUCCIONES PARA EJECUTAR ===
+
+1. Abre la carpeta en VS Code
+
+2. Abre la terminal y corre:
+   npm install
+
+3. Luego corre:
+   npx expo start --clear
+
+4. Escanea el QR con Expo Go
+
+=== IMAGENES REQUERIDAS ===
+Coloca estas imágenes en assets/images/:
+- logo.png       → Logo del splash screen
+- seguridad.png  → Icono recuperar contraseña
+- token.png      → Icono token enviado
+- candado.png    → Icono nueva contraseña
+- check.png      → Icono contraseña restablecida
+
+=== CREDENCIALES DE PRUEBA ===
+Email:    admin@test.com
+Password: Admin@123
+
+=== CÓDIGO DE VERIFICACIÓN ===
+Token:    264255

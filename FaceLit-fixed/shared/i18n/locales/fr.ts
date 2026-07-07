@@ -1,0 +1,98 @@
+const fr = {
+  common: { cancel: 'Annuler', accept: 'Accepter', save: 'Enregistrer', back: 'Retour', loading: 'Chargement...', error: 'Erreur', yes: 'Oui', no: 'Non' },
+  theme: { toggle: 'Thème', light: 'Clair', dark: 'Sombre' },
+  landing: { contactTitle: 'Contact', contactText: 'Support et informations', contactEmail: 'facelit.system@gmail.com', contactPhone: '+57 3299287683', contactLocation: 'SENA — Colombie', footerPrivacy: 'Confidentialité', footerRights: 'Droits' },
+  nav: { app: 'App', security: 'Sécurité', contact: 'Contact' },
+  hero: { pill: 'Système Intelligent · SENA', title1: 'Transformez le', title2: 'contrôle de', titleAccent: 'présence', description: 'FaceLit automatise l\'enregistrement des présences avec reconnaissance faciale.', createAccount: 'Créer un compte', login: 'Se connecter', metric1: 'Disponibilité', metric2: 'Reconnaissance', metric3: 'Automatisé', metric4: 'Fraude', phoneInfo: 'Identification biométrique en temps réel' },
+  problems: { sectionTitle: 'Pourquoi FaceLit ?', sectionText: 'Le contrôle manuel des présences génère des problèmes fréquents.', item1Title: 'Perte de temps', item1Text: 'L\'enregistrement manuel consomme des minutes précieuses.', item2Title: 'Erreurs', item2Text: 'Les erreurs humaines compliquent les rapports.', item3Title: 'Usurpation d\'identité', item3Text: 'Impossible de vérifier l\'identité.' },
+  offers: { sectionTitle: 'Que propose FaceLit ?', item1Title: 'Enregistrement intelligent', item1Text: 'Identification automatique par reconnaissance faciale.', item2Title: 'Sécurité biométrique', item2Text: 'Chaque présence liée au visage unique.', item3Title: 'Optimisation du temps', item3Text: 'Moins de temps sur les listes manuelles.', item4Title: 'Rapports en temps réel', item4Text: 'Rapports automatiques.', item5Title: 'Plateforme moderne', item5Text: 'Interfaces intuitives.' },
+  objective: { title: 'Objectif du Projet', description: 'Système intelligent de présence pour le SENA.', char1: 'Enregistrement des apprenants', char2: 'Capture biométrique faciale', char3: 'Détection en temps réel', char4: 'Enregistrement automatique', char5: 'Validation des environnements', char6: 'Génération de rapports', char7: 'Notifications intelligentes', char8: 'Traçabilité', char9: 'Intégration IoT' },
+  tech: { title: 'Technologies', subtitle: 'Modernes et sécurisées.', label1: 'IA Reconnaissance Faciale', label2: 'Design UI/UX', label3: 'Web & Mobile', label4: 'Architecture scalable', label5: 'Base académique', label6: 'Automatisation rapports', label7: 'Auth biométrique' },
+  innovation: { title: 'Innovation pour l\'éducation', text: 'FaceLit transforme l\'expérience académique.', pill1: 'Plus précis', pill2: 'Plus sûr', pill3: 'Plus de temps' },
+  login: { title: 'Connexion', subtitle: 'Saisissez vos identifiants', email: 'Email', emailPlaceholder: 'email@exemple.com', password: 'Mot de passe', passwordPlaceholder: '••••••••', policyPrefix: 'J\'ai lu et j\'accepte', policyLink: 'la politique de confidentialité', policySuffix: '?', policyError: 'Vous devez accepter', loginBtn: 'Se connecter', forgotPassword: 'Mot de passe oublié ?', noAccount: 'Pas de compte ?', registerLink: 'S\'inscrire', errors: { emailNotFound: 'Email non trouvé', wrongPassword: 'Mot de passe incorrect', emptyEmail: 'Email requis', emptyPassword: 'Mot de passe requis', invalidEmail: 'Email invalide', noSpaces: 'Pas d\'espaces', invalidChars: 'Caractères invalides', passwordShort: 'Min. 6 caractères', passwordLong: 'Max. 20 caractères' } },
+  privacyNotice: { title: 'Confidentialité', subtitle: 'Traitement de vos données', body1: 'Conformément à la Loi 1581/2012:', item1: 'Identification dans le système', item2: 'Enregistrement biométrique', item3: 'Rapports et statistiques', item4: 'Notifications', warning: 'Vos identifiants sont personnels.', body2: 'Vous avez droit d\'accès et de rectification.', moreInfo: 'Plus d\'infos: ' },
+  passwordRecovery: { title: 'Récupération', subtitle: 'Saisissez votre email', emailLabel: 'Email', emailPlaceholder: 'email@exemple.com', sendBtn: 'Envoyer le code', cancelBtn: 'Annuler', errors: { invalidEmail: 'Email invalide', emailNotFound: 'Email non enregistré' } },
+  tokenSent: { title: 'Code envoyé', subtitle: 'Vérifiez votre email.', btn: 'Compris' },
+  verifyIdentity: { backBtn: '← Nouveau code', title: 'Vérifiez votre identité', subtitle: 'Code à 6 chiffres envoyé à', timerLabel: '⏰ Restant ', resendBtn: 'Renvoyer', inputLabel: 'Code', placeholder: 'XXXXXX', hint: 'Saisissez le code', verifyBtn: 'Vérifier', errors: { length: '6 chiffres requis', invalid: 'Code invalide' } },
+  newPassword: { backBtn: '← Nouveau code', title: 'Nouveau mot de passe', subtitle: 'Créez un mot de passe sécurisé.', reqTitle: 'Exigences:', req: { length: '8-15 caractères', upper: 'Une majuscule', lower: 'Une minuscule', number: 'Un chiffre', symbol: 'Un symbole' }, passwordLabel: 'Nouveau mot de passe', passwordPlaceholder: 'Mot de passe', confirmLabel: 'Confirmer', confirmPlaceholder: 'Répéter', submitBtn: 'Réinitialiser', errors: { passwordRequired: 'Requis', passwordInvalid: 'Exigences non respectées', confirmRequired: 'Confirmation requise', confirmMismatch: 'Ne correspondent pas' } },
+  passwordResetDone: { title: 'Mot de passe réinitialisé', subtitle1: 'Mis à jour avec succès.', subtitle2: 'Connectez-vous.', securityTitle: 'Sécurité:', security: { item1: '✓ Mot de passe chiffré', item2: '✓ Code invalidé', item3: '✓ Journal d\'audit', item4: '✓ Loi 1581/2012' }, loginBtn: 'Connexion' },
+  rights: { title1: 'Vos droits sur', title2: 'vos données', subtitle: 'Conformément à la', lawLabel: 'Loi 1581/2012', items: { access: { title: 'Droit d\'accès', desc: 'Vous pouvez connaître vos données.' }, update: { title: 'Droit de mise à jour', desc: 'Corriger les données inexactes.' }, rectification: { title: 'Droit de rectification', desc: 'Faire rectifier les erreurs.' }, deletion: { title: 'Droit de suppression', desc: 'Supprimer les données inutiles.' }, revocation: { title: 'Droit de révocation', desc: 'Révoquer votre consentement.' } }, importantLabel: 'Important: ', importantText: 'En acceptant, vous assumez la responsabilité de vos données.' },
+  registrationSuccess: { title: 'Inscription terminée', subtitle: 'Compte créé. Connectez-vous.', btn: 'Accueil' },
+  minorConsent: { title: 'Consentement requis', subtitle1: 'Vous êtes ', minorLabel: 'mineur', subtitle2: '.\nAutorisation d\'un adulte requise.', legalText: 'Selon la ', lawLabel: 'Loi 1581/2012', legalText2: ', le consentement est requis.', sectionGuardian: 'Tuteur', sectionAuthorization: 'Autorisation', nameLabel: 'Nom complet', namePlaceholder: 'Prénom et nom', docLabel: 'Document (10 chiffres)', docPlaceholder: '0000000000', emailLabel: 'Email du tuteur', emailPlaceholder: 'email@exemple.com', emailWarning: 'Doit être différent de l\'email du mineur: ', validateBtn: 'Vérifier email', validateBtnDone: 'Email vérifié ✓', consentText: 'J\'autorise l\'inscription selon ', consentText2: '.', moreInfo: 'Plus sur la Loi 1581/2012', confirmBtn: 'Confirmer', backBtn: 'Retour', errors: { nameRequired: 'Nom requis', nameIncomplete: 'Prénom et nom', nameLettersOnly: 'Lettres uniquement', docRequired: 'Document requis', docLength: '10 chiffres exactement', emailRequired: 'Email requis', emailInvalid: 'Invalide', emailSameMinor: 'Email différent requis', emailNotValidated: 'Vérifiez l\'email', consentRequired: 'Autorisation requise', emailEmpty: 'Saisissez l\'email d\'abord' } },
+  register: { title: 'Inscription', subtitle: 'Créez votre compte', sections: { personal: 'Personnel', contact: 'Contact', security: 'Sécurité', other: 'Autre', acceptances: 'Acceptations' }, name: 'Prénom', namePlaceholder: 'Votre prénom', lastname: 'Nom', lastnamePlaceholder: 'Votre nom', identityType: 'Type de document', identitySelect: 'Sélectionner', identityTI: 'TI — Carte d\'identité', identityCC: 'CC — Carte citoyen', identityCE: 'CE — Carte étranger', identityPA: 'PA — Passeport', infoTI: 'TI pour mineurs', infoCC: 'CC pour adultes', document: 'Document (10 chiffres)', documentPlaceholder: '0000000000', email: 'Email', emailPlaceholder: 'email@exemple.com', validateEmail: 'Vérifier email', emailValidated: '✓ Vérifié', password: 'Mot de passe', passwordHint: '8-15 car. · 1 maj · 1 chiffre · 1 symbole', passwordAutoPlaceholder: 'Généré auto', generatePassword: 'Générer', passwordCopied: 'Copié!', confirmPassword: 'Confirmer', birthdate: 'Date de naissance (8-100 ans)', birthdateSelect: 'Sélectionner', policyText: 'Je déclare l\'exactitude selon', policyLaw: 'Loi 1581/2012', rightsQuestion: 'Droits lus et acceptés?', rightsYes: 'Oui', rightsNo: 'Non', rightsRead: 'Lire mes droits', registerBtn: 'S\'inscrire', cancelBtn: 'Annuler', hasAccount: 'Déjà un compte?', loginLink: 'Se connecter', errors: { nameRequired: 'Nom requis', onlyLetters: 'Lettres uniquement', lastnameRequired: 'Nom requis', identityRequired: 'Type requis', documentRequired: 'Document requis', documentLength: '10 chiffres', emailRequired: 'Email requis', emailInvalid: 'Invalide', emailNotValidated: 'Vérifiez email', emailEmpty: 'Vide', emailInvalidShort: 'Invalide', passwordRequired: 'Requis', passwordWeak: '8-15 car, 1 maj, 1 chiffre, 1 symbole', confirmRequired: 'Confirmez', passwordMismatch: 'Ne correspondent pas', birthdateRequired: 'Date requise', ageMin: 'Min. 8 ans', ageMax: 'Max. 100 ans', tiAdult: 'TI pour mineurs uniquement', ccMinor: 'CC pour adultes uniquement', policyRequired: 'Acceptez les politiques', rightsRequired: 'Répondez' } },
+  facialReg: { title: 'Enregistrer le visage', subtitle: 'Placez-vous devant la caméra', captureBtn: 'Capturer', instructions: 'Instructions:', instr1: 'Placez-vous devant la caméra', instr2: 'Bon éclairage', instr3: 'Regardez la caméra', instr4: 'Pas de lunettes noires', instr5: 'Photo frontale', tapToCapture: 'Touchez pour activer', requestingPermission: 'Autorisation caméra...', permissionDenied: 'Accès caméra requis.', moveCloser: 'Approchez-vous', goodPosition: 'Bonne position', captured: 'Capturé', captureError: 'Erreur. Réessayez.', lowLight: 'Trop sombre. Améliorez l\'éclairage.', captureSuccess: 'Bonne capture!', retake: 'Refaire', finish: 'Terminer' },
+  emailValidation: { backBtn: 'Retour', title: 'Vérifiez votre email', subtitle: 'Code à 6 chiffres envoyé à', timerLabel: 'Restant ', resendBtn: 'Renvoyer', inputLabel: 'Code', placeholder: 'X X X X X X', hint: 'Saisissez le code', verifyBtn: 'Vérifier', demoText: 'Démo: le code est', errors: { expired: 'Expiré. Redemandez.', length: '6 chiffres.', invalid: 'Incorrect. Réessayez.' } },
+  emailValidatedSuccess: { title: 'Email vérifié!', subtitle: 'Vérifié avec succès.\nContinuez l\'inscription.', btn: 'Continuer' },
+
+  // ─────────────────────────────────────────────
+  //  Modules 2-9
+  // ─────────────────────────────────────────────
+  sidebar: {
+    dashboard: 'Tableau de bord', environments: 'Environnements', academic: 'Académique',
+    schedules: 'Horaires', facial: 'Reconnaissance Faciale', attendance: 'Présences',
+    reports: 'Rapports', notifications: 'Notifications', profile: 'Profil',
+    settings: 'Paramètres', logout: 'Déconnexion',
+    mySchedules: 'Mes Horaires', mySchedule: 'Mon Horaire', myAttendance: 'Ma Présence',
+    myReports: 'Mes Rapports', joinFicha: 'Rejoindre Ficha',
+  },
+  dashboard: { welcome: 'Bienvenue', role: 'Rôle', totalUsers: 'Utilisateurs', activeFichas: 'Fichas actives', environments: 'Environnements', attendanceRate: 'Taux de présence', quickActions: 'Actions rapides', recentActivity: 'Activité récente' },
+  environments: {
+    title: 'Gestion des Environnements', subtitle: 'Gérer les environnements', register: 'Enregistrer', edit: 'Modifier', delete: 'Supprimer', search: 'Rechercher...', emptyState: 'Aucun environnement', confirmDelete: 'Supprimer cet environnement ?', noDeleteActive: 'Impossible: fichas actives',
+    fields: { code: 'Code', name: 'Nom', type: 'Type', capacity: 'Capacité', status: 'Statut', location: 'Emplacement' },
+    types: { classroom: 'Salle', laboratory: 'Laboratoire', workshop: 'Atelier', auditorium: 'Auditorium', office: 'Bureau' },
+    statuses: { active: 'Actif', inactive: 'Inactif', maintenance: 'Maintenance' },
+    assign: { title: 'Assigner Ficha', selectFicha: 'Sélectionner Ficha', selectEnv: 'Sélectionner Environnement', assignBtn: 'Assigner', successMsg: 'Ficha assignée', noFichas: 'Aucune ficha', noEnvs: 'Aucun environnement', capacityWarning: 'Capacité dépassée' },
+    detail: { title: 'Détail', info: 'Info Générale', assignedFichas: 'Fichas Assignées', noFichas: 'Aucune ficha' },
+  },
+  academic: {
+    title: 'Gestion Académique', programs: 'Programmes', programRegister: 'Enregistrer Programme', programEdit: 'Modifier', programDelete: 'Supprimer', programEmpty: 'Aucun programme',
+    fichas: 'Fichas', fichaRegister: 'Enregistrer Ficha', fichaEdit: 'Modifier', fichaDelete: 'Supprimer', fichaEmpty: 'Aucune ficha', fichaCode: 'Code Ficha',
+    joinTitle: 'Rejoindre Ficha', joinSubtitle: 'Saisissez le code fourni', joinSuccess: 'Code validé', joinDisabled: 'Déjà associé',
+    learners: 'Apprenants', learnerEmpty: 'Aucun apprenant', desvincular: 'Dissocier', desvincularConfirm: 'Dissocier apprenant ?', unlinkFromProgram: 'Dissocier du programme', unlinkConfirm: 'Dissocier ficha du programme ?',
+    fields: { programName: 'Nom Programme', fichaNumber: 'N° Ficha', jornada: 'Horaire', code: 'Code', learnerName: 'Nom', learnerLastname: 'Prénom', learnerDoc: 'Document', learnerEmail: 'Email', learnerStatus: 'Statut', actions: 'Actions' },
+    jornadas: { morning: 'Matin', afternoon: 'Après-midi', night: 'Soir', full: 'Temps plein' },
+    learnerFields: { name: 'Nom', lastname: 'Prénom', code: 'Code ficha' },
+  },
+  schedules: {
+    title: 'Gestion des Horaires', register: 'Enregistrer', edit: 'Modifier', delete: 'Supprimer', empty: 'Aucun horaire', detail: 'Détail', exceptions: 'Exceptions', exceptionRegister: 'Enregistrer Exception',
+    fields: { ficha: 'Ficha', program: 'Programme', day: 'Jour', startTime: 'Début', endTime: 'Fin', environment: 'Environnement', instructor: 'Formateur' },
+    days: { monday: 'Lundi', tuesday: 'Mardi', wednesday: 'Mercredi', thursday: 'Jeudi', friday: 'Vendredi', saturday: 'Samedi' },
+    conflicts: { envOccupied: 'Environnement occupé', instructorBusy: 'Formateur occupé', noFicha: 'Sélectionner ficha', noInstructor: 'Sélectionner formateur', noEnv: 'Sélectionner environnement' },
+    exceptionTypes: { instructorChange: 'Changement formateur', envChange: 'Changement environnement', cancel: 'Annulation', reschedule: 'Report', other: 'Autre' },
+    exceptionFields: { type: 'Type', date: 'Date', reason: 'Motif', replacement: 'Remplaçant', newEnv: 'Nouvel environnement' },
+  },
+  facial: {
+    management: 'Reconnaissance Faciale', register: 'Enregistrer Visage', verify: 'Vérifier Identité',
+    stats: { registered: 'Enregistrés', pending: 'En attente', verified: "Vérifiés aujourd'hui" },
+    instructions: { title: 'Instructions', step1: 'Placez-vous devant la caméra', step2: 'Bon éclairage', step3: 'Regardez la caméra', step4: 'Pas de lunettes noires' },
+    capture: { btn: 'Capturer', retake: 'Refaire', success: 'Visage enregistré', error: 'Erreur' },
+  },
+  attendance: {
+    title: 'Contrôle des Présences', empty: 'Aucun enregistrement', detail: 'Détail',
+    fields: { user: 'Utilisateur', ficha: 'Ficha', environment: 'Environnement', date: 'Date', entryTime: 'Entrée', exitTime: 'Sortie', status: 'Statut', delay: 'Retard' },
+    statuses: { punctual: 'Ponctuel', late: 'En retard', absent: 'Absent', invalidEnv: 'Mauvais environnement' },
+    stats: { total: 'Total', punctual: 'Ponctuels', late: 'Retards', absent: 'Absents' },
+  },
+  reports: {
+    title: 'Rapports', byUser: 'Par Utilisateur', byFicha: 'Par Ficha', calendar: 'Calendrier',
+    filters: { user: 'Utilisateur', ficha: 'Ficha', dateFrom: 'Du', dateTo: 'Au', status: 'Statut', all: 'Tous' },
+    table: { date: 'Date', user: 'Utilisateur', ficha: 'Ficha', entry: 'Entrée', exit: 'Sortie', status: 'Statut', env: 'Environnement' },
+    summary: { totalRecords: 'Total', present: 'Présents', lateCount: 'Retards', absentCount: 'Absents', rate: 'Taux' },
+    calendarLegend: { present: 'Présent', late: 'Retard', absent: 'Absent' }, noData: 'Aucune donnée',
+  },
+  notifications: {
+    title: 'Notifications', empty: 'Aucune notification',
+    filters: { all: 'Toutes', unread: 'Non lues', read: 'Lues' },
+    markAsRead: 'Marquer comme lu', markAllRead: 'Tout marquer comme lu',
+    categories: { attendance: 'Présence', schedule: 'Horaire', environment: 'Environnement', system: 'Système', facial: 'Reconnaissance' },
+  },
+  profile: {
+    title: 'Mon Profil', personalInfo: 'Infos Personnelles', accountInfo: 'Infos Compte', settings: 'Paramètres',
+    fields: { name: 'Nom', lastname: 'Prénom', documentType: 'Type Document', document: 'N° Document', email: 'Email', role: 'Rôle', status: 'Statut' },
+    settingsOptions: { language: 'Langue', theme: 'Thème', notifications: 'Notifications', accessibility: 'Accessibilité', changePassword: 'Changer mot de passe' },
+    logout: 'Déconnexion', logoutConfirm: 'Voulez-vous vous déconnecter ?',
+  },
+
+} as const;
+
+export default fr;
