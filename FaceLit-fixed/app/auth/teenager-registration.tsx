@@ -1,36 +1,33 @@
 // ─────────────────────────────────────────────
 //  app/auth/teenager-registration.tsx
-//  Registro facial — código limpio + i18n
+//  Solo VISTA — toda la lógica de negocio vive en
+//  features/auth/hooks/useFacialRegistration.ts
 //
 //  • Móvil (Android/iOS): expo-camera (CameraView)
-//  • Web: MediaDevices API del navegador
-//
-//  Validaciones:
-//  1. "Acércate más" — simulada, tras 1.5s pasa a "posición correcta"
-//  2. Brillo de imagen — real, lee píxeles del canvas/foto
+//  • Web: MediaDevices API del navegador (WebCamera)
 // ─────────────────────────────────────────────
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
-import { CameraType, CameraView, useCameraPermissions } from 'expo-camera';
+import { CameraType, CameraView } from 'expo-camera';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator, Image,
   Modal,
-  Platform,
   ScrollView,
   StyleSheet,
   Text, TouchableOpacity,
   View,
 } from 'react-native';
-// import { Routes } from '@/shared/constants/routes'; // ya no se usa: el modal de éxito reemplazó la navegación
 import GradientBackground from '@/shared/components/layout/GradientBackground';
+import { useFacialRegistration } from '@/features/auth/hooks/useFacialRegistration';
+import WebCamera from '@/features/auth/components/WebCamera';
+import FaceGuideOverlay from '@/features/auth/components/FaceGuideOverlay';
+import ShutterButton from '@/features/auth/components/ShutterButton';
 
-// ── Constantes ────────────────────────────────
+// ── Constantes de presentación ────────────────
 const INSTRUCTION_KEYS = [
   'facialReg.instr1',
   'facialReg.instr2',
@@ -39,205 +36,7 @@ const INSTRUCTION_KEYS = [
   'facialReg.instr5',
 ];
 
-const POSITIONING_DELAY_MS  = 1500; // tiempo simulado de "acércate más"
-const MIN_BRIGHTNESS_SCORE  = 60;   // umbral de brillo (0–255)
-
-// ── Modal de éxito ─────────────────────────────
 const SUCCESS_BUTTON_GRADIENT = ['#72C96D', '#65B361', '#4FA14B'] as const;
-
-type ScreenState = 'idle' | 'requesting' | 'positioning' | 'ready' | 'captured';
-type CaptureQuality = 'checking' | 'good' | 'lowLight';
-
-// ── Helper: brillo promedio de una imagen ─────
-function getAverageBrightness(canvas: HTMLCanvasElement): number {
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return 255;
-
-  const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  let total = 0;
-  const pixelCount = data.length / 4;
-
-  for (let i = 0; i < data.length; i += 4) {
-    // Luminancia perceptual aproximada
-    total += data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
-  }
-  return total / pixelCount;
-}
-
-// ─────────────────────────────────────────────
-//  Cámara web — MediaDevices API
-// ─────────────────────────────────────────────
-interface WebCameraProps {
-  primaryColor: string;
-  isTaking: boolean;
-  isPositioning: boolean;
-  onCapture: (dataUri: string, brightness: number) => void;
-  onShutter: () => void;
-}
-
-function WebCamera({
-  primaryColor, isTaking, isPositioning, onCapture, onShutter,
-}: WebCameraProps) {
-  const { t } = useTranslation();
-  const videoRef  = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const [ready, setReady] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    navigator.mediaDevices
-      .getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 } })
-      .then((stream) => {
-        if (cancelled) {
-          stream.getTracks().forEach((track) => track.stop());
-          return;
-        }
-        streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.onloadedmetadata = () => {
-            videoRef.current?.play();
-            setReady(true);
-          };
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setError(t('facialReg.permissionDenied'));
-      });
-
-    return () => {
-      cancelled = true;
-      streamRef.current?.getTracks().forEach((track) => track.stop());
-    };
-  }, [t]);
-
-  const capture = useCallback(() => {
-    const video  = videoRef.current;
-    const canvas = canvasRef.current;
-    if (!video || !canvas || !ready) return;
-
-    canvas.width  = video.videoWidth  || 640;
-    canvas.height = video.videoHeight || 480;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    ctx.translate(canvas.width, 0);
-    ctx.scale(-1, 1);
-    ctx.drawImage(video, 0, 0);
-
-    const brightness = getAverageBrightness(canvas);
-    const dataUri = canvas.toDataURL('image/jpeg', 0.85);
-
-    onCapture(dataUri, brightness);
-    onShutter();
-  }, [ready, onCapture, onShutter]);
-
-  if (error) {
-    return (
-      <View style={wc.centerBox}>
-        <Ionicons name="alert-circle-outline" size={36} color={Colors.error} />
-        <Text style={wc.errorText}>{error}</Text>
-      </View>
-    );
-  }
-
-  return (
-    <View style={StyleSheet.absoluteFill}>
-      {/* @ts-ignore — elemento HTML nativo */}
-      <video
-        ref={videoRef}
-        style={{
-          width: '100%', height: '100%', objectFit: 'cover',
-          transform: 'scaleX(-1)',
-          display: ready ? 'block' : 'none',
-        }}
-        muted playsInline autoPlay
-      />
-      {/* @ts-ignore */}
-      <canvas ref={canvasRef} style={{ display: 'none' }} />
-
-      {!ready && (
-        <View style={wc.centerBox}>
-          <ActivityIndicator size="large" color={primaryColor} />
-          <Text style={wc.loadingText}>{t('facialReg.requestingPermission')}</Text>
-        </View>
-      )}
-
-      {ready && (
-        <FaceGuideOverlay primaryColor={primaryColor} isPositioning={isPositioning} />
-      )}
-
-      {ready && (
-        <ShutterButton
-          primaryColor={primaryColor}
-          disabled={isTaking || isPositioning}
-          loading={isTaking}
-          onPress={capture}
-        />
-      )}
-    </View>
-  );
-}
-
-const wc = StyleSheet.create({
-  centerBox:   { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 20 },
-  errorText:   { color: Colors.error, fontSize: FontSize.md, textAlign: 'center', lineHeight: 19 },
-  loadingText: { color: '#AAAAAA', fontSize: FontSize.md },
-});
-
-// ─────────────────────────────────────────────
-//  Sub-componentes compartidos
-// ─────────────────────────────────────────────
-function FaceGuideOverlay({
-  primaryColor, isPositioning,
-}: { primaryColor: string; isPositioning: boolean }) {
-  const { t } = useTranslation();
-
-  return (
-    <View style={s.faceGuideContainer} pointerEvents="none">
-      <View style={[
-        s.faceGuide,
-        { borderColor: isPositioning ? Colors.warning : primaryColor },
-      ]} />
-      <View style={[
-        s.positionBadge,
-        { backgroundColor: isPositioning ? Colors.warning : primaryColor },
-      ]}>
-        <Ionicons
-          name={isPositioning ? 'resize-outline' : 'checkmark-circle'}
-          size={14} color={Colors.white}
-        />
-        <Text style={s.positionBadgeText}>
-          {isPositioning ? t('facialReg.moveCloser') : t('facialReg.goodPosition')}
-        </Text>
-      </View>
-    </View>
-  );
-}
-
-function ShutterButton({
-  primaryColor, disabled, loading, onPress,
-}: { primaryColor: string; disabled: boolean; loading: boolean; onPress: () => void }) {
-  return (
-    <View style={s.shutterContainer}>
-      <TouchableOpacity
-        onPress={onPress}
-        disabled={disabled}
-        style={[s.shutterOuter, { borderColor: primaryColor, opacity: disabled ? 0.5 : 1 }]}
-        activeOpacity={0.8}
-      >
-        {loading ? (
-          <ActivityIndicator color={primaryColor} />
-        ) : (
-          <View style={[s.shutterInner, { backgroundColor: primaryColor }]} />
-        )}
-      </TouchableOpacity>
-    </View>
-  );
-}
 
 // ─────────────────────────────────────────────
 //  Pantalla principal
@@ -245,125 +44,23 @@ function ShutterButton({
 export default function TeenagerRegistrationScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
-  const [permission, requestPermission] = useCameraPermissions();
 
-  const [screenState, setScreenState]     = useState<ScreenState>('idle');
-  const [photoUri, setPhotoUri]           = useState<string | null>(null);
-  const [isTaking, setIsTaking]           = useState(false);
-  const [quality, setQuality]             = useState<CaptureQuality>('checking');
-  const [successModalVisible, setSuccessModalVisible] = useState(false);
+  // ── Toda la lógica de negocio viene del hook ──
+  const {
+    screenState, photoUri, isTaking, quality, successModalVisible,
+    isWeb, isPositioning, canFinish, cameraRef,
+    handleOpenCamera, handleTakePhotoNative, handleWebCapture, handleWebShutter,
+    handleRetake, handleFinish, handleCloseSuccessModal,
+  } = useFacialRegistration();
 
-  const cameraRef = useRef<CameraView>(null);
-  const positioningTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isWeb = Platform.OS === 'web';
-  const isPositioning = screenState === 'positioning';
-
+  // ── Colores locales (presentación) ─────────────
   const text       = isDark ? Colors.dark.text      : Colors.light.text;
   const muted      = isDark ? Colors.dark.textMuted  : Colors.light.textMuted;
   const cardBg     = isDark ? Colors.dark.surface    : Colors.white;
   const cardBorder = isDark ? Colors.dark.border     : Colors.light.border;
   const instrBg    = isDark ? 'rgba(101,179,97,0.08)' : 'rgba(101,179,97,0.07)';
 
-  useEffect(() => {
-    return () => {
-      if (positioningTimer.current) clearTimeout(positioningTimer.current);
-    };
-  }, []);
-
-  // ── Iniciar simulación de "acércate más" → "posición correcta" ──
-  const startPositioningSimulation = useCallback(() => {
-    setScreenState('positioning');
-    positioningTimer.current = setTimeout(() => {
-      setScreenState('ready');
-    }, POSITIONING_DELAY_MS);
-  }, []);
-
-  // ── Abrir cámara ──────────────────────────────
-  const handleOpenCamera = useCallback(async () => {
-    if (isWeb) {
-      startPositioningSimulation();
-      return;
-    }
-
-    if (permission?.granted) {
-      startPositioningSimulation();
-      return;
-    }
-
-    if (permission?.canAskAgain === false) {
-      alert(t('facialReg.permissionDenied'));
-      return;
-    }
-
-    setScreenState('requesting');
-    const result = await requestPermission();
-    if (result.granted) {
-      startPositioningSimulation();
-    } else {
-      setScreenState('idle');
-      alert(t('facialReg.permissionDenied'));
-    }
-  }, [isWeb, permission, requestPermission, t, startPositioningSimulation]);
-
-  // ── Evaluar calidad por brillo ────────────────
-  const evaluateBrightness = useCallback((brightness: number) => {
-    setQuality(brightness < MIN_BRIGHTNESS_SCORE ? 'lowLight' : 'good');
-  }, []);
-
-  // ── Captura nativa (expo-camera) ──────────────
-  const handleTakePhotoNative = useCallback(async () => {
-    if (!cameraRef.current || isTaking) return;
-    setIsTaking(true);
-    try {
-      const photo = await cameraRef.current.takePictureAsync({ quality: 0.7 });
-      if (photo?.uri) {
-        setPhotoUri(photo.uri);
-        // En nativo no hay acceso directo a píxeles sin librerías extra,
-        // así que se asume buena calidad salvo casos extremos
-        setQuality('good');
-        setScreenState('captured');
-      }
-    } catch {
-      alert(t('facialReg.captureError'));
-    } finally {
-      setIsTaking(false);
-    }
-  }, [isTaking, t]);
-
-  // ── Captura web (con análisis real de brillo) ─
-  const handleWebCapture = useCallback((dataUri: string, brightness: number) => {
-    setPhotoUri(dataUri);
-    evaluateBrightness(brightness);
-    setScreenState('captured');
-  }, [evaluateBrightness]);
-
-  const handleWebShutter = useCallback(() => {
-    setIsTaking(true);
-    setTimeout(() => setIsTaking(false), 200);
-  }, []);
-
-  // ── Retomar ────────────────────────────────────
-  const handleRetake = useCallback(() => {
-    setPhotoUri(null);
-    setQuality('checking');
-    startPositioningSimulation();
-  }, [startPositioningSimulation]);
-
-  // ── Finalizar ──────────────────────────────────
-  const handleFinish = useCallback(() => {
-    if (screenState !== 'captured' || !photoUri || quality !== 'good') return;
-    setSuccessModalVisible(true);
-  }, [screenState, photoUri, quality]);
-
-  // Al cerrar el modal, recién ahí se navega al login.
-  const handleCloseSuccessModal = useCallback(() => {
-    setSuccessModalVisible(false);
-    router.replace('/auth/login');
-  }, []);
-
-  const canFinish = screenState === 'captured' && quality === 'good';
-
-  // ── Render del área de cámara ──────────────────
+  // ── Render del área de cámara (solo vista, según el estado del hook) ──
   const renderCameraArea = () => {
     if (screenState === 'requesting') {
       return (
@@ -549,28 +246,23 @@ export default function TeenagerRegistrationScreen() {
         <View style={ms.overlay}>
           <View style={[ms.card, { backgroundColor: cardBg, shadowColor: isDark ? '#000000' : '#1C3A1D' }]}>
 
-            {/* Círculo con check */}
             <View style={[ms.iconCircle, { backgroundColor: theme.primary }]}>
               <Ionicons name="checkmark" size={52} color="#FFFFFF" />
             </View>
 
-            {/* Título */}
             <Text style={[ms.title, { color: text }]}>
               {t('registrationSuccess.title')}
             </Text>
 
-            {/* Subtítulo */}
             <Text style={[ms.subtitle, { color: muted }]}>
               {t('registrationSuccess.subtitle')}
             </Text>
 
-            {/* Separador */}
             <View style={[
               ms.divider,
               { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' },
             ]} />
 
-            {/* Botón */}
             <TouchableOpacity
               style={ms.button}
               onPress={handleCloseSuccessModal}
@@ -588,7 +280,7 @@ export default function TeenagerRegistrationScreen() {
   );
 }
 
-// ── Estilos ───────────────────────────────────
+// ── Estilos (solo presentación) ────────────────
 const s = StyleSheet.create({
   scroll: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 32, paddingHorizontal: 20 },
 
@@ -607,16 +299,6 @@ const s = StyleSheet.create({
   centerState: { alignItems: 'center', gap: 14, padding: 20 },
   faceFrame:   { width: 110, height: 110, borderRadius: 55, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   hintText:    { fontSize: FontSize.md, fontWeight: FontWeight.semibold, textAlign: 'center' },
-
-  faceGuideContainer: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
-  faceGuide:          { width: 170, height: 210, borderRadius: 90, borderWidth: 2, borderStyle: 'dashed' },
-
-  positionBadge:     { position: 'absolute', bottom: 90, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20 },
-  positionBadgeText: { color: Colors.white, fontSize: FontSize.sm, fontWeight: FontWeight.bold },
-
-  shutterContainer: { position: 'absolute', bottom: 20, left: 0, right: 0, alignItems: 'center' },
-  shutterOuter:      { width: 64, height: 64, borderRadius: 32, borderWidth: 3, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.18)' },
-  shutterInner:       { width: 46, height: 46, borderRadius: 23 },
 
   capturedOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'flex-end', alignItems: 'center', paddingBottom: 16 },
   capturedBadge:   { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 30, maxWidth: '90%' },

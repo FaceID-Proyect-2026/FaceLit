@@ -1,10 +1,13 @@
 // ─────────────────────────────────────────────
-//  app/minor-consent.tsx  — layout 2 columnas en pantallas anchas
+//  app/auth/minor-consent.tsx
+//  Solo VISTA — toda la lógica de negocio vive en
+//  features/auth/hooks/useMinorConsentForm.ts
 // ─────────────────────────────────────────────
+import { useMinorConsentForm } from '@/features/auth/hooks/useMinorConsentForm';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -20,115 +23,43 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
 const { width } = Dimensions.get('window');
 const CARD_MAX  = 900;
-const EMAIL_REGEX  = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const ONLY_LETTERS = /^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]+$/;
 
 export default function MinorConsentScreen() {
   const { t }             = useTranslation();
   const { theme, isDark } = useTheme();
   const { minorEmail }    = useLocalSearchParams<{ minorEmail?: string }>();
 
-  const text            = isDark ? '#FFFFFF'                   : '#111111';
-  const muted           = isDark ? '#A8BCA6'                   : '#555555';
-  const cardBg          = isDark ? '#07120D'                   : '#FFFFFF';
-  const inputBg         = isDark ? 'rgba(255,255,255,0.05)'    : '#FAFAFA';
-  const inputBorder     = isDark ? 'rgba(255,255,255,0.30)'    : '#BBBBBB';
+  // ── Toda la lógica de negocio viene del hook ──
+  const {
+    form, emailValidated, accepted, errors,
+    handleName, handleDoc, handleEmail, handleEmailValidate,
+    setAccepted, handleSubmit, handleBack,
+  } = useMinorConsentForm({ minorEmail });
+
+  // ── Estado puramente de UI (no es lógica de negocio) ──
+  const [focused, setFocused] = useState<string | null>(null);
+
+  // ── Colores locales (presentación) ─────────────
+  const text            = isDark ? '#FFFFFF'                : '#111111';
+  const muted           = isDark ? '#A8BCA6'                : '#555555';
+  const cardBg          = isDark ? '#07120D'                : '#FFFFFF';
+  const inputBg         = isDark ? 'rgba(255,255,255,0.05)' : '#FAFAFA';
+  const inputBorder     = isDark ? 'rgba(255,255,255,0.30)' : '#BBBBBB';
   const activeBorder    = theme.primary;
-  const linkColor       = isDark ? '#8EF58A'                   : '#3A8C36';
+  const linkColor       = isDark ? '#8EF58A'                : '#3A8C36';
   const errorColor      = '#D92027';
-  const cardBorder      = isDark ? 'rgba(255,255,255,0.08)'    : 'rgba(0,0,0,0.08)';
-  const legalBg         = isDark ? 'rgba(200,130,74,0.15)'     : '#FFF3E0';
+  const cardBorder      = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+  const legalBg         = isDark ? 'rgba(200,130,74,0.15)'  : '#FFF3E0';
   const legalBorder     = '#C8824A';
-  const checkCardBg     = isDark ? 'rgba(255,255,255,0.04)'    : '#F3F8F3';
-  const checkCardBorder = isDark ? 'rgba(255,255,255,0.10)'    : 'rgba(0,0,0,0.07)';
+  const checkCardBg     = isDark ? 'rgba(255,255,255,0.04)' : '#F3F8F3';
+  const checkCardBorder = isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.07)';
 
   const isWide = width >= 700;
 
-  const [guardianName,   setGuardianName]   = useState('');
-  const [guardianDoc,    setGuardianDoc]    = useState('');
-  const [guardianEmail,  setGuardianEmail]  = useState('');
-  const [emailValidated, setEmailValidated] = useState(false);
-  const [accepted,       setAccepted]       = useState(false);
-  const [errors,         setErrors]         = useState<Record<string, string>>({});
-  const [focused,        setFocused]        = useState<string | null>(null);
-
-  const clearError = (k: string) => setErrors((p) => ({ ...p, [k]: '' }));
-
-  const handleName = (v: string) => {
-    setGuardianName(v.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, ''));
-    clearError('guardianName');
-  };
-
-  const handleDoc = (v: string) => {
-    setGuardianDoc(v.replace(/\D/g, '').slice(0, 10));
-    clearError('guardianDoc');
-  };
-
-  const handleEmail = (v: string) => {
-    setGuardianEmail(v.replace(/\s/g, ''));
-    setEmailValidated(false);
-    clearError('guardianEmail');
-    clearError('emailAction');
-  };
-
-  const handleEmailValidate = () => {
-    const e = guardianEmail.trim();
-    if (!e) {
-      setErrors((p) => ({ ...p, emailAction: t('minorConsent.errors.emailEmpty') }));
-      return;
-    }
-    if (!EMAIL_REGEX.test(e)) {
-      setErrors((p) => ({ ...p, emailAction: t('minorConsent.errors.emailInvalid') }));
-      return;
-    }
-    if (minorEmail && e.toLowerCase() === minorEmail.trim().toLowerCase()) {
-      setErrors((p) => ({ ...p, emailAction: t('minorConsent.errors.emailSameMinor') }));
-      return;
-    }
-    setEmailValidated(true);
-    clearError('emailAction');
-  };
-
-  const handleSubmit = () => {
-    const e: Record<string, string> = {};
-    const nameParts = guardianName.trim().split(' ').filter(Boolean);
-
-    if (!guardianName.trim())
-      e.guardianName = t('minorConsent.errors.nameRequired');
-    else if (nameParts.length < 2)
-      e.guardianName = t('minorConsent.errors.nameIncomplete');
-    else if (!ONLY_LETTERS.test(guardianName))
-      e.guardianName = t('minorConsent.errors.nameLettersOnly');
-
-    if (!guardianDoc)
-      e.guardianDoc = t('minorConsent.errors.docRequired');
-    else if (guardianDoc.length !== 10)
-      e.guardianDoc = t('minorConsent.errors.docLength');
-
-    if (!guardianEmail)
-      e.guardianEmail = t('minorConsent.errors.emailRequired');
-    else if (!EMAIL_REGEX.test(guardianEmail))
-      e.guardianEmail = t('minorConsent.errors.emailInvalid');
-    else if (minorEmail && guardianEmail.toLowerCase() === minorEmail.trim().toLowerCase())
-      e.guardianEmail = t('minorConsent.errors.emailSameMinor');
-
-    if (!emailValidated)
-      e.emailAction = t('minorConsent.errors.emailNotValidated');
-
-    if (!accepted)
-      e.consent = t('minorConsent.errors.consentRequired');
-
-    setErrors(e);
-    if (Object.keys(e).length) return;
-
-    // Tras el consentimiento, se continúa con el registro facial.
-    // El modal de éxito se muestra en esa pantalla (teenager-registration), no acá.
-    router.replace('/auth/teenager-registration');
-  };
-
-  // ── JSX del campo Nombre (inline, sin sub-componente) ──
+  // ── Bloques JSX (solo vista) ───────────────────
   const fieldName = (
     <View style={s.fieldGroup}>
       <Text style={[s.label, { color: text }]}>{t('minorConsent.nameLabel')}</Text>
@@ -139,7 +70,7 @@ export default function MinorConsentScreen() {
         <Ionicons name="person-outline" size={18} color={muted} />
         <TextInput
           style={[s.input, { color: text }] as any}
-          value={guardianName}
+          value={form.name}
           onChangeText={handleName}
           placeholder={t('minorConsent.namePlaceholder')}
           placeholderTextColor={isDark ? '#5A7258' : '#AAAAAA'}
@@ -153,7 +84,6 @@ export default function MinorConsentScreen() {
     </View>
   );
 
-  // ── JSX del campo Documento (inline) ──
   const fieldDoc = (
     <View style={s.fieldGroup}>
       <Text style={[s.label, { color: text }]}>{t('minorConsent.docLabel')}</Text>
@@ -164,7 +94,7 @@ export default function MinorConsentScreen() {
         <Ionicons name="document-text-outline" size={18} color={muted} />
         <TextInput
           style={[s.input, { color: text }] as any}
-          value={guardianDoc}
+          value={form.document}
           onChangeText={handleDoc}
           placeholder={t('minorConsent.docPlaceholder')}
           placeholderTextColor={isDark ? '#5A7258' : '#AAAAAA'}
@@ -174,15 +104,14 @@ export default function MinorConsentScreen() {
           onFocus={() => setFocused('doc')}
           onBlur={() => setFocused(null)}
         />
-        <Text style={[s.docCounter, { color: guardianDoc.length === 10 ? theme.primary : muted }]}>
-          {guardianDoc.length}/10
+        <Text style={[s.docCounter, { color: form.document.length === 10 ? theme.primary : muted }]}>
+          {form.document.length}/10
         </Text>
       </View>
       {errors.guardianDoc ? <Text style={s.errorText}>{errors.guardianDoc}</Text> : null}
     </View>
   );
 
-  // ── JSX del campo Email (inline) ──
   const fieldEmail = (
     <View style={s.fieldGroup}>
       <Text style={[s.label, { color: text }]}>{t('minorConsent.emailLabel')}</Text>
@@ -201,7 +130,7 @@ export default function MinorConsentScreen() {
         <Ionicons name="mail-outline" size={18} color={muted} />
         <TextInput
           style={[s.input, { color: text }] as any}
-          value={guardianEmail}
+          value={form.email}
           onChangeText={handleEmail}
           placeholder={t('minorConsent.emailPlaceholder')}
           placeholderTextColor={isDark ? '#5A7258' : '#AAAAAA'}
@@ -217,7 +146,6 @@ export default function MinorConsentScreen() {
     </View>
   );
 
-  // ── JSX del botón validar correo (inline) ──
   const validateEmailBtn = (
     <>
       <TouchableOpacity
@@ -240,6 +168,7 @@ export default function MinorConsentScreen() {
     </>
   );
 
+  // ── Render ────────────────────────────────────
   return (
     <LinearGradient
       colors={isDark ? ['#000000', '#06170F', '#0B2D17'] : ['#F7FFF4', '#E5F7DF', '#1E4C28']}
@@ -294,16 +223,11 @@ export default function MinorConsentScreen() {
               {/* ── Grid 2 columnas (wide) ó 1 columna (móvil) ── */}
               {isWide ? (
                 <>
-                  {/* Fila 1: Nombre | Documento */}
                   <View style={s.row}>
                     <View style={s.col}>{fieldName}</View>
                     <View style={s.col}>{fieldDoc}</View>
                   </View>
-
-                  {/* Fila 2: Correo — ocupa todo el ancho */}
                   {fieldEmail}
-
-                  {/* Botón validar correo */}
                   {validateEmailBtn}
                 </>
               ) : (
@@ -356,7 +280,7 @@ export default function MinorConsentScreen() {
               {/* ── Botones de acción ── */}
               <View style={isWide ? s.actionsRow : s.actionsCol}>
                 <TouchableOpacity
-                  onPress={() => router.back()}
+                  onPress={handleBack}
                   activeOpacity={0.8}
                   style={[s.backBtn, isWide && s.actionBtnWide, { borderColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)' }]}
                 >
@@ -384,6 +308,7 @@ export default function MinorConsentScreen() {
   );
 }
 
+// ── Estilos (solo presentación) ────────────────
 const s = StyleSheet.create({
   gradient:  { flex: 1 },
   safe:      { flex: 1 },

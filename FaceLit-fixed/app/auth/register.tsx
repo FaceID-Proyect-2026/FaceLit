@@ -1,19 +1,22 @@
 // ─────────────────────────────────────────────
-//  app/auth/register.tsx  — layout ref: minor-consent.tsx
+//  app/auth/register.tsx
+//  Solo VISTA — toda la lógica de negocio vive en
+//  features/auth/hooks/useRegisterForm.ts
 // ─────────────────────────────────────────────
 import NavLink from '@/features/auth/components/NavLink';
+import RightsModal from '@/features/auth/components/RightsModal';
+import { formatDate, useRegisterForm } from '@/features/auth/hooks/useRegisterForm';
 import { Routes } from '@/shared/constants/routes';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Dimensions,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   ScrollView,
   StyleSheet,
@@ -24,200 +27,34 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// ── Constantes ────────────────────────────────
+// ── Constantes de layout (solo presentación) ───
 const { width } = Dimensions.get('window');
 const CARD_MAX = 960;
+const isWide = width >= 768;
 
-const ONLY_LETTERS   = /^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]+$/;
-const EMAIL_REGEX    = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()\-_=+[\]{};:'",.<>?/\\|`~]).{8,15}$/;
-
-const IDENTITY_VALUES = ['TI', 'CC', 'CE', 'PA'] as const;
-
-const initialForm = {
-  name: '', lastname: '', identityType: '',
-  document: '', email: '', password: '',
-};
-
-const initialErrors: Record<string, string> = {
-  name: '', lastname: '', identityType: '', document: '',
-  email: '', emailAction: '', password: '', confirmPassword: '',
-  birthdate: '', policy: '', rights: '',
-};
-
-// ── Helpers ───────────────────────────────────
-function getAge(date: Date): number {
-  const today = new Date();
-  let age = today.getFullYear() - date.getFullYear();
-  const m = today.getMonth() - date.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < date.getDate())) age--;
-  return age;
-}
-
-function formatDate(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
-
-function liveValidate(key: string, value: string, t: (k: string) => string): string {
-  switch (key) {
-    case 'name':
-    case 'lastname':
-      if (!value) return '';
-      if (!ONLY_LETTERS.test(value)) return t('register.errors.onlyLetters');
-      return value.length >= 2 ? '✓' : '';
-    case 'document':
-      if (!value) return '';
-      if (value.length < 10) return t('register.errors.documentLength');
-      return '✓';
-    case 'email':
-      if (!value) return '';
-      if (!EMAIL_REGEX.test(value)) return t('register.errors.emailInvalid');
-      return '✓';
-    case 'password':
-      if (!value) return '';
-      if (!PASSWORD_REGEX.test(value)) return t('register.errors.passwordWeak');
-      return '✓';
-    default:
-      return '';
-  }
-}
-
-// ── Modal: Derechos ───────────────────────────
-function RightsModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
-  const { t }             = useTranslation();
-  const { theme, isDark } = useTheme();
-
-  const RIGHTS = [
-    { icon: 'eye-outline'              as const, title: t('rights.items.access.title'),        desc: t('rights.items.access.desc') },
-    { icon: 'create-outline'           as const, title: t('rights.items.update.title'),        desc: t('rights.items.update.desc') },
-    { icon: 'shield-checkmark-outline' as const, title: t('rights.items.rectification.title'), desc: t('rights.items.rectification.desc') },
-    { icon: 'trash-outline'            as const, title: t('rights.items.deletion.title'),      desc: t('rights.items.deletion.desc') },
-    { icon: 'ban-outline'              as const, title: t('rights.items.revocation.title'),    desc: t('rights.items.revocation.desc') },
-  ];
-
-  const text        = isDark ? '#FFFFFF' : '#111111';
-  const muted       = isDark ? '#A8BCA6' : '#555555';
-  const cardBg      = isDark ? '#07120D' : '#FFFFFF';
-  const itemBg      = isDark ? 'rgba(255,255,255,0.04)' : '#F6FBF6';
-  const itemBorder  = isDark ? 'rgba(101,179,97,0.18)'  : 'rgba(101,179,97,0.20)';
-  const importantBg = isDark ? 'rgba(101,179,97,0.12)'  : 'rgba(101,179,97,0.10)';
-
-  return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      statusBarTranslucent
-      onRequestClose={onClose}
-    >
-      <View style={rm.overlay}>
-        <View style={[rm.card, { backgroundColor: cardBg }]}>
-
-          {/* Cerrar */}
-          <TouchableOpacity
-            onPress={onClose}
-            style={[rm.closeBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)' }]}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="close" size={20} color={muted} />
-          </TouchableOpacity>
-
-          <ScrollView showsVerticalScrollIndicator={false}>
-            {/* Ícono */}
-            <View style={rm.iconWrap}>
-              <LinearGradient colors={['#7DD87A', '#65B361', '#4A9146']} style={rm.iconCircle}>
-                <Ionicons name="shield-checkmark" size={30} color="#FFFFFF" />
-              </LinearGradient>
-            </View>
-
-            {/* Título */}
-            <Text style={[rm.title, { color: text }]}>
-              {t('rights.title1')}{'\n'}
-              <Text style={{ color: theme.primary }}>{t('rights.title2')}</Text>
-            </Text>
-
-            {/* Subtítulo */}
-            <Text style={[rm.subtitle, { color: muted }]}>
-              {t('rights.subtitle')}{' '}
-              <Text style={{ color: theme.primary, fontWeight: '700' }}>{t('rights.lawLabel')}</Text>
-            </Text>
-
-            {/* Separador */}
-            <View style={[rm.divider, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)' }]} />
-
-            {/* Lista de derechos */}
-            {RIGHTS.map((r, i) => (
-              <View key={i} style={[rm.rightItem, { backgroundColor: itemBg, borderColor: itemBorder }]}>
-                <View style={[rm.rightIconWrap, { backgroundColor: theme.primary + '20' }]}>
-                  <Ionicons name={r.icon} size={18} color={theme.primary} />
-                </View>
-                <View style={rm.rightContent}>
-                  <Text style={[rm.rightTitle, { color: theme.primary }]}>{r.title}</Text>
-                  <Text style={[rm.rightDesc,  { color: muted }]}>{r.desc}</Text>
-                </View>
-              </View>
-            ))}
-
-            {/* Caja importante */}
-            <View style={[rm.importantBox, { backgroundColor: importantBg, borderColor: theme.primary + '40' }]}>
-              <Ionicons name="information-circle-outline" size={18} color={theme.primary} style={{ marginBottom: 6 }} />
-              <Text style={[rm.importantText, { color: text }]}>
-                <Text style={[rm.importantBold, { color: theme.primary }]}>{t('rights.importantLabel')}</Text>
-                {t('rights.importantText')}
-              </Text>
-            </View>
-          </ScrollView>
-
-        </View>
-      </View>
-    </Modal>
-  );
-}
-
-const rm = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.65)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 32,
-  },
-  card: {
-    width: '100%', maxWidth: 480, borderRadius: 26,
-    paddingHorizontal: 24, paddingVertical: 28,
-    maxHeight: '90%',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3, shadowRadius: 20, elevation: 12,
-  },
-  closeBtn: {
-    alignSelf: 'flex-end', width: 34, height: 34,
-    borderRadius: 17, alignItems: 'center', justifyContent: 'center', marginBottom: 8,
-  },
-  iconWrap:   { alignItems: 'center', marginBottom: 16 },
-  iconCircle: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', shadowColor: '#65B361', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 8, elevation: 6 },
-  title:    { fontSize: 22, fontWeight: '900', textAlign: 'center', lineHeight: 30, marginBottom: 8 },
-  subtitle: { fontSize: 13, textAlign: 'center', lineHeight: 20, marginBottom: 20 },
-  divider:  { height: 1, marginBottom: 20 },
-  rightItem:     { flexDirection: 'row', alignItems: 'flex-start', gap: 12, borderRadius: 12, borderWidth: 1, padding: 14, marginBottom: 10 },
-  rightIconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  rightContent:  { flex: 1 },
-  rightTitle:    { fontSize: 14, fontWeight: '700', marginBottom: 4 },
-  rightDesc:     { fontSize: 13, lineHeight: 19 },
-  importantBox:  { borderRadius: 12, borderWidth: 1, padding: 14, marginTop: 10, marginBottom: 8, alignItems: 'center' },
-  importantText: { fontSize: 13, lineHeight: 20, textAlign: 'center' },
-  importantBold: { fontWeight: '800' },
-});
-
-// ── Componente principal ──────────────────────
 export default function RegisterScreen() {
-  const { t }             = useTranslation();
-  const { theme, isDark } = useTheme();
+  const { t }              = useTranslation();
+  const { theme, isDark }  = useTheme();
   const { validatedEmail } = useLocalSearchParams<{ validatedEmail?: string }>();
 
+  // ── Toda la lógica de negocio viene del hook ──
+  const {
+    form, birthdate, accepted, hasRights, emailValidated,
+    errors, hints, confirmPassword, identityOptions,
+    setField, setConfirmPassword, handleEmail, handleIdentity,
+    handleEmailValidate, setBirthdate, setAccepted, setHasRights,
+    handleRegister, handleCancel, hintColor,
+  } = useRegisterForm({ validatedEmail });
+
+  // ── Estado puramente de UI (no es lógica de negocio) ──
+  const [showPicker, setShowPicker]                   = useState(false);
+  const [showIdentity, setShowIdentity]               = useState(false);
+  const [showPassword, setShowPassword]               = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [focused, setFocused]                         = useState<string | null>(null);
+  const [showRights, setShowRights]                   = useState(false);
+
+  // ── Colores locales (presentación) ─────────────
   const text         = isDark ? '#FFFFFF'                : '#111111';
   const muted        = isDark ? '#A8BCA6'                : '#555555';
   const cardBg       = isDark ? '#07120D'                : '#FFFFFF';
@@ -231,133 +68,14 @@ export default function RegisterScreen() {
   const checkCardBdr = isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.07)';
   const dropBg       = isDark ? '#0D1F14'                : '#FFFFFF';
 
-  const isWide = width >= 768;
+  const hc = (key: string) => hintColor(key, theme.primary, errorColor);
 
-  const identityOptions = IDENTITY_VALUES.map(value => ({
-    value,
-    label: t(`register.identity${value}`),
-  }));
-
-  const [form, setForm]                     = useState({ ...initialForm, email: validatedEmail ?? '' });
-  const [birthdate, setBirthdate]           = useState<Date | null>(null);
-  const [showPicker, setShowPicker]         = useState(false);
-  const [accepted, setAccepted]             = useState(false);
-  const [hasRights, setHasRights]           = useState<boolean | null>(null);
-  const [emailValidated, setEmailValidated] = useState(!!validatedEmail);
-  const [showIdentity, setShowIdentity]     = useState(false);
-  const [errors, setErrors]                 = useState(initialErrors);
-  const [hints, setHints]                   = useState<Record<string, string>>({});
-  const [showPassword, setShowPassword]         = useState(false);
-  // ── NUEVO: estado para confirmar contraseña ──
-  const [confirmPassword, setConfirmPassword]       = useState('');
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  // ────────────────────────────────────────────
-  const [focused, setFocused]               = useState<string | null>(null);
-  const [showRights, setShowRights]         = useState(false);
-
-  const clearError = (k: string) => setErrors(p => ({ ...p, [k]: '' }));
-
-  const setField = (key: string, value: string) => {
-    setForm(p => ({ ...p, [key]: value }));
-    clearError(key);
-    setHints(p => ({ ...p, [key]: liveValidate(key, value, t) }));
-  };
-
-  const handleEmail = (v: string) => {
-    const val = v.replace(/\s/g, '');
-    setForm(p => ({ ...p, email: val }));
-    setEmailValidated(false);
-    clearError('email');
-    clearError('emailAction');
-    setHints(p => ({ ...p, email: liveValidate('email', val, t) }));
-  };
-
-  const handleIdentity = (value: string) => {
-    setForm(p => ({ ...p, identityType: value }));
+  const onSelectIdentity = (value: string) => {
+    handleIdentity(value);
     setShowIdentity(false);
-    clearError('identityType');
   };
 
-  const handleEmailValidate = () => {
-    const e = form.email.trim();
-    if (!e) {
-      setErrors(p => ({ ...p, emailAction: t('register.errors.emailEmpty') }));
-      return;
-    }
-    if (!EMAIL_REGEX.test(e)) {
-      setErrors(p => ({ ...p, emailAction: t('register.errors.emailInvalidShort') }));
-      return;
-    }
-    router.push({
-      pathname: Routes.AUTH.EMAIL_VALIDATION as any,
-      params: { email: e },
-    });
-  };
-
-  const handleRegister = () => {
-    const e = { ...initialErrors };
-    const d = { ...form, name: form.name.trim(), lastname: form.lastname.trim(), email: form.email.trim() };
-
-    if (!d.name)                         e.name = t('register.errors.nameRequired');
-    else if (!ONLY_LETTERS.test(d.name)) e.name = t('register.errors.onlyLetters');
-
-    if (!d.lastname)                           e.lastname = t('register.errors.lastnameRequired');
-    else if (!ONLY_LETTERS.test(d.lastname))   e.lastname = t('register.errors.onlyLetters');
-
-    if (!d.identityType) e.identityType = t('register.errors.identityRequired');
-
-    if (!d.document)                   e.document = t('register.errors.documentRequired');
-    else if (d.document.length !== 10) e.document = t('register.errors.documentLength');
-
-    if (!d.email)                        e.email = t('register.errors.emailRequired');
-    else if (!EMAIL_REGEX.test(d.email)) e.email = t('register.errors.emailInvalid');
-
-    if (!emailValidated) e.emailAction = t('register.errors.emailNotValidated');
-
-    if (!d.password)                           e.password = t('register.errors.passwordRequired');
-    else if (!PASSWORD_REGEX.test(d.password)) e.password = t('register.errors.passwordWeak');
-
-    // ── NUEVO: validación confirmar contraseña ──
-    if (!confirmPassword) {
-      e.confirmPassword = t('register.errors.confirmPasswordRequired') ?? 'Confirma tu contraseña';
-    } else if (confirmPassword !== d.password) {
-      e.confirmPassword = t('register.errors.passwordMismatch') ?? 'Las contraseñas no coinciden';
-    }
-    // ───────────────────────────────────────────
-
-    if (!birthdate) {
-      e.birthdate = t('register.errors.birthdateRequired');
-    } else {
-      const age = getAge(birthdate);
-      if (age < 8)                                    e.birthdate    = t('register.errors.ageMin');
-      else if (age > 100)                             e.birthdate    = t('register.errors.ageMax');
-      else if (d.identityType === 'TI' && age >= 18) e.identityType = t('register.errors.tiAdult');
-      else if (d.identityType === 'CC' && age < 18)  e.identityType = t('register.errors.ccMinor');
-    }
-
-    if (!accepted)          e.policy = t('register.errors.policyRequired');
-    if (hasRights === null) e.rights = t('register.errors.rightsRequired');
-
-    setErrors(e);
-    if (Object.values(e).some(v => v !== '')) return;
-
-    const age = getAge(birthdate!);
-    if (age >= 18) {
-      router.push(Routes.AUTH.TEENAGER_REGISTRATION as any);
-    } else {
-      router.push({ pathname: Routes.AUTH.MINOR_CONSENT as any, params: { minorEmail: d.email } });
-    }
-  };
-
-  const handleCancel = () => {
-    setForm(initialForm);
-    setBirthdate(null);
-    router.replace(Routes.AUTH.LOGIN as any);
-  };
-
-  const hintColor = (key: string) => hints[key] === '✓' ? theme.primary : errorColor;
-
-  // ── Bloques JSX ──────────────────────────────
+  // ── Bloques JSX (solo vista) ───────────────────
   const fieldName = (
     <View style={s.fieldGroup}>
       <Text style={[s.label, { color: text }]}>{t('register.name')}</Text>
@@ -379,7 +97,7 @@ export default function RegisterScreen() {
         />
       </View>
       {errors.name ? <Text style={s.errorText}>{errors.name}</Text>
-        : hints.name ? <Text style={[s.hintText, { color: hintColor('name') }]}>{hints.name}</Text>
+        : hints.name ? <Text style={[s.hintText, { color: hc('name') }]}>{hints.name}</Text>
         : null}
     </View>
   );
@@ -405,7 +123,7 @@ export default function RegisterScreen() {
         />
       </View>
       {errors.lastname ? <Text style={s.errorText}>{errors.lastname}</Text>
-        : hints.lastname ? <Text style={[s.hintText, { color: hintColor('lastname') }]}>{hints.lastname}</Text>
+        : hints.lastname ? <Text style={[s.hintText, { color: hc('lastname') }]}>{hints.lastname}</Text>
         : null}
     </View>
   );
@@ -433,7 +151,7 @@ export default function RegisterScreen() {
           {identityOptions.map(opt => (
             <TouchableOpacity
               key={opt.value}
-              onPress={() => handleIdentity(opt.value)}
+              onPress={() => onSelectIdentity(opt.value)}
               style={[s.dropOption, { borderBottomColor: inputBorder }, form.identityType === opt.value && { backgroundColor: theme.primary + '22' }]}
             >
               <Text style={[s.dropText, { color: text }, form.identityType === opt.value && { color: theme.primary, fontWeight: '700' }]}>
@@ -482,7 +200,7 @@ export default function RegisterScreen() {
         </Text>
       </View>
       {errors.document ? <Text style={s.errorText}>{errors.document}</Text>
-        : hints.document ? <Text style={[s.hintText, { color: hintColor('document') }]}>{hints.document}</Text>
+        : hints.document ? <Text style={[s.hintText, { color: hc('document') }]}>{hints.document}</Text>
         : null}
     </View>
   );
@@ -510,7 +228,7 @@ export default function RegisterScreen() {
         {emailValidated && <Ionicons name="checkmark-circle" size={18} color={theme.primary} />}
       </View>
       {errors.email ? <Text style={s.errorText}>{errors.email}</Text>
-        : hints.email ? <Text style={[s.hintText, { color: hintColor('email') }]}>{hints.email}</Text>
+        : hints.email ? <Text style={[s.hintText, { color: hc('email') }]}>{hints.email}</Text>
         : null}
     </View>
   );
@@ -538,7 +256,6 @@ export default function RegisterScreen() {
     </>
   );
 
-  // ── CAMPO CONTRASEÑA (manual + ojo) ──────────
   const fieldPassword = (
     <View style={s.fieldGroup}>
       <Text style={[s.label, { color: text }]}>{t('register.password')}</Text>
@@ -567,12 +284,11 @@ export default function RegisterScreen() {
         <Text style={[s.hintBoxText, { color: muted }]}>{t('register.passwordHint')}</Text>
       </View>
       {errors.password ? <Text style={s.errorText}>{errors.password}</Text>
-        : hints.password ? <Text style={[s.hintText, { color: hintColor('password') }]}>{hints.password}</Text>
+        : hints.password ? <Text style={[s.hintText, { color: hc('password') }]}>{hints.password}</Text>
         : null}
     </View>
   );
 
-  // ── CAMPO CONFIRMAR CONTRASEÑA ────────────────
   const fieldConfirmPassword = (
     <View style={s.fieldGroup}>
       <Text style={[s.label, { color: text }]}>
@@ -586,10 +302,7 @@ export default function RegisterScreen() {
         <TextInput
           style={[s.input, { color: text }] as any}
           value={confirmPassword}
-          onChangeText={v => {
-            setConfirmPassword(v);
-            clearError('confirmPassword');
-          }}
+          onChangeText={setConfirmPassword}
           placeholder={t('register.confirmPasswordPlaceholder') ?? 'Confirmar contraseña'}
           placeholderTextColor={isDark ? '#5A7258' : '#AAAAAA'}
           secureTextEntry={!showConfirmPassword}
@@ -609,7 +322,6 @@ export default function RegisterScreen() {
           : null}
     </View>
   );
-  // ─────────────────────────────────────────────
 
   const fieldBirthdate = (
     <View style={s.fieldGroup}>
@@ -821,15 +533,13 @@ export default function RegisterScreen() {
         </KeyboardAvoidingView>
       </SafeAreaView>
 
-      {/* Modal de derechos */}
+      {/* Modal de derechos (vista pura, componente separado) */}
       <RightsModal visible={showRights} onClose={() => setShowRights(false)} />
     </LinearGradient>
   );
 }
 
-// ── Estilos ───────────────────────────────────
-const isWide = width >= 768;
-
+// ── Estilos (solo presentación) ────────────────
 const s = StyleSheet.create({
   gradient:  { flex: 1 },
   safe:      { flex: 1 },

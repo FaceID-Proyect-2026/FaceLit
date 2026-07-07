@@ -1,5 +1,7 @@
 // ─────────────────────────────────────────────
 //  app/auth/new-password.tsx
+//  Solo VISTA — toda la lógica de negocio vive en
+//  features/auth/hooks/useNewPasswordForm.ts
 // ─────────────────────────────────────────────
 import { useState } from 'react';
 import {
@@ -8,57 +10,32 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/shared/contexts/ThemeContext';
-
-const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>_\-+=]).{8,15}$/;
+import { useNewPasswordForm } from '@/features/auth/hooks/useNewPasswordForm';
 
 export default function NewPasswordScreen() {
-  const { t }           = useTranslation();
+  const { t }             = useTranslation();
   const { isDark, theme } = useTheme();
 
-  const [password,        setPassword]        = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword,    setShowPassword]    = useState(false);
-  const [showConfirm,     setShowConfirm]     = useState(false);
-  const [errors,          setErrors]          = useState<Record<string, string>>({});
+  // ── Toda la lógica de negocio viene del hook ──
+  const {
+    password, confirmPassword, errors, requirements,
+    setPassword, setConfirmPassword, handleSubmit, handleBack,
+  } = useNewPasswordForm();
 
+  // ── Estado puramente de UI (no es lógica de negocio) ──
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm,  setShowConfirm]  = useState(false);
+
+  // ── Colores locales (presentación) ─────────────
   const text        = isDark ? '#FFFFFF' : '#000000';
   const muted       = isDark ? '#CAD6C8' : '#1E1E1E';
   const cardBg      = isDark ? '#07120D' : '#FFFFFF';
   const inputBg     = isDark ? 'rgba(255,255,255,0.04)' : '#FFFFFF';
   const inputBorder = isDark ? 'rgba(255,255,255,0.78)' : '#BBBBBB';
   const errorColor  = '#D92027';
-
-  // ── Array dentro del componente para acceder a t() ──
-  const REQUIREMENTS = [
-    { key: 'length', label: t('newPassword.req.length'), test: (p: string) => p.length >= 8 && p.length <= 15 },
-    { key: 'upper',  label: t('newPassword.req.upper'),  test: (p: string) => /[A-Z]/.test(p) },
-    { key: 'lower',  label: t('newPassword.req.lower'),  test: (p: string) => /[a-z]/.test(p) },
-    { key: 'number', label: t('newPassword.req.number'), test: (p: string) => /\d/.test(p) },
-    { key: 'symbol', label: t('newPassword.req.symbol'), test: (p: string) => /[!@#$%^&*(),.?":{}|<>_\-+=]/.test(p) },
-  ];
-
-  const handleSubmit = () => {
-    const e: Record<string, string> = {};
-
-    if (!password)
-      e.password = t('newPassword.errors.passwordRequired');
-    else if (!PASSWORD_REGEX.test(password))
-      e.password = t('newPassword.errors.passwordInvalid');
-
-    if (!confirmPassword)
-      e.confirm = t('newPassword.errors.confirmRequired');
-    else if (password !== confirmPassword)
-      e.confirm = t('newPassword.errors.confirmMismatch');
-
-    setErrors(e);
-    if (Object.keys(e).length > 0) return;
-
-    router.push('/auth/password-reset-done');
-  };
 
   return (
     <LinearGradient
@@ -74,7 +51,7 @@ export default function NewPasswordScreen() {
           <View style={[s.card, { backgroundColor: cardBg, shadowColor: isDark ? '#000000' : '#1C3A1D' }]}>
 
             {/* Volver */}
-            <TouchableOpacity style={s.backBtn} onPress={() => router.push('/auth/verify-identity')}>
+            <TouchableOpacity style={s.backBtn} onPress={handleBack}>
               <Text style={s.backText}>{t('newPassword.backBtn')}</Text>
             </TouchableOpacity>
 
@@ -96,21 +73,18 @@ export default function NewPasswordScreen() {
               <Text style={[s.reqTitle, { color: theme.primary }]}>
                 {t('newPassword.reqTitle')}
               </Text>
-              {REQUIREMENTS.map((req) => {
-                const met = req.test(password);
-                return (
-                  <View key={req.key} style={s.reqRow}>
-                    <Ionicons
-                      name={met ? 'checkmark-circle' : 'ellipse-outline'}
-                      size={14}
-                      color={met ? theme.primary : isDark ? '#4A5E49' : '#AAAAAA'}
-                    />
-                    <Text style={[s.reqItem, { color: met ? theme.primary : isDark ? '#7A8A78' : '#888888' }]}>
-                      {req.label}
-                    </Text>
-                  </View>
-                );
-              })}
+              {requirements.map((req) => (
+                <View key={req.key} style={s.reqRow}>
+                  <Ionicons
+                    name={req.met ? 'checkmark-circle' : 'ellipse-outline'}
+                    size={14}
+                    color={req.met ? theme.primary : isDark ? '#4A5E49' : '#AAAAAA'}
+                  />
+                  <Text style={[s.reqItem, { color: req.met ? theme.primary : isDark ? '#7A8A78' : '#888888' }]}>
+                    {req.label}
+                  </Text>
+                </View>
+              ))}
             </View>
 
             {/* Nueva contraseña */}
@@ -122,10 +96,7 @@ export default function NewPasswordScreen() {
               <TextInput
                 style={[s.input, { color: text }]}
                 value={password}
-                onChangeText={(v) => {
-                  setPassword(v);
-                  setErrors((p) => ({ ...p, password: '' }));
-                }}
+                onChangeText={setPassword}
                 placeholder={t('newPassword.passwordPlaceholder')}
                 placeholderTextColor={isDark ? '#AEB6C2' : '#AAAAAA'}
                 secureTextEntry={!showPassword}
@@ -151,10 +122,7 @@ export default function NewPasswordScreen() {
               <TextInput
                 style={[s.input, { color: text }]}
                 value={confirmPassword}
-                onChangeText={(v) => {
-                  setConfirmPassword(v);
-                  setErrors((p) => ({ ...p, confirm: '' }));
-                }}
+                onChangeText={setConfirmPassword}
                 placeholder={t('newPassword.confirmPlaceholder')}
                 placeholderTextColor={isDark ? '#AEB6C2' : '#AAAAAA'}
                 secureTextEntry={!showConfirm}
@@ -185,6 +153,7 @@ export default function NewPasswordScreen() {
   );
 }
 
+// ── Estilos (solo presentación) ────────────────
 const s = StyleSheet.create({
   gradient: { flex: 1 },
   safe:     { flex: 1 },

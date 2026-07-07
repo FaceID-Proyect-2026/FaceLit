@@ -8,7 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import {
-  Dimensions, KeyboardAvoidingView, Platform,
+  ActivityIndicator, Dimensions, KeyboardAvoidingView, Platform,
   ScrollView, StyleSheet, Text, TextInput,
   TouchableOpacity, View,
 } from 'react-native';
@@ -28,7 +28,7 @@ export default function LoginScreen() {
   const { theme, isDark } = useTheme();
   const { t }             = useTranslation();
   const router            = useRouter();
-  const { form, errors, setField, handleSubmit } = useLoginForm();
+  const { form, errors, loading, setField, handleSubmit } = useLoginForm();
 
   const [showPassword, setShowPassword] = useState(false);
   const [focused,      setFocused]      = useState<string | null>(null);
@@ -208,16 +208,23 @@ export default function LoginScreen() {
               {/* ── Botón iniciar sesión ── */}
               <TouchableOpacity
                 onPress={handleSubmit}
-                style={s.loginBtn}
+                style={[s.loginBtn, loading && s.loginBtnDisabled]}
                 activeOpacity={0.85}
+                disabled={loading}
               >
                 <LinearGradient
                   colors={['#72C96D', '#65B361', '#4FA14B']}
                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                   style={s.loginBtnGradient}
                 >
-                  <Ionicons name="log-in-outline" size={18} color={Colors.white} />
-                  <Text style={s.loginBtnText}>{t('login.loginBtn')}</Text>
+                  {loading ? (
+                    <ActivityIndicator size="small" color={Colors.white} />
+                  ) : (
+                    <Ionicons name="log-in-outline" size={18} color={Colors.white} />
+                  )}
+                  <Text style={s.loginBtnText}>
+                    {loading ? t('login.loggingIn') ?? t('login.loginBtn') : t('login.loginBtn')}
+                  </Text>
                 </LinearGradient>
               </TouchableOpacity>
 
@@ -322,6 +329,7 @@ const s = StyleSheet.create({
 
   // ── Botón ──
   loginBtn:         { width: '100%', maxWidth: 320, alignSelf: 'center', borderRadius: 16, overflow: 'hidden', marginTop: 20, marginBottom: 10 },
+  loginBtnDisabled: { opacity: 0.7 },
   loginBtnGradient: { paddingVertical: 14, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 },
   loginBtnText:     { color: Colors.white, fontSize: FontSize.lg, fontWeight: FontWeight.bold },
 
