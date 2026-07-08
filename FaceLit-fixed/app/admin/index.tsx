@@ -40,7 +40,7 @@ export default function AdminDashboard() {
     { icon: 'people-outline', value: '1,248', label: t('dashboard.totalUsers') },
     { icon: 'school-outline', value: '48', label: t('dashboard.activeFichas') },
     { icon: 'business-outline', value: '32', label: t('dashboard.environments') },
-    { icon: 'checkmark-circle-outline', value: '96%', label: t('dashboard.attendanceRate') },
+    { icon: 'book-outline', value: '12', label: t('dashboard.trainingPrograms') },
   ];
 
   const quickActions: QuickAction[] = [
@@ -52,13 +52,6 @@ export default function AdminDashboard() {
     { icon: 'bar-chart-outline', label: t('sidebar.reports'), route: Routes.REPORTS.DASHBOARD, color: '#E74C3C' },
   ];
 
-  // ── Datos mock ────────────────────────────
-  const recentActivity = [
-    { icon: 'person-add-outline', text: 'Nuevo aprendiz registrado: Ana Martínez', time: 'Hace 5 min', color: '#27AE60' },
-    { icon: 'checkmark-circle-outline', text: 'Asistencia registrada: Ficha 3145555', time: 'Hace 12 min', color: '#4A90D9' },
-    { icon: 'alert-circle-outline', text: 'Ambiente 304 sin instructor asignado', time: 'Hace 1 hora', color: '#E89B2C' },
-    { icon: 'time-outline', text: 'Horario modificado: ADSO - Jornada mañana', time: 'Hace 2 horas', color: '#9B59B6' },
-  ];
 
   return (
     <View style={[ads.safe, { backgroundColor: bg }]}>
@@ -80,7 +73,7 @@ export default function AdminDashboard() {
         <View style={ads.statsGrid}>
           {stats.map((stat) => (
             <View key={stat.label} style={[ads.statCard, { backgroundColor: cardBg, borderColor: border }]}>
-              <Ionicons name={stat.icon as any} size={22} color={theme.primary} />
+              <Ionicons name={stat.icon as any} size={26} color={theme.primary} />
               <Text style={[ads.statValue, { color: text }]}>{stat.value}</Text>
               <Text style={[ads.statLabel, { color: muted }]}>{stat.label}</Text>
             </View>
@@ -98,34 +91,13 @@ export default function AdminDashboard() {
               activeOpacity={0.8}
             >
               <View style={[ads.actionIcon, { backgroundColor: action.color + '20' }]}>
-                <Ionicons name={action.icon as any} size={24} color={action.color} />
+                <Ionicons name={action.icon as any} size={28} color={action.color} />
               </View>
               <Text style={[ads.actionLabel, { color: text }]}>{action.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* Recent Activity */}
-        <Text style={[ads.sectionTitle, { color: text }]}>{t('dashboard.recentActivity')}</Text>
-        <View style={[ads.activityCard, { backgroundColor: cardBg, borderColor: border }]}>
-          {recentActivity.map((item, i) => (
-            <View
-              key={i}
-              style={[
-                ads.activityItem,
-                i < recentActivity.length - 1 && { borderBottomWidth: 1, borderBottomColor: border },
-              ]}
-            >
-              <View style={[ads.activityIcon, { backgroundColor: item.color + '20' }]}>
-                <Ionicons name={item.icon as any} size={16} color={item.color} />
-              </View>
-              <View style={ads.activityContent}>
-                <Text style={[ads.activityText, { color: text }]}>{item.text}</Text>
-                <Text style={[ads.activityTime, { color: muted }]}>{item.time}</Text>
-              </View>
-            </View>
-          ))}
-        </View>
       </ScrollView>
     </View>
   );
@@ -133,7 +105,7 @@ export default function AdminDashboard() {
 
 const ads = StyleSheet.create({
   safe: { flex: 1 },
-  scroll: { padding: 16, paddingBottom: 40 },
+  scroll: { padding: 16, paddingBottom: 40, flexGrow: 1, justifyContent: 'center' },
   welcomeBanner: {
     borderRadius: 16,
     padding: 22,
@@ -147,62 +119,43 @@ const ads = StyleSheet.create({
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 24,
+    gap: 14,
+    marginBottom: 32,
   },
   statCard: {
     flex: 1,
     minWidth: 150,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
-    padding: 16,
+    paddingVertical: 24,
+    paddingHorizontal: 16,
     alignItems: 'center',
   },
-  statValue: { fontSize: FontSize['2xl'], fontWeight: FontWeight.black, marginTop: 8 },
-  statLabel: { fontSize: FontSize.sm, marginTop: 4, textAlign: 'center' },
-  sectionTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.black, marginBottom: 12 },
+  statValue: { fontSize: FontSize['3xl'], fontWeight: FontWeight.black, marginTop: 10 },
+  statLabel: { fontSize: FontSize.md, marginTop: 6, textAlign: 'center' },
+  sectionTitle: { fontSize: FontSize.xl, fontWeight: FontWeight.black, marginBottom: 16 },
   actionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: 14,
     marginBottom: 24,
   },
   actionCard: {
     width: '30%',
     minWidth: 100,
     flex: 1,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
-    padding: 16,
-    alignItems: 'center',
-    gap: 10,
-  },
-  actionIcon: {
-    width: 48, height: 48,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionLabel: { fontSize: FontSize.sm, fontWeight: FontWeight.bold, textAlign: 'center' },
-  activityCard: {
-    borderRadius: 14,
-    borderWidth: 1,
-    overflow: 'hidden',
-  },
-  activityItem: {
-    flexDirection: 'row',
+    paddingVertical: 26,
+    paddingHorizontal: 16,
     alignItems: 'center',
     gap: 12,
-    padding: 14,
   },
-  activityIcon: {
-    width: 32, height: 32,
-    borderRadius: 8,
+  actionIcon: {
+    width: 56, height: 56,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    flexShrink: 0,
   },
-  activityContent: { flex: 1 },
-  activityText: { fontSize: FontSize.md, lineHeight: 20 },
-  activityTime: { fontSize: FontSize.xs, marginTop: 2 },
+  actionLabel: { fontSize: FontSize.md, fontWeight: FontWeight.bold, textAlign: 'center' },
 });

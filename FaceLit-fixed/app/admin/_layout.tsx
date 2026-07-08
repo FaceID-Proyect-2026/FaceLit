@@ -103,6 +103,8 @@ const sal = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
+    position: 'relative',
+    zIndex: 20,
   },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   menuBtn: { padding: 4 },
