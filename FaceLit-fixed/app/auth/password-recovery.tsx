@@ -1,68 +1,39 @@
+// ─────────────────────────────────────────────
+//  app/auth/password-recovery.tsx
+//  Solo VISTA — toda la lógica de negocio vive en
+//  features/auth/hooks/usePasswordRecoveryForm.ts
+// ─────────────────────────────────────────────
 import { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  Image,
-  Modal,
-} from 'react-native';
-import { router } from 'expo-router';
+import {View,Text, StyleSheet,TouchableOpacity, TextInput, ScrollView, KeyboardAvoidingView, Platform,Image,Modal} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/shared/contexts/ThemeContext';
+import { usePasswordRecoveryForm } from '@/features/auth/hooks/usePasswordRecoveryForm';
 
-const correosRegistrados = [
-  'admin@test.com',
-  'usuario@empresa.com',
-  'valery@gmail.com',
-  'juan@gmail.com',
-];
-
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const GRADIENT_DARK   = ['#000000', '#06170F', '#0B2D17'] as const;
-const GRADIENT_LIGHT  = ['#F7FFF4', '#E5F7DF', '#1E4C28'] as const;
 const BUTTON_GRADIENT = ['#72C96D', '#65B361', '#4FA14B'] as const;
 
 export default function PasswordRecoveryScreen() {
   const { t } = useTranslation();
   const { theme, isDark } = useTheme();
 
-  const [email,     setEmail]     = useState('');
-  const [error,     setError]     = useState('');
-  const [focused,   setFocused]   = useState(false);
-  const [showModal, setShowModal] = useState(false);
+  // ── Toda la lógica de negocio viene del hook ──
+  const {
+    email, error, showModal,
+    setEmail, handleSubmit, closeModal, handleModalContinue, handleCancel,
+  } = usePasswordRecoveryForm();
 
+  // ── Estado puramente de UI (no es lógica de negocio) ──
+  const [focused, setFocused] = useState(false);
+
+  // ── Colores locales (presentación) ─────────────
   const text        = isDark ? '#FFFFFF' : '#000000';
   const muted       = isDark ? '#CAD6C8' : '#1E1E1E';
   const cardBg      = isDark ? '#07120D' : '#FFFFFF';
   const inputBorder = isDark ? 'rgba(255,255,255,0.78)' : '#000000';
   const inputBg     = isDark ? 'rgba(255,255,255,0.04)' : '#FFFFFF';
   const errorColor  = '#D92027';
-
-  const handleSubmit = () => {
-    if (!EMAIL_REGEX.test(email)) {
-      setError(t('passwordRecovery.errors.invalidEmail'));
-      return;
-    }
-    if (!correosRegistrados.includes(email)) {
-      setError(t('passwordRecovery.errors.emailNotFound'));
-      return;
-    }
-    setError('');
-    setShowModal(true);
-  };
-
-  const handleModalContinue = () => {
-    setShowModal(false);
-    router.push('/auth/verify-identity');
-  };
 
   return (
     <>
@@ -130,10 +101,7 @@ export default function PasswordRecoveryScreen() {
                       placeholder={t('passwordRecovery.emailPlaceholder')}
                       placeholderTextColor={isDark ? '#AEB6C2' : '#323232'}
                       value={email}
-                      onChangeText={(value) => {
-                        setEmail(value);
-                        setError('');
-                      }}
+                      onChangeText={setEmail}
                       keyboardType="email-address"
                       autoCapitalize="none"
                       onFocus={() => setFocused(true)}
@@ -161,7 +129,7 @@ export default function PasswordRecoveryScreen() {
 
                   <TouchableOpacity
                     style={styles.secondaryBtn}
-                    onPress={() => router.replace('/auth/login')}
+                    onPress={handleCancel}
                   >
                     <Text style={styles.secondaryText}>
                       {t('passwordRecovery.cancelBtn')}
@@ -179,7 +147,7 @@ export default function PasswordRecoveryScreen() {
         visible={showModal}
         transparent={true}
         animationType="fade"
-        onRequestClose={() => setShowModal(false)}
+        onRequestClose={closeModal}
       >
         <View style={styles.modalOverlay}>
           <View
@@ -225,6 +193,7 @@ export default function PasswordRecoveryScreen() {
   );
 }
 
+// ── Estilos (solo presentación) ────────────────
 const styles = StyleSheet.create({
   gradient:          { flex: 1 },
   safe:              { flex: 1 },

@@ -4,10 +4,7 @@
 //  features/auth/hooks/useNewPasswordForm.ts
 // ─────────────────────────────────────────────
 import { useState } from 'react';
-import {
-  View, Text, Image, TouchableOpacity, StyleSheet,
-  ScrollView, TextInput,
-} from 'react-native';
+import {View, Text, Image, TouchableOpacity, StyleSheet, ScrollView, TextInput} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';

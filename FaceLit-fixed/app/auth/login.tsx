@@ -179,23 +179,21 @@ export default function LoginScreen() {
                     )}
                   </View>
 
-                  {/* Texto en una sola línea usando flex wrap */}
-                  <View style={s.policyTextWrap}>
+                  {/* Texto en un solo bloque anidado — evita que el '?' quede huérfano al envolver en pantallas angostas */}
+                  <Text style={s.policyTextWrap}>
                     <Text style={[s.policyText, { color: text }]}>
                       {t('login.policyPrefix')}{' '}
                     </Text>
-                    <TouchableOpacity
+                    <Text
+                      style={[s.policyLink, { color: theme.primary }]}
                       onPress={() => router.push(Routes.AUTH.PRIVACY_NOTICE as any)}
-                      hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
                     >
-                      <Text style={[s.policyLink, { color: theme.primary }]}>
-                        {t('login.policyLink')}
-                      </Text>
-                    </TouchableOpacity>
+                      {t('login.policyLink')}
+                    </Text>
                     <Text style={[s.policyText, { color: text }]}>
                       {t('login.policySuffix')}
                     </Text>
-                  </View>
+                  </Text>
                 </TouchableOpacity>
 
                 {errors.policy
@@ -311,13 +309,10 @@ const s = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     flexShrink: 0,
   },
-  // Contenedor del texto en fila — flexWrap para que no se rompa feo
+  // Contenedor del texto en un solo bloque — ahora es un Text (no View),
+  // así el motor de texto de RN decide el wrap como una oración normal
   policyTextWrap: {
     flex: 1,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    gap: 2,
   },
   policyText: { fontSize: FontSize.md, lineHeight: 22 },
   policyLink: {

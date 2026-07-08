@@ -1,10 +1,5 @@
 # FaceLit — Documentación de Desarrollo Frontend
 
-> **Versión:** 1.0  
-> **Fecha:** 1 de Julio, 2026  
-> **Autor:** Desarrollo automático asistido por IA  
-> **Repositorio:** `C:\Users\jorge\OneDrive\Documentos\Hermes\Valery\FaceLit\FaceLit-fixed`
-
 ---
 
 ## 📋 Tabla de Contenidos

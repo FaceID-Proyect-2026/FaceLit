@@ -1,60 +1,39 @@
-import { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-} from 'react-native';
+// ─────────────────────────────────────────────
+//  app/auth/verify-identity.tsx
+//  Solo VISTA — toda la lógica de negocio vive en
+//  features/auth/hooks/useVerificationCode.ts
+//  (el mismo hook compartido con email-validation.tsx)
+// ─────────────────────────────────────────────
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/shared/contexts/ThemeContext';
+import { formatTime, useVerificationCode } from '@/features/auth/hooks/useVerificationCode';
 
-const CODE_MOCK    = '264255';
-const INITIAL_TIME = 5 * 60;
-
-function formatTime(seconds: number) {
-  const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-  const s = (seconds % 60).toString().padStart(2, '0');
-  return `${m}:${s}`;
-}
+const CODE_MOCK = '264255';
 
 export default function VerifyIdentityScreen() {
-  const { t }    = useTranslation();
-  const { isDark } = useTheme();
+  const { t }       = useTranslation();
+  const { isDark }  = useTheme();
 
-  const [code,     setCode]     = useState('');
-  const [timeLeft, setTimeLeft] = useState(INITIAL_TIME);
-  const [error,    setError]    = useState('');
+  // ── Toda la lógica de negocio viene del hook compartido ──
+  const {
+    code, setCode, timeLeft, error, handleResend, handleVerify,
+  } = useVerificationCode({
+    namespace: 'verifyIdentity',
+    codeMock: CODE_MOCK,
+    checkExpired: false, // verify-identity no bloquea el botón al expirar, a diferencia de email-validation
+    onVerified: () => router.push('/auth/new-password'),
+  });
 
+  // ── Colores locales (presentación) ─────────────
   const text        = isDark ? '#FFFFFF' : '#000000';
   const muted       = isDark ? '#CAD6C8' : '#1E1E1E';
   const cardBg      = isDark ? '#07120D' : '#FFFFFF';
   const inputBg     = isDark ? 'rgba(255,255,255,0.04)' : '#FFFFFF';
   const inputBorder = isDark ? 'rgba(255,255,255,0.78)' : '#000000';
-
-  useEffect(() => {
-    if (timeLeft <= 0) return;
-    const timer = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
-    return () => clearInterval(timer);
-  }, [timeLeft]);
-
-  const handleVerify = () => {
-    if (code.length !== 6) {
-      setError(t('verifyIdentity.errors.length'));
-      return;
-    }
-    if (code !== CODE_MOCK) {
-      setError(t('verifyIdentity.errors.invalid'));
-      return;
-    }
-    setError('');
-    router.push('/auth/new-password');
-  };
-
-  const handleResend = () => setTimeLeft(INITIAL_TIME);
 
   return (
     <LinearGradient
@@ -141,10 +120,7 @@ export default function VerifyIdentityScreen() {
               },
             ]}
             value={code}
-            onChangeText={(v) => {
-              setCode(v.replace(/\D/g, ''));
-              setError('');
-            }}
+            onChangeText={setCode}
             placeholder={t('verifyIdentity.placeholder')}
             placeholderTextColor={isDark ? '#AEB6C2' : '#7A7A7A'}
             keyboardType="number-pad"
@@ -175,6 +151,7 @@ export default function VerifyIdentityScreen() {
   );
 }
 
+// ── Estilos (solo presentación) ────────────────
 const styles = StyleSheet.create({
   gradient:          { flex: 1 },
   safe:              { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 15 },

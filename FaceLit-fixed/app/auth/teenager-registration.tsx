@@ -13,14 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { CameraType, CameraView } from 'expo-camera';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
-import {
-  ActivityIndicator, Image,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text, TouchableOpacity,
-  View,
-} from 'react-native';
+import {ActivityIndicator, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View} from 'react-native'; 
 import GradientBackground from '@/shared/components/layout/GradientBackground';
 import { useFacialRegistration } from '@/features/auth/hooks/useFacialRegistration';
 import WebCamera from '@/features/auth/components/WebCamera';

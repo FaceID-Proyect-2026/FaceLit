@@ -1,62 +1,25 @@
 // ─────────────────────────────────────────────
 //  app/auth/email-validation.tsx
+//  Solo VISTA — toda la lógica de negocio vive en
+//  features/auth/hooks/useVerificationCode.ts
+//  (el mismo hook compartido con verify-identity.tsx)
 // ─────────────────────────────────────────────
 import GradientBackground from '@/shared/components/layout/GradientBackground';
 import { AppButton, InputField } from '@/shared/components/ui';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useTheme } from '@/shared/contexts/ThemeContext';
+import { formatTime, useVerificationCode } from '@/features/auth/hooks/useVerificationCode';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-// ─── Constants ────────────────────────────────
-const CODE_MOCK    = '123456';
-const INITIAL_TIME = 5 * 60;
+// ── Constante de presentación (código de demo mostrado en pantalla) ──
+const CODE_MOCK = '123456';
 
-// ─── Helpers ──────────────────────────────────
-function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-  const s = (seconds % 60).toString().padStart(2, '0');
-  return `${m}:${s}`;
-}
-
-// ─── Hook: lógica de validación ───────────────
-function useEmailValidation(t: (key: string) => string) {
-  const [code,     setCode]     = useState('');
-  const [timeLeft, setTimeLeft] = useState(INITIAL_TIME);
-  const [expired,  setExpired]  = useState(false);
-  const [error,    setError]    = useState('');
-
-  useEffect(() => {
-    if (timeLeft <= 0) { setExpired(true); return; }
-    const timer = setInterval(() => setTimeLeft((p) => p - 1), 1000);
-    return () => clearInterval(timer);
-  }, [timeLeft]);
-
-  const handleResend = () => {
-    setCode('');
-    setError('');
-    setExpired(false);
-    setTimeLeft(INITIAL_TIME);
-  };
-
-  const validate = (): boolean => {
-    if (expired) { setError(t('emailValidation.errors.expired')); return false; }
-    if (code.length !== 6) { setError(t('emailValidation.errors.length'));  return false; }
-    if (code !== CODE_MOCK) { setError(t('emailValidation.errors.invalid')); return false; }
-    return true;
-  };
-
-  return {
-    code, setCode, timeLeft, expired,
-    error, setError, handleResend, validate,
-  };
-}
-
-// ─── Sub-component: Timer badge ───────────────
+// ─── Sub-component: Timer badge (vista pura) ──
 function TimerBadge({ timeLeft }: { timeLeft: number }) {
   const { t } = useTranslation();
   const color = timeLeft > 60 ? Colors.warning : Colors.error;
@@ -76,7 +39,7 @@ const badge = StyleSheet.create({
   text: { color: Colors.white, fontWeight: FontWeight.bold, fontSize: FontSize.md },
 });
 
-// ─── Sub-component: Demo box ──────────────────
+// ─── Sub-component: Demo box (vista pura) ─────
 function DemoBox() {
   const { t }     = useTranslation();
   const { theme } = useTheme();
@@ -99,7 +62,7 @@ const demo = StyleSheet.create({
   text: { fontSize: FontSize.sm },
 });
 
-// ─── Sub-component: Modal de éxito ────────────
+// ─── Sub-component: Modal de éxito (vista pura) ──
 function SuccessModal({ visible, email, onContinue }: {
   visible: boolean;
   email: string;
@@ -115,21 +78,17 @@ function SuccessModal({ visible, email, onContinue }: {
       animationType="fade"
       statusBarTranslucent
     >
-      {/* Fondo semitransparente */}
       <View style={m.overlay}>
         <View style={[m.card, { backgroundColor: theme.card }]}>
 
-          {/* Ícono */}
           <View style={[m.iconCircle, { borderColor: theme.primary }]}>
             <Ionicons name="checkmark-circle" size={72} color={theme.primary} />
           </View>
 
-          {/* Título */}
           <Text style={[m.title, { color: theme.text }]}>
             {t('emailValidatedSuccess.title')}
           </Text>
 
-          {/* Email badge */}
           <View style={[m.emailBadge, { backgroundColor: theme.primaryFaint, borderColor: theme.primary }]}>
             <Ionicons name="mail-open-outline" size={16} color={theme.primary} />
             <Text style={[m.emailText, { color: theme.primary }]}>
@@ -137,15 +96,12 @@ function SuccessModal({ visible, email, onContinue }: {
             </Text>
           </View>
 
-          {/* Subtítulo */}
           <Text style={[m.subtitle, { color: theme.textMuted }]}>
             {t('emailValidatedSuccess.subtitle')}
           </Text>
 
-          {/* Divider */}
           <View style={[m.divider, { backgroundColor: theme.border }]} />
 
-          {/* Botón */}
           <AppButton
             title={t('emailValidatedSuccess.btn')}
             onPress={onContinue}
@@ -193,18 +149,21 @@ export default function EmailValidationScreen() {
   const { theme } = useTheme();
   const { email } = useLocalSearchParams<{ email: string }>();
 
+  // ── Estado puramente de UI (no es lógica de negocio) ──
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // ── Toda la lógica de negocio viene del hook COMPARTIDO ──
+  // (el mismo que usa verify-identity.tsx — antes esta pantalla
+  // tenía su propio hook local duplicado, ya se unificó)
   const {
     code, setCode, timeLeft, expired,
-    error, setError, handleResend, validate,
-  } = useEmailValidation(t);
-
-  const handleVerify = () => {
-    if (!validate()) return;
-    setError('');
-    setShowSuccess(true); // ← abre el modal en vez de navegar
-  };
+    error, handleResend, handleVerify,
+  } = useVerificationCode({
+    namespace: 'emailValidation',
+    codeMock: CODE_MOCK,
+    checkExpired: true, // email-validation SÍ bloquea el botón al expirar (a diferencia de verify-identity)
+    onVerified: () => setShowSuccess(true), // ← abre el modal en vez de navegar directo
+  });
 
   const handleContinue = () => {
     setShowSuccess(false);
@@ -260,7 +219,7 @@ export default function EmailValidationScreen() {
           <InputField
             label={t('emailValidation.inputLabel')}
             value={code}
-            onChangeText={(v) => { setCode(v.replace(/\D/g, '')); setError(''); }}
+            onChangeText={setCode}
             placeholder={t('emailValidation.placeholder')}
             keyboardType="number-pad"
             maxLength={6}
@@ -295,7 +254,7 @@ export default function EmailValidationScreen() {
   );
 }
 
-// ─── Styles ───────────────────────────────────
+// ─── Styles (solo presentación) ───────────────
 const s = StyleSheet.create({
   scroll: {
     flexGrow: 1, alignItems: 'center',
