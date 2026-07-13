@@ -1,68 +1,65 @@
 // ─────────────────────────────────────────────
 //  features/environments/useEnvironments.ts
-//  Hook con lógica CRUD de ambientes
+//  Hook con lógica CRUD de ambientes.
+//  Usa un store externo compartido (environmentsStore)
+//  para que register/list/detail siempre vean los
+//  mismos datos, sin importar cuántas veces se
+//  invoque este hook.
 // ─────────────────────────────────────────────
-import { useState, useCallback, useMemo } from 'react';
-import { Environment, EnvironmentForm, MOCK_ENVIRONMENTS } from './types';
+import { useState, useCallback, useMemo, useSyncExternalStore } from 'react';
+import { EnvironmentStatus } from './types';
+import {
+  subscribe,
+  getSnapshot,
+  getById as storeGetById,
+  registerEnvironment,
+  updateEnvironment,
+  deactivateEnvironment,
+  assignFichaToEnvironment,
+  unassignFichaFromEnvironment,
+} from './environmentsStore';
+
+export type EnvironmentStatusFilter = 'all' | EnvironmentStatus;
 
 export function useEnvironments() {
-  const [environments, setEnvironments] = useState<Environment[]>(MOCK_ENVIRONMENTS);
+  const environments = useSyncExternalStore(subscribe, getSnapshot);
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<EnvironmentStatusFilter>('all');
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return environments;
-    const q = search.toLowerCase();
-    return environments.filter(
-      e => e.code.toLowerCase().includes(q) || e.name.toLowerCase().includes(q) || e.location.toLowerCase().includes(q)
-    );
-  }, [environments, search]);
+    let list = environments;
 
-  const getById = useCallback((id: string) => environments.find(e => e.id === id), [environments]);
-
-  const register = useCallback((form: EnvironmentForm) => {
-    const newEnv: Environment = {
-      id: Date.now().toString(),
-      code: form.code.trim(),
-      name: form.name.trim(),
-      type: form.type as Environment['type'],
-      capacity: parseInt(form.capacity, 10) || 0,
-      status: form.status,
-      location: form.location.trim(),
-      assignedFichas: [],
-    };
-    setEnvironments(prev => [...prev, newEnv]);
-    return newEnv;
-  }, []);
-
-  const update = useCallback((id: string, form: EnvironmentForm) => {
-    setEnvironments(prev => prev.map(e => e.id === id ? {
-      ...e,
-      code: form.code.trim(),
-      name: form.name.trim(),
-      type: form.type as Environment['type'],
-      capacity: parseInt(form.capacity, 10) || 0,
-      status: form.status,
-      location: form.location.trim(),
-    } : e));
-  }, []);
-
-  const remove = useCallback((id: string) => {
-    const env = environments.find(e => e.id === id);
-    if (env && env.assignedFichas.length > 0) {
-      return { success: false, error: 'No se puede eliminar: tiene fichas activas' };
+    if (statusFilter !== 'all') {
+      list = list.filter(e => e.status === statusFilter);
     }
-    setEnvironments(prev => prev.filter(e => e.id !== id));
-    return { success: true };
-  }, [environments]);
 
-  const assignFicha = useCallback((envId: string, fichaId: string) => {
-    setEnvironments(prev => prev.map(e =>
-      e.id === envId && !e.assignedFichas.includes(fichaId)
-        ? { ...e, assignedFichas: [...e.assignedFichas, fichaId] }
-        : e
-    ));
-    return { success: true };
-  }, []);
+    const q = search.trim().toLowerCase();
+    if (q) {
+      list = list.filter(e => e.code.toLowerCase().includes(q));
+    }
 
-  return { environments: filtered, search, setSearch, getById, register, update, remove, assignFicha };
+    return list;
+  }, [environments, search, statusFilter]);
+
+  const getById = useCallback((id: string) => storeGetById(id), [environments]);
+
+  const register = useCallback(registerEnvironment, []);
+  const update = useCallback(updateEnvironment, []);
+  const deactivate = useCallback(deactivateEnvironment, []);
+  const assignFicha = useCallback(assignFichaToEnvironment, []);
+  const unassignFicha = useCallback(unassignFichaFromEnvironment, []);
+
+  return {
+    environments: filtered,
+    search,
+    setSearch,
+    statusFilter,
+    setStatusFilter,
+    getById,
+    register,
+    update,
+    deactivate,
+    assignFicha,
+    unassignFicha,
+  };
 }

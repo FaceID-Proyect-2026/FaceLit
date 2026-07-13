@@ -7,16 +7,18 @@ import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useEnvironments } from '@/features/environments/useEnvironments';
 import { MOCK_FICHAS } from '@/features/environments/types';
+import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 export default function EnvironmentDetailScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { getById, assignFicha } = useEnvironments();
+  const { getById, assignFicha, unassignFicha } = useEnvironments();
+  const { alert, DialogUI } = useAppDialog();
   const env = getById(id ?? '');
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
@@ -33,10 +35,28 @@ export default function EnvironmentDetailScreen() {
     );
   }
 
-  const statusColor = env.status === 'active' ? Colors.success : env.status === 'maintenance' ? Colors.warning : Colors.error;
+  const statusColor = env.status === 'active' ? Colors.success : Colors.error;
 
   const assignedFichasData = MOCK_FICHAS.filter(f => env.assignedFichas.includes(f.code));
   const availableFichas = MOCK_FICHAS.filter(f => !env.assignedFichas.includes(f.code));
+
+  const handleRemoveFicha = (fichaId: string, fichaName: string) => {
+    alert(
+      t('environments.detail.removeFicha'),
+      `${fichaName}\n\n${t('environments.detail.removeFichaConfirm')}`,
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('environments.detail.removeFicha'),
+          style: 'destructive',
+          onPress: () => {
+            const result = unassignFicha(env.id, fichaId);
+            if (result.success) alert('✓', t('environments.detail.removeFichaSuccess'));
+          },
+        },
+      ]
+    );
+  };
 
   return (
     <View style={[eds.safe, { backgroundColor: bg }]}>
@@ -51,37 +71,21 @@ export default function EnvironmentDetailScreen() {
         {/* Info card */}
         <View style={[eds.card, { backgroundColor: cardBg, borderColor: border }]}>
           <View style={eds.infoRow}>
-            <Text style={[eds.infoLabel, { color: muted }]}>{t('environments.fields.code')}</Text>
+            <Text style={[eds.infoLabel, { color: muted }]}>{t('environments.fields.name')}</Text>
             <Text style={[eds.infoValue, { color: text }]}>{env.code}</Text>
           </View>
-          <View style={eds.infoRow}>
-            <Text style={[eds.infoLabel, { color: muted }]}>{t('environments.fields.name')}</Text>
-            <Text style={[eds.infoValue, { color: text }]}>{env.name}</Text>
-          </View>
-          <View style={eds.infoRow}>
-            <Text style={[eds.infoLabel, { color: muted }]}>{t('environments.fields.type')}</Text>
-            <Text style={[eds.infoValue, { color: text }]}>{t(`environments.types.${env.type}`)}</Text>
-          </View>
-          <View style={eds.infoRow}>
-            <Text style={[eds.infoLabel, { color: muted }]}>{t('environments.fields.capacity')}</Text>
-            <Text style={[eds.infoValue, { color: text }]}>{env.capacity}</Text>
-          </View>
-          <View style={eds.infoRow}>
+          <View style={[eds.infoRow, { borderBottomWidth: 0 }]}>
             <Text style={[eds.infoLabel, { color: muted }]}>{t('environments.fields.status')}</Text>
             <View style={[eds.statusBadge, { backgroundColor: statusColor + '20' }]}>
               <View style={[eds.statusDot, { backgroundColor: statusColor }]} />
               <Text style={[eds.statusText, { color: statusColor }]}>{t(`environments.statuses.${env.status}`)}</Text>
             </View>
           </View>
-          <View style={eds.infoRow}>
-            <Text style={[eds.infoLabel, { color: muted }]}>{t('environments.fields.location')}</Text>
-            <Text style={[eds.infoValue, { color: text }]}>{env.location}</Text>
-          </View>
         </View>
 
-        {/* Edit button */}
+        {/* Edit button (único) */}
         <TouchableOpacity
-          onPress={() => router.push(`/admin/environments/${env.id}?edit=1` as any)}
+          onPress={() => router.push(`/admin/environments/register?id=${env.id}` as any)}
           style={[eds.editBtn, { borderColor: theme.primary }]}
           activeOpacity={0.7}
         >
@@ -96,10 +100,16 @@ export default function EnvironmentDetailScreen() {
         ) : (
           assignedFichasData.map(f => (
             <View key={f.id} style={[eds.fichaCard, { backgroundColor: cardBg, borderColor: border }]}>
-              <View>
+              <View style={{ flex: 1 }}>
                 <Text style={[eds.fichaName, { color: text }]}>{f.name}</Text>
                 <Text style={[eds.fichaInfo, { color: muted }]}>{f.program} · {f.learners} aprendices</Text>
               </View>
+              <TouchableOpacity
+                onPress={() => handleRemoveFicha(f.code, f.name)}
+                style={[eds.removeBtn, { backgroundColor: Colors.error + '15' }]}
+              >
+                <Ionicons name="close-circle-outline" size={18} color={Colors.error} />
+              </TouchableOpacity>
             </View>
           ))
         )}
@@ -113,7 +123,7 @@ export default function EnvironmentDetailScreen() {
                 key={f.id}
                 onPress={() => {
                   const result = assignFicha(env.id, f.code);
-                  if (result.success) Alert.alert('✓', t('environments.assign.successMsg'));
+                  if (result.success) alert('✓', t('environments.assign.successMsg'));
                 }}
                 style={[eds.assignCard, { backgroundColor: cardBg, borderColor: theme.primary + '40' }]}
                 activeOpacity={0.7}
@@ -127,16 +137,8 @@ export default function EnvironmentDetailScreen() {
             ))}
           </>
         )}
-
-        {/* Link to register page for editing */}
-        <TouchableOpacity
-          onPress={() => router.push(`/admin/environments/register?id=${env.id}` as any)}
-          style={[eds.fullEditBtn, { backgroundColor: theme.primary }]}
-          activeOpacity={0.85}
-        >
-          <Text style={eds.fullEditText}>{t('environments.edit')}</Text>
-        </TouchableOpacity>
       </ScrollView>
+      {DialogUI}
     </View>
   );
 }
@@ -158,10 +160,9 @@ const eds = StyleSheet.create({
   editBtnText: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
   sectionTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.black, marginBottom: 10 },
   empty: { fontSize: FontSize.md, textAlign: 'center', paddingVertical: 20 },
-  fichaCard: { borderRadius: 12, borderWidth: 1, padding: 14, marginBottom: 8 },
+  fichaCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, borderWidth: 1, padding: 14, marginBottom: 8, gap: 10 },
   fichaName: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
   fichaInfo: { fontSize: FontSize.sm, marginTop: 2 },
+  removeBtn: { width: 34, height: 34, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   assignCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, borderWidth: 1, padding: 14, marginBottom: 8, gap: 10 },
-  fullEditBtn: { borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 24 },
-  fullEditText: { color: Colors.white, fontSize: FontSize.lg, fontWeight: FontWeight.bold },
 });

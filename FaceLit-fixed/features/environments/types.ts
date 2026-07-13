@@ -3,36 +3,31 @@
 //  Tipos del módulo de ambientes
 // ─────────────────────────────────────────────
 
-export type EnvironmentType = 'classroom' | 'laboratory' | 'workshop' | 'auditorium' | 'office';
-export type EnvironmentStatus = 'active' | 'inactive' | 'maintenance';
+export type EnvironmentStatus = 'active' | 'inactive';
 
 export interface Environment {
   id: string;
-  code: string;
-  name: string;
-  type: EnvironmentType;
-  capacity: number;
+  code: string; // Nombre del ambiente. Ej: "209", "209-1", "Laboratorio A"
   status: EnvironmentStatus;
-  location: string;
   assignedFichas: string[];
 }
 
 export interface EnvironmentForm {
   code: string;
-  name: string;
-  type: EnvironmentType | '';
-  capacity: string;
-  status: EnvironmentStatus;
-  location: string;
+  status?: EnvironmentStatus;
 }
 
+// El nombre del ambiente admite letras, números, espacios y guiones.
+// Ej: "209", "209-1", "Laboratorio A", "Sala 2"
+export const ENVIRONMENT_NAME_REGEX = /^[\p{L}0-9][\p{L}0-9\s-]*$/u;
+
 export const MOCK_ENVIRONMENTS: Environment[] = [
-  { id: '1', code: 'AMB-101', name: 'Salón 101', type: 'classroom', capacity: 30, status: 'active', location: 'Edificio A - Piso 1', assignedFichas: ['3145555'] },
-  { id: '2', code: 'AMB-102', name: 'Salón 102', type: 'classroom', capacity: 25, status: 'active', location: 'Edificio A - Piso 1', assignedFichas: [] },
-  { id: '3', code: 'LAB-201', name: 'Laboratorio de Sistemas', type: 'laboratory', capacity: 20, status: 'active', location: 'Edificio B - Piso 2', assignedFichas: ['3145556', '3145557'] },
-  { id: '4', code: 'TALL-301', name: 'Taller de Mecánica', type: 'workshop', capacity: 15, status: 'maintenance', location: 'Edificio C - Piso 1', assignedFichas: [] },
-  { id: '5', code: 'AUD-401', name: 'Auditorio Principal', type: 'auditorium', capacity: 100, status: 'active', location: 'Edificio D - Piso 1', assignedFichas: [] },
-  { id: '6', code: 'AMB-103', name: 'Salón 103', type: 'classroom', capacity: 30, status: 'inactive', location: 'Edificio A - Piso 1', assignedFichas: [] },
+  { id: '1', code: '101-1', status: 'active', assignedFichas: ['3145555'] },
+  { id: '2', code: '102-1', status: 'active', assignedFichas: [] },
+  { id: '3', code: '201-2', status: 'active', assignedFichas: ['3145556', '3145557'] },
+  { id: '4', code: '301-3', status: 'inactive', assignedFichas: [] },
+  { id: '5', code: '401-4', status: 'active', assignedFichas: [] },
+  { id: '6', code: '103-1', status: 'inactive', assignedFichas: [] },
 ];
 
 // Fichas mock para asignación

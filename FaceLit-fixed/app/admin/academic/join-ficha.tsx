@@ -2,15 +2,17 @@ import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAcademic } from '@/features/academic/useAcademic';
+import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 export default function JoinFichaScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const { allFichas, addLearner } = useAcademic();
+  const { alert, DialogUI } = useAppDialog();
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
   const inputBg = isDark ? 'rgba(255,255,255,0.05)' : '#FAFAFA';
@@ -40,7 +42,7 @@ export default function JoinFichaScreen() {
     });
     setJoined(true);
     setError('');
-    Alert.alert('✓', t('academic.joinSuccess'));
+    alert('✓', t('academic.joinSuccess'));
   };
 
   if (joined) {
@@ -49,6 +51,7 @@ export default function JoinFichaScreen() {
         <Ionicons name="checkmark-circle" size={64} color={Colors.success} />
         <Text style={[jfs.successTitle, { color: text }]}>{t('academic.joinSuccess')}</Text>
         <Text style={[jfs.successSub, { color: muted }]}>{t('academic.joinDisabled')}</Text>
+        {DialogUI}
       </View>
     );
   }
@@ -72,6 +75,7 @@ export default function JoinFichaScreen() {
           <Text style={jfs.joinBtnText}>{t('academic.joinTitle')}</Text>
         </TouchableOpacity>
       </ScrollView>
+      {DialogUI}
     </View>
   );
 }

@@ -1,12 +1,33 @@
 // ─────────────────────────────────────────────
 //  features/academic/useAcademic.ts
+//  Hook con lógica CRUD de Programas y Fichas.
+//  Usa un store externo compartido (academicStore) para que
+//  listado/registro/detalle siempre vean los mismos datos,
+//  sin importar cuántas veces se invoque este hook — igual
+//  que useEnvironments con environmentsStore.
 // ─────────────────────────────────────────────
-import { useState, useCallback, useMemo } from 'react';
-import { Program, Ficha, MOCK_PROGRAMS, MOCK_FICHAS } from './types';
+import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
+import { Ficha } from './types';
+import {
+  subscribe,
+  getProgramsSnapshot,
+  getFichasSnapshot,
+  getProgramById,
+  getFichaById,
+  registerProgram,
+  updateProgramStore,
+  deleteProgramStore,
+  registerFicha,
+  updateFichaStore,
+  deleteFichaStore,
+  unlinkFichaFromProgramStore,
+  addLearnerStore,
+  removeLearnerStore,
+} from './academicStore';
 
 export function useAcademic() {
-  const [programs, setPrograms] = useState<Program[]>(MOCK_PROGRAMS);
-  const [fichas, setFichas] = useState<Ficha[]>(MOCK_FICHAS);
+  const programs = useSyncExternalStore(subscribe, getProgramsSnapshot);
+  const fichas = useSyncExternalStore(subscribe, getFichasSnapshot);
   const [search, setSearch] = useState('');
 
   const filteredPrograms = useMemo(() => {
@@ -21,63 +42,20 @@ export function useAcademic() {
     return fichas.filter(f => f.number.includes(q) || f.code.toLowerCase().includes(q));
   }, [fichas, search]);
 
-  const getProgram = useCallback((id: string) => programs.find(p => p.id === id), [programs]);
-  const getFicha = useCallback((id: string) => fichas.find(f => f.id === id), [fichas]);
+  const getProgram = useCallback((id: string) => getProgramById(id), [programs]);
+  const getFicha = useCallback((id: string) => getFichaById(id), [fichas]);
 
-  const addProgram = useCallback((name: string) => {
-    const p: Program = { id: Date.now().toString(), name: name.trim(), status: 'active', fichas: [] };
-    setPrograms(prev => [...prev, p]);
-    return p;
-  }, []);
+  const addProgram = useCallback((name: string) => registerProgram(name), []);
+  const updateProgram = useCallback((id: string, name: string, status: 'active' | 'inactive') => updateProgramStore(id, name, status), []);
+  const deleteProgram = useCallback((id: string) => deleteProgramStore(id), []);
 
-  const updateProgram = useCallback((id: string, name: string, status: 'active' | 'inactive') => {
-    setPrograms(prev => prev.map(p => p.id === id ? { ...p, name: name.trim(), status } : p));
-  }, []);
+  const addFicha = useCallback((number: string, jornada: Ficha['jornada'], programId: string) => registerFicha(number, jornada, programId), []);
+  const updateFicha = useCallback((id: string, data: Partial<Ficha>) => updateFichaStore(id, data), []);
+  const deleteFicha = useCallback((id: string) => deleteFichaStore(id), []);
 
-  const deleteProgram = useCallback((id: string) => {
-    const prog = programs.find(p => p.id === id);
-    if (prog && prog.fichas.length > 0) return { success: false, error: 'El programa tiene fichas asociadas' };
-    setPrograms(prev => prev.filter(p => p.id !== id));
-    return { success: true };
-  }, [programs]);
-
-  const addFicha = useCallback((number: string, jornada: Ficha['jornada'], programId: string) => {
-    const f: Ficha = {
-      id: Date.now().toString(),
-      number: number.trim(),
-      jornada,
-      status: 'active',
-      programId,
-      code: `FCH-${Date.now().toString().slice(-6)}`,
-      learners: [],
-    };
-    setFichas(prev => [...prev, f]);
-    setPrograms(prev => prev.map(p => p.id === programId ? { ...p, fichas: [...p.fichas, f.id] } : p));
-    return f;
-  }, []);
-
-  const updateFicha = useCallback((id: string, data: Partial<Ficha>) => {
-    setFichas(prev => prev.map(f => f.id === id ? { ...f, ...data } : f));
-  }, []);
-
-  const deleteFicha = useCallback((id: string) => {
-    setFichas(prev => prev.filter(f => f.id !== id));
-    setPrograms(prev => prev.map(p => ({ ...p, fichas: p.fichas.filter(fid => fid !== id) })));
-    return { success: true };
-  }, []);
-
-  const unlinkFichaFromProgram = useCallback((fichaId: string, programId: string) => {
-    setPrograms(prev => prev.map(p => p.id === programId ? { ...p, fichas: p.fichas.filter(fid => fid !== fichaId) } : p));
-    return { success: true };
-  }, []);
-
-  const addLearner = useCallback((fichaId: string, learner: Ficha['learners'][0]) => {
-    setFichas(prev => prev.map(f => f.id === fichaId ? { ...f, learners: [...f.learners, learner] } : f));
-  }, []);
-
-  const removeLearner = useCallback((fichaId: string, learnerId: string) => {
-    setFichas(prev => prev.map(f => f.id === fichaId ? { ...f, learners: f.learners.filter(l => l.id !== learnerId) } : f));
-  }, []);
+  const unlinkFichaFromProgram = useCallback((fichaId: string, programId: string) => unlinkFichaFromProgramStore(fichaId, programId), []);
+  const addLearner = useCallback((fichaId: string, learner: Ficha['learners'][0]) => addLearnerStore(fichaId, learner), []);
+  const removeLearner = useCallback((fichaId: string, learnerId: string) => removeLearnerStore(fichaId, learnerId), []);
 
   return {
     programs: filteredPrograms, fichas: filteredFichas, allFichas: fichas,

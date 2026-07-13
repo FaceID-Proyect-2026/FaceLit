@@ -2,9 +2,10 @@ import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAcademic } from '@/features/academic/useAcademic';
+import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 export default function ProgramDetailScreen() {
@@ -12,6 +13,7 @@ export default function ProgramDetailScreen() {
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { getProgram, allFichas, unlinkFichaFromProgram } = useAcademic();
+  const { alert, DialogUI } = useAppDialog();
   const program = getProgram(id ?? '');
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -56,12 +58,13 @@ export default function ProgramDetailScreen() {
                 <Text style={[pds.cardMeta, { color: muted }]}>{t(`academic.jornadas.${item.jornada}`)} · {item.learners.length} aprendices · Código: {item.code}</Text>
               </View>
             </View>
-            <TouchableOpacity onPress={() => { Alert.alert(t('academic.unlinkConfirm')??'', '', [{ text: t('common.cancel'), style: 'cancel' }, { text: t('academic.unlinkFromProgram'), style: 'destructive', onPress: () => unlinkFichaFromProgram(item.id, program.id) }]); }}
+            <TouchableOpacity onPress={() => { alert(t('academic.unlinkConfirm')??'', '', [{ text: t('common.cancel'), style: 'cancel' }, { text: t('academic.unlinkFromProgram'), style: 'destructive', onPress: () => unlinkFichaFromProgram(item.id, program.id) }]); }}
               style={{ padding: 6 }}><Ionicons name="link-outline" size={18} color={Colors.warning} /></TouchableOpacity>
           </TouchableOpacity>
         )}
         ListEmptyComponent={<View style={pds.empty}><Text style={{ color: muted }}>{t('academic.fichaEmpty')}</Text></View>}
       />
+      {DialogUI}
     </View>
   );
 }

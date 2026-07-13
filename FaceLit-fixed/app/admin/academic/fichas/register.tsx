@@ -3,10 +3,11 @@ import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAcademic } from '@/features/academic/useAcademic';
 import { JornadaType } from '@/features/academic/types';
+import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState, useMemo } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 const JORNADAS: { value: JornadaType; icon: string }[] = [
@@ -21,6 +22,7 @@ export default function FichaRegisterScreen() {
   const { t } = useTranslation();
   const { id: editId, programId: pid } = useLocalSearchParams<{ id?: string; programId?: string }>();
   const { programs, getFicha, addFicha, updateFicha } = useAcademic();
+  const { alert, DialogUI } = useAppDialog();
   const existing = editId ? getFicha(editId) : null;
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
@@ -51,7 +53,7 @@ export default function FichaRegisterScreen() {
     } else {
       addFicha(number, jornada, selectedProgram);
     }
-    Alert.alert('✓', existing ? 'Ficha actualizada' : 'Ficha registrada', [{ text: 'OK', onPress: () => router.back() }]);
+    alert('✓', existing ? 'Ficha actualizada' : 'Ficha registrada', [{ text: 'OK', onPress: () => router.back() }]);
   };
 
   return (
@@ -96,6 +98,7 @@ export default function FichaRegisterScreen() {
           <Text style={frs.saveBtnText}>{t('common.save')}</Text>
         </TouchableOpacity>
       </ScrollView>
+      {DialogUI}
     </View>
   );
 }

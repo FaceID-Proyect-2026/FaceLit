@@ -2,9 +2,10 @@ import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAcademic } from '@/features/academic/useAcademic';
+import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 export default function FichaDetailScreen() {
@@ -12,6 +13,7 @@ export default function FichaDetailScreen() {
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { getFicha, programs, removeLearner } = useAcademic();
+  const { alert, DialogUI } = useAppDialog();
   const ficha = getFicha(id ?? '');
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -23,7 +25,7 @@ export default function FichaDetailScreen() {
   const program = programs.find(p => p.id === ficha.programId);
 
   const handleDesvincular = (learnerId: string, name: string) => {
-    Alert.alert(t('academic.desvincularConfirm')??'', name, [
+    alert(t('academic.desvincularConfirm')??'', name, [
       { text: t('common.cancel'), style: 'cancel' },
       { text: t('academic.desvincular'), style: 'destructive', onPress: () => removeLearner(ficha.id, learnerId) },
     ]);
@@ -70,6 +72,7 @@ export default function FichaDetailScreen() {
         )}
         ListEmptyComponent={<View style={fds.empty}><Text style={{ color: muted }}>{t('academic.learnerEmpty')}</Text></View>}
       />
+      {DialogUI}
     </View>
   );
 }

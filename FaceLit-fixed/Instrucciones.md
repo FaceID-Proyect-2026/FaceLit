@@ -662,7 +662,7 @@ Lista Ambientes (/admin/environments)
 
 | Rol | Email | Contraseña |
 |-----|-------|------------|
-| Administrador | `admin@facelit.com` | `Admin123!` |
+| Administrador | `admin@facelit.com` | `` |
 | Instructor | `instructor@facelit.com` | `Inst1234!` |
 | Aprendiz | `aprendiz@facelit.com` | `Apre1234!` |
 

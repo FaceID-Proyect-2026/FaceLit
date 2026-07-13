@@ -5,15 +5,17 @@ import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAcademic } from '@/features/academic/useAcademic';
+import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Alert, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 export default function AcademicProgramsScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const { programs, search, setSearch, deleteProgram } = useAcademic();
+  const { alert, DialogUI } = useAppDialog();
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -23,11 +25,11 @@ export default function AcademicProgramsScreen() {
   const bg = isDark ? Colors.dark.background : Colors.light.background;
 
   const handleDelete = (id: string, name: string) => {
-    Alert.alert(t('academic.programDelete'), name, [
+    alert(t('academic.programDelete'), name, [
       { text: t('common.cancel'), style: 'cancel' },
       { text: t('common.yes'), style: 'destructive', onPress: () => {
         const r = deleteProgram(id);
-        if (!r.success) Alert.alert(t('common.error'), r.error);
+        if (!r.success) alert(t('common.error'), r.error);
       }},
     ]);
   };
@@ -44,7 +46,7 @@ export default function AcademicProgramsScreen() {
       <View style={[aps.searchWrap, { backgroundColor: inputBg, borderColor: border }]}>
         <Ionicons name="search-outline" size={18} color={muted} />
         <TextInput style={[aps.searchInput, { color: text }] as any} value={search} onChangeText={setSearch}
-          placeholder="Buscar programa..." placeholderTextColor={isDark ? '#5A7258' : '#AAAAAA'} />
+        placeholder={t('academic:searchProgram')}placeholderTextColor={isDark ? '#5A7258' : '#AAAAAA'} />
       </View>
       <FlatList data={programs} keyExtractor={p => p.id}
         contentContainerStyle={aps.list}
@@ -67,6 +69,7 @@ export default function AcademicProgramsScreen() {
         )}
         ListEmptyComponent={<View style={aps.empty}><Ionicons name="school-outline" size={48} color={muted} /><Text style={[aps.emptyText, { color: muted }]}>{t('academic.programEmpty')}</Text></View>}
       />
+      {DialogUI}
     </View>
   );
 }

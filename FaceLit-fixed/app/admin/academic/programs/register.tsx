@@ -2,10 +2,11 @@ import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAcademic } from '@/features/academic/useAcademic';
+import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 export default function ProgramRegisterScreen() {
@@ -13,6 +14,7 @@ export default function ProgramRegisterScreen() {
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const { getProgram, addProgram, updateProgram } = useAcademic();
+  const { alert, DialogUI } = useAppDialog();
   const existing = id ? getProgram(id) : null;
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
@@ -31,7 +33,7 @@ export default function ProgramRegisterScreen() {
     } else {
       addProgram(name);
     }
-    Alert.alert('✓', existing ? 'Programa actualizado' : 'Programa registrado', [{ text: 'OK', onPress: () => router.back() }]);
+    alert('✓', existing ? 'Programa actualizado' : 'Programa registrado', [{ text: 'OK', onPress: () => router.back() }]);
   };
 
   return (
@@ -59,6 +61,7 @@ export default function ProgramRegisterScreen() {
           <Text style={prs.saveBtnText}>{t('common.save')}</Text>
         </TouchableOpacity>
       </ScrollView>
+      {DialogUI}
     </View>
   );
 }
