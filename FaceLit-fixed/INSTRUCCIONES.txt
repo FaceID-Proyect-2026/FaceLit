@@ -19,8 +19,8 @@ Coloca estas imágenes en assets/images/:
 - check.png      → Icono contraseña restablecida
 
 === CREDENCIALES DE PRUEBA ===
-Email:    admin@test.com
-Password: Admin@123
+Email:    admin@facelit.com
+Password: Admin1234!
 
 === CÓDIGO DE VERIFICACIÓN ===
 Token:    264255
