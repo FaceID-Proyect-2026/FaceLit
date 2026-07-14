@@ -20,7 +20,7 @@ Coloca estas imágenes en assets/images/:
 
 === CREDENCIALES DE PRUEBA ===
 Email:    admin@facelit.com
-Password: Admin1234!
+Password: Admin123!
 
 === CÓDIGO DE VERIFICACIÓN ===
 Token:    264255
