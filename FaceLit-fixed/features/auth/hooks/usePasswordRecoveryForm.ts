@@ -4,16 +4,16 @@
 //  contraseña, separada de la pantalla (clean code)
 //  — misma convención que useLoginForm / useRegisterForm
 // ─────────────────────────────────────────────
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { router } from 'expo-router';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Mock temporal: simula la validación contra el backend
 // (debe reemplazarse por la llamada real al servicio de auth)
 const REGISTERED_EMAILS = [
-  'admin@test.com',
+  'admin@facelit.com',
   'usuario@empresa.com',
   'valery@gmail.com',
   'juan@gmail.com',
