@@ -5,7 +5,7 @@ import { MOCK_SCHEDULES, MOCK_INSTRUCTORS } from '@/features/schedules/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 const DAYS: Record<string,string> = { monday:'Lunes', tuesday:'Martes', wednesday:'Miércoles', thursday:'Jueves', friday:'Viernes', saturday:'Sábado' };
@@ -14,6 +14,8 @@ export default function SchedulesListScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const [schedules] = useState(MOCK_SCHEDULES);
+  const { width } = useWindowDimensions();
+  const isMobile = width < 480;
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
   const cardBg = isDark ? '#0D1F14' : Colors.white;
@@ -22,9 +24,9 @@ export default function SchedulesListScreen() {
 
   return (
     <View style={[sls.safe, { backgroundColor: bg }]}>
-      <View style={sls.header}>
+      <View style={[sls.header, isMobile && sls.headerMobile]}>
         <Text style={[sls.title, { color: text }]}>{t('schedules.title')}</Text>
-        <TouchableOpacity onPress={() => router.push('/admin/schedules/register' as any)} style={[sls.addBtn, { backgroundColor: theme.primary }]} activeOpacity={0.85}>
+        <TouchableOpacity onPress={() => router.push('/admin/schedules/register' as any)} style={[sls.addBtn, isMobile && sls.addBtnMobile, { backgroundColor: theme.primary }]} activeOpacity={0.85}>
           <Ionicons name="add" size={20} color={Colors.white} /><Text style={sls.addBtnText}>{t('schedules.register')}</Text>
         </TouchableOpacity>
       </View>
@@ -58,8 +60,10 @@ export default function SchedulesListScreen() {
 
 const sls = StyleSheet.create({
   safe: { flex: 1 }, header: { flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:16,paddingTop:16,paddingBottom:8 },
+  headerMobile: { flexDirection: 'column', alignItems: 'stretch', gap: 12 },
   title: { fontSize: FontSize['2xl'], fontWeight: FontWeight.black },
   addBtn: { flexDirection:'row',alignItems:'center',gap:6,paddingHorizontal:14,paddingVertical:10,borderRadius:12 },
+  addBtnMobile: { justifyContent: 'center', paddingVertical: 13, alignSelf: 'stretch' },
   addBtnText: { color: Colors.white, fontSize: FontSize.md, fontWeight: FontWeight.bold },
   list: { padding: 16, gap: 10 },
   card: { borderRadius: 14, borderWidth: 1, padding: 16 },

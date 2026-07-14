@@ -3,6 +3,7 @@ import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAcademic } from '@/features/academic/useAcademic';
 import { JornadaType } from '@/features/academic/types';
+import { getProgramDisplayName } from '@/features/academic/types';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -87,7 +88,7 @@ export default function FichaRegisterScreen() {
             <TouchableOpacity key={p.id} onPress={() => { setSelectedProgram(p.id); setErrors(p=>({...p,program:''})); }}
               style={[frs.programCard, { backgroundColor: selectedProgram===p.id ? theme.primary+'15' : inputBg, borderColor: selectedProgram===p.id ? theme.primary : inputBorder }]} activeOpacity={0.7}>
               <Ionicons name={selectedProgram===p.id ? 'radio-button-on' : 'radio-button-off'} size={18} color={selectedProgram===p.id ? theme.primary : muted} />
-              <Text style={[frs.programName, { color: text }]}>{p.name}</Text>
+              <Text style={[frs.programName, { color: text }]}>{getProgramDisplayName(p, t)}</Text>
             </TouchableOpacity>
           ))}
           {activePrograms.length===0 && <Text style={{ color: muted, textAlign: 'center', padding: 12 }}>No hay programas activos</Text>}

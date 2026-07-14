@@ -2,6 +2,7 @@ import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAcademic } from '@/features/academic/useAcademic';
+import { getProgramDisplayName } from '@/features/academic/types';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -33,7 +34,7 @@ export default function ProgramDetailScreen() {
         ListHeaderComponent={
           <View>
             <TouchableOpacity onPress={() => router.back()} style={pds.backBtn}><Ionicons name="arrow-back" size={20} color={text} /><Text style={[pds.backText, { color: text }]}>{t('common.back')}</Text></TouchableOpacity>
-            <Text style={[pds.title, { color: text }]}>{program.name}</Text>
+            <Text style={[pds.title, { color: text }]}>{getProgramDisplayName(program, t)}</Text>
             <View style={[pds.statusBadge, { backgroundColor: program.status === 'active' ? Colors.success + '20' : Colors.error + '20', alignSelf: 'flex-start', marginBottom: 8 }]}>
               <Text style={{ color: program.status === 'active' ? Colors.success : Colors.error, fontWeight: '700', fontSize: 13 }}>{t(`environments.statuses.${program.status}`)}</Text>
             </View>

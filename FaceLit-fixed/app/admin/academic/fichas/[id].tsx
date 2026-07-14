@@ -2,6 +2,7 @@ import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAcademic } from '@/features/academic/useAcademic';
+import { getProgramDisplayName } from '@/features/academic/types';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -42,7 +43,7 @@ export default function FichaDetailScreen() {
             <TouchableOpacity onPress={() => router.back()} style={fds.backBtn}><Ionicons name="arrow-back" size={20} color={text} /><Text style={[fds.backText, { color: text }]}>{t('common.back')}</Text></TouchableOpacity>
             <View style={[fds.card, { backgroundColor: cardBg, borderColor: border }]}>
               <Text style={[fds.fichaTitle, { color: text }]}>Ficha {ficha.number}</Text>
-              <View style={fds.infoRow}><Text style={[fds.infoLabel, { color: muted }]}>Programa</Text><Text style={[fds.infoValue, { color: text }]}>{program?.name ?? 'Sin programa'}</Text></View>
+              <View style={fds.infoRow}><Text style={[fds.infoLabel, { color: muted }]}>Programa</Text><Text style={[fds.infoValue, { color: text }]}>{program ? getProgramDisplayName(program, t) : 'Sin programa'}</Text></View>
               <View style={fds.infoRow}><Text style={[fds.infoLabel, { color: muted }]}>Jornada</Text><Text style={[fds.infoValue, { color: text }]}>{t(`academic.jornadas.${ficha.jornada}`)}</Text></View>
               <View style={fds.infoRow}><Text style={[fds.infoLabel, { color: muted }]}>{t('academic.fichaCode')}</Text><Text style={[fds.infoValue, { color: theme.primary, fontWeight: '800' }]}>{ficha.code}</Text></View>
               <View style={fds.infoRow}><Text style={[fds.infoLabel, { color: muted }]}>Estado</Text><Text style={{ color: ficha.status==='active'?Colors.success:Colors.error, fontWeight:'700' }}>{t(`environments.statuses.${ficha.status}`)}</Text></View>

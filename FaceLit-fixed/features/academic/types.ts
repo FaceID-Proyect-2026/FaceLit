@@ -37,6 +37,15 @@ export const MOCK_PROGRAMS: Program[] = [
   { id: '4', name: 'Producción Multimedia', status: 'active', fichas: ['6'] },
 ];
 
+// Los 4 programas mock tienen traducción disponible (academic.programNames.<id>).
+// Los programas creados por el administrador solo existen en el idioma en que se registraron,
+// así que se muestran tal cual (program.name) sin pasar por esta tabla.
+const MOCK_PROGRAM_IDS = new Set(MOCK_PROGRAMS.map(p => p.id));
+
+export function getProgramDisplayName(program: { id: string; name: string }, t: (key: string) => string): string {
+  return MOCK_PROGRAM_IDS.has(program.id) ? t(`academic.programNames.${program.id}`) : program.name;
+}
+
 export const MOCK_FICHAS: Ficha[] = [
   { id: '1', number: '3145555', jornada: 'morning', status: 'active', programId: '1', code: 'FCH-001', learners: [
     { id: 'l1', name: 'Juan', lastname: 'Pérez', document: '1122334455', email: 'juan@mail.com', role: 'aprendiz', status: 'active' },

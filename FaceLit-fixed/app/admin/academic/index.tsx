@@ -5,10 +5,11 @@ import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAcademic } from '@/features/academic/useAcademic';
+import { getProgramDisplayName } from '@/features/academic/types';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 export default function AcademicProgramsScreen() {
@@ -16,6 +17,8 @@ export default function AcademicProgramsScreen() {
   const { t } = useTranslation();
   const { programs, search, setSearch, deleteProgram } = useAcademic();
   const { alert, DialogUI } = useAppDialog();
+  const { width } = useWindowDimensions();
+  const isMobile = width < 480;
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -36,9 +39,9 @@ export default function AcademicProgramsScreen() {
 
   return (
     <View style={[aps.safe, { backgroundColor: bg }]}>
-      <View style={aps.header}>
+      <View style={[aps.header, isMobile && aps.headerMobile]}>
         <Text style={[aps.title, { color: text }]}>{t('academic.programs')}</Text>
-        <TouchableOpacity onPress={() => router.push('/admin/academic/programs/register' as any)} style={[aps.addBtn, { backgroundColor: theme.primary }]} activeOpacity={0.85}>
+        <TouchableOpacity onPress={() => router.push('/admin/academic/programs/register' as any)} style={[aps.addBtn, isMobile && aps.addBtnMobile, { backgroundColor: theme.primary }]} activeOpacity={0.85}>
           <Ionicons name="add" size={20} color={Colors.white} />
           <Text style={aps.addBtnText}>{t('academic.programRegister')}</Text>
         </TouchableOpacity>
@@ -58,11 +61,11 @@ export default function AcademicProgramsScreen() {
                 <Ionicons name="school-outline" size={22} color={theme.primary} />
               </View>
               <View>
-                <Text style={[aps.cardTitle, { color: text }]}>{item.name}</Text>
+                <Text style={[aps.cardTitle, { color: text }]}>{getProgramDisplayName(item, t)}</Text>
                 <Text style={[aps.cardMeta, { color: muted }]}>{item.fichas.length} {t('academic.fichas').toLowerCase()} · {t(`environments.statuses.${item.status}`)}</Text>
               </View>
             </View>
-            <TouchableOpacity onPress={() => handleDelete(item.id, item.name)} style={aps.deleteBtn}>
+            <TouchableOpacity onPress={() => handleDelete(item.id, getProgramDisplayName(item, t))} style={aps.deleteBtn}>
               <Ionicons name="trash-outline" size={18} color={Colors.error} />
             </TouchableOpacity>
           </TouchableOpacity>
@@ -77,8 +80,10 @@ export default function AcademicProgramsScreen() {
 const aps = StyleSheet.create({
   safe: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
+  headerMobile: { flexDirection: 'column', alignItems: 'stretch', gap: 12 },
   title: { fontSize: FontSize['2xl'], fontWeight: FontWeight.black },
   addBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12 },
+  addBtnMobile: { justifyContent: 'center', paddingVertical: 13, alignSelf: 'stretch' },
   addBtnText: { color: Colors.white, fontSize: FontSize.md, fontWeight: FontWeight.bold },
   searchWrap: { flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 16, marginVertical: 10, height: 44, borderRadius: 12, borderWidth: 1, paddingHorizontal: 14 },
   searchInput: { flex: 1, fontSize: FontSize.md, outlineStyle: 'none' } as any,

@@ -9,7 +9,7 @@ import { useEnvironments, EnvironmentStatusFilter } from '@/features/environment
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 export default function EnvironmentsListScreen() {
@@ -17,6 +17,8 @@ export default function EnvironmentsListScreen() {
   const { t } = useTranslation();
   const { environments, search, setSearch, statusFilter, setStatusFilter, deactivate } = useEnvironments();
   const { alert, DialogUI } = useAppDialog();
+  const { width } = useWindowDimensions();
+  const isMobile = width < 480;
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -46,7 +48,7 @@ export default function EnvironmentsListScreen() {
           style: 'destructive',
           onPress: () => {
             const result = deactivate(id);
-            if (!result.success) alert(t('common.error'), result.error);
+            if (!result.success && result.error) alert(t('common.error'), t(result.error));
           },
         },
       ]
@@ -71,8 +73,7 @@ export default function EnvironmentsListScreen() {
           </Text>
         </View>
       </View>
-      <Text style={[els.cardTitle, { color: text }]}>{t('environments:cardTitle', { code: item.code })}
-    </Text>
+      <Text style={[els.cardTitle, { color: text }]}>{t('environments.cardTitle', { code: item.code })}</Text>
       <View style={els.cardActions}>
         <TouchableOpacity
           onPress={() => router.push(`/admin/environments/${item.id}` as any)}
@@ -94,11 +95,11 @@ export default function EnvironmentsListScreen() {
 
   return (
     <View style={[els.safe, { backgroundColor: isDark ? Colors.dark.background : Colors.light.background }]}>
-      <View style={els.header}>
+      <View style={[els.header, isMobile && els.headerMobile]}>
         <Text style={[els.title, { color: text }]}>{t('environments.title')}</Text>
         <TouchableOpacity
           onPress={() => router.push('/admin/environments/register' as any)}
-          style={[els.addBtn, { backgroundColor: theme.primary }]}
+          style={[els.addBtn, isMobile && els.addBtnMobile, { backgroundColor: theme.primary }]}
           activeOpacity={0.85}
         >
           <Ionicons name="add" size={20} color={Colors.white} />
@@ -162,10 +163,16 @@ const els = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8,
   },
+  headerMobile: {
+    flexDirection: 'column', alignItems: 'stretch', gap: 12,
+  },
   title: { fontSize: FontSize['2xl'], fontWeight: FontWeight.black },
   addBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12,
+  },
+  addBtnMobile: {
+    justifyContent: 'center', paddingVertical: 13, alignSelf: 'stretch',
   },
   addBtnText: { color: Colors.white, fontSize: FontSize.md, fontWeight: FontWeight.bold },
   searchWrap: {
