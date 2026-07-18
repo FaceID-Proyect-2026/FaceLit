@@ -42,9 +42,6 @@ export default function ProgramDetailScreen() {
               <TouchableOpacity onPress={() => router.push(`/admin/academic/programs/register?id=${program.id}` as any)} style={[pds.actionBtn, { borderColor: theme.primary }]} activeOpacity={0.7}>
                 <Ionicons name="create-outline" size={16} color={theme.primary} /><Text style={{ color: theme.primary, fontWeight: '700', fontSize: 13 }}>{t('academic.programEdit')}</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => router.push('/admin/academic/fichas/register' as any)} style={[pds.actionBtn, { borderColor: theme.primary }]} activeOpacity={0.7}>
-                <Ionicons name="add" size={16} color={theme.primary} /><Text style={{ color: theme.primary, fontWeight: '700', fontSize: 13 }}>{t('academic.fichaRegister')}</Text>
-              </TouchableOpacity>
             </View>
             <Text style={[pds.sectionTitle, { color: text, marginTop: 20 }]}>{t('academic.fichas')} ({programFichas.length})</Text>
           </View>

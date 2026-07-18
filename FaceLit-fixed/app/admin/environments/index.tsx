@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next';
 export default function EnvironmentsListScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
-  const { environments, search, setSearch, statusFilter, setStatusFilter, deactivate } = useEnvironments();
+  const { environments, search, setSearch, statusFilter, setStatusFilter, deactivate, deletePermanently } = useEnvironments();
   const { alert, DialogUI } = useAppDialog();
   const { width } = useWindowDimensions();
   const isMobile = width < 480;
@@ -55,6 +55,25 @@ export default function EnvironmentsListScreen() {
     );
   };
 
+  const handleDeletePermanently = (id: string, code: string) => {
+    alert(
+      t('environments.deleteCompletely'),
+      `${code}\n\n${t('environments.deleteCompletelyConfirm')}`,
+      [
+        { text: t('common.no'), style: 'cancel' },
+        {
+          text: t('common.yes'),
+          style: 'destructive',
+          onPress: () => {
+            const result = deletePermanently(id);
+            if (result.success) alert('✓', t('environments.deleteCompletelySuccess'));
+            else if (result.error) alert(t('common.error'), t(result.error));
+          },
+        },
+      ]
+    );
+  };
+
   const renderItem = ({ item }: any) => (
     <TouchableOpacity
       onPress={() => router.push(`/admin/environments/${item.id}` as any)}
@@ -74,6 +93,7 @@ export default function EnvironmentsListScreen() {
         </View>
       </View>
       <Text style={[els.cardTitle, { color: text }]}>{t('environments.cardTitle', { code: item.code })}</Text>
+      <Text style={[els.cardSub, { color: muted }]}>{t('environments.fields.quantity')}: {item.quantity}</Text>
       <View style={els.cardActions}>
         <TouchableOpacity
           onPress={() => router.push(`/admin/environments/${item.id}` as any)}
@@ -87,6 +107,14 @@ export default function EnvironmentsListScreen() {
             style={[els.actionBtn, { backgroundColor: Colors.error + '15' }]}
           >
             <Ionicons name="trash-outline" size={16} color={Colors.error} />
+          </TouchableOpacity>
+        )}
+        {item.status === 'inactive' && (
+          <TouchableOpacity
+            onPress={() => handleDeletePermanently(item.id, item.code)}
+            style={[els.actionBtn, { backgroundColor: Colors.error + '15' }]}
+          >
+            <Ionicons name="trash" size={16} color={Colors.error} />
           </TouchableOpacity>
         )}
       </View>
@@ -191,7 +219,8 @@ const els = StyleSheet.create({
   statusWrap: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   statusDot: { width: 10, height: 10, borderRadius: 5 },
   statusLabel: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
-  cardTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, marginBottom: 8 },
+  cardTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, marginBottom: 2 },
+  cardSub: { fontSize: FontSize.sm, marginBottom: 8 },
   cardActions: { flexDirection: 'row', gap: 8, justifyContent: 'flex-end' },
   actionBtn: { width: 34, height: 34, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   empty: { alignItems: 'center', paddingVertical: 60, gap: 12 },

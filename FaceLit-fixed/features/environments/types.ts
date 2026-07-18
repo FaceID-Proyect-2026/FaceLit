@@ -9,12 +9,14 @@ export interface Environment {
   id: string;
   code: string; // Nombre del ambiente. Ej: "209", "209-1", "Laboratorio A"
   status: EnvironmentStatus;
+  quantity: number;
   assignedFichas: string[];
 }
 
 export interface EnvironmentForm {
   code: string;
   status?: EnvironmentStatus;
+  quantity?: number;
 }
 
 // El nombre del ambiente admite letras, números, espacios y guiones.
@@ -22,12 +24,12 @@ export interface EnvironmentForm {
 export const ENVIRONMENT_NAME_REGEX = /^[\p{L}0-9][\p{L}0-9\s-]*$/u;
 
 export const MOCK_ENVIRONMENTS: Environment[] = [
-  { id: '1', code: '101-1', status: 'active', assignedFichas: ['3145555'] },
-  { id: '2', code: '102-1', status: 'active', assignedFichas: [] },
-  { id: '3', code: '201-2', status: 'active', assignedFichas: ['3145556', '3145557'] },
-  { id: '4', code: '301-3', status: 'inactive', assignedFichas: [] },
-  { id: '5', code: '401-4', status: 'active', assignedFichas: [] },
-  { id: '6', code: '103-1', status: 'inactive', assignedFichas: [] },
+  { id: '1', code: '101-1', status: 'active', quantity: 25, assignedFichas: ['3145555'] },
+  { id: '2', code: '102-1', status: 'active', quantity: 20, assignedFichas: [] },
+  { id: '3', code: '201-2', status: 'active', quantity: 30, assignedFichas: ['3145556', '3145557'] },
+  { id: '4', code: '301-3', status: 'inactive', quantity: 15, assignedFichas: [] },
+  { id: '5', code: '401-4', status: 'active', quantity: 22, assignedFichas: [] },
+  { id: '6', code: '103-1', status: 'inactive', quantity: 18, assignedFichas: [] },
 ];
 
 // Fichas mock para asignación

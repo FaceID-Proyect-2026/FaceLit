@@ -32,6 +32,7 @@ export default function EnvironmentRegisterScreen() {
   const [form, setForm] = useState({
     code: existing?.code ?? '',
   });
+  const [quantity, setQuantity] = useState(existing?.quantity != null ? String(existing.quantity) : '');
   const [status, setStatus] = useState<EnvironmentStatus>(existing?.status ?? 'active');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -46,13 +47,14 @@ export default function EnvironmentRegisterScreen() {
 
   const handleSave = () => {
     if (!validate()) return;
+    const quantityValue = quantity.trim() ? Number(quantity) : 0;
     if (isEditing) {
-      update(id!, { ...form, status });
+      update(id!, { ...form, status, quantity: quantityValue });
       alert('✓', 'Ambiente actualizado', [
         { text: 'OK', onPress: () => router.back() },
       ]);
     } else {
-      const newEnv = register({ ...form, status });
+      const newEnv = register({ ...form, status, quantity: quantityValue });
       alert('✓', 'Ambiente registrado', [
         {
           text: 'OK',
@@ -82,6 +84,12 @@ export default function EnvironmentRegisterScreen() {
           value={form.code} onChangeText={v => { setForm({ code: v }); setErrors(p => ({ ...p, code: '' })); }}
           placeholder="Ej: 209, 209-1, Laboratorio A" placeholderTextColor={isDark ? '#5A7258' : '#AAAAAA'} />
         {errors.code ? <Text style={ers.error}>{errors.code}</Text> : null}
+
+        {/* Cantidad */}
+        <Text style={[ers.label, { color: text, marginTop: 16 }]}>{t('environments.fields.quantity')}</Text>
+        <TextInput style={[ers.input, { backgroundColor: inputBg, borderColor: inputBorder, color: text }] as any}
+          value={quantity} onChangeText={v => setQuantity(v.replace(/\D/g, ''))}
+          placeholder="0" placeholderTextColor={isDark ? '#5A7258' : '#AAAAAA'} keyboardType="numeric" />
 
         {/* Estado */}
         <Text style={[ers.label, { color: text, marginTop: 16 }]}>{t('environments.fields.status')}</Text>

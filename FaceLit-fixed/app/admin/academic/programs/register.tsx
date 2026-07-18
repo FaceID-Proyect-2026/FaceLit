@@ -48,7 +48,7 @@ export default function ProgramRegisterScreen() {
         <TextInput style={[prs.input, { backgroundColor: inputBg, borderColor: error ? Colors.error : inputBorder, color: text }] as any}
           value={name} onChangeText={v => { setName(v); setError(''); }} placeholder="Nombre del programa" placeholderTextColor={isDark ? '#5A7258' : '#AAAAAA'} />
         {error ? <Text style={prs.error}>{error}</Text> : null}
-        <Text style={[prs.label, { color: text, marginTop: 16 }]}>{t('academic.fields.programDescription')}</Text>
+        <Text style={[prs.label, { color: text, marginTop: 16 }]}>{t('academic.fields.status')}</Text>
         <View style={prs.statusRow}>
           {(['active','inactive'] as const).map(s => (
             <TouchableOpacity key={s} onPress={() => setStatus(s)}

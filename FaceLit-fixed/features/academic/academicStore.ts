@@ -59,9 +59,20 @@ export function updateProgramStore(id: string, name: string, status: 'active' | 
   emit();
 }
 
+// Desactivación lógica: cambia el estado a Inactivo pero conserva el registro
+// y su información (fichas asociadas, etc.).
+export function deactivateProgramStore(id: string) {
+  const prog = programs.find(p => p.id === id);
+  if (!prog) return { success: false, error: 'academic.programNotFound' };
+  programs = programs.map(p => (p.id === id ? { ...p, status: 'inactive' as const } : p));
+  emit();
+  return { success: true };
+}
+
+// Eliminación física — solo debe usarse desde la pestaña de Inactivos.
 export function deleteProgramStore(id: string) {
   const prog = programs.find(p => p.id === id);
-  if (prog && prog.fichas.length > 0) return { success: false, error: 'El programa tiene fichas asociadas' };
+  if (prog && prog.fichas.length > 0) return { success: false, error: 'academic.programHasFichas' };
   programs = programs.filter(p => p.id !== id);
   emit();
   return { success: true };
