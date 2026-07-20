@@ -1,9 +1,7 @@
 // ─────────────────────────────────────────────
 //  features/auth/hooks/useVerificationCode.ts
 //  Lógica de verificación por código (OTP) —
-//  reutilizada por email-validation.tsx y
-//  verify-identity.tsx, que comparten el mismo
-//  patrón: temporizador, reenvío y validación.
+//  ahora conectada al backend real
 // ─────────────────────────────────────────────
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -17,31 +15,33 @@ export function formatTime(seconds: number): string {
 }
 
 interface UseVerificationCodeParams {
-  /** Prefijo de las claves i18n de error, ej: 'emailValidation' o 'verifyIdentity' */
   namespace: string;
-  /** Código correcto simulado (mock del backend) */
-  codeMock: string;
-  /** Duración inicial del temporizador, en segundos */
   initialTime?: number;
-  /** Si el código expirado debe bloquear la verificación (email-validation lo usa, verify-identity no) */
   checkExpired?: boolean;
-  /** Qué hacer cuando el código es correcto */
-  onVerified: () => void;
+  /** Llama al backend para verificar el código. Debe lanzar error si falla. */
+  onVerify: (code: string) => Promise<void>;
+  /** Llama al backend para reenviar el código. Debe lanzar error si falla. */
+  onResend: () => Promise<void>;
 }
+
+const RESEND_COOLDOWN = 300; // segundos entre reenvíos
 
 export function useVerificationCode({
   namespace,
-  codeMock,
   initialTime = DEFAULT_TIME,
   checkExpired = false,
-  onVerified,
+  onVerify,
+  onResend,
 }: UseVerificationCodeParams) {
   const { t } = useTranslation();
 
-  const [code, setCodeValue]     = useState('');
-  const [timeLeft, setTimeLeft]  = useState(initialTime);
-  const [expired, setExpired]    = useState(false);
-  const [error, setError]        = useState('');
+  const [code, setCodeValue] = useState('');
+  const [timeLeft, setTimeLeft] = useState(initialTime);
+  const [expired, setExpired] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0); // ← NUEVO
 
   useEffect(() => {
     if (timeLeft <= 0) {
@@ -52,19 +52,37 @@ export function useVerificationCode({
     return () => clearInterval(timer);
   }, [timeLeft, checkExpired]);
 
+  // ── NUEVO: cuenta regresiva del cooldown de reenvío ──
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => setResendCooldown(p => Math.max(0, p - 1)), 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
   const setCode = (v: string) => {
     setCodeValue(v.replace(/\D/g, ''));
     setError('');
   };
 
-  const handleResend = () => {
-    setCodeValue('');
+  const handleResend = async () => {
+    if (resendCooldown > 0) return; // ← bloqueo extra por seguridad
+
+    setResending(true);
     setError('');
-    setExpired(false);
-    setTimeLeft(initialTime);
+    try {
+      await onResend();
+      setCodeValue('');
+      setExpired(false);
+      setTimeLeft(initialTime);
+      setResendCooldown(RESEND_COOLDOWN); // ← arranca el cooldown
+    } catch (err: any) {
+      setError(err.response?.data?.message || t(`${namespace}.errors.resendFailed`) || 'No se pudo reenviar el código');
+    } finally {
+      setResending(false);
+    }
   };
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
     if (checkExpired && expired) {
       setError(t(`${namespace}.errors.expired`));
       return;
@@ -73,12 +91,16 @@ export function useVerificationCode({
       setError(t(`${namespace}.errors.length`));
       return;
     }
-    if (code !== codeMock) {
-      setError(t(`${namespace}.errors.invalid`));
-      return;
-    }
+
+    setLoading(true);
     setError('');
-    onVerified();
+    try {
+      await onVerify(code);
+    } catch (err: any) {
+      setError(err.response?.data?.message || t(`${namespace}.errors.invalid`));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return {
@@ -88,6 +110,9 @@ export function useVerificationCode({
     expired,
     error,
     setError,
+    loading,
+    resending,
+    resendCooldown, 
     handleResend,
     handleVerify,
   };

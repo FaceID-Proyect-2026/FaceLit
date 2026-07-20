@@ -1,11 +1,17 @@
 // ─────────────────────────────────────────────
 //  app/auth/login.tsx — código limpio + i18n
 // ─────────────────────────────────────────────
-import { useState } from 'react';
+import NavLink from '@/features/auth/components/NavLink';
+import PrivacyNoticeModal from '@/features/auth/components/PrivacyNoticeModal';
+import { useLoginForm } from '@/features/auth/hooks/useLoginForm';
+import { Colors } from '@/shared/constants/colors';
+import { Routes } from '@/shared/constants/routes';
+import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator, Dimensions, KeyboardAvoidingView, Platform,
@@ -13,33 +19,29 @@ import {
   TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Routes } from '@/shared/constants/routes';
-import { Colors } from '@/shared/constants/colors';
-import { FontSize, FontWeight } from '@/shared/constants/typography';
-import { useLoginForm } from '@/features/auth/hooks/useLoginForm';
-import NavLink from '@/features/auth/components/NavLink';
 
 // ── Constantes ────────────────────────────────
 const { width } = Dimensions.get('window');
-const CARD_MAX  = 600;
-const isWide    = width >= 768;
+const CARD_MAX = 600;
+const isWide = width >= 768;
 
 export default function LoginScreen() {
   const { theme, isDark } = useTheme();
-  const { t }             = useTranslation();
-  const router            = useRouter();
+  const { t } = useTranslation();
+  const router = useRouter();
   const { form, errors, loading, setField, handleSubmit } = useLoginForm();
 
   const [showPassword, setShowPassword] = useState(false);
-  const [focused,      setFocused]      = useState<string | null>(null);
+  const [focused, setFocused] = useState<string | null>(null);
+  const [showPrivacy, setShowPrivacy] = useState(false);
 
   // ── Colores locales ───────────────────────────
-  const text        = isDark ? Colors.dark.text        : Colors.light.text;
-  const muted       = isDark ? Colors.dark.textMuted   : Colors.light.textMuted;
-  const cardBg      = isDark ? Colors.dark.surface     : Colors.white;
-  const inputBg     = isDark ? Colors.dark.inputBg     : Colors.light.inputBg;
+  const text = isDark ? Colors.dark.text : Colors.light.text;
+  const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
+  const cardBg = isDark ? Colors.dark.surface : Colors.white;
+  const inputBg = isDark ? Colors.dark.inputBg : Colors.light.inputBg;
   const inputBorder = isDark ? Colors.dark.inputBorder : Colors.light.inputBorder;
-  const cardBorder  = isDark ? Colors.dark.border      : Colors.light.border;
+  const cardBorder = isDark ? Colors.dark.border : Colors.light.border;
 
   return (
     <LinearGradient
@@ -49,7 +51,7 @@ export default function LoginScreen() {
       start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
       style={s.gradient}
     >
-      <View style={[s.arcTop,    { backgroundColor: isDark ? 'rgba(101,179,97,0.08)' : 'rgba(20,70,28,0.18)' }]} />
+      <View style={[s.arcTop, { backgroundColor: isDark ? 'rgba(101,179,97,0.08)' : 'rgba(20,70,28,0.18)' }]} />
       <View style={[s.arcBottom, { backgroundColor: isDark ? 'rgba(101,179,97,0.22)' : 'rgba(101,179,97,0.28)' }]} />
 
       <SafeAreaView style={s.safe}>
@@ -88,8 +90,8 @@ export default function LoginScreen() {
                   borderColor: errors.email
                     ? Colors.error
                     : focused === 'email'
-                    ? theme.primary
-                    : inputBorder,
+                      ? theme.primary
+                      : inputBorder,
                 }]}>
                   <Ionicons name="mail-outline" size={18} color={muted} />
                   <TextInput
@@ -118,8 +120,8 @@ export default function LoginScreen() {
                   borderColor: errors.password
                     ? Colors.error
                     : focused === 'password'
-                    ? theme.primary
-                    : inputBorder,
+                      ? theme.primary
+                      : inputBorder,
                 }]}>
                   <Ionicons name="lock-closed-outline" size={18} color={muted} />
                   <TextInput
@@ -168,8 +170,8 @@ export default function LoginScreen() {
                     borderColor: errors.policy
                       ? Colors.error
                       : form.accepted
-                      ? theme.primary
-                      : inputBorder,
+                        ? theme.primary
+                        : inputBorder,
                     backgroundColor: form.accepted
                       ? theme.primary
                       : Colors.transparent,
@@ -186,7 +188,7 @@ export default function LoginScreen() {
                     </Text>
                     <Text
                       style={[s.policyLink, { color: theme.primary }]}
-                      onPress={() => router.push(Routes.AUTH.PRIVACY_NOTICE as any)}
+                      onPress={() => setShowPrivacy(true)}
                     >
                       {t('login.policyLink')}
                     </Text>
@@ -198,8 +200,8 @@ export default function LoginScreen() {
 
                 {errors.policy
                   ? <Text style={[s.errorText, { marginTop: 6, marginLeft: 30 }]}>
-                      {t('login.policyError')}
-                    </Text>
+                    {t('login.policyError')}
+                  </Text>
                   : null}
               </View>
 
@@ -210,6 +212,7 @@ export default function LoginScreen() {
                 activeOpacity={0.85}
                 disabled={loading}
               >
+                <PrivacyNoticeModal visible={showPrivacy} onClose={() => setShowPrivacy(false)} />
                 <LinearGradient
                   colors={['#72C96D', '#65B361', '#4FA14B']}
                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
@@ -253,11 +256,11 @@ export default function LoginScreen() {
 
 // ── Estilos ───────────────────────────────────
 const s = StyleSheet.create({
-  gradient:  { flex: 1 },
-  safe:      { flex: 1 },
-  kav:       { flex: 1 },
-  arcTop:    { position: 'absolute', width: 300, height: 420, right: -120, top: -90,    borderRadius: 200 },
-  arcBottom: { position: 'absolute', width: 420, height: 220, left: -120,  bottom: -30, borderRadius: 180 },
+  gradient: { flex: 1 },
+  safe: { flex: 1 },
+  kav: { flex: 1 },
+  arcTop: { position: 'absolute', width: 300, height: 420, right: -120, top: -90, borderRadius: 200 },
+  arcBottom: { position: 'absolute', width: 420, height: 220, left: -120, bottom: -30, borderRadius: 180 },
 
   scroll: {
     flexGrow: 1,
@@ -286,24 +289,24 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  title:    { fontSize: FontSize['3xl'], fontWeight: FontWeight.black, textAlign: 'center', marginBottom: 4 },
+  title: { fontSize: FontSize['3xl'], fontWeight: FontWeight.black, textAlign: 'center', marginBottom: 4 },
   subtitle: { fontSize: FontSize.md, textAlign: 'center', lineHeight: 20, marginBottom: 20 },
 
   fieldGroup: { marginBottom: 14 },
-  label:      { fontSize: FontSize.md, fontWeight: FontWeight.bold, marginBottom: 6 },
-  inputWrap:  {
+  label: { fontSize: FontSize.md, fontWeight: FontWeight.bold, marginBottom: 6 },
+  inputWrap: {
     height: 48, borderWidth: 1.2, borderRadius: 12,
     paddingHorizontal: 14, flexDirection: 'row',
     alignItems: 'center', gap: 10,
   },
-  input:   { flex: 1, fontSize: FontSize.lg, outlineStyle: 'none' } as any,
-  eyeBtn:  { padding: 4 },
+  input: { flex: 1, fontSize: FontSize.lg, outlineStyle: 'none' } as any,
+  eyeBtn: { padding: 4 },
   errorText: { color: Colors.error, fontSize: FontSize.xs, marginTop: 3 },
 
   // ── Política ── fix: texto en una sola línea
   policyCard: { borderRadius: 14, borderWidth: 1, padding: 14, marginTop: 4, marginBottom: 4 },
-  policyRow:  { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  checkbox:   {
+  policyRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  checkbox: {
     width: 20, height: 20,
     borderWidth: 1.5, borderRadius: 4,
     alignItems: 'center', justifyContent: 'center',
@@ -323,13 +326,13 @@ const s = StyleSheet.create({
   },
 
   // ── Botón ──
-  loginBtn:         { width: '100%', maxWidth: 320, alignSelf: 'center', borderRadius: 16, overflow: 'hidden', marginTop: 20, marginBottom: 10 },
+  loginBtn: { width: '100%', maxWidth: 320, alignSelf: 'center', borderRadius: 16, overflow: 'hidden', marginTop: 20, marginBottom: 10 },
   loginBtnDisabled: { opacity: 0.7 },
   loginBtnGradient: { paddingVertical: 14, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 },
-  loginBtnText:     { color: Colors.white, fontSize: FontSize.lg, fontWeight: FontWeight.bold },
+  loginBtnText: { color: Colors.white, fontSize: FontSize.lg, fontWeight: FontWeight.bold },
 
   // ── Links ──
-  links:       { alignItems: 'center', marginTop: 16, gap: 12 },
+  links: { alignItems: 'center', marginTop: 16, gap: 12 },
   registerRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },
-  bottomText:  { fontSize: FontSize.md, fontWeight: FontWeight.semibold },
+  bottomText: { fontSize: FontSize.md, fontWeight: FontWeight.semibold },
 });

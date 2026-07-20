@@ -2,10 +2,11 @@
 //  features/auth/hooks/useLoginForm.ts
 //  Lógica del formulario de login separada
 //  de la pantalla (clean code)
+// Ya esta conectado con el backend
 // ─────────────────────────────────────────────
+import { useAuth } from '@/shared/contexts/AuthContext';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '@/shared/contexts/AuthContext';
 
 const EMAIL_REGEX            = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const EMAIL_ALLOWED_REGEX    = /^[A-Za-z0-9._%+\-@]+$/;

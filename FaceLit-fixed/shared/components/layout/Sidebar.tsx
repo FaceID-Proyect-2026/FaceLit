@@ -2,15 +2,15 @@
 //  shared/components/layout/Sidebar.tsx
 //  Sidebar de navegación para admin/instructor
 // ─────────────────────────────────────────────
+import { Colors } from '@/shared/constants/colors';
+import { Routes } from '@/shared/constants/routes';
+import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
-import { Routes } from '@/shared/constants/routes';
-import { Colors } from '@/shared/constants/colors';
-import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { Ionicons } from '@expo/vector-icons';
 import { router, usePathname } from 'expo-router';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -35,7 +35,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
   const activeBg = isDark ? 'rgba(101,179,97,0.15)' : 'rgba(101,179,97,0.10)';
-  const hoverBg = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)';
   const bg = isDark ? Colors.dark.surface : Colors.light.surface;
   const border = isDark ? Colors.dark.border : Colors.light.border;
 
@@ -70,8 +69,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     { icon: 'person-outline', label: t('sidebar.profile'), route: Routes.PROFILE.VIEW, module: 'profile' },
   ];
 
-  const menu = user?.role === 'administrador' ? adminMenu
-    : user?.role === 'instructor' ? instructorMenu
+  // ✅ FIX: roles del backend vienen en MAYÚSCULAS
+  const menu = user?.role === 'ADMINISTRATOR' || user?.role === 'COORDINATOR' ? adminMenu
+    : user?.role === 'INSTRUCTOR' ? instructorMenu
     : apprenticeMenu;
 
   const isActive = (route: string) => {
@@ -79,6 +79,22 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       return pathname === route;
     }
     return pathname.startsWith(route.split('[')[0]);
+  };
+
+  // ✅ FIX: iniciales con respaldo si no hay firstName/lastName
+  const getInitials = () => {
+    if (user?.firstName) {
+      return `${user.firstName.charAt(0)}${user.lastName?.charAt(0) ?? ''}`.toUpperCase();
+    }
+    return user?.email?.charAt(0).toUpperCase() ?? '?';
+  };
+
+  // ✅ FIX: nombre a mostrar con respaldo al email
+  const getDisplayName = () => {
+    if (user?.firstName) {
+      return `${user.firstName} ${user.lastName ?? ''}`.trim();
+    }
+    return user?.email ?? '';
   };
 
   return (
@@ -97,14 +113,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         {user && (
           <View style={[ss.userSection, { borderBottomColor: border }]}>
             <View style={[ss.avatar, { backgroundColor: theme.primary }]}>
-              <Text style={ss.avatarText}>
-                {user.name.charAt(0)}{user.lastname.charAt(0)}
-              </Text>
+              <Text style={ss.avatarText}>{getInitials()}</Text>
             </View>
             <View style={ss.userInfo}>
-              <Text style={[ss.userName, { color: text }]}>{user.name} {user.lastname}</Text>
+              <Text style={[ss.userName, { color: text }]} numberOfLines={1}>
+                {getDisplayName()}
+              </Text>
               <Text style={[ss.userRole, { color: muted }]}>
-                {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                {user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase()}
               </Text>
             </View>
           </View>

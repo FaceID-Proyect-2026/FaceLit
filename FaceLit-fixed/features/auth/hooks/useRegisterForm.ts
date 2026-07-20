@@ -3,15 +3,18 @@
 //  Lógica del formulario de registro separada
 //  de la pantalla (clean code) — misma
 //  convención que useLoginForm.ts
+//  ahora conectada al backend real
 // ─────────────────────────────────────────────
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { router } from 'expo-router';
 import { Routes } from '@/shared/constants/routes';
+import { registerUser } from '@/shared/services/authService';
+import { getDocumentTypes } from '@/shared/services/catalogService';
+import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 // ── Regex de validación ────────────────────────
-const ONLY_LETTERS   = /^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]+$/;
-const EMAIL_REGEX    = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const ONLY_LETTERS = /^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]+$/;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()\-_=+[\]{};:'",.<>?/\\|`~]).{8,15}$/;
 
 export const IDENTITY_VALUES = ['TI', 'CC', 'CE', 'PA'] as const;
@@ -24,6 +27,12 @@ interface RegisterForm {
   document: string;
   email: string;
   password: string;
+}
+
+interface DocumentTypeOption {
+  idDocumentType: string;
+  name: string;
+  abbreviation: string;
 }
 
 const initialForm: RegisterForm = {
@@ -85,18 +94,29 @@ interface UseRegisterFormParams {
 export function useRegisterForm({ validatedEmail }: UseRegisterFormParams) {
   const { t } = useTranslation();
 
-  const [form, setForm]           = useState<RegisterForm>({ ...initialForm, email: validatedEmail ?? '' });
+  const [form, setForm] = useState<RegisterForm>({ ...initialForm, email: validatedEmail ?? '' });
   const [birthdate, setBirthdate] = useState<Date | null>(null);
-  const [accepted, setAccepted]   = useState(false);
+  const [accepted, setAccepted] = useState(false);
   const [hasRights, setHasRights] = useState<boolean | null>(null);
   const [emailValidated, setEmailValidated] = useState(!!validatedEmail);
-  const [errors, setErrors]       = useState(initialErrors);
-  const [hints, setHints]         = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState(initialErrors);
+  const [hints, setHints] = useState<Record<string, string>>({});
   const [confirmPassword, setConfirmPasswordState] = useState('');
+  const [duplicateAccount, setDuplicateAccount] = useState(false); // ← NUEVO, junto a los demás useState
 
-  const identityOptions = IDENTITY_VALUES.map(value => ({
-    value,
-    label: t(`register.identity${value}`),
+  // ── Catálogo de tipos de documento (viene del backend) ──
+  const [documentTypes, setDocumentTypes] = useState<DocumentTypeOption[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    getDocumentTypes()
+      .then(setDocumentTypes)
+      .catch(() => console.warn('No se pudieron cargar los tipos de documento'));
+  }, []);
+
+  const identityOptions = documentTypes.map(dt => ({
+    value: dt.abbreviation,
+    label: t(`register.identity${dt.abbreviation}`),
   }));
 
   const clearError = (k: string) => setErrors(p => ({ ...p, [k]: '' }));
@@ -126,48 +146,33 @@ export function useRegisterForm({ validatedEmail }: UseRegisterFormParams) {
     clearError('identityType');
   };
 
-  const handleEmailValidate = () => {
-    const e = form.email.trim();
-    if (!e) {
-      setErrors(p => ({ ...p, emailAction: t('register.errors.emailEmpty') }));
-      return;
-    }
-    if (!EMAIL_REGEX.test(e)) {
-      setErrors(p => ({ ...p, emailAction: t('register.errors.emailInvalidShort') }));
-      return;
-    }
-    router.push({
-      pathname: Routes.AUTH.EMAIL_VALIDATION as any,
-      params: { email: e },
-    });
-  };
-
   const setBirthdateValue = (date: Date) => {
     setBirthdate(date);
     clearError('birthdate');
   };
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
+
     const e = { ...initialErrors };
+    setDuplicateAccount(false); // ← NUEVO — se limpia en cada intento
     const d = { ...form, name: form.name.trim(), lastname: form.lastname.trim(), email: form.email.trim() };
 
-    if (!d.name)                         e.name = t('register.errors.nameRequired');
+    if (!d.name) e.name = t('register.errors.nameRequired');
     else if (!ONLY_LETTERS.test(d.name)) e.name = t('register.errors.onlyLetters');
 
-    if (!d.lastname)                         e.lastname = t('register.errors.lastnameRequired');
+    if (!d.lastname) e.lastname = t('register.errors.lastnameRequired');
     else if (!ONLY_LETTERS.test(d.lastname)) e.lastname = t('register.errors.onlyLetters');
 
     if (!d.identityType) e.identityType = t('register.errors.identityRequired');
 
-    if (!d.document)                   e.document = t('register.errors.documentRequired');
+    if (!d.document) e.document = t('register.errors.documentRequired');
     else if (d.document.length !== 10) e.document = t('register.errors.documentLength');
 
-    if (!d.email)                        e.email = t('register.errors.emailRequired');
+    if (!d.email) e.email = t('register.errors.emailRequired');
     else if (!EMAIL_REGEX.test(d.email)) e.email = t('register.errors.emailInvalid');
 
-    if (!emailValidated) e.emailAction = t('register.errors.emailNotValidated');
 
-    if (!d.password)                           e.password = t('register.errors.passwordRequired');
+    if (!d.password) e.password = t('register.errors.passwordRequired');
     else if (!PASSWORD_REGEX.test(d.password)) e.password = t('register.errors.passwordWeak');
 
     if (!confirmPassword) {
@@ -180,23 +185,59 @@ export function useRegisterForm({ validatedEmail }: UseRegisterFormParams) {
       e.birthdate = t('register.errors.birthdateRequired');
     } else {
       const age = getAge(birthdate);
-      if (age < 8)                                   e.birthdate    = t('register.errors.ageMin');
-      else if (age > 100)                            e.birthdate    = t('register.errors.ageMax');
+      if (age < 8) e.birthdate = t('register.errors.ageMin');
+      else if (age > 100) e.birthdate = t('register.errors.ageMax');
       else if (d.identityType === 'TI' && age >= 18) e.identityType = t('register.errors.tiAdult');
-      else if (d.identityType === 'CC' && age < 18)  e.identityType = t('register.errors.ccMinor');
+      else if (d.identityType === 'CC' && age < 18) e.identityType = t('register.errors.ccMinor');
     }
 
-    if (!accepted)          e.policy = t('register.errors.policyRequired');
+    if (!accepted) e.policy = t('register.errors.policyRequired');
     if (hasRights === null) e.rights = t('register.errors.rightsRequired');
 
     setErrors(e);
     if (Object.values(e).some(v => v !== '')) return;
 
-    const age = getAge(birthdate!);
-    if (age >= 18) {
-      router.push(Routes.AUTH.TEENAGER_REGISTRATION as any);
-    } else {
-      router.push({ pathname: Routes.AUTH.MINOR_CONSENT as any, params: { minorEmail: d.email } });
+    const docType = documentTypes.find(dt => dt.abbreviation === d.identityType);
+    if (!docType) {
+      setErrors(prev => ({ ...prev, identityType: 'No se pudo validar el tipo de documento' }));
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await registerUser({
+        idDocumentType: docType.idDocumentType,
+        firstName: d.name,
+        lastName: d.lastname,
+        documentNumber: d.document,
+        birthDate: formatDate(birthdate!),
+        email: d.email,
+        password: d.password,
+        accepted: accepted,   // ← NUEVO — se manda junto con todo lo demás
+      });
+
+      router.push({
+        pathname: Routes.AUTH.EMAIL_VALIDATION as any,
+        params: { idUser: result.id_user, email: d.email },
+      });
+
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'No se pudo completar el registro';
+
+      const isDuplicate = message.includes('ya esta registrado') || message.includes('ya está registrado');
+      setDuplicateAccount(isDuplicate); // ← NUEVO
+
+      if (message.includes('documento')) {
+        setErrors(prev => ({ ...prev, document: message }));
+      } else if (message.toLowerCase().includes('email') || message.toLowerCase().includes('correo')) {
+        setErrors(prev => ({ ...prev, email: message }));
+      } else if (message.includes('Tarjeta de Identidad') || message.includes('Cedula')) {
+        setErrors(prev => ({ ...prev, identityType: message }));
+      } else {
+        setErrors(prev => ({ ...prev, policy: message }));
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -208,6 +249,7 @@ export function useRegisterForm({ validatedEmail }: UseRegisterFormParams) {
     setHints({});
     setAccepted(false);
     setHasRights(null);
+    setDuplicateAccount(false); // ← NUEVO — limpia el estado también al cancelar
     router.replace(Routes.AUTH.LOGIN as any);
   };
 
@@ -225,13 +267,14 @@ export function useRegisterForm({ validatedEmail }: UseRegisterFormParams) {
     hints,
     confirmPassword,
     identityOptions,
+    loading,
+    duplicateAccount, // ← NUEVO
 
     // acciones
     setField,
     setConfirmPassword,
     handleEmail,
     handleIdentity,
-    handleEmailValidate,
     setBirthdate: setBirthdateValue,
     setAccepted,
     setHasRights,

@@ -2,9 +2,9 @@
 //  app/_layout.tsx
 //  Root layout con AuthProvider + temas + i18n
 // ─────────────────────────────────────────────
+import { AuthProvider } from '@/shared/contexts/AuthContext';
 import { I18nProvider } from '@/shared/contexts/I18nContext';
 import { ThemeProvider, useTheme } from '@/shared/contexts/ThemeContext';
-import { AuthProvider } from '@/shared/contexts/AuthContext';
 import i18n from '@/shared/i18n/index';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -31,10 +31,9 @@ function RootLayoutInner() {
         <Stack.Screen name="auth/password-recovery" />
         <Stack.Screen name="auth/verify-identity" />
         <Stack.Screen name="auth/new-password" />
-        <Stack.Screen name="auth/password-reset-done" />
         <Stack.Screen name="auth/teenager-registration" />
         <Stack.Screen name="auth/minor-consent" />
-        <Stack.Screen name="auth/privacy-notice" />
+        <Stack.Screen name="auth/guardian-verification" />
         <Stack.Screen name="admin" options={{ animation: 'fade' }} />
         <Stack.Screen name="instructor" options={{ animation: 'fade' }} />
         <Stack.Screen name="apprentice" options={{ animation: 'fade' }} />

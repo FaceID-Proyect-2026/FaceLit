@@ -10,40 +10,40 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {Dimensions, KeyboardAvoidingView, Linking, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View} from 'react-native';  
+import { Dimensions, KeyboardAvoidingView, Linking, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
-const CARD_MAX  = 900;
+const CARD_MAX = 900;
 
 export default function MinorConsentScreen() {
-  const { t }             = useTranslation();
+  const { t } = useTranslation();
   const { theme, isDark } = useTheme();
-  const { minorEmail }    = useLocalSearchParams<{ minorEmail?: string }>();
+  const { minorEmail, idUser } = useLocalSearchParams<{ minorEmail?: string; idUser?: string }>();
 
   // ── Toda la lógica de negocio viene del hook ──
   const {
     form, emailValidated, accepted, errors,
     handleName, handleDoc, handleEmail, handleEmailValidate,
     setAccepted, handleSubmit, handleBack,
-  } = useMinorConsentForm({ minorEmail });
+  } = useMinorConsentForm({ minorEmail, idUser });
 
   // ── Estado puramente de UI (no es lógica de negocio) ──
   const [focused, setFocused] = useState<string | null>(null);
 
   // ── Colores locales (presentación) ─────────────
-  const text            = isDark ? '#FFFFFF'                : '#111111';
-  const muted           = isDark ? '#A8BCA6'                : '#555555';
-  const cardBg          = isDark ? '#07120D'                : '#FFFFFF';
-  const inputBg         = isDark ? 'rgba(255,255,255,0.05)' : '#FAFAFA';
-  const inputBorder     = isDark ? 'rgba(255,255,255,0.30)' : '#BBBBBB';
-  const activeBorder    = theme.primary;
-  const linkColor       = isDark ? '#8EF58A'                : '#3A8C36';
-  const errorColor      = '#D92027';
-  const cardBorder      = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
-  const legalBg         = isDark ? 'rgba(200,130,74,0.15)'  : '#FFF3E0';
-  const legalBorder     = '#C8824A';
-  const checkCardBg     = isDark ? 'rgba(255,255,255,0.04)' : '#F3F8F3';
+  const text = isDark ? '#FFFFFF' : '#111111';
+  const muted = isDark ? '#A8BCA6' : '#555555';
+  const cardBg = isDark ? '#07120D' : '#FFFFFF';
+  const inputBg = isDark ? 'rgba(255,255,255,0.05)' : '#FAFAFA';
+  const inputBorder = isDark ? 'rgba(255,255,255,0.30)' : '#BBBBBB';
+  const activeBorder = theme.primary;
+  const linkColor = isDark ? '#8EF58A' : '#3A8C36';
+  const errorColor = '#D92027';
+  const cardBorder = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+  const legalBg = isDark ? 'rgba(200,130,74,0.15)' : '#FFF3E0';
+  const legalBorder = '#C8824A';
+  const checkCardBg = isDark ? 'rgba(255,255,255,0.04)' : '#F3F8F3';
   const checkCardBorder = isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.07)';
 
   const isWide = width >= 700;
@@ -140,7 +140,7 @@ export default function MinorConsentScreen() {
       <TouchableOpacity
         onPress={handleEmailValidate}
         style={[s.validateBtn, {
-          borderColor:     emailValidated ? theme.primary : errors.emailAction ? errorColor : inputBorder,
+          borderColor: emailValidated ? theme.primary : errors.emailAction ? errorColor : inputBorder,
           backgroundColor: emailValidated ? theme.primary + '18' : 'transparent',
         }]}
       >
@@ -240,7 +240,7 @@ export default function MinorConsentScreen() {
               <View style={[s.consentCard, { backgroundColor: checkCardBg, borderColor: checkCardBorder }]}>
                 <TouchableOpacity onPress={() => setAccepted(!accepted)} activeOpacity={0.8} style={s.checkRow}>
                   <View style={[s.checkbox, {
-                    borderColor:     errors.consent ? errorColor : accepted ? theme.primary : inputBorder,
+                    borderColor: errors.consent ? errorColor : accepted ? theme.primary : inputBorder,
                     backgroundColor: accepted ? theme.primary : 'transparent',
                   }]}>
                     {accepted && <Ionicons name="checkmark" size={12} color="#FFFFFF" />}
@@ -264,6 +264,9 @@ export default function MinorConsentScreen() {
                     {t('minorConsent.moreInfo')}
                   </Text>
                 </TouchableOpacity>
+                <Text style={[s.legalText, { color: muted, fontSize: 11, textAlign: 'left', marginTop: 6 }]}>
+                  {t('minorConsent.articlesRef')}
+                </Text>
               </View>
 
               {/* ── Botones de acción ── */}
@@ -299,12 +302,12 @@ export default function MinorConsentScreen() {
 
 // ── Estilos (solo presentación) ────────────────
 const s = StyleSheet.create({
-  gradient:  { flex: 1 },
-  safe:      { flex: 1 },
-  kav:       { flex: 1 },
-  arcTop:    { position: 'absolute', width: 300, height: 420, right: -120, top: -90,    borderRadius: 200, backgroundColor: 'rgba(20,70,28,0.18)' },
-  arcBottom: { position: 'absolute', width: 420, height: 220, left: -120,  bottom: -30, borderRadius: 180, backgroundColor: 'rgba(101,179,97,0.28)' },
-  scroll:    { flexGrow: 1, alignItems: 'center', paddingVertical: 28, paddingHorizontal: 16 },
+  gradient: { flex: 1 },
+  safe: { flex: 1 },
+  kav: { flex: 1 },
+  arcTop: { position: 'absolute', width: 300, height: 420, right: -120, top: -90, borderRadius: 200, backgroundColor: 'rgba(20,70,28,0.18)' },
+  arcBottom: { position: 'absolute', width: 420, height: 220, left: -120, bottom: -30, borderRadius: 180, backgroundColor: 'rgba(101,179,97,0.28)' },
+  scroll: { flexGrow: 1, alignItems: 'center', paddingVertical: 28, paddingHorizontal: 16 },
 
   card: {
     width: '100%',
@@ -315,48 +318,48 @@ const s = StyleSheet.create({
     paddingVertical: 30,
   },
 
-  iconWrap:   { alignItems: 'center', marginBottom: 16 },
+  iconWrap: { alignItems: 'center', marginBottom: 16 },
   iconCircle: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', shadowColor: '#F57C00', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 6 },
 
-  title:    { fontSize: 24, fontWeight: '900', textAlign: 'center', marginBottom: 8 },
+  title: { fontSize: 24, fontWeight: '900', textAlign: 'center', marginBottom: 8 },
   subtitle: { fontSize: 13, textAlign: 'center', lineHeight: 20, marginBottom: 16 },
 
-  legalBox:  { borderRadius: 12, borderWidth: 1, padding: 14, marginBottom: 6, alignItems: 'center' },
+  legalBox: { borderRadius: 12, borderWidth: 1, padding: 14, marginBottom: 6, alignItems: 'center' },
   legalText: { fontSize: 13, lineHeight: 20, textAlign: 'center' },
 
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 20, marginBottom: 12, paddingBottom: 8, borderBottomWidth: 1 },
-  sectionTitle:  { fontSize: 11, fontWeight: '800', letterSpacing: 0.8, textTransform: 'uppercase' },
+  sectionTitle: { fontSize: 11, fontWeight: '800', letterSpacing: 0.8, textTransform: 'uppercase' },
 
   row: { flexDirection: 'row', gap: 16 },
   col: { flex: 1 },
 
   fieldGroup: { marginBottom: 12 },
-  label:      { fontSize: 13, fontWeight: '700', marginBottom: 6 },
-  inputWrap:  { height: 48, borderWidth: 1.2, borderRadius: 12, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  input:      { flex: 1, fontSize: 15, outlineStyle: 'none' } as any,
-  errorText:  { color: '#D92027', fontSize: 11, marginTop: 3 },
+  label: { fontSize: 13, fontWeight: '700', marginBottom: 6 },
+  inputWrap: { height: 48, borderWidth: 1.2, borderRadius: 12, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  input: { flex: 1, fontSize: 15, outlineStyle: 'none' } as any,
+  errorText: { color: '#D92027', fontSize: 11, marginTop: 3 },
   docCounter: { fontSize: 12, fontWeight: '700', minWidth: 32, textAlign: 'right' },
 
-  infoBox:  { flexDirection: 'row', alignItems: 'center', gap: 6, padding: 10, borderRadius: 8, borderWidth: 1, marginBottom: 8 },
+  infoBox: { flexDirection: 'row', alignItems: 'center', gap: 6, padding: 10, borderRadius: 8, borderWidth: 1, marginBottom: 8 },
   infoText: { fontSize: 12, flex: 1, lineHeight: 17 },
 
-  validateBtn:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 44, borderRadius: 10, borderWidth: 1.2, marginBottom: 4, paddingHorizontal: 12 },
+  validateBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 44, borderRadius: 10, borderWidth: 1.2, marginBottom: 4, paddingHorizontal: 12 },
   validateBtnText: { fontSize: 13, fontWeight: '700', textAlign: 'center' },
 
-  consentCard:  { borderRadius: 14, borderWidth: 1, padding: 16, marginTop: 6, marginBottom: 4 },
-  checkRow:     { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  checkbox:     { width: 20, height: 20, borderWidth: 1.5, borderRadius: 4, alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 },
-  checkLabel:   { flex: 1, fontSize: 13, lineHeight: 20 },
-  moreInfoBtn:  { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 14, paddingTop: 12, borderTopWidth: 1 },
+  consentCard: { borderRadius: 14, borderWidth: 1, padding: 16, marginTop: 6, marginBottom: 4 },
+  checkRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  checkbox: { width: 20, height: 20, borderWidth: 1.5, borderRadius: 4, alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 },
+  checkLabel: { flex: 1, fontSize: 13, lineHeight: 20 },
+  moreInfoBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 14, paddingTop: 12, borderTopWidth: 1 },
   moreInfoText: { fontSize: 12, fontWeight: '600' },
 
-  actionsRow:    { flexDirection: 'row', gap: 250, marginTop: 24, marginBottom: 8 },
-  actionsCol:    { flexDirection: 'column', alignItems: 'center', marginTop: 24, marginBottom: 8 },
+  actionsRow: { flexDirection: 'row', gap: 250, marginTop: 24, marginBottom: 8 },
+  actionsCol: { flexDirection: 'column', alignItems: 'center', marginTop: 24, marginBottom: 8 },
   actionBtnWide: { flex: 1, maxWidth: undefined, alignSelf: undefined, width: undefined },
 
-  confirmBtn:         { width: '100%', maxWidth: 300, alignSelf: 'center', borderRadius: 16, overflow: 'hidden', marginBottom: 10 },
+  confirmBtn: { width: '100%', maxWidth: 300, alignSelf: 'center', borderRadius: 16, overflow: 'hidden', marginBottom: 10 },
   confirmBtnGradient: { paddingVertical: 14, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 },
-  confirmBtnText:     { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
-  backBtn:            { width: '100%', maxWidth: 300, alignSelf: 'center', borderRadius: 16, borderWidth: 1.2, paddingVertical: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 6, marginBottom: 8 },
-  backBtnText:        { fontSize: 15, fontWeight: '600' },
+  confirmBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  backBtn: { width: '100%', maxWidth: 300, alignSelf: 'center', borderRadius: 16, borderWidth: 1.2, paddingVertical: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 6, marginBottom: 8 },
+  backBtnText: { fontSize: 15, fontWeight: '600' },
 });

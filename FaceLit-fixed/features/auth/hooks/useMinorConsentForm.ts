@@ -1,12 +1,10 @@
 // ─────────────────────────────────────────────
 //  features/auth/hooks/useMinorConsentForm.ts
-//  Lógica del formulario de consentimiento del
-//  acudiente, separada de la pantalla (clean code)
-//  — misma convención que useLoginForm / useRegisterForm
 // ─────────────────────────────────────────────
+import { requestConsent } from '@/shared/services/consentService';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { router } from 'expo-router';
 
 const EMAIL_REGEX  = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const ONLY_LETTERS = /^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]+$/;
@@ -25,17 +23,18 @@ const initialErrors: Record<string, string> = {
 };
 
 interface UseMinorConsentFormParams {
-  /** Correo del menor, recibido por query param, para evitar que coincida con el del acudiente */
   minorEmail?: string;
+  idUser?: string;
 }
 
-export function useMinorConsentForm({ minorEmail }: UseMinorConsentFormParams) {
+export function useMinorConsentForm({ minorEmail, idUser }: UseMinorConsentFormParams) {
   const { t } = useTranslation();
 
   const [form, setForm]                     = useState<GuardianForm>(initialForm);
   const [emailValidated, setEmailValidated] = useState(false);
   const [accepted, setAccepted]             = useState(false);
   const [errors, setErrors]                 = useState(initialErrors);
+  const [loading, setLoading]               = useState(false);
 
   const clearError = (k: string) => setErrors(p => ({ ...p, [k]: '' }));
 
@@ -74,7 +73,7 @@ export function useMinorConsentForm({ minorEmail }: UseMinorConsentFormParams) {
     clearError('emailAction');
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const e = { ...initialErrors };
     const nameParts = form.name.trim().split(' ').filter(Boolean);
 
@@ -96,25 +95,42 @@ export function useMinorConsentForm({ minorEmail }: UseMinorConsentFormParams) {
     setErrors(e);
     if (Object.values(e).some(v => v !== '')) return;
 
-    // Tras el consentimiento, se continúa con el registro facial.
-    // El modal de éxito se muestra en esa pantalla (teenager-registration), no acá.
-    router.replace('/auth/teenager-registration');
+    if (!idUser) {
+      setErrors(prev => ({ ...prev, consent: 'No se encontró el ID del usuario menor' }));
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await requestConsent({
+        id_user: idUser,
+        fullName: form.name.trim(),
+        identityDocument: form.document,
+        emailGuardian: form.email.trim(),
+      });
+
+      // Navega a la pantalla donde el acudiente ingresa el código de 6 dígitos
+      router.replace({
+        pathname: '/auth/guardian-verification' as any,
+        params: { idUser, guardianEmail: form.email.trim() },
+      });
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'No se pudo enviar la solicitud';
+      if (message.toLowerCase().includes('correo') || message.toLowerCase().includes('email')) {
+        setErrors(prev => ({ ...prev, guardianEmail: message }));
+      } else {
+        setErrors(prev => ({ ...prev, consent: message }));
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleBack = () => router.back();
 
   return {
-    form,
-    emailValidated,
-    accepted,
-    errors,
-
-    handleName,
-    handleDoc,
-    handleEmail,
-    handleEmailValidate,
-    setAccepted,
-    handleSubmit,
-    handleBack,
+    form, emailValidated, accepted, errors, loading,
+    handleName, handleDoc, handleEmail, handleEmailValidate,
+    setAccepted, handleSubmit, handleBack,
   };
 }
