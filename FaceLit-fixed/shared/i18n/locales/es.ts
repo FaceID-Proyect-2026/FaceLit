@@ -573,6 +573,13 @@ emailValidatedSuccess: {
     desvincularConfirm: '¿Desvincular aprendiz de esta ficha?',
     unlinkFromProgram: 'Desvincular del programa',
     unlinkConfirm:   '¿Desvincular ficha del programa?',
+    unlinkedFichas:  'Fichas Desvinculadas',
+    unlinkedFichasEmpty: 'No hay fichas desvinculadas',
+    linkToProgram:   'Vincular',
+    linkToProgramConfirm: '¿Vincular esta ficha al programa seleccionado?',
+    linkToProgramSuccess: 'Ficha vinculada correctamente',
+    noActivePrograms: 'No hay programas activos',
+    fichaNotFound:   'Ficha no encontrada',
     fields: {
       programName:   'Nombre del Programa',
       fichaNumber:   'Número de Ficha',

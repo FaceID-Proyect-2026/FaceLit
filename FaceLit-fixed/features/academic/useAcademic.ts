@@ -22,6 +22,7 @@ import {
   updateFichaStore,
   deleteFichaStore,
   unlinkFichaFromProgramStore,
+  linkFichaToProgramStore,
   addLearnerStore,
   removeLearnerStore,
 } from './academicStore';
@@ -50,6 +51,11 @@ export function useAcademic() {
     return fichas.filter(f => f.number.includes(q) || f.code.toLowerCase().includes(q));
   }, [fichas, search]);
 
+  // Fichas sin programa asociado (desvinculadas). Se conservan en el
+  // sistema con toda su información y quedan disponibles para volver a
+  // asociarse a un programa de formación.
+  const unlinkedFichas = useMemo(() => fichas.filter(f => !f.programId), [fichas]);
+
   const getProgram = useCallback((id: string) => getProgramById(id), [programs]);
   const getFicha = useCallback((id: string) => getFichaById(id), [fichas]);
 
@@ -63,14 +69,15 @@ export function useAcademic() {
   const deleteFicha = useCallback((id: string) => deleteFichaStore(id), []);
 
   const unlinkFichaFromProgram = useCallback((fichaId: string, programId: string) => unlinkFichaFromProgramStore(fichaId, programId), []);
+  const linkFichaToProgram = useCallback((fichaId: string, programId: string) => linkFichaToProgramStore(fichaId, programId), []);
   const addLearner = useCallback((fichaId: string, learner: Ficha['learners'][0]) => addLearnerStore(fichaId, learner), []);
   const removeLearner = useCallback((fichaId: string, learnerId: string) => removeLearnerStore(fichaId, learnerId), []);
 
   return {
-    programs: filteredPrograms, fichas: filteredFichas, allFichas: fichas,
+    programs: filteredPrograms, fichas: filteredFichas, allFichas: fichas, unlinkedFichas,
     search, setSearch, statusFilter, setStatusFilter, getProgram, getFicha,
     addProgram, updateProgram, deactivateProgram, deleteProgram,
     addFicha, updateFicha, deleteFicha,
-    unlinkFichaFromProgram, addLearner, removeLearner,
+    unlinkFichaFromProgram, linkFichaToProgram, addLearner, removeLearner,
   };
 }
