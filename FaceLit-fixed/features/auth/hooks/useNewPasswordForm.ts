@@ -67,7 +67,7 @@ export function useNewPasswordForm() {
       const message = error.response?.data?.message || 'No se pudo restablecer la contraseña';
       // El backend puede responder "Código incorrecto" o "Código vencido" —
       // se lo mostramos junto al campo de contraseña ya que no hay campo de código aquí
-      setErrors({ password: message });
+      setErrors({ code : message });
     } finally {
       setLoading(false);
     }

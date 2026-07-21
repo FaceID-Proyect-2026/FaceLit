@@ -1,12 +1,7 @@
-// ─────────────────────────────────────────────
-//  features/auth/hooks/useVerificationCode.ts
-//  Lógica de verificación por código (OTP) —
-//  ahora conectada al backend real
-// ─────────────────────────────────────────────
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-const DEFAULT_TIME = 5 * 60; // 5 minutos
+const DEFAULT_TIME = 5 * 60; // 5 minutos — duración del código y cooldown del botón
 
 export function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -18,13 +13,9 @@ interface UseVerificationCodeParams {
   namespace: string;
   initialTime?: number;
   checkExpired?: boolean;
-  /** Llama al backend para verificar el código. Debe lanzar error si falla. */
   onVerify: (code: string) => Promise<void>;
-  /** Llama al backend para reenviar el código. Debe lanzar error si falla. */
   onResend: () => Promise<void>;
 }
-
-const RESEND_COOLDOWN = 300; // segundos entre reenvíos
 
 export function useVerificationCode({
   namespace,
@@ -35,13 +26,13 @@ export function useVerificationCode({
 }: UseVerificationCodeParams) {
   const { t } = useTranslation();
 
-  const [code, setCodeValue] = useState('');
-  const [timeLeft, setTimeLeft] = useState(initialTime);
-  const [expired, setExpired] = useState(false);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [code, setCodeValue]     = useState('');
+  const [timeLeft, setTimeLeft]  = useState(initialTime);
+  const [expired, setExpired]    = useState(false);
+  const [error, setError]        = useState('');
+  const [loading, setLoading]    = useState(false);
   const [resending, setResending] = useState(false);
-  const [resendCooldown, setResendCooldown] = useState(0); // ← NUEVO
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   useEffect(() => {
     if (timeLeft <= 0) {
@@ -52,7 +43,6 @@ export function useVerificationCode({
     return () => clearInterval(timer);
   }, [timeLeft, checkExpired]);
 
-  // ── NUEVO: cuenta regresiva del cooldown de reenvío ──
   useEffect(() => {
     if (resendCooldown <= 0) return;
     const timer = setInterval(() => setResendCooldown(p => Math.max(0, p - 1)), 1000);
@@ -65,7 +55,7 @@ export function useVerificationCode({
   };
 
   const handleResend = async () => {
-    if (resendCooldown > 0) return; // ← bloqueo extra por seguridad
+    if (resendCooldown > 0) return;
 
     setResending(true);
     setError('');
@@ -73,8 +63,8 @@ export function useVerificationCode({
       await onResend();
       setCodeValue('');
       setExpired(false);
-      setTimeLeft(initialTime);
-      setResendCooldown(RESEND_COOLDOWN); // ← arranca el cooldown
+      setTimeLeft(initialTime);      // reinicia el temporizador de expiración del código
+      setResendCooldown(initialTime); // el botón queda bloqueado los mismos 5 minutos
     } catch (err: any) {
       setError(err.response?.data?.message || t(`${namespace}.errors.resendFailed`) || 'No se pudo reenviar el código');
     } finally {
@@ -91,7 +81,6 @@ export function useVerificationCode({
       setError(t(`${namespace}.errors.length`));
       return;
     }
-
     setLoading(true);
     setError('');
     try {
@@ -104,16 +93,8 @@ export function useVerificationCode({
   };
 
   return {
-    code,
-    setCode,
-    timeLeft,
-    expired,
-    error,
-    setError,
-    loading,
-    resending,
-    resendCooldown, 
-    handleResend,
-    handleVerify,
+    code, setCode, timeLeft, expired, error,
+    loading, resending, resendCooldown,
+    handleResend, handleVerify,
   };
 }

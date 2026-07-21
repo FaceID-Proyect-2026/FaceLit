@@ -71,7 +71,7 @@ const m = StyleSheet.create({
 
 // ─── Screen ────────────────────────────────────
 export default function NewPasswordScreen() {
-  const { t }             = useTranslation();
+  const { t } = useTranslation();
   const { isDark, theme } = useTheme();
 
   const {
@@ -80,14 +80,14 @@ export default function NewPasswordScreen() {
   } = useNewPasswordForm();
 
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm,  setShowConfirm]  = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
-  const text        = isDark ? '#FFFFFF' : '#000000';
-  const muted       = isDark ? '#CAD6C8' : '#1E1E1E';
-  const cardBg      = isDark ? '#07120D' : '#FFFFFF';
-  const inputBg     = isDark ? 'rgba(255,255,255,0.04)' : '#FFFFFF';
+  const text = isDark ? '#FFFFFF' : '#000000';
+  const muted = isDark ? '#CAD6C8' : '#1E1E1E';
+  const cardBg = isDark ? '#07120D' : '#FFFFFF';
+  const inputBg = isDark ? 'rgba(255,255,255,0.04)' : '#FFFFFF';
   const inputBorder = isDark ? 'rgba(255,255,255,0.78)' : '#BBBBBB';
-  const errorColor  = '#D92027';
+  const errorColor = '#D92027';
 
   const handleModalContinue = () => {
     router.replace(Routes.AUTH.LOGIN as any);
@@ -99,7 +99,7 @@ export default function NewPasswordScreen() {
       start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
       style={s.gradient}
     >
-      <View style={[s.arcTop,    { backgroundColor: isDark ? 'rgba(101,179,97,0.08)' : 'rgba(20,70,28,0.18)' }]} />
+      <View style={[s.arcTop, { backgroundColor: isDark ? 'rgba(101,179,97,0.08)' : 'rgba(20,70,28,0.18)' }]} />
       <View style={[s.arcBottom, { backgroundColor: isDark ? 'rgba(101,179,97,0.22)' : 'rgba(101,179,97,0.28)' }]} />
 
       <SafeAreaView style={s.safe}>
@@ -114,7 +114,7 @@ export default function NewPasswordScreen() {
               <Image source={require('@/assets/images/candado.png')} style={s.image} resizeMode="contain" />
             </View>
 
-            <Text style={[s.title,    { color: text  }]}>{t('newPassword.title')}</Text>
+            <Text style={[s.title, { color: text }]}>{t('newPassword.title')}</Text>
             <Text style={[s.subtitle, { color: muted }]}>{t('newPassword.subtitle')}</Text>
 
             <View style={[s.requirements, { backgroundColor: isDark ? 'rgba(101,179,97,0.08)' : 'rgba(101,179,97,0.10)' }]}>
@@ -150,7 +150,13 @@ export default function NewPasswordScreen() {
                 <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={isDark ? '#7A8A78' : '#999999'} />
               </TouchableOpacity>
             </View>
-            {errors.password ? <Text style={s.errorText}>{errors.password}</Text> : null}
+            {errors.code ? (
+              <View style={{ backgroundColor: 'rgba(217,32,39,0.10)', borderWidth: 1, borderColor: '#D92027', borderRadius: 12, padding: 12, marginBottom: 16 }}>
+                <Text style={{ color: '#D92027', fontSize: 13, fontWeight: '700', textAlign: 'center' }}>
+                  {errors.code}
+                </Text>
+              </View>
+            ) : null}
 
             <Text style={[s.fieldLabel, { color: text }]}>{t('newPassword.confirmLabel')}</Text>
             <View style={[s.inputRow, { backgroundColor: inputBg, borderColor: errors.confirm ? errorColor : inputBorder }]}>
@@ -190,26 +196,26 @@ export default function NewPasswordScreen() {
 
 const s = StyleSheet.create({
   gradient: { flex: 1 },
-  safe:     { flex: 1 },
-  scroll:   { flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 15 },
-  arcTop:    { position: 'absolute', width: 300, height: 420, right: -120, top: -90,    borderRadius: 200 },
-  arcBottom: { position: 'absolute', width: 420, height: 220, left: -120,  bottom: -30, borderRadius: 180 },
+  safe: { flex: 1 },
+  scroll: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 15 },
+  arcTop: { position: 'absolute', width: 300, height: 420, right: -120, top: -90, borderRadius: 200 },
+  arcBottom: { position: 'absolute', width: 420, height: 220, left: -120, bottom: -30, borderRadius: 180 },
   card: { width: '100%', maxWidth: 750, borderRadius: 26, paddingHorizontal: 40, paddingVertical: 60, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.18, shadowRadius: 18, elevation: 8 },
-  backBtn:     { marginBottom: 18 },
-  backText:    { color: '#65B361', fontSize: 14, fontWeight: '700' },
+  backBtn: { marginBottom: 18 },
+  backText: { color: '#65B361', fontSize: 14, fontWeight: '700' },
   iconWrapper: { alignItems: 'center', marginBottom: 16 },
-  image:       { width: 95, height: 95 },
-  title:       { fontSize: 28, fontWeight: '900', textAlign: 'center', marginBottom: 8 },
-  subtitle:    { fontSize: 14, textAlign: 'center', lineHeight: 22, marginBottom: 20 },
+  image: { width: 95, height: 95 },
+  title: { fontSize: 28, fontWeight: '900', textAlign: 'center', marginBottom: 8 },
+  subtitle: { fontSize: 14, textAlign: 'center', lineHeight: 22, marginBottom: 20 },
   requirements: { borderRadius: 14, padding: 16, marginBottom: 22 },
-  reqTitle:     { fontWeight: '800', fontSize: 13, marginBottom: 10 },
-  reqRow:       { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
-  reqItem:      { fontSize: 13 },
-  fieldLabel:   { fontSize: 14, fontWeight: '800', marginBottom: 8 },
+  reqTitle: { fontWeight: '800', fontSize: 13, marginBottom: 10 },
+  reqRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+  reqItem: { fontSize: 13 },
+  fieldLabel: { fontSize: 14, fontWeight: '800', marginBottom: 8 },
   inputRow: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.2, borderRadius: 14, paddingHorizontal: 14, marginBottom: 6, gap: 10 },
-  input:          { flex: 1, paddingVertical: 14, fontSize: 15 },
-  errorText:      { color: '#D92027', fontSize: 12, marginBottom: 12 },
-  button:         { width: '100%', borderRadius: 16, overflow: 'hidden', marginTop: 16 },
+  input: { flex: 1, paddingVertical: 14, fontSize: 15 },
+  errorText: { color: '#D92027', fontSize: 12, marginBottom: 12 },
+  button: { width: '100%', borderRadius: 16, overflow: 'hidden', marginTop: 16 },
   buttonGradient: { paddingVertical: 12, alignItems: 'center' },
-  buttonText:     { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
+  buttonText: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
 });

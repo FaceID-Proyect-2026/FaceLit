@@ -363,6 +363,7 @@ const en = {
       emailNotValidated: 'You must validate your email before continuing',
       emailEmpty: 'Enter your email address first',
       emailInvalidShort: 'Invalid email',
+      rightsDeclined: 'You must read and accept your rights before continuing. This information is required to ensure the correct use of your data.',
       passwordRequired: 'Password is required',
       passwordWeak: 'Minimum 8 and maximum 15 characters, one uppercase letter, one number, and one symbol',
       confirmRequired: 'Confirm your password',

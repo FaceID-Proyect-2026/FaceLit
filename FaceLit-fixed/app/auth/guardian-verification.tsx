@@ -79,7 +79,6 @@ export default function GuardianVerificationScreen() {
                     <Text style={[s.subtitle, { color: theme.textMuted }]}>{t('guardianVerification.subtitle')}</Text>
                     <Text style={[s.emailText, { color: theme.primary }]}>{guardianEmail || 'correo@ejemplo.com'}</Text>
 
-                    <TimerBadge timeLeft={timeLeft} />
 
                     <TouchableOpacity onPress={handleResend} disabled={resending || resendCooldown > 0} style={s.resendBtn}>
                         <Text style={[s.resendText, { color: theme.primary, opacity: (resending || resendCooldown > 0) ? 0.5 : 1 }]}>

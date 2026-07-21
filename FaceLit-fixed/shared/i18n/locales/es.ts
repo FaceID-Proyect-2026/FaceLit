@@ -364,6 +364,7 @@ const es = {
     errors: {
       nameRequired: 'El nombre es obligatorio',
       onlyLetters: 'Solo se permiten letras',
+      rightsDeclined: 'Debes leer y aceptar tus derechos antes de continuar. Esta información es obligatoria para garantizar el uso correcto de tus datos.',
       lastnameRequired: 'El apellido es obligatorio',
       identityRequired: 'Selecciona un tipo de identidad',
       documentRequired: 'Documento obligatorio',

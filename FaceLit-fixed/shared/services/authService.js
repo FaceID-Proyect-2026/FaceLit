@@ -30,5 +30,13 @@ export const resendCode = async (idUser) => {
   return data; // { message }
 };
 
+export const getRegistrationStatus = async (document, email) => {
+  const params = new URLSearchParams();
+  if (document) params.append('document', document);
+  if (email) params.append('email', email);
+  const { data } = await api.get(`/api/auth/registration-status?${params.toString()}`);
+  return data;
+};
+
 export const logout = () => removeToken();
 

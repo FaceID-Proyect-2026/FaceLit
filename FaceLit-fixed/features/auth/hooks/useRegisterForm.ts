@@ -6,7 +6,7 @@
 //  ahora conectada al backend real
 // ─────────────────────────────────────────────
 import { Routes } from '@/shared/constants/routes';
-import { registerUser } from '@/shared/services/authService';
+import { getRegistrationStatus, registerUser } from '@/shared/services/authService';
 import { getDocumentTypes } from '@/shared/services/catalogService';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -152,9 +152,7 @@ export function useRegisterForm({ validatedEmail }: UseRegisterFormParams) {
   };
 
   const handleRegister = async () => {
-
     const e = { ...initialErrors };
-    setDuplicateAccount(false); // ← NUEVO — se limpia en cada intento
     const d = { ...form, name: form.name.trim(), lastname: form.lastname.trim(), email: form.email.trim() };
 
     if (!d.name) e.name = t('register.errors.nameRequired');
@@ -171,9 +169,11 @@ export function useRegisterForm({ validatedEmail }: UseRegisterFormParams) {
     if (!d.email) e.email = t('register.errors.emailRequired');
     else if (!EMAIL_REGEX.test(d.email)) e.email = t('register.errors.emailInvalid');
 
-
     if (!d.password) e.password = t('register.errors.passwordRequired');
     else if (!PASSWORD_REGEX.test(d.password)) e.password = t('register.errors.passwordWeak');
+
+    if (hasRights === null) e.rights = t('register.errors.rightsRequired');
+    else if (hasRights === false) e.rights = t('register.errors.rightsDeclined');
 
     if (!confirmPassword) {
       e.confirmPassword = t('register.errors.confirmPasswordRequired') ?? 'Confirma tu contraseña';
@@ -193,6 +193,7 @@ export function useRegisterForm({ validatedEmail }: UseRegisterFormParams) {
 
     if (!accepted) e.policy = t('register.errors.policyRequired');
     if (hasRights === null) e.rights = t('register.errors.rightsRequired');
+    else if (hasRights === false) e.rights = t('register.errors.rightsDeclined');
 
     setErrors(e);
     if (Object.values(e).some(v => v !== '')) return;
@@ -213,7 +214,7 @@ export function useRegisterForm({ validatedEmail }: UseRegisterFormParams) {
         birthDate: formatDate(birthdate!),
         email: d.email,
         password: d.password,
-        accepted: accepted,   // ← NUEVO — se manda junto con todo lo demás
+        accepted: accepted,
       });
 
       router.push({
@@ -223,9 +224,45 @@ export function useRegisterForm({ validatedEmail }: UseRegisterFormParams) {
 
     } catch (error: any) {
       const message = error.response?.data?.message || 'No se pudo completar el registro';
-
       const isDuplicate = message.includes('ya esta registrado') || message.includes('ya está registrado');
-      setDuplicateAccount(isDuplicate); // ← NUEVO
+
+      if (isDuplicate) {
+        try {
+          const status = await getRegistrationStatus(d.document, d.email);
+          // 1. Falta verificar el email
+          if (!status.emailVerified) {
+            router.replace({
+              pathname: Routes.AUTH.EMAIL_VALIDATION as any,
+              params: { idUser: status.idUser, email: d.email },
+            });
+            return;
+          }
+
+          if (status.isMinor && status.accountStatus !== 'ACTIVE') {
+            if (!status.consentStatus) {
+              router.replace({
+                pathname: Routes.AUTH.MINOR_CONSENT as any,
+                params: { idUser: status.idUser, minorEmail: d.email },
+              });
+              return;
+            }
+            if (status.consentStatus === 'PENDING') {
+              router.replace({
+                pathname: '/auth/guardian-verification' as any,
+                params: { idUser: status.idUser, guardianEmail: status.guardianEmail },
+              });
+              return;
+            }
+          }
+
+          router.replace(Routes.AUTH.TEENAGER_REGISTRATION as any);
+          return;
+
+        } catch (statusError) {
+          setErrors(prev => ({ ...prev, policy: 'Ya existe una cuenta con estos datos, pero no pudimos verificar en qué paso quedó.' }));
+          return;
+        }
+      }
 
       if (message.includes('documento')) {
         setErrors(prev => ({ ...prev, document: message }));
