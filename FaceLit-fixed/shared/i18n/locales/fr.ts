@@ -54,7 +54,7 @@ const fr = {
     fichas: 'Fichas', fichaRegister: 'Enregistrer Ficha', fichaEdit: 'Modifier', fichaDelete: 'Supprimer', fichaEmpty: 'Aucune ficha', fichaCode: 'Code Ficha',
     joinTitle: 'Rejoindre Ficha', joinSubtitle: 'Saisissez le code fourni', joinSuccess: 'Code validé', joinDisabled: 'Déjà associé',
     learners: 'Apprenants', learnerEmpty: 'Aucun apprenant', desvincular: 'Dissocier', desvincularConfirm: 'Dissocier apprenant ?', unlinkFromProgram: 'Dissocier du programme', unlinkConfirm: 'Dissocier ficha du programme ?',
-    unlinkedFichas: 'Fichas dissociées', unlinkedFichasEmpty: 'Aucune ficha dissociée', linkToProgram: 'Associer', linkToProgramConfirm: 'Associer cette ficha au programme sélectionné ?', linkToProgramSuccess: 'Ficha associée avec succès', noActivePrograms: 'Aucun programme actif', fichaNotFound: 'Ficha introuvable',
+    unlinkedFichas: 'Fichas dissociées', unlinkedFichasEmpty: 'Aucune ficha dissociée', linkToProgram: 'Associer à un programme', linkToProgramConfirm: 'Associer cette ficha au programme sélectionné ?', linkToProgramSuccess: 'Ficha associée avec succès', noActivePrograms: 'Aucun programme actif', fichaNotFound: 'Ficha introuvable',
     fields: { programName: 'Nom Programme', fichaNumber: 'N° Ficha', jornada: 'Horaire', code: 'Code', learnerName: 'Nom', learnerLastname: 'Prénom', learnerDoc: 'Document', learnerEmail: 'Email', learnerStatus: 'Statut', status: 'Statut', actions: 'Actions' },
     jornadas: { morning: 'Matin', afternoon: 'Après-midi', night: 'Soir', full: 'Temps plein' },
     learnerFields: { name: 'Nom', lastname: 'Prénom', code: 'Code ficha' },

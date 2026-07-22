@@ -575,7 +575,7 @@ emailValidatedSuccess: {
     unlinkConfirm:   '¿Desvincular ficha del programa?',
     unlinkedFichas:  'Fichas Desvinculadas',
     unlinkedFichasEmpty: 'No hay fichas desvinculadas',
-    linkToProgram:   'Vincular',
+    linkToProgram:   'Vincular a programa',
     linkToProgramConfirm: '¿Vincular esta ficha al programa seleccionado?',
     linkToProgramSuccess: 'Ficha vinculada correctamente',
     noActivePrograms: 'No hay programas activos',

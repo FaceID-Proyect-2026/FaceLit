@@ -199,11 +199,10 @@ export default function AcademicProgramsScreen() {
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => setExpandedFichaId(isExpanded ? null : item.id)}
-                    style={[aps.actionBtn, { width: undefined, paddingHorizontal: 10, backgroundColor: theme.primary + '15', flexDirection: 'row', gap: 4 }]}
+                    style={[aps.actionBtn, { backgroundColor: theme.primary + '15' }]}
                     activeOpacity={0.7}
                   >
                     <Ionicons name="link-outline" size={16} color={theme.primary} />
-                    <Text style={{ color: theme.primary, fontWeight: '700', fontSize: 13 }}>{t('academic.linkToProgram')}</Text>
                   </TouchableOpacity>
                 </View>
 
