@@ -59,9 +59,20 @@ export function updateProgramStore(id: string, name: string, status: 'active' | 
   emit();
 }
 
+// Desactivación lógica: cambia el estado a Inactivo pero conserva el registro
+// y su información (fichas asociadas, etc.).
+export function deactivateProgramStore(id: string) {
+  const prog = programs.find(p => p.id === id);
+  if (!prog) return { success: false, error: 'academic.programNotFound' };
+  programs = programs.map(p => (p.id === id ? { ...p, status: 'inactive' as const } : p));
+  emit();
+  return { success: true };
+}
+
+// Eliminación física — solo debe usarse desde la pestaña de Inactivos.
 export function deleteProgramStore(id: string) {
   const prog = programs.find(p => p.id === id);
-  if (prog && prog.fichas.length > 0) return { success: false, error: 'El programa tiene fichas asociadas' };
+  if (prog && prog.fichas.length > 0) return { success: false, error: 'academic.programHasFichas' };
   programs = programs.filter(p => p.id !== id);
   emit();
   return { success: true };
@@ -95,8 +106,27 @@ export function deleteFichaStore(id: string) {
   return { success: true };
 }
 
+// Desvincula la ficha del programa: solo se elimina la relación
+// (tanto en el arreglo `fichas` del programa como en `programId` de la
+// ficha). La ficha y su información (código, aprendices, etc.) se
+// conservan intactas y quedan disponibles para vincularse nuevamente.
 export function unlinkFichaFromProgramStore(fichaId: string, programId: string) {
   programs = programs.map(p => (p.id === programId ? { ...p, fichas: p.fichas.filter(fid => fid !== fichaId) } : p));
+  fichas = fichas.map(f => (f.id === fichaId ? { ...f, programId: '' } : f));
+  emit();
+  return { success: true };
+}
+
+// Vincula una ficha desvinculada a un programa: actualiza `programId` en
+// la ficha y agrega su id al arreglo `fichas` del programa, igual que
+// `assignFichaToEnvironment` en environmentsStore.
+export function linkFichaToProgramStore(fichaId: string, programId: string) {
+  const ficha = fichas.find(f => f.id === fichaId);
+  if (!ficha) return { success: false, error: 'academic.fichaNotFound' };
+  const program = programs.find(p => p.id === programId);
+  if (!program) return { success: false, error: 'academic.programNotFound' };
+  fichas = fichas.map(f => (f.id === fichaId ? { ...f, programId } : f));
+  programs = programs.map(p => (p.id === programId && !p.fichas.includes(fichaId) ? { ...p, fichas: [...p.fichas, fichaId] } : p));
   emit();
   return { success: true };
 }

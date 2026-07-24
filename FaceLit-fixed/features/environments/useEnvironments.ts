@@ -15,6 +15,7 @@ import {
   registerEnvironment,
   updateEnvironment,
   deactivateEnvironment,
+  deleteEnvironmentPermanently,
   assignFichaToEnvironment,
   unassignFichaFromEnvironment,
 } from './environmentsStore';
@@ -46,6 +47,7 @@ export function useEnvironments() {
   const register = useCallback(registerEnvironment, []);
   const update = useCallback(updateEnvironment, []);
   const deactivate = useCallback(deactivateEnvironment, []);
+  const deletePermanently = useCallback(deleteEnvironmentPermanently, []);
   const assignFicha = useCallback(assignFichaToEnvironment, []);
   const unassignFicha = useCallback(unassignFichaFromEnvironment, []);
 
@@ -59,6 +61,7 @@ export function useEnvironments() {
     register,
     update,
     deactivate,
+    deletePermanently,
     assignFicha,
     unassignFicha,
   };

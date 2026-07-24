@@ -32,6 +32,7 @@ export function registerEnvironment(form: EnvironmentForm) {
     id: Date.now().toString(),
     code: form.code.trim(),
     status: form.status ?? 'active',
+    quantity: form.quantity ?? 0,
     assignedFichas: [],
   };
   environments = [...environments, newEnv];
@@ -44,6 +45,7 @@ export function updateEnvironment(id: string, form: EnvironmentForm) {
     ...e,
     code: form.code.trim(),
     status: form.status ?? e.status,
+    quantity: form.quantity ?? e.quantity,
   } : e);
   emit();
 }
@@ -54,6 +56,18 @@ export function deactivateEnvironment(id: string) {
   const env = environments.find(e => e.id === id);
   if (!env) return { success: false, error: 'Ambiente no encontrado' };
   environments = environments.map(e => e.id === id ? { ...e, status: 'inactive' as const } : e);
+  emit();
+  return { success: true };
+}
+
+// Elimina físicamente el ambiente. Solo debe invocarse sobre ambientes
+// Inactivos (la UI restringe la acción a esa pestaña) — se conserva una
+// validación defensiva por si se llega a invocar en otro estado.
+export function deleteEnvironmentPermanently(id: string) {
+  const env = environments.find(e => e.id === id);
+  if (!env) return { success: false, error: 'environments.errors.notFound' };
+  if (env.status !== 'inactive') return { success: false, error: 'environments.noDeleteActive' };
+  environments = environments.filter(e => e.id !== id);
   emit();
   return { success: true };
 }

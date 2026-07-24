@@ -74,6 +74,10 @@ export default function EnvironmentDetailScreen() {
             <Text style={[eds.infoLabel, { color: muted }]}>{t('environments.fields.name')}</Text>
             <Text style={[eds.infoValue, { color: text }]}>{env.code}</Text>
           </View>
+          <View style={eds.infoRow}>
+            <Text style={[eds.infoLabel, { color: muted }]}>{t('environments.fields.quantity')}</Text>
+            <Text style={[eds.infoValue, { color: text }]}>{env.quantity}</Text>
+          </View>
           <View style={[eds.infoRow, { borderBottomWidth: 0 }]}>
             <Text style={[eds.infoLabel, { color: muted }]}>{t('environments.fields.status')}</Text>
             <View style={[eds.statusBadge, { backgroundColor: statusColor + '20' }]}>
