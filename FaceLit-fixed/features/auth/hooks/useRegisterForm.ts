@@ -229,7 +229,20 @@ export function useRegisterForm({ validatedEmail }: UseRegisterFormParams) {
       if (isDuplicate) {
         try {
           const status = await getRegistrationStatus(d.document, d.email);
-          // 1. Falta verificar el email
+
+          const isFullyComplete = status.isMinor
+            ? status.emailVerified && status.consentStatus === 'ACCEPTED' && status.accountStatus === 'ACTIVE'
+            : status.emailVerified && status.accountStatus === 'ACTIVE';
+
+          // Solo se bloquea cuando el registro está TERMINADO al 100%.
+          // Cualquier otro caso significa que hay un paso pendiente por completar.
+          if (isFullyComplete) {
+            setDuplicateAccount(true);
+            setErrors(prev => ({ ...prev, policy: 'Ya existe una cuenta con estos datos.' }));
+            return;
+          }
+
+          // 1. Falta verificar el email — sin importar si es menor o mayor
           if (!status.emailVerified) {
             router.replace({
               pathname: Routes.AUTH.EMAIL_VALIDATION as any,
@@ -238,14 +251,18 @@ export function useRegisterForm({ validatedEmail }: UseRegisterFormParams) {
             return;
           }
 
-          if (status.isMinor && status.accountStatus !== 'ACTIVE') {
-            if (!status.consentStatus) {
+          // 2. Es menor, ya verificó su email, pero el consentimiento no está aceptado todavía
+          if (status.isMinor) {
+            // 2a. Nunca se envió la solicitud al acudiente → volver a minor-consent
+            if (!status.consentStatus || status.consentStatus === 'REJECTED') {
               router.replace({
                 pathname: Routes.AUTH.MINOR_CONSENT as any,
                 params: { idUser: status.idUser, minorEmail: d.email },
               });
               return;
             }
+
+            // 2b. Ya se envió, está esperando que el acudiente responda
             if (status.consentStatus === 'PENDING') {
               router.replace({
                 pathname: '/auth/guardian-verification' as any,
@@ -255,12 +272,13 @@ export function useRegisterForm({ validatedEmail }: UseRegisterFormParams) {
             }
           }
 
-          router.replace(Routes.AUTH.TEENAGER_REGISTRATION as any);
-          return;
+          // Caso no contemplado (no debería llegar aquí) — por seguridad, bloquear
+          setDuplicateAccount(true);
+          setErrors(prev => ({ ...prev, policy: 'Ya existe una cuenta con estos datos.' }));
 
         } catch (statusError) {
+          setDuplicateAccount(true);
           setErrors(prev => ({ ...prev, policy: 'Ya existe una cuenta con estos datos, pero no pudimos verificar en qué paso quedó.' }));
-          return;
         }
       }
 

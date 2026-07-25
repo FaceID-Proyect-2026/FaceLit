@@ -2,6 +2,7 @@
 //  app/auth/new-password.tsx
 // ─────────────────────────────────────────────
 import { useNewPasswordForm } from '@/features/auth/hooks/useNewPasswordForm';
+import { Colors } from '@/shared/constants/colors';
 import { Routes } from '@/shared/constants/routes';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,8 +14,9 @@ import { Image, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // ─── Sub-component: Modal de éxito (antes era password-reset-done.tsx) ──
-function SuccessModal({ visible, onContinue }: { visible: boolean; onContinue: () => void }) {
+function SuccessModal({ visible, onContinue, isDark }: { visible: boolean; onContinue: () => void; isDark: boolean }) {
   const { t } = useTranslation();
+  const palette = isDark ? Colors.dark : Colors.light;
 
   const SECURITY_ITEMS = [
     t('passwordResetDone.security.item1'),
@@ -26,24 +28,32 @@ function SuccessModal({ visible, onContinue }: { visible: boolean; onContinue: (
   return (
     <Modal visible={visible} transparent animationType="fade" statusBarTranslucent>
       <View style={m.overlay}>
-        <View style={m.card}>
+        <View
+          style={[
+            m.card,
+            {
+              backgroundColor: palette.surface,
+              borderColor: `${Colors.primary}38`,
+            },
+          ]}
+        >
           <View style={m.iconWrapper}>
             <Image source={require('@/assets/images/check.png')} style={m.imagen} resizeMode="contain" />
           </View>
 
-          <Text style={m.title}>{t('passwordResetDone.title')}</Text>
-          <Text style={m.subtitle}>{t('passwordResetDone.subtitle1')}</Text>
-          <Text style={m.subtitle2}>{t('passwordResetDone.subtitle2')}</Text>
+          <Text style={[m.title, { color: palette.text }]}>{t('passwordResetDone.title')}</Text>
+          <Text style={[m.subtitle, { color: palette.textSecondary }]}>{t('passwordResetDone.subtitle1')}</Text>
+          <Text style={[m.subtitle2, { color: palette.textSecondary }]}>{t('passwordResetDone.subtitle2')}</Text>
 
-          <View style={m.securityLog}>
-            <Text style={m.securityTitle}>{t('passwordResetDone.securityTitle')}</Text>
+          <View style={[m.securityLog, { backgroundColor: palette.inputBg, borderColor: palette.border }]}>
+            <Text style={[m.securityTitle, { color: palette.link }]}>{t('passwordResetDone.securityTitle')}</Text>
             {SECURITY_ITEMS.map((item) => (
-              <Text key={item} style={m.securityItem}>{item}</Text>
+              <Text key={item} style={[m.securityItem, { color: palette.text }]}>{item}</Text>
             ))}
           </View>
 
           <TouchableOpacity style={m.btn} onPress={onContinue} activeOpacity={0.85}>
-            <LinearGradient colors={['#72C96D', '#65B361', '#4FA14B']} style={m.btnGradient}>
+            <LinearGradient colors={[Colors.primaryLight, Colors.primary, Colors.primaryDark]} style={m.btnGradient}>
               <Text style={m.btnText}>{t('passwordResetDone.loginBtn')}</Text>
             </LinearGradient>
           </TouchableOpacity>
@@ -55,24 +65,25 @@ function SuccessModal({ visible, onContinue }: { visible: boolean; onContinue: (
 
 const m = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20 },
-  card: { width: '100%', maxWidth: 420, backgroundColor: '#07120D', borderRadius: 26, paddingHorizontal: 28, paddingVertical: 34, borderWidth: 1, borderColor: 'rgba(101,179,97,0.22)', alignItems: 'center' },
+  card: { width: '100%', maxWidth: 420, borderRadius: 26, paddingHorizontal: 28, paddingVertical: 34, borderWidth: 1, alignItems: 'center' },
   iconWrapper: { marginBottom: 18 },
   imagen: { width: 90, height: 90 },
-  title: { fontSize: 24, fontWeight: '900', color: '#FFFFFF', textAlign: 'center', marginBottom: 10 },
-  subtitle: { fontSize: 13, color: '#CAD6C8', textAlign: 'center', marginBottom: 4, lineHeight: 19 },
-  subtitle2: { fontSize: 13, color: '#CAD6C8', textAlign: 'center', marginBottom: 20, lineHeight: 19 },
-  securityLog: { width: '100%', backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 14, padding: 16, marginBottom: 22, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
-  securityTitle: { color: '#7ED957', fontWeight: '800', fontSize: 13, marginBottom: 8 },
-  securityItem: { color: '#FFFFFF', fontSize: 12, marginBottom: 5, lineHeight: 17 },
+  title: { fontSize: 24, fontWeight: '900', textAlign: 'center', marginBottom: 10 },
+  subtitle: { fontSize: 13, textAlign: 'center', marginBottom: 4, lineHeight: 19 },
+  subtitle2: { fontSize: 13, textAlign: 'center', marginBottom: 20, lineHeight: 19 },
+  securityLog: { width: '100%', borderRadius: 14, padding: 16, marginBottom: 22, borderWidth: 1 },
+  securityTitle: { fontWeight: '800', fontSize: 13, marginBottom: 8 },
+  securityItem: { fontSize: 12, marginBottom: 5, lineHeight: 17 },
   btn: { width: '80%', borderRadius: 16, overflow: 'hidden' },
   btnGradient: { paddingVertical: 13, alignItems: 'center' },
-  btnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  btnText: { color: Colors.white, fontSize: 16, fontWeight: '700' },
 });
 
 // ─── Screen ────────────────────────────────────
 export default function NewPasswordScreen() {
   const { t } = useTranslation();
   const { isDark, theme } = useTheme();
+  const palette = isDark ? Colors.dark : Colors.light;
 
   const {
     password, confirmPassword, errors, requirements, loading, showSuccess,
@@ -82,12 +93,12 @@ export default function NewPasswordScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const text = isDark ? '#FFFFFF' : '#000000';
-  const muted = isDark ? '#CAD6C8' : '#1E1E1E';
-  const cardBg = isDark ? '#07120D' : '#FFFFFF';
-  const inputBg = isDark ? 'rgba(255,255,255,0.04)' : '#FFFFFF';
-  const inputBorder = isDark ? 'rgba(255,255,255,0.78)' : '#BBBBBB';
-  const errorColor = '#D92027';
+  const text = palette.text;
+  const muted = palette.textSecondary;
+  const cardBg = palette.surface;
+  const inputBg = palette.inputBg;
+  const inputBorder = palette.inputBorder;
+  const errorColor = Colors.error;
 
   const handleModalContinue = () => {
     router.replace(Routes.AUTH.LOGIN as any);
@@ -95,16 +106,16 @@ export default function NewPasswordScreen() {
 
   return (
     <LinearGradient
-      colors={isDark ? ['#000000', '#06170F', '#0B2D17'] : ['#F7FFF4', '#E5F7DF', '#1E4C28']}
+      colors={palette.gradient}
       start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
       style={s.gradient}
     >
-      <View style={[s.arcTop, { backgroundColor: isDark ? 'rgba(101,179,97,0.08)' : 'rgba(20,70,28,0.18)' }]} />
-      <View style={[s.arcBottom, { backgroundColor: isDark ? 'rgba(101,179,97,0.22)' : 'rgba(101,179,97,0.28)' }]} />
+      <View style={[s.arcTop, { backgroundColor: isDark ? `${Colors.primary}14` : `${Colors.primary}38` }]} />
+      <View style={[s.arcBottom, { backgroundColor: isDark ? `${Colors.primary}38` : `${Colors.primary}47` }]} />
 
       <SafeAreaView style={s.safe}>
         <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
-          <View style={[s.card, { backgroundColor: cardBg, shadowColor: isDark ? '#000000' : '#1C3A1D' }]}>
+          <View style={[s.card, { backgroundColor: cardBg, shadowColor: isDark ? Colors.black : Colors.primaryDark }]}>
 
             <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
               <Text style={s.backText}>{t('newPassword.backBtn')}</Text>
@@ -117,16 +128,16 @@ export default function NewPasswordScreen() {
             <Text style={[s.title, { color: text }]}>{t('newPassword.title')}</Text>
             <Text style={[s.subtitle, { color: muted }]}>{t('newPassword.subtitle')}</Text>
 
-            <View style={[s.requirements, { backgroundColor: isDark ? 'rgba(101,179,97,0.08)' : 'rgba(101,179,97,0.10)' }]}>
+            <View style={[s.requirements, { backgroundColor: isDark ? `${Colors.primary}14` : Colors.primaryFaint }]}>
               <Text style={[s.reqTitle, { color: theme.primary }]}>{t('newPassword.reqTitle')}</Text>
               {requirements.map((req) => (
                 <View key={req.key} style={s.reqRow}>
                   <Ionicons
                     name={req.met ? 'checkmark-circle' : 'ellipse-outline'}
                     size={14}
-                    color={req.met ? theme.primary : isDark ? '#4A5E49' : '#AAAAAA'}
+                    color={req.met ? theme.primary : palette.placeholder}
                   />
-                  <Text style={[s.reqItem, { color: req.met ? theme.primary : isDark ? '#7A8A78' : '#888888' }]}>
+                  <Text style={[s.reqItem, { color: req.met ? theme.primary : palette.placeholder }]}>
                     {req.label}
                   </Text>
                 </View>
@@ -135,24 +146,24 @@ export default function NewPasswordScreen() {
 
             <Text style={[s.fieldLabel, { color: text }]}>{t('newPassword.passwordLabel')}</Text>
             <View style={[s.inputRow, { backgroundColor: inputBg, borderColor: errors.password ? errorColor : inputBorder }]}>
-              <Ionicons name="lock-closed-outline" size={18} color={isDark ? '#7A8A78' : '#999999'} />
+              <Ionicons name="lock-closed-outline" size={18} color={palette.placeholder} />
               <TextInput
                 style={[s.input, { color: text }]}
                 value={password}
                 onChangeText={setPassword}
                 placeholder={t('newPassword.passwordPlaceholder')}
-                placeholderTextColor={isDark ? '#AEB6C2' : '#AAAAAA'}
+                placeholderTextColor={palette.placeholder}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 autoCorrect={false}
               />
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)} activeOpacity={0.7}>
-                <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={isDark ? '#7A8A78' : '#999999'} />
+                <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={palette.placeholder} />
               </TouchableOpacity>
             </View>
             {errors.code ? (
-              <View style={{ backgroundColor: 'rgba(217,32,39,0.10)', borderWidth: 1, borderColor: '#D92027', borderRadius: 12, padding: 12, marginBottom: 16 }}>
-                <Text style={{ color: '#D92027', fontSize: 13, fontWeight: '700', textAlign: 'center' }}>
+              <View style={{ backgroundColor: `${Colors.error}1A`, borderWidth: 1, borderColor: Colors.error, borderRadius: 12, padding: 12, marginBottom: 16 }}>
+                <Text style={{ color: Colors.error, fontSize: 13, fontWeight: '700', textAlign: 'center' }}>
                   {errors.code}
                 </Text>
               </View>
@@ -160,25 +171,25 @@ export default function NewPasswordScreen() {
 
             <Text style={[s.fieldLabel, { color: text }]}>{t('newPassword.confirmLabel')}</Text>
             <View style={[s.inputRow, { backgroundColor: inputBg, borderColor: errors.confirm ? errorColor : inputBorder }]}>
-              <Ionicons name="shield-checkmark-outline" size={18} color={isDark ? '#7A8A78' : '#999999'} />
+              <Ionicons name="shield-checkmark-outline" size={18} color={palette.placeholder} />
               <TextInput
                 style={[s.input, { color: text }]}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 placeholder={t('newPassword.confirmPlaceholder')}
-                placeholderTextColor={isDark ? '#AEB6C2' : '#AAAAAA'}
+                placeholderTextColor={palette.placeholder}
                 secureTextEntry={!showConfirm}
                 autoCapitalize="none"
                 autoCorrect={false}
               />
               <TouchableOpacity onPress={() => setShowConfirm(!showConfirm)} activeOpacity={0.7}>
-                <Ionicons name={showConfirm ? 'eye-off-outline' : 'eye-outline'} size={20} color={isDark ? '#7A8A78' : '#999999'} />
+                <Ionicons name={showConfirm ? 'eye-off-outline' : 'eye-outline'} size={20} color={palette.placeholder} />
               </TouchableOpacity>
             </View>
-            {errors.confirm ? <Text style={s.errorText}>{errors.confirm}</Text> : null}
+            {errors.confirm ? <Text style={[s.errorText, { color: errorColor }]}>{errors.confirm}</Text> : null}
 
             <TouchableOpacity style={s.button} onPress={handleSubmit} disabled={loading}>
-              <LinearGradient colors={['#72C96D', '#65B361', '#4FA14B']} style={s.buttonGradient}>
+              <LinearGradient colors={[Colors.primaryLight, Colors.primary, Colors.primaryDark]} style={s.buttonGradient}>
                 <Text style={s.buttonText}>
                   {loading ? (t('newPassword.submitting') ?? 'Guardando...') : t('newPassword.submitBtn')}
                 </Text>
@@ -189,7 +200,7 @@ export default function NewPasswordScreen() {
         </ScrollView>
       </SafeAreaView>
 
-      <SuccessModal visible={showSuccess} onContinue={handleModalContinue} />
+      <SuccessModal visible={showSuccess} onContinue={handleModalContinue} isDark={isDark} />
     </LinearGradient>
   );
 }
@@ -202,7 +213,7 @@ const s = StyleSheet.create({
   arcBottom: { position: 'absolute', width: 420, height: 220, left: -120, bottom: -30, borderRadius: 180 },
   card: { width: '100%', maxWidth: 750, borderRadius: 26, paddingHorizontal: 40, paddingVertical: 60, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.18, shadowRadius: 18, elevation: 8 },
   backBtn: { marginBottom: 18 },
-  backText: { color: '#65B361', fontSize: 14, fontWeight: '700' },
+  backText: { color: Colors.primary, fontSize: 14, fontWeight: '700' },
   iconWrapper: { alignItems: 'center', marginBottom: 16 },
   image: { width: 95, height: 95 },
   title: { fontSize: 28, fontWeight: '900', textAlign: 'center', marginBottom: 8 },
@@ -214,8 +225,8 @@ const s = StyleSheet.create({
   fieldLabel: { fontSize: 14, fontWeight: '800', marginBottom: 8 },
   inputRow: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.2, borderRadius: 14, paddingHorizontal: 14, marginBottom: 6, gap: 10 },
   input: { flex: 1, paddingVertical: 14, fontSize: 15 },
-  errorText: { color: '#D92027', fontSize: 12, marginBottom: 12 },
+  errorText: { fontSize: 12, marginBottom: 12 },
   button: { width: '100%', borderRadius: 16, overflow: 'hidden', marginTop: 16 },
   buttonGradient: { paddingVertical: 12, alignItems: 'center' },
-  buttonText: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
+  buttonText: { color: Colors.white, fontSize: 18, fontWeight: '700' },
 });
