@@ -144,12 +144,22 @@ export default function EmailValidationScreen() {
           <TimerBadge timeLeft={timeLeft} />
 
           <TouchableOpacity style={s.resendBtn} onPress={handleResend} disabled={resending || resendCooldown > 0}>
-                      <Text style={[s.resendText, { opacity: (resending || resendCooldown > 0) ? 0.5 : 1 }]}>
-                        {resendCooldown > 0
-                          ? `Disponible en ${resendCooldown}s`
-                          : resending ? t('verifyIdentity.resending') ?? 'Reenviando...' : t('verifyIdentity.resendBtn')}
-                      </Text>
-                    </TouchableOpacity>
+            <Text
+              style={[
+                s.resendText,
+                {
+                  color: theme.link,
+                  opacity: (resending || resendCooldown > 0) ? 0.5 : 1,
+                },
+              ]}
+            >
+              {resendCooldown > 0
+                ? `Disponible en ${resendCooldown}s`
+                : resending
+                  ? t('verifyIdentity.resending') ?? 'Reenviando...'
+                  : t('verifyIdentity.resendBtn')}
+            </Text>
+          </TouchableOpacity>
           <InputField
             label={t('emailValidation.inputLabel')}
             value={code}

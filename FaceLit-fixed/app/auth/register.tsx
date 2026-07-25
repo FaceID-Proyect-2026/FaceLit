@@ -37,6 +37,8 @@ export default function RegisterScreen() {
     handleRegister, handleCancel, hintColor,
   } = useRegisterForm({ validatedEmail });
 
+   console.log("identityOptions:", identityOptions);
+
   // ── Estado puramente de UI (no es lógica de negocio) ──
   const [showPicker, setShowPicker] = useState(false);
   const [showIdentity, setShowIdentity] = useState(false);
