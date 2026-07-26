@@ -1,12 +1,13 @@
 // ─────────────────────────────────────────────
 //  features/auth/hooks/useMinorConsentForm.ts
 // ─────────────────────────────────────────────
+import { Routes } from '@/shared/constants/routes';
 import { requestConsent } from '@/shared/services/consentService';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-const EMAIL_REGEX  = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const ONLY_LETTERS = /^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]+$/;
 
 interface GuardianForm {
@@ -30,11 +31,11 @@ interface UseMinorConsentFormParams {
 export function useMinorConsentForm({ minorEmail, idUser }: UseMinorConsentFormParams) {
   const { t } = useTranslation();
 
-  const [form, setForm]                     = useState<GuardianForm>(initialForm);
+  const [form, setForm] = useState<GuardianForm>(initialForm);
   const [emailValidated, setEmailValidated] = useState(false);
-  const [accepted, setAccepted]             = useState(false);
-  const [errors, setErrors]                 = useState(initialErrors);
-  const [loading, setLoading]               = useState(false);
+  const [accepted, setAccepted] = useState(false);
+  const [errors, setErrors] = useState(initialErrors);
+  const [loading, setLoading] = useState(false);
 
   const clearError = (k: string) => setErrors(p => ({ ...p, [k]: '' }));
 
@@ -77,20 +78,20 @@ export function useMinorConsentForm({ minorEmail, idUser }: UseMinorConsentFormP
     const e = { ...initialErrors };
     const nameParts = form.name.trim().split(' ').filter(Boolean);
 
-    if (!form.name.trim())               e.guardianName = t('minorConsent.errors.nameRequired');
-    else if (nameParts.length < 2)       e.guardianName = t('minorConsent.errors.nameIncomplete');
+    if (!form.name.trim()) e.guardianName = t('minorConsent.errors.nameRequired');
+    else if (nameParts.length < 2) e.guardianName = t('minorConsent.errors.nameIncomplete');
     else if (!ONLY_LETTERS.test(form.name)) e.guardianName = t('minorConsent.errors.nameLettersOnly');
 
-    if (!form.document)                  e.guardianDoc = t('minorConsent.errors.docRequired');
+    if (!form.document) e.guardianDoc = t('minorConsent.errors.docRequired');
     else if (form.document.length !== 10) e.guardianDoc = t('minorConsent.errors.docLength');
 
-    if (!form.email)                        e.guardianEmail = t('minorConsent.errors.emailRequired');
+    if (!form.email) e.guardianEmail = t('minorConsent.errors.emailRequired');
     else if (!EMAIL_REGEX.test(form.email)) e.guardianEmail = t('minorConsent.errors.emailInvalid');
     else if (minorEmail && form.email.toLowerCase() === minorEmail.trim().toLowerCase())
       e.guardianEmail = t('minorConsent.errors.emailSameMinor');
 
     if (!emailValidated) e.emailAction = t('minorConsent.errors.emailNotValidated');
-    if (!accepted)        e.consent    = t('minorConsent.errors.consentRequired');
+    if (!accepted) e.consent = t('minorConsent.errors.consentRequired');
 
     setErrors(e);
     if (Object.values(e).some(v => v !== '')) return;
@@ -126,7 +127,7 @@ export function useMinorConsentForm({ minorEmail, idUser }: UseMinorConsentFormP
     }
   };
 
-  const handleBack = () => router.back();
+  const handleBack = () => router.replace(Routes.AUTH.REGISTER as any);
 
   return {
     form, emailValidated, accepted, errors, loading,
