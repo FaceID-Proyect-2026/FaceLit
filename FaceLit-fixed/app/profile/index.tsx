@@ -1,11 +1,11 @@
-import { useAuth } from '@/shared/contexts/AuthContext';
-import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
+import { useAuth } from '@/shared/contexts/AuthContext';
+import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
@@ -16,10 +16,24 @@ export default function ProfileScreen() {
   const cardBg = isDark ? '#0D1F14' : Colors.white;
   const border = isDark ? 'rgba(101,179,97,0.18)' : 'rgba(101,179,97,0.20)';
   const bg = isDark ? Colors.dark.background : Colors.light.background;
+  const profileUser = user as any;
+
   if (!user) return null;
 
+  const displayName = profileUser?.name ?? profileUser?.firstName ?? profileUser?.first_name ?? profileUser?.fullName ?? '';
+  const displayLastName = profileUser?.lastName ?? profileUser?.last_name ?? '';
+  const documentType = profileUser?.documentType ?? profileUser?.document_type ?? '';
+  const document = profileUser?.document ?? profileUser?.documentNumber ?? profileUser?.dni ?? '';
+  const email = profileUser?.email ?? '';
+  const role = profileUser?.role ?? profileUser?.userRole ?? '';
+  const firstNameInitial = displayName.charAt(0).toUpperCase();
+  const lastNameInitial = displayLastName.charAt(0).toUpperCase();
+  const roleLabel = role ? role.charAt(0).toUpperCase() + role.slice(1) : '';
+  const avatarText = `${firstNameInitial}${lastNameInitial}`.trim() || '?';
+  const userName = `${displayName} ${displayLastName}`.trim();
+
   const handleLogout = () => {
-    Alert.alert(t('profile.logoutConfirm')??'', '', [
+    Alert.alert(t('profile.logoutConfirm') ?? '', '', [
       { text: t('common.cancel'), style: 'cancel' },
       { text: t('profile.logout'), style: 'destructive', onPress: logout },
     ]);
@@ -32,20 +46,20 @@ export default function ProfileScreen() {
 
         {/* Avatar */}
         <View style={{ alignItems:'center',marginBottom:24 }}>
-          <View style={[ps.avatar, { backgroundColor: theme.primary }]}><Text style={ps.avatarText}>{user.name.charAt(0)}{user.lastname.charAt(0)}</Text></View>
-          <Text style={[ps.userName, { color: text }]}>{user.name} {user.lastname}</Text>
-          <View style={[ps.roleBadge, { backgroundColor: theme.primary+'20' }]}><Text style={{ color: theme.primary, fontWeight:'700',fontSize:13 }}>{user.role.charAt(0).toUpperCase()+user.role.slice(1)}</Text></View>
+          <View style={[ps.avatar, { backgroundColor: theme.primary }]}><Text style={ps.avatarText}>{avatarText}</Text></View>
+          <Text style={[ps.userName, { color: text }]}>{userName}</Text>
+          <View style={[ps.roleBadge, { backgroundColor: theme.primary+'20' }]}><Text style={{ color: theme.primary, fontWeight:'700',fontSize:13 }}>{roleLabel}</Text></View>
         </View>
 
         {/* Info */}
         <Text style={[ps.sectionTitle, { color: text }]}>{t('profile.personalInfo')}</Text>
         <View style={[ps.card, { backgroundColor: cardBg, borderColor: border }]}>
           {[
-            { icon: 'person-outline', label: t('profile.fields.name'), value: user.name },
-            { icon: 'people-outline', label: t('profile.fields.lastname'), value: user.lastname },
-            { icon: 'card-outline', label: t('profile.fields.documentType'), value: user.documentType },
-            { icon: 'document-text-outline', label: t('profile.fields.document'), value: user.document },
-            { icon: 'mail-outline', label: t('profile.fields.email'), value: user.email },
+            { icon: 'person-outline', label: t('profile.fields.name'), value: displayName },
+            { icon: 'people-outline', label: t('profile.fields.lastname'), value: displayLastName },
+            { icon: 'card-outline', label: t('profile.fields.documentType'), value: documentType },
+            { icon: 'document-text-outline', label: t('profile.fields.document'), value: document },
+            { icon: 'mail-outline', label: t('profile.fields.email'), value: email },
           ].map((row,i) => (
             <View key={i} style={[ps.infoRow, i<4&&{ borderBottomWidth:1,borderBottomColor:border }]}>
               <View style={{ flexDirection:'row',alignItems:'center',gap:8,flex:1 }}><Ionicons name={row.icon as any} size={16} color={muted} /><Text style={{ color: muted,fontSize:14 }}>{row.label}</Text></View>
