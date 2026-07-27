@@ -34,7 +34,9 @@ export default function ProgramDetailScreen() {
         ListHeaderComponent={
           <View>
             <TouchableOpacity onPress={() => router.back()} style={pds.backBtn}><Ionicons name="arrow-back" size={20} color={text} /><Text style={[pds.backText, { color: text }]}>{t('common.back')}</Text></TouchableOpacity>
-            <Text style={[pds.title, { color: text }]}>{getProgramDisplayName(program, t)}</Text>
+            <View style={pds.titleRow}>
+              <Text style={[pds.title, { color: text }]}>{getProgramDisplayName(program, t)}</Text>
+            </View>
             <View style={[pds.statusBadge, { backgroundColor: program.status === 'active' ? Colors.success + '20' : Colors.error + '20', alignSelf: 'flex-start', marginBottom: 8 }]}>
               <Text style={{ color: program.status === 'active' ? Colors.success : Colors.error, fontWeight: '700', fontSize: 13 }}>{t(`environments.statuses.${program.status}`)}</Text>
             </View>
@@ -71,9 +73,10 @@ const pds = StyleSheet.create({
   safe: { flex: 1 }, scroll: { padding: 16, paddingBottom: 40 },
   backBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 12 },
   backText: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
-  title: { fontSize: FontSize['3xl'], fontWeight: FontWeight.black, marginBottom: 8 },
+  title: { fontSize: FontSize['3xl'], fontWeight: FontWeight.black, marginBottom: 8, flexShrink: 1, flexWrap: 'wrap' },
+  titleRow: { width: '100%' },
   statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  headerActions: { flexDirection: 'row', gap: 8, marginTop: 12 },
+  headerActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 },
   actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1.5, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 },
   sectionTitle: { fontSize: FontSize.xl, fontWeight: FontWeight.black, marginBottom: 10 },
   card: { borderRadius: 14, borderWidth: 1, padding: 16, flexDirection: 'row', alignItems: 'center', marginBottom: 8 },

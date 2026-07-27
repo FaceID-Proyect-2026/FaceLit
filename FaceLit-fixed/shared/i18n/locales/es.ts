@@ -492,6 +492,8 @@ emailValidatedSuccess: {
       name:          'Nombre del Ambiente',
       namePlaceholder: 'Ej: 209, 209-1, Laboratorio A',
       nameInvalid:   'Formato inválido. Ej: 209, 209-1, Laboratorio A',
+      quantityRequired: 'La cantidad es obligatoria',
+      quantityMin:   'La cantidad mínima es {{min}} aprendices',
       type:          'Tipo',
       capacity:      'Capacidad',
       status:        'Estado',

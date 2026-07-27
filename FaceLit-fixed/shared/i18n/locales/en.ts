@@ -475,7 +475,7 @@ const en = {
     updateSuccess:   'Environment updated',
     registerSuccess: 'Environment registered',
     errors: { notFound: 'Environment not found' },
-    fields: { code: 'Name', name: 'Environment Name', namePlaceholder: 'E.g.: 209, 209-1, Laboratory A', nameInvalid: 'Invalid format. E.g.: 209, 209-1, Laboratory A', type: 'Type', capacity: 'Capacity', status: 'Status', location: 'Location', quantity: 'Quantity' },
+    fields: { code: 'Name', name: 'Environment Name', namePlaceholder: 'E.g.: 209, 209-1, Laboratory A', nameInvalid: 'Invalid format. E.g.: 209, 209-1, Laboratory A', type: 'Type', capacity: 'Capacity', status: 'Status', location: 'Location', quantity: 'Quantity', quantityRequired: 'Quantity is required', quantityMin: 'Minimum quantity is {{min}} learners' },
     types: { classroom: 'Classroom', laboratory: 'Laboratory', workshop: 'Workshop', auditorium: 'Auditorium', office: 'Office' },
     statuses: { active: 'Active', inactive: 'Inactive', maintenance: 'Maintenance' },
     filter: { label: 'Status', all: 'All', active: 'Active', inactive: 'Inactive' },

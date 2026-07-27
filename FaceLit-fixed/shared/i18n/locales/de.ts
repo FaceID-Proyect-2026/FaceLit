@@ -74,7 +74,7 @@ const de = {
     updateSuccess:   'Umgebung aktualisiert',
     registerSuccess: 'Umgebung registriert',
     errors: { notFound: 'Umgebung nicht gefunden' },
-    fields: { code: 'Name', name: 'Name der Umgebung', namePlaceholder: 'Z.B.: 209, 209-1, Labor A', nameInvalid: 'Ungültiges Format. Z.B.: 209, 209-1, Labor A', type: 'Typ', capacity: 'Kapazität', status: 'Status', location: 'Standort', quantity: 'Menge' },
+    fields: { code: 'Name', name: 'Name der Umgebung', namePlaceholder: 'Z.B.: 209, 209-1, Labor A', nameInvalid: 'Ungültiges Format. Z.B.: 209, 209-1, Labor A', type: 'Typ', capacity: 'Kapazität', status: 'Status', location: 'Standort', quantity: 'Menge', quantityRequired: 'Die Menge ist erforderlich', quantityMin: 'Die Mindestmenge beträgt {{min}} Lernende' },
     types: { classroom: 'Klassenzimmer', laboratory: 'Labor', workshop: 'Werkstatt', auditorium: 'Auditorium', office: 'Büro' },
     statuses: { active: 'Aktiv', inactive: 'Inaktiv', maintenance: 'Wartung' },
     filter: { label: 'Status', all: 'Alle', active: 'Aktiv', inactive: 'Inaktiv' },
