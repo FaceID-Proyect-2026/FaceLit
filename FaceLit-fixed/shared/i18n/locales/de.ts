@@ -96,9 +96,11 @@ const de = {
   },
   schedules: {
     title: 'Stundenplanverwaltung', register: 'Stundenplan registrieren', edit: 'Bearbeiten', delete: 'Löschen', empty: 'Keine Stundenpläne', detail: 'Details', exceptions: 'Ausnahmen', exceptionRegister: 'Ausnahme registrieren',
+    notFound: 'Stundenplan nicht gefunden', deleteConfirm: 'Diesen Stundenplan löschen? Diese Aktion kann nicht rückgängig gemacht werden.', registerSuccess: 'Stundenplan erfolgreich registriert', updateSuccess: 'Stundenplan erfolgreich aktualisiert', deleteSuccess: 'Stundenplan erfolgreich gelöscht',
+    searchPlaceholder: 'Suche nach Ficha, Umgebung oder Ausbilder', selectSchedule: 'Stundenplan auswählen', noSchedulesForException: 'Zuerst muss ein Stundenplan registriert werden', noExceptions: 'Keine Ausnahmen registriert', exceptionDeleteConfirm: 'Diese Ausnahme löschen?', exceptionRegisterSuccess: 'Ausnahme erfolgreich registriert', exceptionDeleteSuccess: 'Ausnahme erfolgreich gelöscht',
     fields: { ficha: 'Ficha', program: 'Programm', day: 'Tag', startTime: 'Beginn', endTime: 'Ende', environment: 'Umgebung', instructor: 'Ausbilder' },
     days: { monday: 'Montag', tuesday: 'Dienstag', wednesday: 'Mittwoch', thursday: 'Donnerstag', friday: 'Freitag', saturday: 'Samstag' },
-    conflicts: { envOccupied: 'Umgebung belegt', instructorBusy: 'Ausbilder belegt', noFicha: 'Ficha wählen', noInstructor: 'Ausbilder wählen', noEnv: 'Umgebung wählen' },
+    conflicts: { envOccupied: 'Umgebung belegt', instructorBusy: 'Ausbilder belegt', noFicha: 'Ficha wählen', noInstructor: 'Ausbilder wählen', noEnv: 'Umgebung wählen', invalidTime: 'Die Endzeit muss nach der Startzeit liegen' },
     exceptionTypes: { instructorChange: 'Ausbilderwechsel', envChange: 'Umgebungswechsel', cancel: 'Stornierung', reschedule: 'Neuplanung', other: 'Sonstiges' },
     exceptionFields: { type: 'Typ', date: 'Datum', reason: 'Grund', replacement: 'Ersatz', newEnv: 'Neue Umgebung' },
   },

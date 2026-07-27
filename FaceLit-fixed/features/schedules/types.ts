@@ -19,3 +19,17 @@ export const MOCK_SCHEDULES: Schedule[] = [
 export const MOCK_EXCEPTIONS: ScheduleException[] = [
   { id: 'e1', scheduleId: 's1', type: 'instructorChange', date: '2026-06-15', reason: 'Instructor incapacitado', replacementInstructor: 'Laura Torres' },
 ];
+
+// Días disponibles para horarios (usados por index/register/[id] — antes cada
+// pantalla tenía su propio diccionario hardcodeado en español, ignorando el
+// idioma activo; ahora se combina con `t('schedules.days.<día>')`).
+export const SCHEDULE_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
+
+// Franjas horarias seleccionables (cada 30 min, de 06:00 a 21:00), para que
+// el formulario de registro tenga un selector real en vez de un texto fijo.
+export const TIME_SLOTS: string[] = Array.from({ length: 31 }, (_, i) => {
+  const totalMinutes = 6 * 60 + i * 30;
+  const h = Math.floor(totalMinutes / 60).toString().padStart(2, '0');
+  const m = (totalMinutes % 60).toString().padStart(2, '0');
+  return `${h}:${m}`;
+});

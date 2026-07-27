@@ -497,9 +497,11 @@ const en = {
   },
   schedules: {
     title: 'Schedule Management', register: 'Register Schedule', edit: 'Edit Schedule', delete: 'Delete Schedule', empty: 'No schedules registered', detail: 'Schedule Detail', exceptions: 'Exceptions', exceptionRegister: 'Register Exception',
+    notFound: 'Schedule not found', deleteConfirm: 'Delete this schedule? This action cannot be undone.', registerSuccess: 'Schedule registered successfully', updateSuccess: 'Schedule updated successfully', deleteSuccess: 'Schedule deleted successfully',
+    searchPlaceholder: 'Search by ficha, environment or instructor', selectSchedule: 'Select the schedule', noSchedulesForException: 'You must register a schedule first', noExceptions: 'No exceptions registered', exceptionDeleteConfirm: 'Delete this exception?', exceptionRegisterSuccess: 'Exception registered successfully', exceptionDeleteSuccess: 'Exception deleted successfully',
     fields: { ficha: 'Training Ficha', program: 'Program', day: 'Day', startTime: 'Start Time', endTime: 'End Time', environment: 'Environment', instructor: 'Instructor' },
     days: { monday: 'Monday', tuesday: 'Tuesday', wednesday: 'Wednesday', thursday: 'Thursday', friday: 'Friday', saturday: 'Saturday' },
-    conflicts: { envOccupied: 'Environment occupied at this time', instructorBusy: 'Instructor assigned at another time', noFicha: 'Select a ficha', noInstructor: 'Select an instructor', noEnv: 'Select an environment' },
+    conflicts: { envOccupied: 'Environment occupied at this time', instructorBusy: 'Instructor assigned at another time', noFicha: 'Select a ficha', noInstructor: 'Select an instructor', noEnv: 'Select an environment', invalidTime: 'End time must be after start time' },
     exceptionTypes: { instructorChange: 'Instructor change', envChange: 'Environment change', cancel: 'Cancellation', reschedule: 'Reschedule', other: 'Other' },
     exceptionFields: { type: 'Exception Type', date: 'Date', reason: 'Reason', replacement: 'Replacement', newEnv: 'New Environment' },
   },
