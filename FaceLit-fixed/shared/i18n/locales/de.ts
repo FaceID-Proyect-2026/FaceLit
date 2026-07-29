@@ -156,7 +156,7 @@ const de = {
   profile: {
     title: 'Mein Profil', personalInfo: 'Persönliche Daten', accountInfo: 'Kontoinfo', settings: 'Einstellungen',
     fields: { name: 'Name', lastname: 'Nachname', documentType: 'Dokumenttyp', document: 'Dokumentnr.', email: 'E-Mail', role: 'Rolle', status: 'Status' },
-    settingsOptions: { language: 'Sprache', theme: 'Design', notifications: 'Benachrichtigungen', accessibility: 'Barrierefreiheit', changePassword: 'Passwort ändern' },
+    settingsOptions: { language: 'Sprache', theme: 'Design', notifications: 'Benachrichtigungen', accessibility: 'Barrierefreiheit', changePassword: 'Passwort ändern', saveChanges: 'Änderungen speichern', saved: 'Gespeichert'},
     logout: 'Abmelden', logoutConfirm: 'Wirklich abmelden?',
   },
 

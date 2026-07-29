@@ -782,6 +782,8 @@ const es = {
       notifications: 'Notificaciones',
       accessibility: 'Accesibilidad',
       changePassword: 'Cambiar Contraseña',
+      saveChanges: 'Guardar cambios',
+      saved: 'Guardado',
     },
     logout: 'Cerrar Sesión',
     logoutConfirm: '¿Estás seguro de cerrar sesión?',

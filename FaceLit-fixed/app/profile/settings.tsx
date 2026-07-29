@@ -9,7 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 
 const LANGUAGES = [
   { code: 'es', label: 'Español' },
@@ -20,8 +20,11 @@ const LANGUAGES = [
 
 export default function SettingsScreen() {
   const { theme, isDark } = useTheme();
-  const { t, i18n } = useTranslation();
-  const { notificationsActive, changeTheme, changeLanguage, changeNotifications } = useUserSettings();
+  const { t } = useTranslation();
+  const {
+    saving, saved, draft,
+    setDraftTheme, setDraftLanguage, setDraftNotifications, saveChanges,
+  } = useUserSettings();
 
   const [showLanguages, setShowLanguages] = useState(false);
 
@@ -31,7 +34,16 @@ export default function SettingsScreen() {
   const border = isDark ? 'rgba(101,179,97,0.18)' : 'rgba(101,179,97,0.20)';
   const bg = isDark ? Colors.dark.background : Colors.light.background;
 
-  const currentLangLabel = LANGUAGES.find(l => l.code === i18n.language)?.label ?? 'Español';
+  const currentLangLabel = LANGUAGES.find(l => l.code === draft.language)?.label ?? 'Español';
+
+  const handleSave = async () => {
+    const result = await saveChanges();
+    if (result.success) {
+      Alert.alert('✓', t('profile.settingsOptions.saved') ?? 'Cambios guardados');
+    } else {
+      Alert.alert(t('common.error'), result.error);
+    }
+  };
 
   return (
     <View style={[ss.safe, { backgroundColor: bg }]}>
@@ -63,17 +75,17 @@ export default function SettingsScreen() {
             {LANGUAGES.map(lang => (
               <TouchableOpacity
                 key={lang.code}
-                onPress={() => { changeLanguage(lang.code); setShowLanguages(false); }}
+                onPress={() => { setDraftLanguage(lang.code); setShowLanguages(false); }}
                 style={ss.langOption}
               >
                 <Text style={{
-                  color: i18n.language === lang.code ? theme.primary : text,
-                  fontWeight: i18n.language === lang.code ? '700' : '400',
+                  color: draft.language === lang.code ? theme.primary : text,
+                  fontWeight: draft.language === lang.code ? '700' : '400',
                   fontSize: 14,
                 }}>
                   {lang.label}
                 </Text>
-                {i18n.language === lang.code && (
+                {draft.language === lang.code && (
                   <Ionicons name="checkmark" size={16} color={theme.primary} />
                 )}
               </TouchableOpacity>
@@ -90,8 +102,8 @@ export default function SettingsScreen() {
             </Text>
           </View>
           <Switch
-            value={isDark}
-            onValueChange={changeTheme}
+            value={draft.darkMode}
+            onValueChange={setDraftTheme}
             trackColor={{ false: '#ccc', true: theme.primary }}
             thumbColor={Colors.white}
           />
@@ -106,14 +118,36 @@ export default function SettingsScreen() {
             </Text>
           </View>
           <Switch
-            value={notificationsActive}
-            onValueChange={changeNotifications}
+            value={draft.notificationsActive}
+            onValueChange={setDraftNotifications}
             trackColor={{ false: '#ccc', true: theme.primary }}
             thumbColor={Colors.white}
           />
         </View>
 
       </View>
+
+      {/* Botón Guardar cambios */}
+      <TouchableOpacity
+        onPress={handleSave}
+        disabled={saved || saving}
+        style={[
+          ss.saveBtn,
+          { backgroundColor: theme.primary, opacity: (saved || saving) ? 0.5 : 1 },
+        ]}
+        activeOpacity={0.85}
+      >
+        {saving ? (
+          <ActivityIndicator size="small" color={Colors.white} />
+        ) : (
+          <>
+            <Ionicons name="save-outline" size={18} color={Colors.white} />
+            <Text style={ss.saveBtnText}>
+              {saved ? (t('profile.settingsOptions.saved') ?? 'Guardado') : (t('profile.settingsOptions.saveChanges') ?? 'Guardar cambios')}
+            </Text>
+          </>
+        )}
+      </TouchableOpacity>
     </View>
   );
 }
@@ -126,4 +160,6 @@ const ss = StyleSheet.create({
   card: { borderRadius: 14, borderWidth: 1, padding: 8 },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, paddingHorizontal: 10 },
   langOption: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, paddingRight: 10 },
+  saveBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 14, paddingVertical: 14, marginTop: 20 },
+  saveBtnText: { color: '#FFFFFF', fontSize: FontSize.lg, fontWeight: FontWeight.bold },
 });
