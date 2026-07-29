@@ -38,5 +38,10 @@ export const getRegistrationStatus = async (document, email) => {
   return data;
 };
 
+export const getMyProfile = async () => {
+  const { data } = await api.get('/api/profile/me');
+  return data; // { idUser, firstName, lastName, documentType, documentNumber, email }
+};
+
 export const logout = () => removeToken();
 
