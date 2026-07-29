@@ -54,6 +54,14 @@ function validateHour(digits: string): boolean {
   return h >= 1 && h <= 12;
 }
 
+function validateMinutes(digits: string): boolean {
+  // digits = solo los dígitos de minutos ya escritos (0, 1 o 2 caracteres)
+  if (digits.length === 0) return true;
+  if (digits.length === 1) return true; // aún no hay suficiente info para descartar
+  const m = parseInt(digits, 10);
+  return m >= 0 && m <= 59;
+}
+
 export default function TimeInput({
   label, value, onChange, error, containerStyle,
 }: TimeInputProps) {
@@ -70,10 +78,17 @@ export default function TimeInput({
   }, [value]);
 
   const handleTextChange = (raw: string) => {
+    const rawDigits = raw.replace(/[^0-9]/g, '');
+    if (!DIGITS_ONLY.test(rawDigits)) return;
+
     const formatted = formatDisplay(raw);
     const digits = formatted.replace(/[^0-9]/g, '');
-    if (!DIGITS_ONLY.test(raw.replace(/[^0-9]/g, ''))) return;
+
+    // Hora: solo 1-12
     if (digits.length >= 3 && !validateHour(digits.slice(0, 2))) return;
+    // Minutos: solo 00-59
+    if (digits.length >= 3 && !validateMinutes(digits.slice(2, 4))) return;
+
     setDisplayTime(formatted);
     if (formatted.length === 0) {
       onChange('');
@@ -81,6 +96,8 @@ export default function TimeInput({
       const result = to24h(formatted, meridiem);
       if (result) onChange(result);
     }
+    // Entrada incompleta (1-4 dígitos): se mantiene solo en el estado local
+    // (displayTime) sin notificar al padre todavía, para no perder lo escrito.
   };
 
   const toggleMeridiem = () => {

@@ -174,7 +174,7 @@ export default function ScheduleRegisterScreen() {
           options={fichaOptions}
           onSelect={v => { setFicha(v); setErrors(p => ({ ...p, ficha: '' })); }}
           error={errors.ficha}
-          placeholder="Seleccionar ficha"
+          placeholder={t('schedules.placeholders.ficha')}
         />
 
         <SelectField
@@ -183,7 +183,7 @@ export default function ScheduleRegisterScreen() {
           options={dayOptions}
           onSelect={v => { setDay(v); setErrors(p => ({ ...p, day: '' })); }}
           error={errors.day}
-          placeholder="Seleccionar día"
+          placeholder={t('schedules.placeholders.day')}
         />
 
         <View style={srs.row}>
@@ -218,7 +218,7 @@ export default function ScheduleRegisterScreen() {
           options={instructorOptions}
           onSelect={v => { setInst(v); setErrors(p => ({ ...p, inst: '' })); }}
           error={errors.inst}
-          placeholder="Seleccionar instructor"
+          placeholder={t('schedules.placeholders.instructor')}
         />
 
         <TouchableOpacity onPress={handleSave} style={[srs.saveBtn, { backgroundColor: theme.primary }]} activeOpacity={0.85}>

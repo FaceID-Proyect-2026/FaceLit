@@ -640,6 +640,11 @@ emailValidatedSuccess: {
       environment:   'Ambiente',
       instructor:    'Instructor',
     },
+    placeholders: {
+      ficha:       'Seleccionar ficha',
+      day:         'Seleccionar día',
+      instructor:  'Seleccionar instructor',
+    },
     days: {
       monday:        'Lunes',
       tuesday:       'Martes',

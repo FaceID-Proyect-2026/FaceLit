@@ -13,6 +13,14 @@ interface SelectOption {
   label: string;
 }
 
+// Mismo stack tipográfico que usa react-native-web internamente para los
+// componentes <Text> del resto de la app (labels, inputs, etc.). Los
+// elementos HTML crudos (button/div) NO heredan esta fuente por defecto
+// (los navegadores aplican su propia fuente UA a <button>), así que hay
+// que fijarla explícitamente para que coincida con el resto de la pantalla.
+const WEB_FONT_STACK =
+  "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+
 interface SelectFieldProps {
   label: string;
   value: string;
@@ -32,9 +40,13 @@ function SelectFieldWeb({
   const selected = options.find(o => o.value === value);
 
   return (
-    <View style={[{ marginBottom: 14 }, containerStyle]}>
+    // El contenedor sube su z-index SOLO mientras está abierto. Así, cuando
+    // hay varios SelectField apilados en el mismo formulario (Ficha, Día,
+    // Instructor...), el desplegable abierto siempre queda por encima de los
+    // campos que le siguen, y los demás no lo tapan al estar cerrados.
+    <View style={[{ marginBottom: 14, zIndex: open ? 20000 : 1 }, containerStyle]}>
       <Text style={[s.label, { color: theme.text }]}>{label}</Text>
-      <div style={{ position: 'relative', zIndex: 9999 }}>
+      <div style={{ position: 'relative', zIndex: open ? 20000 : 1 }}>
         <button
           type="button"
           onClick={() => setOpen(v => !v)}
@@ -49,12 +61,15 @@ function SelectFieldWeb({
             borderRadius: 12,
             padding: '0 14px',
             cursor: 'pointer',
+            fontFamily: WEB_FONT_STACK,
             fontSize: FontSize.lg,
             color: selected ? theme.inputText : theme.inputPlaceholder,
             outline: 'none',
           }}
         >
-          <span>{selected ? selected.label : placeholder || 'Seleccionar'}</span>
+          <span style={{ fontFamily: WEB_FONT_STACK }}>
+            {selected ? selected.label : placeholder || 'Seleccionar'}
+          </span>
           <Ionicons name="chevron-down" size={16} color={theme.textMuted} />
         </button>
         {open && (
@@ -67,7 +82,7 @@ function SelectFieldWeb({
               background: theme.card,
               border: `1px solid ${theme.border}`,
               borderRadius: 12,
-              zIndex: 99999,
+              zIndex: 20000,
               boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
               maxHeight: 260,
               overflowY: 'auto',
@@ -86,9 +101,10 @@ function SelectFieldWeb({
                     padding: '12px 16px',
                     cursor: 'pointer',
                     background: isActive ? theme.primaryFaint : 'transparent',
+                    fontFamily: WEB_FONT_STACK,
                     fontWeight: isActive ? 700 : 400,
                     color: isActive ? theme.primary : theme.text,
-                    fontSize: 14,
+                    fontSize: FontSize.base,
                   }}
                   onMouseEnter={(e: any) => {
                     if (!isActive) e.currentTarget.style.background = theme.primaryFaint;
