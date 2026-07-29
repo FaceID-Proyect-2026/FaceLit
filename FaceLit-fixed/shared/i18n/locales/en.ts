@@ -400,6 +400,8 @@ const en = {
     captureSuccess:  'Great capture! The face is clearly visible.',
     retake: 'Retake photo',
     finish: 'Finish registration',
+    successTitle: 'Facial registration completed',
+    successMessage: 'Face registered successfully.',
   },
 
   //Email Validation
@@ -514,6 +516,7 @@ const en = {
     stats: { registered: 'Registered users', pending: 'Pending', verified: 'Verified today' },
     instructions: { title: 'Instructions', step1: 'Stand in front of the camera', step2: 'Ensure good lighting', step3: 'Look directly at the camera', step4: 'Avoid dark glasses or hats' },
     capture: { btn: 'Capture Face', retake: 'Retake', success: 'Face registered successfully', error: 'Capture error' },
+    users: 'Users', noDate: 'No date', empty: 'No users in this category', filters: { registered: 'Registered', pending: 'Pending' }, roles: { administrador: 'Administrator', instructor: 'Instructor', aprendiz: 'Apprentice' }, statuses: { registered: 'Registered', pending: 'Pending', failed: 'Failed' }, validation: { noFace: 'No face was detected.', userNotFound: 'The user does not exist.', invalidRole: 'The user does not have a valid role.', trainingFailed: 'Model training failed.', alreadyRegistered: 'The user already has a registered face.' },
   },
   attendance: {
     title: 'Attendance Control', empty: 'No attendance records', detail: 'Attendance Detail',

@@ -61,7 +61,7 @@ const MOCK_USERS: Record<string, { user: User; password: string }> = {
   'aprendiz@facelit.com': {
     password: 'Apre1234!',
     user: {
-      id: '3',
+      id: 'l1',
       name: 'Juan',
       lastname: 'Pérez',
       email: 'aprendiz@facelit.com',
@@ -72,6 +72,12 @@ const MOCK_USERS: Record<string, { user: User; password: string }> = {
     },
   },
 };
+
+// Directorio de usuarios del sistema disponible para los módulos que deben
+// resolver un rol sin duplicar información de identidad.
+export function getSystemUsers(): User[] {
+  return Object.values(MOCK_USERS).map(entry => entry.user);
+}
 
 // ── Contexto ──────────────────────────────────
 const AuthContext = createContext<AuthContextType>({
