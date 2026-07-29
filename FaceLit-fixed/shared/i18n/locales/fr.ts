@@ -65,7 +65,7 @@ const fr = {
     searchPlaceholder: 'Rechercher par ficha, environnement ou formateur', selectSchedule: "Sélectionner l'horaire", noSchedulesForException: "Vous devez d'abord enregistrer un horaire", noExceptions: 'Aucune exception enregistrée', exceptionDeleteConfirm: 'Supprimer cette exception ?', exceptionRegisterSuccess: 'Exception enregistrée avec succès', exceptionDeleteSuccess: 'Exception supprimée avec succès',
     fields: { ficha: 'Ficha', program: 'Programme', day: 'Jour', startTime: 'Début', endTime: 'Fin', environment: 'Environnement', instructor: 'Formateur' },
     days: { monday: 'Lundi', tuesday: 'Mardi', wednesday: 'Mercredi', thursday: 'Jeudi', friday: 'Vendredi', saturday: 'Samedi' },
-    conflicts: { envOccupied: 'Environnement occupé', instructorBusy: 'Formateur occupé', noFicha: 'Sélectionner ficha', noInstructor: 'Sélectionner formateur', noEnv: 'Sélectionner environnement', invalidTime: 'L\'heure de fin doit être postérieure à celle de début' },
+    conflicts: { envOccupied: 'Environnement occupé', instructorBusy: 'Formateur occupé', noFicha: 'Sélectionner ficha', noInstructor: 'Sélectionner formateur', noEnv: 'Sélectionner environnement', invalidTime: 'L\'heure de fin doit être postérieure à celle de début', invalidFormat: 'Format invalide (HH:MM)', envNotFound: 'Environnement introuvable' },
     exceptionTypes: { instructorChange: 'Changement formateur', envChange: 'Changement environnement', cancel: 'Annulation', reschedule: 'Report', other: 'Autre' },
     exceptionFields: { type: 'Type', date: 'Date', reason: 'Motif', replacement: 'Remplaçant', newEnv: 'Nouvel environnement' },
   },
