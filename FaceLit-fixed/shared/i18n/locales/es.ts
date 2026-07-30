@@ -777,6 +777,7 @@ const es = {
       status: 'Estado',
     },
     settingsOptions: {
+      preferences: 'Preferencias',
       language: 'Idioma',
       theme: 'Tema',
       notifications: 'Notificaciones',
@@ -784,6 +785,7 @@ const es = {
       changePassword: 'Cambiar Contraseña',
       saveChanges: 'Guardar cambios',
       saved: 'Guardado',
+      subtitle: 'Configura tu cuenta y preferencias',
     },
     logout: 'Cerrar Sesión',
     logoutConfirm: '¿Estás seguro de cerrar sesión?',

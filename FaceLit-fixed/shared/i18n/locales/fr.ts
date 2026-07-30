@@ -123,7 +123,7 @@ const fr = {
   profile: {
     title: 'Mon Profil', personalInfo: 'Infos Personnelles', accountInfo: 'Infos Compte', settings: 'Paramètres',
     fields: { name: 'Nom', lastname: 'Prénom', documentType: 'Type Document', document: 'N° Document', email: 'Email', role: 'Rôle', status: 'Statut' },
-    settingsOptions: { language: 'Langue', theme: 'Thème', notifications: 'Notifications', accessibility: 'Accessibilité', changePassword: 'Changer mot de passe', saveChanges: 'Enregistrer les modifications', saved: 'Enregistré' },
+    settingsOptions: { preferences: 'Préférences', subtitle: 'Gérez votre compte et vos préférences', language: 'Langue', theme: 'Thème', notifications: 'Notifications', accessibility: 'Accessibilité', changePassword: 'Changer mot de passe', saveChanges: 'Enregistrer les modifications', saved: 'Enregistré' },
     logout: 'Déconnexion', logoutConfirm: 'Voulez-vous vous déconnecter ?',
   },
 

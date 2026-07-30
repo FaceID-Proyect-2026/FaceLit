@@ -550,7 +550,7 @@ const en = {
   profile: {
     title: 'My Profile', personalInfo: 'Personal Information', accountInfo: 'Account Information', settings: 'Settings',
     fields: { name: 'Name', lastname: 'Last Name', documentType: 'Document Type', document: 'Document Number', email: 'Email', role: 'Role', status: 'Status' },
-    settingsOptions: { language: 'Language', theme: 'Theme', notifications: 'Notifications', accessibility: 'Accessibility', changePassword: 'Change Password', saveChanges: 'Save changes', saved: 'Saved'},
+    settingsOptions: { preferences: 'Preferences', language: 'Language', subtitle: 'Manage your account and preferences', theme: 'Theme', notifications: 'Notifications', accessibility: 'Accessibility', changePassword: 'Change Password', saveChanges: 'Save changes', saved: 'Saved'},
     logout: 'Log out', logoutConfirm: 'Are you sure you want to log out?',
   },
 
