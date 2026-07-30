@@ -7,7 +7,7 @@ import { FacialRole, FacialUser, VALID_FACIAL_ROLES } from '@/features/facial/ty
 import { getSystemUsers } from '@/shared/contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 type Filter = 'registered' | 'pending';
 
@@ -21,6 +21,7 @@ export default function FacialManagementScreen() {
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
   const cardBg = isDark ? '#0D1F14' : Colors.white;
   const border = isDark ? 'rgba(101,179,97,0.18)' : 'rgba(101,179,97,0.20)';
+  const inputBg = isDark ? 'rgba(255,255,255,0.05)' : '#FAFAFA';
   const bg = isDark ? Colors.dark.background : Colors.light.background;
 
   const users = useMemo(() => {
@@ -39,7 +40,11 @@ export default function FacialManagementScreen() {
   const listedUsers = users.filter(user => filter === 'registered' ? recordByUserId.has(user.id) : !recordByUserId.has(user.id));
   const stats = { registered: recordByUserId.size, pending: users.filter(user => !recordByUserId.has(user.id)).length, verified: 12 };
 
-  return <View style={[fms.safe, { backgroundColor: bg }]}>
+  return <ScrollView
+    style={[fms.safe, { backgroundColor: bg }]}
+    contentContainerStyle={fms.scrollContent}
+    showsVerticalScrollIndicator={false}
+  >
     <Text style={[fms.title, { color: text }]}>{t('facial.management')}</Text>
     <View style={fms.statsRow}>
       {[{ label: t('facial.stats.registered'), value: stats.registered, color: Colors.success }, { label: t('facial.stats.pending'), value: stats.pending, color: Colors.warning }, { label: t('facial.stats.verified'), value: stats.verified, color: Colors.info }].map(stat => <View key={stat.label} style={[fms.statCard, { backgroundColor: cardBg, borderColor: border }]}><Text style={[fms.statValue, { color: stat.color }]}>{stat.value}</Text><Text style={[fms.statLabel, { color: muted }]}>{stat.label}</Text></View>)}
@@ -50,21 +55,47 @@ export default function FacialManagementScreen() {
     </View>
     <Text style={[fms.sectionTitle, { color: text }]}>{t('facial.users')}</Text>
     <View style={fms.filterRow}>
-      {(['registered', 'pending'] as const).map(status => <TouchableOpacity key={status} onPress={() => setFilter(status)} style={[fms.filterButton, { borderColor: filter === status ? theme.primary : border, backgroundColor: filter === status ? theme.primary : cardBg }]}><Text style={{ color: filter === status ? Colors.white : text, fontWeight: '700' }}>{t(`facial.filters.${status}`)}</Text></TouchableOpacity>)}
+      {(['registered', 'pending'] as const).map(status => (
+        <TouchableOpacity
+          key={status}
+          onPress={() => setFilter(status)}
+          style={[
+            fms.filterChip,
+            {
+              backgroundColor: filter === status ? theme.primary + '20' : inputBg,
+              borderColor: filter === status ? theme.primary : border,
+            },
+          ]}
+          activeOpacity={0.7}
+        >
+          <Text style={[fms.filterChipText, { color: filter === status ? theme.primary : muted }]}>
+            {t(`facial.filters.${status}`)}
+          </Text>
+        </TouchableOpacity>
+      ))}
     </View>
-    <FlatList data={listedUsers} keyExtractor={item => item.id} contentContainerStyle={fms.list} ListEmptyComponent={<View style={fms.empty}><Text style={{ color: muted }}>{t('facial.empty')}</Text></View>} renderItem={({ item }) => {
-      const record = recordByUserId.get(item.id);
-      const status: Filter = record ? 'registered' : 'pending';
-      const statusColor = status === 'registered' ? Colors.success : Colors.warning;
-      return <View style={[fms.recordCard, { backgroundColor: cardBg, borderColor: border }]}><View style={fms.recordRow}><View style={[fms.avatar, { backgroundColor: theme.primary + '20' }]}><Ionicons name="person" size={20} color={theme.primary} /></View><View style={fms.userInfo}><Text numberOfLines={1} style={[fms.userName, { color: text }]}>{item.name}</Text><Text style={{ color: muted, fontSize: 12 }}>{t(`facial.roles.${item.role}`)}</Text><Text style={{ color: muted, fontSize: 12 }}>{record?.date ?? t('facial.noDate')}</Text></View><View style={[fms.statusBadge, { backgroundColor: statusColor + '20' }]}><Text style={{ color: statusColor, fontWeight: '700', fontSize: 12 }}>{t(`facial.statuses.${status}`)}</Text></View></View></View>;
-    }} />
-  </View>;
+    <View style={fms.list}>
+      {listedUsers.length === 0 ? (
+        <View style={fms.empty}><Text style={{ color: muted }}>{t('facial.empty')}</Text></View>
+      ) : (
+        listedUsers.map(item => {
+          const record = recordByUserId.get(item.id);
+          const status: Filter = record ? 'registered' : 'pending';
+          const statusColor = status === 'registered' ? Colors.success : Colors.warning;
+          return <View key={item.id} style={[fms.recordCard, { backgroundColor: cardBg, borderColor: border }]}><View style={fms.recordRow}><View style={[fms.avatar, { backgroundColor: theme.primary + '20' }]}><Ionicons name="person" size={20} color={theme.primary} /></View><View style={fms.userInfo}><Text numberOfLines={1} style={[fms.userName, { color: text }]}>{item.name}</Text><Text style={{ color: muted, fontSize: 12 }}>{t(`facial.roles.${item.role}`)}</Text><Text style={{ color: muted, fontSize: 12 }}>{record?.date ?? t('facial.noDate')}</Text></View><View style={[fms.statusBadge, { backgroundColor: statusColor + '20' }]}><Text style={{ color: statusColor, fontWeight: '700', fontSize: 12 }}>{t(`facial.statuses.${status}`)}</Text></View></View></View>;
+        })
+      )}
+    </View>
+  </ScrollView>;
 }
 
 const fms = StyleSheet.create({
-  safe: { flex: 1, paddingHorizontal: 16, paddingTop: 16 }, title: { fontSize: FontSize['2xl'], fontWeight: FontWeight.black, marginBottom: 14 },
+  safe: { flex: 1 }, scrollContent: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 24 },
+  title: { fontSize: FontSize['2xl'], fontWeight: FontWeight.black, marginBottom: 14 },
   statsRow: { flexDirection: 'row', gap: 8, marginBottom: 16 }, statCard: { flex: 1, minWidth: 0, borderRadius: 14, borderWidth: 1, padding: 10, alignItems: 'center' }, statValue: { fontSize: FontSize['3xl'], fontWeight: FontWeight.black }, statLabel: { fontSize: FontSize.xs, marginTop: 4, textAlign: 'center' },
   sectionTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.black, marginBottom: 10 }, instrCard: { borderRadius: 14, borderWidth: 1, padding: 14, marginBottom: 16 }, instruction: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4 }, instructionText: { flex: 1, fontSize: 14 },
-  filterRow: { flexDirection: 'row', gap: 10, marginBottom: 6 }, filterButton: { flex: 1, minHeight: 44, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10 },
+  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
+  filterChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, borderWidth: 1.2 },
+  filterChipText: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
   list: { gap: 10, paddingBottom: 24 }, recordCard: { borderRadius: 12, borderWidth: 1, padding: 14 }, recordRow: { flexDirection: 'row', alignItems: 'center', gap: 12 }, avatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' }, userInfo: { flex: 1, minWidth: 0 }, userName: { fontSize: FontSize.base, fontWeight: FontWeight.bold }, statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 }, empty: { alignItems: 'center', paddingVertical: 48 },
 });
