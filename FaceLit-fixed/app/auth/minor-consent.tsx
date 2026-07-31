@@ -10,16 +10,17 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {Dimensions, KeyboardAvoidingView, Linking, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View} from 'react-native';  
+import {KeyboardAvoidingView, Linking, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const { width } = Dimensions.get('window');
 const CARD_MAX  = 900;
 
 export default function MinorConsentScreen() {
   const { t }             = useTranslation();
   const { theme, isDark } = useTheme();
   const { minorEmail }    = useLocalSearchParams<{ minorEmail?: string }>();
+  const { width }         = useWindowDimensions();
+  const isWide            = width >= 700;
 
   // ── Toda la lógica de negocio viene del hook ──
   const {
@@ -45,8 +46,6 @@ export default function MinorConsentScreen() {
   const legalBorder     = '#C8824A';
   const checkCardBg     = isDark ? 'rgba(255,255,255,0.04)' : '#F3F8F3';
   const checkCardBorder = isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.07)';
-
-  const isWide = width >= 700;
 
   // ── Bloques JSX (solo vista) ───────────────────
   const fieldName = (
@@ -170,7 +169,7 @@ export default function MinorConsentScreen() {
       <SafeAreaView style={s.safe}>
         <KeyboardAvoidingView style={s.kav} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
           <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-            <View style={[s.card, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+            <View style={[s.card, isWide && s.cardWide, { backgroundColor: cardBg, borderColor: cardBorder }]}>
 
               {/* ── Cabecera ── */}
               <View style={s.iconWrap}>
@@ -311,9 +310,10 @@ const s = StyleSheet.create({
     maxWidth: CARD_MAX,
     borderRadius: 26,
     borderWidth: 1,
-    paddingHorizontal: 28,
+    paddingHorizontal: 18,
     paddingVertical: 30,
   },
+  cardWide: { paddingHorizontal: 28 },
 
   iconWrap:   { alignItems: 'center', marginBottom: 16 },
   iconCircle: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', shadowColor: '#F57C00', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 6 },
@@ -325,32 +325,32 @@ const s = StyleSheet.create({
   legalText: { fontSize: 13, lineHeight: 20, textAlign: 'center' },
 
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 20, marginBottom: 12, paddingBottom: 8, borderBottomWidth: 1 },
-  sectionTitle:  { fontSize: 11, fontWeight: '800', letterSpacing: 0.8, textTransform: 'uppercase' },
+  sectionTitle:  { fontSize: 11, fontWeight: '800', letterSpacing: 0.8, textTransform: 'uppercase', flex: 1, flexShrink: 1 },
 
   row: { flexDirection: 'row', gap: 16 },
   col: { flex: 1 },
 
   fieldGroup: { marginBottom: 12 },
   label:      { fontSize: 13, fontWeight: '700', marginBottom: 6 },
-  inputWrap:  { height: 48, borderWidth: 1.2, borderRadius: 12, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  inputWrap:  { minHeight: 48, borderWidth: 1.2, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 10 },
   input:      { flex: 1, fontSize: 15, outlineStyle: 'none' } as any,
   errorText:  { color: '#D92027', fontSize: 11, marginTop: 3 },
   docCounter: { fontSize: 12, fontWeight: '700', minWidth: 32, textAlign: 'right' },
 
   infoBox:  { flexDirection: 'row', alignItems: 'center', gap: 6, padding: 10, borderRadius: 8, borderWidth: 1, marginBottom: 8 },
-  infoText: { fontSize: 12, flex: 1, lineHeight: 17 },
+  infoText: { fontSize: 12, flex: 1, flexShrink: 1, lineHeight: 17, wordBreak: 'break-word' } as any,
 
-  validateBtn:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 44, borderRadius: 10, borderWidth: 1.2, marginBottom: 4, paddingHorizontal: 12 },
-  validateBtnText: { fontSize: 13, fontWeight: '700', textAlign: 'center' },
+  validateBtn:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 44, borderRadius: 10, borderWidth: 1.2, marginBottom: 4, paddingHorizontal: 12, paddingVertical: 10 },
+  validateBtnText: { fontSize: 13, fontWeight: '700', textAlign: 'center', flexShrink: 1 },
 
   consentCard:  { borderRadius: 14, borderWidth: 1, padding: 16, marginTop: 6, marginBottom: 4 },
   checkRow:     { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   checkbox:     { width: 20, height: 20, borderWidth: 1.5, borderRadius: 4, alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 },
   checkLabel:   { flex: 1, fontSize: 13, lineHeight: 20 },
   moreInfoBtn:  { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 14, paddingTop: 12, borderTopWidth: 1 },
-  moreInfoText: { fontSize: 12, fontWeight: '600' },
+  moreInfoText: { fontSize: 12, fontWeight: '600', flex: 1, flexShrink: 1 },
 
-  actionsRow:    { flexDirection: 'row', gap: 250, marginTop: 24, marginBottom: 8 },
+  actionsRow:    { flexDirection: 'row', justifyContent: 'space-between', gap: 16, marginTop: 24, marginBottom: 8 },
   actionsCol:    { flexDirection: 'column', alignItems: 'center', marginTop: 24, marginBottom: 8 },
   actionBtnWide: { flex: 1, maxWidth: undefined, alignSelf: undefined, width: undefined },
 

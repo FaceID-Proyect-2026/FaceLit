@@ -6,7 +6,7 @@ import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useEnvironments } from '@/features/environments/useEnvironments';
-import { ENVIRONMENT_NAME_REGEX, EnvironmentStatus } from '@/features/environments/types';
+import { ENVIRONMENT_NAME_REGEX, EnvironmentStatus, MIN_ENVIRONMENT_QUANTITY } from '@/features/environments/types';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -41,13 +41,21 @@ export default function EnvironmentRegisterScreen() {
     const value = form.code.trim();
     if (!value) e.code = 'Requerido';
     else if (!ENVIRONMENT_NAME_REGEX.test(value)) e.code = 'Formato inválido. Ej: 209, 209-1, Laboratorio A';
+
+    const quantityTrimmed = quantity.trim();
+    if (!quantityTrimmed) {
+      e.quantity = t('environments.fields.quantityRequired');
+    } else if (Number(quantityTrimmed) < MIN_ENVIRONMENT_QUANTITY) {
+      e.quantity = t('environments.fields.quantityMin', { min: MIN_ENVIRONMENT_QUANTITY });
+    }
+
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
   const handleSave = () => {
     if (!validate()) return;
-    const quantityValue = quantity.trim() ? Number(quantity) : 0;
+    const quantityValue = Number(quantity.trim());
     if (isEditing) {
       update(id!, { ...form, status, quantity: quantityValue });
       alert('✓', 'Ambiente actualizado', [
@@ -87,9 +95,10 @@ export default function EnvironmentRegisterScreen() {
 
         {/* Cantidad */}
         <Text style={[ers.label, { color: text, marginTop: 16 }]}>{t('environments.fields.quantity')}</Text>
-        <TextInput style={[ers.input, { backgroundColor: inputBg, borderColor: inputBorder, color: text }] as any}
-          value={quantity} onChangeText={v => setQuantity(v.replace(/\D/g, ''))}
+        <TextInput style={[ers.input, { backgroundColor: inputBg, borderColor: errors.quantity ? Colors.error : inputBorder, color: text }] as any}
+          value={quantity} onChangeText={v => { setQuantity(v.replace(/\D/g, '')); setErrors(p => ({ ...p, quantity: '' })); }}
           placeholder="0" placeholderTextColor={isDark ? '#5A7258' : '#AAAAAA'} keyboardType="numeric" />
+        {errors.quantity ? <Text style={ers.error}>{errors.quantity}</Text> : null}
 
         {/* Estado */}
         <Text style={[ers.label, { color: text, marginTop: 16 }]}>{t('environments.fields.status')}</Text>

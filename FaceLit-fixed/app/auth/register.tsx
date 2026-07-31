@@ -14,18 +14,18 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {Dimensions, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View} from 'react-native';
+import {KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // ── Constantes de layout (solo presentación) ───
-const { width } = Dimensions.get('window');
 const CARD_MAX = 960;
-const isWide = width >= 768;
 
 export default function RegisterScreen() {
   const { t }              = useTranslation();
   const { theme, isDark }  = useTheme();
   const { validatedEmail } = useLocalSearchParams<{ validatedEmail?: string }>();
+  const { width }          = useWindowDimensions();
+  const isWide             = width >= 768;
 
   // ── Toda la lógica de negocio viene del hook ──
   const {
@@ -367,7 +367,7 @@ export default function RegisterScreen() {
       <SafeAreaView style={s.safe}>
         <KeyboardAvoidingView style={s.kav} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
           <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-            <View style={[s.card, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+            <View style={[s.card, isWide && s.cardWide, { backgroundColor: cardBg, borderColor: cardBorder }]}>
 
               <Text style={[s.title, { color: text }]}>{t('register.title')}</Text>
               <Text style={[s.subtitle, { color: muted }]}>{t('register.subtitle')}</Text>
@@ -537,7 +537,8 @@ const s = StyleSheet.create({
   arcTop:    { position: 'absolute', width: 300, height: 420, right: -120, top: -90,    borderRadius: 200, backgroundColor: 'rgba(20,70,28,0.18)' },
   arcBottom: { position: 'absolute', width: 420, height: 220, left: -120,  bottom: -30, borderRadius: 180, backgroundColor: 'rgba(101,179,97,0.28)' },
   scroll:    { flexGrow: 1, alignItems: 'center', paddingVertical: 28, paddingHorizontal: 16 },
-  card:      { width: '100%', maxWidth: CARD_MAX, borderRadius: 26, borderWidth: 1, paddingHorizontal: isWide ? 40 : 24, paddingVertical: 30 },
+  card:      { width: '100%', maxWidth: CARD_MAX, borderRadius: 26, borderWidth: 1, paddingHorizontal: 24, paddingVertical: 30 },
+  cardWide:  { paddingHorizontal: 40 },
   title:    { fontSize: 26, fontWeight: '900', textAlign: 'center', marginBottom: 4 },
   subtitle: { fontSize: 13, textAlign: 'center', lineHeight: 20, marginBottom: 8 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 20, marginBottom: 12, paddingBottom: 8, borderBottomWidth: 1 },
@@ -546,7 +547,7 @@ const s = StyleSheet.create({
   col: { flex: 1 },
   fieldGroup: { marginBottom: 12 },
   label:      { fontSize: 13, fontWeight: '700', marginBottom: 6 },
-  inputWrap:  { height: 48, borderWidth: 1.2, borderRadius: 12, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  inputWrap:  { minHeight: 48, borderWidth: 1.2, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 10 },
   input:      { flex: 1, fontSize: 15, outlineStyle: 'none' } as any,
   errorText:  { color: '#D92027', fontSize: 11, marginTop: 3 },
   hintText:   { fontSize: 11, marginTop: 3, fontWeight: '600' },

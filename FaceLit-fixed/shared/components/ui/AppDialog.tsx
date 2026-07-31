@@ -78,7 +78,7 @@ const ad = StyleSheet.create({
   title: { fontSize: FontSize.lg, fontWeight: FontWeight.black, textAlign: 'center', paddingHorizontal: 20 },
   message: { fontSize: FontSize.md, textAlign: 'center', marginTop: 8, paddingHorizontal: 20, lineHeight: 20 },
   buttonsRow: { flexDirection: 'row', marginTop: 20, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(101,179,97,0.20)' },
-  button: { flex: 1, paddingVertical: 14, alignItems: 'center', justifyContent: 'center', borderRightWidth: StyleSheet.hairlineWidth },
+  button: { flex: 1, paddingVertical: 14, paddingHorizontal: 8, alignItems: 'center', justifyContent: 'center', borderRightWidth: StyleSheet.hairlineWidth },
   buttonLast: { borderRightWidth: 0 },
-  buttonText: { fontSize: FontSize.md, fontWeight: FontWeight.bold },
+  buttonText: { fontSize: FontSize.md, fontWeight: FontWeight.bold, textAlign: 'center' },
 });

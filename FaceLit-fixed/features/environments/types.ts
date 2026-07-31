@@ -23,6 +23,9 @@ export interface EnvironmentForm {
 // Ej: "209", "209-1", "Laboratorio A", "Sala 2"
 export const ENVIRONMENT_NAME_REGEX = /^[\p{L}0-9][\p{L}0-9\s-]*$/u;
 
+// Cantidad mínima de aprendices permitida al registrar un ambiente (RN-19).
+export const MIN_ENVIRONMENT_QUANTITY = 50;
+
 export const MOCK_ENVIRONMENTS: Environment[] = [
   { id: '1', code: '101-1', status: 'active', quantity: 25, assignedFichas: ['3145555'] },
   { id: '2', code: '102-1', status: 'active', quantity: 20, assignedFichas: [] },
