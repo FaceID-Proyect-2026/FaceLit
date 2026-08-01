@@ -244,11 +244,11 @@ export default function TeenagerRegistrationScreen() {
             </View>
 
             <Text style={[ms.title, { color: text }]}>
-              {t('registrationSuccess.title')}
+              {t('facialReg.successTitle')}
             </Text>
 
             <Text style={[ms.subtitle, { color: muted }]}>
-              {t('registrationSuccess.subtitle')}
+              {t('facialReg.successMessage')}
             </Text>
 
             <View style={[

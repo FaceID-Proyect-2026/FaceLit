@@ -410,6 +410,8 @@ facialReg: {
     captureSuccess:  '¡Buena captura! El rostro se ve claro.',
     retake: 'Volver a tomar',
     finish: 'Finalizar registro',
+    successTitle: 'Registro facial completado',
+    successMessage: 'Rostro registrado correctamente.',
   },
 
 //Email Validation
@@ -698,6 +700,11 @@ emailValidatedSuccess: {
       success:       'Rostro registrado correctamente',
       error:         'Error en la captura',
     },
+    users: 'Usuarios', noDate: 'Sin fecha', empty: 'No hay usuarios en esta categoría',
+    filters: { registered: 'Registrados', pending: 'Pendientes' },
+    roles: { administrador: 'Administrador', instructor: 'Instructor', aprendiz: 'Aprendiz' },
+    statuses: { registered: 'Registrado', pending: 'Pendiente', failed: 'Fallido' },
+    validation: { noFace: 'No se detectó un rostro.', userNotFound: 'El usuario no existe.', invalidRole: 'El usuario no tiene un rol válido.', trainingFailed: 'Falló el entrenamiento del modelo.', alreadyRegistered: 'El usuario ya cuenta con un rostro registrado.' },
   },
   attendance: {
     title:           'Control de Asistencia',

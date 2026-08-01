@@ -14,6 +14,8 @@ import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
 import { Platform } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import { useAuth } from '@/shared/contexts/AuthContext';
+import { registerFacialCapture } from '@/features/facial/facialStore';
 
 export type ScreenState = 'idle' | 'requesting' | 'positioning' | 'ready' | 'captured';
 export type CaptureQuality = 'checking' | 'good' | 'lowLight';
@@ -39,6 +41,7 @@ export function getAverageBrightness(canvas: HTMLCanvasElement): number {
 
 export function useFacialRegistration() {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [permission, requestPermission] = useCameraPermissions();
 
   const [screenState, setScreenState]                 = useState<ScreenState>('idle');
@@ -140,9 +143,18 @@ export function useFacialRegistration() {
 
   // ── Finalizar ──────────────────────────────────
   const handleFinish = useCallback(() => {
-    if (screenState !== 'captured' || !photoUri || quality !== 'good') return;
+    if (!photoUri) {
+      alert(t('facial.validation.noFace'));
+      return;
+    }
+    if (screenState !== 'captured' || quality !== 'good') return;
+    const result = registerFacialCapture(user ? { id: user.id, name: `${user.name} ${user.lastname}`, role: user.role } : undefined, photoUri);
+    if (!result.success) {
+      alert(t(result.error));
+      return;
+    }
     setSuccessModalVisible(true);
-  }, [screenState, photoUri, quality]);
+  }, [screenState, photoUri, quality, t, user]);
 
   // Al cerrar el modal, recién ahí se navega al login.
   const handleCloseSuccessModal = useCallback(() => {
