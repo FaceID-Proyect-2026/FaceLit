@@ -76,6 +76,9 @@ export default function SchedulesListScreen() {
                   <Text style={[sls.cardTitle, { color: text }]}>Ficha {fichaNumber} - {item.programName}</Text>
                   <Text style={[sls.cardTime, { color: muted }]}>{item.startTime} - {item.endTime}</Text>
                 </View>
+                <TouchableOpacity onPress={() => router.push(`/admin/schedules/exceptions?scheduleId=${item.id}` as any)} style={[sls.iconBtn, { backgroundColor: Colors.warning + '15' }]}>
+                  <Ionicons name="alert-circle-outline" size={16} color={Colors.warning} />
+                </TouchableOpacity>
                 <TouchableOpacity onPress={() => router.push(`/admin/schedules/register?id=${item.id}` as any)} style={[sls.iconBtn, { backgroundColor: theme.primary + '15' }]}>
                   <Ionicons name="create-outline" size={16} color={theme.primary} />
                 </TouchableOpacity>
@@ -92,9 +95,6 @@ export default function SchedulesListScreen() {
         }}
         ListEmptyComponent={<View style={sls.empty}><Text style={{ color: muted }}>{t('schedules.empty')}</Text></View>}
       />
-      <TouchableOpacity onPress={() => router.push('/admin/schedules/exceptions' as any)} style={[sls.exBtn, { borderColor: Colors.warning }]} activeOpacity={0.7}>
-        <Ionicons name="alert-circle-outline" size={18} color={Colors.warning} /><Text style={{ color: Colors.warning, fontWeight: '700' }}>{t('schedules.exceptions')}</Text>
-      </TouchableOpacity>
       {DialogUI}
     </View>
   );
@@ -117,5 +117,4 @@ const sls = StyleSheet.create({
   cardFooter: { flexDirection: 'row', gap: 16, marginTop: 6 },
   iconBtn: { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   empty: { alignItems: 'center', paddingVertical: 60 },
-  exBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: 1.5, borderRadius: 12, paddingVertical: 12, marginHorizontal: 16, marginBottom: 16 },
 });

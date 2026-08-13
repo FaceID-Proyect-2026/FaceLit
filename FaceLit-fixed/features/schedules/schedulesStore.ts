@@ -11,7 +11,7 @@
 //  realmente, porque cada pantalla leía la misma constante
 //  congelada en el momento de cargar el módulo.
 // ─────────────────────────────────────────────
-import { MOCK_EXCEPTIONS, MOCK_SCHEDULES, Schedule, ScheduleException } from './types';
+import { MOCK_EXCEPTIONS, MOCK_SCHEDULES, Schedule, ScheduleException, getExceptionStatus } from './types';
 
 type Listener = () => void;
 
@@ -95,6 +95,33 @@ export function deleteScheduleStore(id: string) {
   return { success: true };
 }
 
+// Verifica disponibilidad del ambiente alterno / instructor de reemplazo
+// elegidos para una excepción, contra el resto de horarios regulares que
+// ocupan el mismo día y franja horaria que el horario padre de la
+// excepción (mismo criterio de choque que checkScheduleConflict).
+export interface ExceptionAvailability {
+  envBusy: boolean;
+  instructorBusy: boolean;
+}
+
+export function checkExceptionAvailability(data: {
+  scheduleId: string; environmentId?: string; instructorId?: string;
+}): ExceptionAvailability {
+  const schedule = schedules.find(s => s.id === data.scheduleId);
+  if (!schedule) return { envBusy: false, instructorBusy: false };
+
+  const envBusy = !!data.environmentId && schedules.some(
+    s => s.id !== schedule.id && s.day === schedule.day && s.environmentId === data.environmentId &&
+      timesOverlap(schedule.startTime, schedule.endTime, s.startTime, s.endTime)
+  );
+  const instructorBusy = !!data.instructorId && schedules.some(
+    s => s.id !== schedule.id && s.day === schedule.day && s.instructorId === data.instructorId &&
+      timesOverlap(schedule.startTime, schedule.endTime, s.startTime, s.endTime)
+  );
+
+  return { envBusy, instructorBusy };
+}
+
 export function registerExceptionStore(data: Omit<ScheduleException, 'id'>) {
   const exception: ScheduleException = { id: Date.now().toString(), ...data };
   exceptions = [...exceptions, exception];
@@ -103,6 +130,13 @@ export function registerExceptionStore(data: Omit<ScheduleException, 'id'>) {
 }
 
 export function deleteExceptionStore(id: string) {
+  const exception = exceptions.find(e => e.id === id);
+  if (!exception) return { success: false, error: 'schedules.notFound' };
+  // Solo se puede eliminar definitivamente una excepción una vez que su
+  // estado calculado sea Inactivo (el período definido ya transcurrió).
+  if (getExceptionStatus(exception.endTimestamp) === 'active') {
+    return { success: false, error: 'schedules.exceptionDeleteBlocked' };
+  }
   exceptions = exceptions.filter(e => e.id !== id);
   emit();
   return { success: true };

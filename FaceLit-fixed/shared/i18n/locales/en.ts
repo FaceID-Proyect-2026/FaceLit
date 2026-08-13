@@ -503,13 +503,14 @@ const en = {
   schedules: {
     title: 'Schedule Management', register: 'Register Schedule', edit: 'Edit Schedule', delete: 'Delete Schedule', empty: 'No schedules registered', detail: 'Schedule Detail', exceptions: 'Exceptions', exceptionRegister: 'Register Exception',
     notFound: 'Schedule not found', deleteConfirm: 'Delete this schedule? This action cannot be undone.', registerSuccess: 'Schedule registered successfully', updateSuccess: 'Schedule updated successfully', deleteSuccess: 'Schedule deleted successfully',
-    searchPlaceholder: 'Search by ficha, environment or instructor', selectSchedule: 'Select the schedule', noSchedulesForException: 'You must register a schedule first', noExceptions: 'No exceptions registered', exceptionDeleteConfirm: 'Delete this exception?', exceptionRegisterSuccess: 'Exception registered successfully', exceptionDeleteSuccess: 'Exception deleted successfully',
+    searchPlaceholder: 'Search by ficha, environment or instructor', selectSchedule: 'Select the schedule', noSchedulesForException: 'You must register a schedule first', noExceptions: 'No exceptions registered for this schedule', exceptionsNoSchedule: 'Select a schedule from the list to manage its exceptions.', exceptionDeleteConfirm: 'Delete this exception?', exceptionRegisterSuccess: 'Exception registered successfully', exceptionDeleteSuccess: 'Exception deleted successfully', exceptionDeleteBlocked: 'An exception in Active status cannot be deleted. Wait for it to end, or delete it once it is Inactive.',
     fields: { ficha: 'Training Ficha', program: 'Program', day: 'Day', startTime: 'Start Time', endTime: 'End Time', environment: 'Environment', instructor: 'Instructor' },
-    placeholders: { ficha: 'Select ficha', day: 'Select day', instructor: 'Select instructor' },
+    placeholders: { ficha: 'Select ficha', day: 'Select day', instructor: 'Select instructor', alternateEnv: 'Select alternate environment' },
     days: { monday: 'Monday', tuesday: 'Tuesday', wednesday: 'Wednesday', thursday: 'Thursday', friday: 'Friday', saturday: 'Saturday' },
     conflicts: { envOccupied: 'Environment occupied at this time', instructorBusy: 'Instructor assigned at another time', noFicha: 'Select a ficha', noInstructor: 'Select an instructor', noEnv: 'Select an environment', invalidTime: 'End time must be after start time', invalidFormat: 'Invalid format (HH:MM)', envNotFound: 'Environment not found' },
-    exceptionTypes: { instructorChange: 'Instructor change', envChange: 'Environment change', cancel: 'Cancellation', reschedule: 'Reschedule', other: 'Other' },
-    exceptionFields: { type: 'Exception Type', date: 'Date', reason: 'Reason', replacement: 'Replacement', newEnv: 'New Environment' },
+    exceptionTypes: { instructorChange: 'Instructor change', envChange: 'Environment change', cancel: 'Cancellation', reschedule: 'Reschedule' },
+    exceptionStatus: { active: 'Active', inactive: 'Inactive' },
+    exceptionFields: { type: 'Exception Type', startDate: 'Exception Date', duration: 'Exception Duration', durationAmount: 'Amount', durationUnit: 'Unit', durationUnits: { hours: 'Hours', days: 'Days', weeks: 'Weeks', months: 'Months' }, reason: 'Reason', status: 'Status', statusHint: 'Status is calculated automatically on save and turns Inactive once the defined duration ends.', activeUntil: 'Active until {{date}}', replacement: 'Replacement Instructor', alternateEnv: 'Alternate Environment' },
   },
   facial: {
     management: 'Facial Recognition Management', register: 'Register Face', verify: 'Verify Identity',

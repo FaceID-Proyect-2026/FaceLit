@@ -18,6 +18,7 @@ import {
   deleteScheduleStore,
   registerExceptionStore,
   deleteExceptionStore,
+  checkExceptionAvailability,
 } from './schedulesStore';
 
 export function useSchedules() {
@@ -52,6 +53,10 @@ export function useSchedules() {
   );
   const registerException = useCallback((data: Omit<ScheduleException, 'id'>) => registerExceptionStore(data), []);
   const removeException = useCallback((id: string) => deleteExceptionStore(id), []);
+  const checkExceptionAvail = useCallback(
+    (data: { scheduleId: string; environmentId?: string; instructorId?: string }) => checkExceptionAvailability(data),
+    [schedules]
+  );
 
   return {
     schedules: filteredSchedules,
@@ -67,5 +72,6 @@ export function useSchedules() {
     getExceptionsBySchedule,
     registerException,
     removeException,
+    checkExceptionAvail,
   };
 }
