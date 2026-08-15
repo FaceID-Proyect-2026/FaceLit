@@ -1,7 +1,7 @@
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
-import { MOCK_ATTENDANCE } from '@/features/attendance/types';
+import { useAttendance } from '@/features/attendance/useAttendance';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 export default function CalendarReportScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
+  const attendance = useAttendance();
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
   const cardBg = isDark ? '#0D1F14' : Colors.white;
@@ -18,7 +19,7 @@ export default function CalendarReportScreen() {
 
   const days = Array.from({ length: 30 }, (_, i) => {
     const date = `2026-06-${String(i+1).padStart(2,'0')}`;
-    const records = MOCK_ATTENDANCE.filter(a => a.date === date);
+    const records = attendance.filter(a => a.date === date);
     return { day: i+1, date, records };
   });
 

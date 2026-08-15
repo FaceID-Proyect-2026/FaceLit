@@ -115,9 +115,9 @@ const de = {
   },
   attendance: {
     title: 'Anwesenheitskontrolle', empty: 'Keine Einträge', detail: 'Details',
-    fields: { user: 'Nutzer', ficha: 'Ficha', environment: 'Umgebung', date: 'Datum', entryTime: 'Eintritt', exitTime: 'Austritt', status: 'Status', delay: 'Verspätung' },
+    fields: { user: 'Lernender', document: 'Identifikation', email: 'E-Mail', ficha: 'Ficha', program: 'Ausbildungsprogramm', environment: 'Umgebung', date: 'Datum', entryTime: 'Eintrittszeit', exitTime: 'Austrittszeit', scheduledTime: 'Geplante Zeit', instructor: 'Ausbilder', status: 'Status', delay: 'Verspätung' },
     statuses: { punctual: 'Pünktlich', late: 'Verspätet', absent: 'Abwesend', invalidEnv: 'Falsche Umgebung' },
-    stats: { total: 'Gesamt', punctual: 'Pünktlich', late: 'Verspätet', absent: 'Abwesend' },
+    stats: { total: 'Gesamt', punctual: 'Pünktlich', late: 'Verspätet', absent: 'Abwesend' }, notFound: 'Informationen sind in der aktuellen Quelle nicht verfügbar.',
   },
   reports: {
     title: 'Berichte', byUser: 'Nach Nutzer', byFicha: 'Nach Ficha', calendar: 'Kalender',

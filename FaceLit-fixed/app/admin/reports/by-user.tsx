@@ -1,7 +1,7 @@
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
-import { MOCK_ATTENDANCE } from '@/features/attendance/types';
+import { useAttendance } from '@/features/attendance/useAttendance';
 import { MOCK_REPORT_USERS } from '@/features/reports/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -13,12 +13,13 @@ export default function ReportByUserScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const [selectedUser, setUser] = useState('');
+  const attendance = useAttendance();
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
   const cardBg = isDark ? '#0D1F14' : Colors.white;
   const border = isDark ? 'rgba(101,179,97,0.18)' : 'rgba(101,179,97,0.20)';
   const bg = isDark ? Colors.dark.background : Colors.light.background;
-  const filtered = selectedUser ? MOCK_ATTENDANCE.filter(a => a.userId === selectedUser) : MOCK_ATTENDANCE;
+  const filtered = selectedUser ? attendance.filter(a => a.userId === selectedUser) : attendance;
 
   return (
     <View style={[rus.safe, { backgroundColor: bg }]}>

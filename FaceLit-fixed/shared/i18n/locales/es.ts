@@ -731,7 +731,9 @@ emailValidatedSuccess: {
     empty:           'No hay registros de asistencia',
     detail:          'Detalle de Asistencia',
     fields: {
-      user:          'Usuario',
+      user:          'Aprendiz',
+      document:      'Identificación',
+      email:         'Correo electrónico',
       ficha:         'Ficha',
       environment:   'Ambiente',
       date:          'Fecha',
@@ -739,6 +741,9 @@ emailValidatedSuccess: {
       exitTime:      'Hora de Salida',
       status:        'Estado',
       delay:         'Retraso',
+      program:       'Programa de formación',
+      scheduledTime: 'Horario programado',
+      instructor:    'Instructor',
     },
     statuses: {
       punctual:      'Puntual',
@@ -752,6 +757,7 @@ emailValidatedSuccess: {
       late:          'Retrasos',
       absent:        'Inasistencias',
     },
+    notFound:        'Información no disponible en la fuente actual.',
   },
   reports: {
     title:           'Reportes y Consultas',
@@ -834,4 +840,4 @@ emailValidatedSuccess: {
 
 } as const;
 
-export default es;
+export default es

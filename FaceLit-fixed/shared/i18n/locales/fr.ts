@@ -80,9 +80,9 @@ const fr = {
   },
   attendance: {
     title: 'Contrôle des Présences', empty: 'Aucun enregistrement', detail: 'Détail',
-    fields: { user: 'Utilisateur', ficha: 'Ficha', environment: 'Environnement', date: 'Date', entryTime: 'Entrée', exitTime: 'Sortie', status: 'Statut', delay: 'Retard' },
+    fields: { user: 'Apprenant', document: 'Identification', email: 'E-mail', ficha: 'Ficha', program: 'Programme de formation', environment: 'Environnement', date: 'Date', entryTime: "Heure d'arrivée", exitTime: 'Heure de sortie', scheduledTime: 'Horaire prévu', instructor: 'Formateur', status: 'Statut', delay: 'Retard' },
     statuses: { punctual: 'Ponctuel', late: 'En retard', absent: 'Absent', invalidEnv: 'Mauvais environnement' },
-    stats: { total: 'Total', punctual: 'Ponctuels', late: 'Retards', absent: 'Absents' },
+    stats: { total: 'Total', punctual: 'Ponctuels', late: 'Retards', absent: 'Absents' }, notFound: "Information non disponible dans la source actuelle.",
   },
   reports: {
     title: 'Rapports', byUser: 'Par Utilisateur', byFicha: 'Par Ficha', calendar: 'Calendrier',
