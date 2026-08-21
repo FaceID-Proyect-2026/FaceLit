@@ -730,6 +730,11 @@ emailValidatedSuccess: {
     title:           'Control de Asistencia',
     empty:           'No hay registros de asistencia',
     detail:          'Detalle de Asistencia',
+    sections: {
+      learner:       'Información del aprendiz',
+      record:        'Registro de asistencia',
+      academic:      'Información académica',
+    },
     fields: {
       user:          'Aprendiz',
       document:      'Identificación',

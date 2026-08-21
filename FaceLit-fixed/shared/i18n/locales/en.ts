@@ -521,6 +521,7 @@ const en = {
   },
   attendance: {
     title: 'Attendance Control', empty: 'No attendance records', detail: 'Attendance Detail',
+    sections: { learner: 'Learner Information', record: 'Attendance Record', academic: 'Academic Information' },
     fields: { user: 'Apprentice', document: 'Identification', email: 'Email', ficha: 'Ficha', program: 'Training program', environment: 'Environment', date: 'Date', entryTime: 'Entry time', exitTime: 'Exit time', scheduledTime: 'Scheduled time', instructor: 'Instructor', status: 'Status', delay: 'Delay' },
     statuses: { punctual: 'Punctual', late: 'Late', absent: 'Absent', invalidEnv: 'Wrong Environment' },
     stats: { total: 'Total records', punctual: 'Punctual', late: 'Late', absent: 'Absent' }, notFound: 'Information is not available from the current source.',

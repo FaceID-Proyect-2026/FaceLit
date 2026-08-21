@@ -54,7 +54,7 @@ export default function AttendanceListScreen() {
           const config = statusConfig[status];
           const selected = statusFilter === status;
           return <TouchableOpacity key={status} accessibilityRole="tab" accessibilityState={{ selected }} onPress={() => setStatusFilter(selected ? null : status)} style={[als.filter, { borderColor: selected ? config.color : border, backgroundColor: selected ? config.color + '20' : cardBg }]}>
-            <Text style={{ color: selected ? config.color : text, fontWeight: '700' }}>{config.label}</Text>
+            <Text style={[als.filterText, { color: selected ? config.color : text }]}>{config.label}</Text>
           </TouchableOpacity>;
         })}
       </View>
@@ -82,6 +82,6 @@ export default function AttendanceListScreen() {
 const als = StyleSheet.create({
   safe: { flex: 1 }, title: { fontSize: FontSize['2xl'], fontWeight: FontWeight.black, marginBottom: 12, paddingHorizontal: 16, paddingTop: 16 },
   statsRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginBottom: 12 }, stat: { flex: 1, minWidth: 0, borderRadius: 12, borderWidth: 1, padding: 10, alignItems: 'center' }, statV: { fontSize: FontSize.xl, fontWeight: FontWeight.black }, statL: { fontSize: 10, marginTop: 2, textAlign: 'center' },
-  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16, marginBottom: 4 }, filter: { minHeight: 40, flexGrow: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, borderRadius: 10, borderWidth: 1 },
+  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16, marginBottom: 10 }, filter: { flexGrow: 1, minWidth: 100, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14, paddingVertical: 9, borderRadius: 10, borderWidth: 1.2 }, filterText: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
   list: { padding: 16, gap: 8, paddingBottom: 32 }, card: { borderRadius: 12, borderWidth: 1, padding: 14 }, cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6 }, cardUser: { flex: 1, fontSize: FontSize.base, fontWeight: FontWeight.bold }, statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 }, cardInfo: { gap: 3 }, empty: { alignItems: 'center', paddingVertical: 60 },
 });
