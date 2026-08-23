@@ -335,6 +335,7 @@ const es = {
     identityCC: 'CC — Cédula de Ciudadanía (mayor)',
     identityCE: 'CE — Cédula de Extranjería',
     identityPA: 'PA — Pasaporte',
+    identityPAS: 'PAS — Pasaporte',
     infoTI: 'TI es para menores de edad (menos de 18 años)',
     infoCC: 'CC es para mayores de edad (18 años o más)',
     document: 'Número de documento (10 dígitos)',
@@ -464,6 +465,8 @@ const es = {
   // ─────────────────────────────────────────────
   sidebar: {
     dashboard: 'Dashboard',
+    users: 'Usuarios',
+    userManagement: 'Gestión de usuarios',
     environments: 'Ambientes',
     academic: 'Gestión Académica',
     schedules: 'Horarios',
@@ -490,6 +493,13 @@ const es = {
     attendanceRate: 'Tasa de asistencia',
     quickActions: 'Acciones rápidas',
     recentActivity: 'Actividad reciente',
+  },
+  users: {
+    title: 'Gestión de usuarios', subtitle: 'Usuarios con al menos una sesión registrada', adminLabel: 'Panel administrativo', total: 'Total', active: 'Activos', apprentices: 'Aprendices', registered: 'Usuarios registrados', results: 'resultados', all: 'Todos', search: 'Buscar por nombre o correo',
+    empty: 'No se encontraron usuarios con ese criterio', pendingFicha: 'Pendiente por ficha', noFicha: 'Sin ficha asignada', details: 'Detalle del usuario', editData: 'Datos editables', readonlyData: 'Información de consulta', document: 'Documento', birthDate: 'Nacimiento', ficha: 'Ficha', program: 'Programa', status: 'Estado', role: 'Rol', statuses: { ACTIVE: 'Activo', INACTIVE: 'Inactivo', PENDING_CONSENT: 'Consentimiento pendiente', BLOCKED: 'Bloqueado' }, roles: { APPRENTICE: 'Aprendiz', INSTRUCTOR: 'Instructor', ADMINISTRATOR: 'Administrador', COORDINATOR: 'Coordinador' },
+    firstName: 'Nombre', lastName: 'Apellido', view: 'Ver detalles', delete: 'Eliminar', deleteTitle: 'Eliminar usuario',
+    deleteConfirm: '¿Está seguro de eliminar este usuario?', loadError: 'No se pudieron cargar los usuarios',
+    saveError: 'No se pudo actualizar el usuario', deleteError: 'No se pudo eliminar el usuario',
   },
   environments: {
     title: 'Gestión de Ambientes',

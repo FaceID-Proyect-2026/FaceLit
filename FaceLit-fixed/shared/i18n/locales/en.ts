@@ -328,6 +328,7 @@ const en = {
     identityCC: 'CC — National ID (adult)',
     identityCE: 'CE — Foreign ID',
     identityPA: 'PA — Passport',
+    identityPAS: 'PAS — Passport',
     infoTI: 'TI is for minors under 18 years old',
     infoCC: 'CC is for adults 18 years old or older',
     document: 'ID number (10 digits)',
@@ -454,6 +455,8 @@ const en = {
   // ─────────────────────────────────────────────
   sidebar: {
     dashboard: 'Dashboard',
+    users: 'Users',
+    userManagement: 'User management',
     environments: 'Environments',
     academic: 'Academic',
     schedules: 'Schedules',
@@ -480,6 +483,13 @@ const en = {
     attendanceRate: 'Attendance rate',
     quickActions: 'Quick actions',
     recentActivity: 'Recent activity',
+  },
+  users: {
+    title: 'User management', subtitle: 'Users with at least one registered session', adminLabel: 'Administration panel', total: 'Total', active: 'Active', apprentices: 'Apprentices', registered: 'Registered users', results: 'results', all: 'All', search: 'Search by name or email',
+    empty: 'No users found with that criterion', pendingFicha: 'Ficha pending', noFicha: 'No ficha assigned', details: 'User details', editData: 'Editable data', readonlyData: 'Reference information', document: 'Document', birthDate: 'Birth date', ficha: 'Ficha', program: 'Program', status: 'Status', role: 'Role', statuses: { ACTIVE: 'Active', INACTIVE: 'Inactive', PENDING_CONSENT: 'Consent pending', BLOCKED: 'Blocked' }, roles: { APPRENTICE: 'Apprentice', INSTRUCTOR: 'Instructor', ADMINISTRATOR: 'Administrator', COORDINATOR: 'Coordinator' },
+    firstName: 'First name', lastName: 'Last name', view: 'View details', delete: 'Delete', deleteTitle: 'Delete user',
+    deleteConfirm: 'Are you sure you want to delete this user?', loadError: 'Users could not be loaded',
+    saveError: 'User could not be updated', deleteError: 'User could not be deleted',
   },
   environments: {
     title: 'Environment Management',

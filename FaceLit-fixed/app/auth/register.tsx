@@ -122,7 +122,7 @@ export default function RegisterScreen() {
   );
 
   const fieldIdentity = (
-    <View style={s.fieldGroup}>
+    <View style={[s.fieldGroup, showIdentity && s.identityField]}>
       <Text style={[s.label, { color: text }]}>{t('register.identityType')}</Text>
       <TouchableOpacity
         onPress={() => setShowIdentity(!showIdentity)}
@@ -534,6 +534,7 @@ const s = StyleSheet.create({
   row: { flexDirection: 'row', gap: 16 },
   col: { flex: 1 },
   fieldGroup: { marginBottom: 12 },
+  identityField: { zIndex: 20, elevation: 20 },
   label: { fontSize: 13, fontWeight: '700', marginBottom: 6 },
   inputWrap: { height: 48, borderWidth: 1.2, borderRadius: 12, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 10 },
   input: { flex: 1, fontSize: 15, outlineStyle: 'none' } as any,
@@ -543,7 +544,7 @@ const s = StyleSheet.create({
   eyeBtn: { padding: 4 },
   infoBox: { flexDirection: 'row', alignItems: 'center', gap: 6, padding: 10, borderRadius: 8, borderWidth: 1, marginTop: 8 },
   infoText: { fontSize: 12, flex: 1, lineHeight: 17 },
-  dropdown: { marginTop: 4, borderRadius: 10, borderWidth: 1, overflow: 'hidden' },
+  dropdown: { marginTop: 4, borderRadius: 10, borderWidth: 1, overflow: 'hidden', zIndex: 30, elevation: 30 },
   dropOption: { paddingVertical: 13, paddingHorizontal: 16, borderBottomWidth: 1 },
   dropText: { fontSize: 15 },
   validateBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 44, borderRadius: 10, borderWidth: 1.2, marginBottom: 4, paddingHorizontal: 12 },

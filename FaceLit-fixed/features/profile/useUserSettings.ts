@@ -6,15 +6,19 @@
 // ─────────────────────────────────────────────
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import {
-  createUserConfiguration,
-  getUserConfiguration,
-  updateUserConfiguration,
+    createUserConfiguration,
+    getUserConfiguration,
+    updateUserConfiguration,
 } from '@/shared/services/userConfigService';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-const LANG_BACKEND_TO_APP: Record<string, string> = { ES: 'es', EN: 'en', DE: 'de', FR: 'fr' };
-const LANG_APP_TO_BACKEND: Record<string, string> = { es: 'ES', en: 'EN', de: 'DE', fr: 'FR' };
+const LANG_BACKEND_TO_APP: Record<string, string> = {
+  ES: 'es', EN: 'en', DE: 'de', FR: 'fr', FRA: 'fr', FRANCES: 'fr',
+};
+const LANG_APP_TO_BACKEND: Record<string, string[]> = {
+  es: ['ES'], en: ['EN'], de: ['DE'], fr: ['FR', 'FRA', 'FRANCES'],
+};
 
 interface Draft {
   darkMode: boolean;
@@ -47,7 +51,8 @@ export function useUserSettings() {
       const config = await getUserConfiguration();
       setHasConfig(true);
 
-      const lang = LANG_BACKEND_TO_APP[config.language] ?? 'es';
+      const backendLanguage = String(config.language ?? '').trim().toUpperCase();
+      const lang = LANG_BACKEND_TO_APP[backendLanguage] ?? 'es';
       setDarkMode(config.darkMode);
       i18n.changeLanguage(lang);
 
@@ -88,24 +93,42 @@ export function useUserSettings() {
   const saveChanges = useCallback(async () => {
     setSaving(true);
     try {
-      const payload = {
+      const languageCodes = LANG_APP_TO_BACKEND[draft.language] ?? ['ES'];
+      const basePayload = {
         configurationName: 'Configuración principal',
         description: '',
         notificationsActive: draft.notificationsActive,
         darkMode: draft.darkMode,
-        language: LANG_APP_TO_BACKEND[draft.language] ?? 'ES',
       };
 
-      if (hasConfig) {
-        await updateUserConfiguration(payload);
-      } else {
-        await createUserConfiguration(payload);
-        setHasConfig(true);
+      let lastError: any;
+      for (const language of languageCodes) {
+        try {
+          const payload = { ...basePayload, language };
+          if (hasConfig) {
+            await updateUserConfiguration(payload);
+          } else {
+            await createUserConfiguration(payload);
+            setHasConfig(true);
+          }
+          setSaved(true);
+          return { success: true };
+        } catch (err) {
+          lastError = err;
+        }
       }
-      setSaved(true);
-      return { success: true };
+
+      throw lastError;
     } catch (err: any) {
-      return { success: false, error: err.response?.data?.message || 'No se pudo guardar la configuración' };
+      const responseData = err.response?.data;
+      const serverError = typeof responseData === 'string'
+        ? responseData
+        : responseData?.message || responseData?.error || responseData?.title;
+      const status = err.response?.status;
+      return {
+        success: false,
+        error: serverError || (status ? `Error del servidor (${status})` : 'No se pudo guardar la configuración'),
+      };
     } finally {
       setSaving(false);
     }

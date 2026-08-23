@@ -40,6 +40,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const adminMenu: MenuItem[] = [
     { icon: 'grid-outline', label: t('sidebar.dashboard'), route: Routes.ADMIN.DASHBOARD, module: 'dashboard' },
+    ...(user?.role === 'ADMINISTRATOR' || user?.role === 'COORDINATOR'
+      ? [{ icon: 'people-outline', label: t('sidebar.users'), route: Routes.ADMIN.USERS, module: 'users' }]
+      : []),
     { icon: 'business-outline', label: t('sidebar.environments'), route: Routes.ENVIRONMENTS.LIST, module: 'environments' },
     { icon: 'school-outline', label: t('sidebar.academic'), route: Routes.ACADEMIC.PROGRAMS, module: 'academic' },
     { icon: 'time-outline', label: t('sidebar.schedules'), route: Routes.SCHEDULES.LIST, module: 'schedules' },
