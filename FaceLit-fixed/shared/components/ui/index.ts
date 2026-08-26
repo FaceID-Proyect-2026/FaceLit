@@ -10,3 +10,4 @@ export { default as ThemeToggle }      from './ThemeToggle';
 export { default as LanguageSelector } from './LanguageSelector';
 export { default as SelectField }      from './SelectField';
 export { default as TimeInput }        from './TimeInput';
+export { default as DateField, formatDateDisplay } from './DateField';

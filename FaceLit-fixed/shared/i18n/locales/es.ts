@@ -629,10 +629,12 @@ emailValidatedSuccess: {
     searchPlaceholder: 'Buscar por ficha, ambiente o instructor',
     selectSchedule:  'Selecciona el horario',
     noSchedulesForException: 'Primero debes registrar un horario',
-    noExceptions:    'No hay excepciones registradas',
+    noExceptions:    'No hay excepciones registradas para este horario',
+    exceptionsNoSchedule: 'Selecciona un horario desde el listado para gestionar sus excepciones.',
     exceptionDeleteConfirm: '¿Eliminar esta excepción?',
     exceptionRegisterSuccess: 'Excepción registrada correctamente',
     exceptionDeleteSuccess: 'Excepción eliminada correctamente',
+    exceptionDeleteBlocked: 'No se puede eliminar una excepción en estado Activo. Espera a que finalice o cancélala cuando esté Inactiva.',
     fields: {
       ficha:         'Ficha de Formación',
       program:       'Programa',
@@ -646,6 +648,7 @@ emailValidatedSuccess: {
       ficha:       'Seleccionar ficha',
       day:         'Seleccionar día',
       instructor:  'Seleccionar instructor',
+      alternateEnv:'Seleccionar ambiente alterno',
     },
     days: {
       monday:        'Lunes',
@@ -662,20 +665,37 @@ emailValidatedSuccess: {
       noInstructor:  'Selecciona un instructor',
       noEnv:         'Selecciona un ambiente',
       invalidTime:   'La hora de fin debe ser posterior a la de inicio',
+      invalidFormat: 'Formato inválido (HH:MM)',
+      envNotFound:   'Ambiente no encontrado',
     },
     exceptionTypes: {
       instructorChange: 'Cambio de instructor',
       envChange:        'Cambio de ambiente',
       cancel:           'Cancelación',
       reschedule:       'Reprogramación',
-      other:            'Otro',
+    },
+    exceptionStatus: {
+      active:        'Activo',
+      inactive:      'Inactivo',
     },
     exceptionFields: {
       type:          'Tipo de Excepción',
-      date:          'Fecha',
+      startDate:     'Fecha de la Excepción',
+      duration:      'Duración de la Excepción',
+      durationAmount:'Cantidad',
+      durationUnit:  'Unidad',
+      durationUnits: {
+        hours:  'Horas',
+        days:   'Días',
+        weeks:  'Semanas',
+        months: 'Meses',
+      },
       reason:        'Motivo',
-      replacement:   'Reemplazo',
-      newEnv:        'Nuevo Ambiente',
+      status:        'Estado',
+      statusHint:    'El estado se calculará automáticamente al guardar y pasará a Inactivo al finalizar la duración definida.',
+      activeUntil:   'Activo hasta {{date}}',
+      replacement:   'Instructor de Reemplazo',
+      alternateEnv:  'Ambiente Alterno',
     },
   },
   facial: {
@@ -710,8 +730,15 @@ emailValidatedSuccess: {
     title:           'Control de Asistencia',
     empty:           'No hay registros de asistencia',
     detail:          'Detalle de Asistencia',
+    sections: {
+      learner:       'Información del aprendiz',
+      record:        'Registro de asistencia',
+      academic:      'Información académica',
+    },
     fields: {
-      user:          'Usuario',
+      user:          'Aprendiz',
+      document:      'Identificación',
+      email:         'Correo electrónico',
       ficha:         'Ficha',
       environment:   'Ambiente',
       date:          'Fecha',
@@ -719,6 +746,9 @@ emailValidatedSuccess: {
       exitTime:      'Hora de Salida',
       status:        'Estado',
       delay:         'Retraso',
+      program:       'Programa de formación',
+      scheduledTime: 'Horario programado',
+      instructor:    'Instructor',
     },
     statuses: {
       punctual:      'Puntual',
@@ -732,6 +762,7 @@ emailValidatedSuccess: {
       late:          'Retrasos',
       absent:        'Inasistencias',
     },
+    notFound:        'Información no disponible en la fuente actual.',
   },
   reports: {
     title:           'Reportes y Consultas',
@@ -814,4 +845,4 @@ emailValidatedSuccess: {
 
 } as const;
 
-export default es;
+export default es

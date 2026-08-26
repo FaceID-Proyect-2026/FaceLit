@@ -82,6 +82,12 @@ export default function ScheduleDetailScreen() {
           ))}
         </View>
 
+        <TouchableOpacity onPress={() => router.push(`/admin/schedules/exceptions?scheduleId=${schedule.id}` as any)}
+          style={[sds.exceptionsBtn, { borderColor: Colors.warning }]} activeOpacity={0.7}>
+          <Ionicons name="alert-circle-outline" size={18} color={Colors.warning} />
+          <Text style={{ color: Colors.warning, fontWeight: '700' }}>{t('schedules.exceptions')}</Text>
+        </TouchableOpacity>
+
         <View style={sds.actions}>
           <TouchableOpacity onPress={() => router.push(`/admin/schedules/register?id=${schedule.id}` as any)}
             style={[sds.actionBtn, { borderColor: theme.primary }]} activeOpacity={0.7}>
@@ -107,6 +113,7 @@ const sds = StyleSheet.create({
   title: { fontSize: FontSize['2xl'], fontWeight: FontWeight.black, marginBottom: 20 },
   card: { borderRadius: 14, borderWidth: 1, padding: 16, marginBottom: 20 },
   infoRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 },
+  exceptionsBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: 1.5, borderRadius: 12, paddingVertical: 12, marginBottom: 14 },
   actions: { flexDirection: 'row', gap: 10 },
   actionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 1.5, borderRadius: 12, paddingVertical: 12 },
 });
