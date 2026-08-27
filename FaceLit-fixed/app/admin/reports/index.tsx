@@ -5,8 +5,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { Routes } from '@/shared/constants/routes';
+import { useAuth } from '@/shared/contexts/AuthContext';
 
 export default function ReportsDashboardScreen() {
+  const { user } = useAuth();
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const text = isDark ? Colors.dark.text : Colors.light.text;
@@ -15,10 +18,19 @@ export default function ReportsDashboardScreen() {
   const border = isDark ? 'rgba(101,179,97,0.18)' : 'rgba(101,179,97,0.20)';
   const bg = isDark ? Colors.dark.background : Colors.light.background;
 
+  const isAdminOrInstructor = user?.role === 'administrador' || user?.role === 'instructor';
+
   const options = [
-    { icon: 'person-outline', label: t('reports.byUser'), route: '/admin/reports/by-user', color: '#4A90D9' },
-    { icon: 'people-outline', label: t('reports.byFicha'), route: '/admin/reports/by-ficha', color: '#27AE60' },
-    { icon: 'calendar-outline', label: t('reports.calendar'), route: '/admin/reports/calendar', color: '#E89B2C' },
+    { icon: 'person-outline', label: t('reports.byUser'), route: Routes.REPORTS.BY_USER, color: '#4A90D9' },
+    { icon: 'people-outline', label: t('reports.byFicha'), route: Routes.REPORTS.BY_FICHA, color: '#27AE60' },
+    { icon: 'calendar-outline', label: t('reports.calendar'), route: Routes.REPORTS.CALENDAR, color: '#E89B2C' },
+    { icon: 'trending-up-outline', label: t('reports.myPerformance'), route: Routes.REPORTS.MY_PERFORMANCE, color: '#9B59B6' },
+    ...(isAdminOrInstructor ? [{
+      icon: 'clipboard-outline',
+      label: t('reports.excuses.title'),
+      route: Routes.REPORTS.EXCUSES_REVIEW,
+      color: '#E74C3C',
+    }] : []),
   ];
 
   return (

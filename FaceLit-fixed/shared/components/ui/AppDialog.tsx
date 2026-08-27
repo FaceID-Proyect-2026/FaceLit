@@ -17,6 +17,7 @@
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
+import type { ReactNode } from 'react';
 import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export interface AppDialogButton {
@@ -30,11 +31,12 @@ interface AppDialogProps {
   title: string;
   message?: string;
   buttons: AppDialogButton[];
+  children?: ReactNode;
   onRequestClose: () => void;
   onPressButton: (button: AppDialogButton) => void;
 }
 
-export default function AppDialog({ visible, title, message, buttons, onRequestClose, onPressButton }: AppDialogProps) {
+export default function AppDialog({ visible, title, message, buttons, children, onRequestClose, onPressButton }: AppDialogProps) {
   const { theme, isDark } = useTheme();
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
@@ -54,6 +56,7 @@ export default function AppDialog({ visible, title, message, buttons, onRequestC
         <Pressable style={[ad.card, { backgroundColor: cardBg, borderColor: border }]} onPress={() => {}}>
           <Text style={[ad.title, { color: text }]}>{title}</Text>
           {message ? <Text style={[ad.message, { color: muted }]}>{message}</Text> : null}
+          {children ? <View style={ad.content}>{children}</View> : null}
           <View style={ad.buttonsRow}>
             {buttons.map((btn, idx) => (
               <TouchableOpacity
@@ -77,6 +80,7 @@ const ad = StyleSheet.create({
   card: { width: '100%', maxWidth: 380, borderRadius: 16, borderWidth: 1, paddingTop: 20, overflow: 'hidden' },
   title: { fontSize: FontSize.lg, fontWeight: FontWeight.black, textAlign: 'center', paddingHorizontal: 20 },
   message: { fontSize: FontSize.md, textAlign: 'center', marginTop: 8, paddingHorizontal: 20, lineHeight: 20 },
+  content: { marginTop: 14, paddingHorizontal: 20 },
   buttonsRow: { flexDirection: 'row', marginTop: 20, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(101,179,97,0.20)' },
   button: { flex: 1, paddingVertical: 14, paddingHorizontal: 8, alignItems: 'center', justifyContent: 'center', borderRightWidth: StyleSheet.hairlineWidth },
   buttonLast: { borderRightWidth: 0 },
