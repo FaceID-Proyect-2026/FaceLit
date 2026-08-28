@@ -122,7 +122,7 @@ const de = {
     stats: { total: 'Gesamt', punctual: 'Pünktlich', late: 'Verspätet', absent: 'Abwesend' }, notFound: 'Informationen sind in der aktuellen Quelle nicht verfügbar.',
   },
   reports: {
-    title: 'Berichte', byUser: 'Nach Nutzer', byFicha: 'Nach Ficha', calendar: 'Kalender', myPerformance: 'Meine Leistung',
+    title: 'Berichte', byUser: 'Nach Nutzer', filtersTitle: 'Filter', results: 'Ergebnisse', invalidDateRange: 'Das Startdatum darf nicht nach dem Enddatum liegen.', noRecords: 'Keine Einträge vorhanden.', byFicha: 'Nach Ficha', calendar: 'Kalender', myPerformance: 'Meine Leistung',
     filters: { user: 'Nutzer', ficha: 'Ficha', environment: 'Umgebung', program: 'Programm', dateFrom: 'Von', dateTo: 'Bis', status: 'Status', all: 'Alle' },
     table: { date: 'Datum', user: 'Nutzer', ficha: 'Ficha', entry: 'Eintritt', exit: 'Austritt', status: 'Status', env: 'Umgebung', delay: 'Verspätung', duration: 'Dauer', identification: 'Identifikation', totalClasses: 'Gesamtstunden', attendances: 'Anwesend', absences: 'Abwesend', lateCount: 'Verspätet', percentage: 'Prozent' },
     summary: { totalRecords: 'Gesamt', present: 'Anwesend', lateCount: 'Verspätet', absentCount: 'Abwesend', rate: 'Quote', avgDelay: 'Ø Verspätung', daysNoAttendance: 'Tage ohne Anwesenheit' },

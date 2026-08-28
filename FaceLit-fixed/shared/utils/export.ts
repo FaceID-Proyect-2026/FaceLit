@@ -17,6 +17,15 @@ export interface ExportOptions {
   format: 'pdf' | 'excel' | 'csv';
 }
 
+function reportDuration(entry: string, exit: string): string {
+  if (!/^\d{2}:\d{2}$/.test(entry) || !/^\d{2}:\d{2}$/.test(exit)) return '--';
+  const [entryHour, entryMinute] = entry.split(':').map(Number);
+  const [exitHour, exitMinute] = exit.split(':').map(Number);
+  let minutes = exitHour * 60 + exitMinute - entryHour * 60 - entryMinute;
+  if (minutes < 0) minutes += 24 * 60;
+  return `${Math.floor(minutes / 60)} h ${minutes % 60} min`;
+}
+
 function generateCSV(data: ExportData): string {
   let csv = '';
   
@@ -149,7 +158,7 @@ function generateExcelXML(data: ExportData): string {
 
 function escapeXml(str: string): string {
   return str
-    .replace(/&/g, '&')
+    .replace(/&/g, '&amp;')
     .replace(/</g, '<')
     .replace(/>/g, '>')
     .replace(/"/g, '"')
@@ -175,8 +184,8 @@ export async function exportReport(data: ExportData, options: ExportOptions): Pr
         break;
       case 'pdf':
         content = generatePDFContent(data);
-        mimeType = 'text/plain';
-        fileExtension = '.txt';
+        mimeType = 'application/pdf';
+        fileExtension = '.pdf';
         break;
       default:
         content = generateCSV(data);
@@ -216,29 +225,25 @@ export async function exportReport(data: ExportData, options: ExportOptions): Pr
   }
 }
 
+/** Minimal, valid PDF document. The report remains usable without adding a platform-only PDF dependency. */
 function generatePDFContent(data: ExportData): string {
-  let content = `%PDF-1.4\n% FaceLit Export\n`;
-  content += `Title: ${data.title}\n`;
-  if (data.subtitle) content += `Subtitle: ${data.subtitle}\n`;
-  content += `Generated: ${data.generatedAt}\n\n`;
-  
-  if (data.filters && data.filters.length > 0) {
-    content += 'Filtros aplicados:\n';
-    data.filters.forEach(f => content += `  ${f.label}: ${f.value}\n`);
-    content += '\n';
-  }
-  
-  if (data.summary && data.summary.length > 0) {
-    content += 'Resumen:\n';
-    data.summary.forEach(s => content += `  ${s.label}: ${s.value}\n`);
-    content += '\n';
-  }
-  
-  content += 'Datos:\n';
-  content += data.headers.join('\t') + '\n';
-  data.rows.forEach(row => content += row.join('\t') + '\n');
-  
-  return content;
+  const clean = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[()\\]/g, '\\$&').replace(/[^\x20-\x7E]/g, '?');
+  const lines = [data.title, data.subtitle || '', ...((data.filters || []).map(f => `${f.label}: ${f.value}`)), '', ...((data.summary || []).map(s => `${s.label}: ${s.value}`)), '', data.headers.join(' | '), ...data.rows.map(row => row.join(' | ')), '', data.generatedAt]
+    .flatMap(line => clean(line).match(/.{1,100}/g) || ['']);
+  const pageHeight = Math.max(792, lines.length * 15 + 80);
+  const stream = ['BT', '/F1 11 Tf', `50 ${pageHeight - 35} Td`, ...lines.flatMap((line, index) => [index ? '0 -15 Td' : '', `(${line}) Tj`]).filter(Boolean), 'ET'].join('\n');
+  const objects = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 ${pageHeight}] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>`,
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+    `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`,
+  ];
+  let pdf = '%PDF-1.4\n'; const offsets = [0];
+  objects.forEach((object, index) => { offsets.push(pdf.length); pdf += `${index + 1} 0 obj\n${object}\nendobj\n`; });
+  const xref = pdf.length;
+  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n${offsets.slice(1).map(offset => `${String(offset).padStart(10, '0')} 00000 n \n`).join('')}trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+  return pdf;
 }
 
 export function generateReportData(
@@ -255,11 +260,13 @@ export function generateReportData(
         r.date,
         r.userName,
         r.fichaNumber,
+        r.programName,
+        r.environmentName,
         r.entryTime || '--',
         r.exitTime || '--',
-        r.status === 'punctual' ? t('reports.statuses.punctual') : r.status === 'late' ? t('reports.statuses.late') : t('reports.statuses.absent'),
-        r.environmentName,
         r.delayMinutes > 0 ? `${r.delayMinutes} min` : '--',
+        r.status === 'punctual' ? t('reports.statuses.punctual') : r.status === 'late' ? t('reports.statuses.late') : t('reports.statuses.absent'),
+        reportDuration(r.entryTime, r.exitTime),
       ]);
       
       const stats = {
@@ -276,11 +283,13 @@ export function generateReportData(
           t('reports.table.date'),
           t('reports.table.user'),
           t('reports.table.ficha'),
+          t('reports.filters.program'),
+          t('reports.table.env'),
           t('reports.table.entry'),
           t('reports.table.exit'),
-          t('reports.table.status'),
-          t('reports.table.env'),
           t('reports.table.delay'),
+          t('reports.table.status'),
+          t('reports.table.duration'),
         ],
         rows,
         summary: [
@@ -296,7 +305,6 @@ export function generateReportData(
           { label: t('reports.filters.program'), value: filters.program || t('reports.filters.all') },
           { label: t('reports.filters.dateFrom'), value: filters.dateFrom || '---' },
           { label: t('reports.filters.dateTo'), value: filters.dateTo || '---' },
-          { label: t('reports.filters.status'), value: filters.status || t('reports.filters.all') },
         ],
         generatedAt,
       };

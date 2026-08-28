@@ -774,6 +774,10 @@ emailValidatedSuccess: {
   reports: {
     title:           'Reportes y Consultas',
     byUser:          'Reporte por Usuario',
+    filtersTitle:    'Filtros',
+    results:         'Resultados',
+    invalidDateRange:'La fecha inicial no puede ser posterior a la fecha final.',
+    noRecords:       'No existen registros.',
     byFicha:         'Reporte por Ficha',
     calendar:        'Vista Calendario',
     myPerformance:   'Mi Rendimiento',

@@ -534,7 +534,7 @@ const en = {
     stats: { total: 'Total records', punctual: 'Punctual', late: 'Late', absent: 'Absent' }, notFound: 'Information is not available from the current source.',
   },
   reports: {
-    title: 'Reports & Queries', byUser: 'Report by User', byFicha: 'Report by Ficha', calendar: 'Calendar View', myPerformance: 'My Performance',
+    title: 'Reports & Queries', byUser: 'Report by User', filtersTitle: 'Filters', results: 'Results', invalidDateRange: 'The start date cannot be after the end date.', noRecords: 'No records found.', byFicha: 'Report by Ficha', calendar: 'Calendar View', myPerformance: 'My Performance',
     filters: { user: 'User', ficha: 'Ficha', environment: 'Environment', program: 'Program', dateFrom: 'From', dateTo: 'To', status: 'Status', all: 'All' },
     table: { date: 'Date', user: 'User', ficha: 'Ficha', entry: 'Entry', exit: 'Exit', status: 'Status', env: 'Environment', delay: 'Delay', duration: 'Duration', identification: 'Identification', totalClasses: 'Total Classes', attendances: 'Attendances', absences: 'Absences', lateCount: 'Late', percentage: 'Percentage' },
     summary: { totalRecords: 'Total Records', present: 'Present', lateCount: 'Late', absentCount: 'Absent', rate: 'Rate', avgDelay: 'Avg Delay', daysNoAttendance: 'Days No Attendance' },
