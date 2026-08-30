@@ -778,6 +778,9 @@ emailValidatedSuccess: {
     results:         'Resultados',
     invalidDateRange:'La fecha inicial no puede ser posterior a la fecha final.',
     noRecords:       'No existen registros.',
+    selectFicha:     'Selecciona una ficha para consultar el reporte.',
+    noAttendanceRecords: 'Los aprendices de esta ficha no tienen registros de asistencia.',
+    summaryVisual:   'Resumen visual',
     byFicha:         'Reporte por Ficha',
     calendar:        'Vista Calendario',
     myPerformance:   'Mi Rendimiento',
@@ -809,6 +812,7 @@ emailValidatedSuccess: {
       percentage:    'Porcentaje',
     },
     summary: {
+      title:         'Resumen',
       totalRecords:  'Total Registros',
       present:       'Asistencias',
       lateCount:     'Retrasos',
@@ -825,6 +829,7 @@ emailValidatedSuccess: {
     noData:          'No existen registros para los filtros seleccionados.',
     noDataFicha:     'La ficha no posee estudiantes registrados.',
     noDataPeriod:    'No hay información para este periodo.',
+    noRecordsPeriod: 'No hay registros para este periodo.',
     performance: {
       title:         'Mi Rendimiento',
       attendanceRate: 'Porcentaje de Asistencia',
@@ -835,6 +840,8 @@ emailValidatedSuccess: {
       daysNoAttendance: 'Días sin Asistencia',
       totalClasses:  'Total de Clases',
       monthlyChart:  'Gráfica Mensual',
+      noData:        'No existen registros suficientes para generar estadísticas.',
+      noDataDesc:    'Cuando existan registros de asistencia, aquí se mostrarán tus indicadores.',
     },
     excuses: {
       title:         'Excusas',
@@ -842,6 +849,7 @@ emailValidatedSuccess: {
       message:       'Mensaje',
       messagePlaceholder: 'Describa el motivo de su ausencia...',
       pdfRequired:   'PDF Obligatorio',
+      pdfMissing:    'Debe adjuntar un archivo PDF válido.',
       attachPdf:     'Adjuntar PDF',
       pdfFormatError: 'Solo se permiten archivos PDF.',
       pdfSizeError:  'El archivo no debe exceder 5 MB.',

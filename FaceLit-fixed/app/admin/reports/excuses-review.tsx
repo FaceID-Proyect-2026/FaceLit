@@ -30,33 +30,6 @@ interface Excuse {
   reviewComment?: string;
 }
 
-const INITIAL_EXCUSES: Excuse[] = [
-  {
-    id: 'exc-1',
-    userId: 'l1',
-    userName: 'Juan Pérez',
-    userDocument: '1122334455',
-    date: '2026-06-22',
-    status: 'pending',
-    message: 'Enfermedad por gripe, adjunto certificado médico.',
-    pdfUrl: 'file://certificado-medico.pdf',
-    submittedAt: '2026-06-22T10:30:00Z',
-  },
-  {
-    id: 'exc-2',
-    userId: 'l2',
-    userName: 'Ana Martínez',
-    userDocument: '2233445566',
-    date: '2026-06-20',
-    status: 'approved',
-    message: 'Cita médica programada.',
-    pdfUrl: 'file://cita-medica.pdf',
-    submittedAt: '2026-06-20T08:00:00Z',
-    reviewedAt: '2026-06-20T14:00:00Z',
-    reviewerName: 'María González',
-  },
-];
-
 export default function ExcusesReviewScreen() {
   const { user, isAuthenticated } = useAuth();
   const { theme, isDark } = useTheme();
@@ -73,7 +46,8 @@ export default function ExcusesReviewScreen() {
   const border = isDark ? Colors.dark.border : Colors.light.border;
   const bg = isDark ? Colors.dark.background : Colors.light.background;
 
-  const [excuses, setExcuses] = useState<Excuse[]>(INITIAL_EXCUSES);
+  // La fuente real debe ser el servicio de excusas; no se muestran solicitudes ficticias.
+  const [excuses, setExcuses] = useState<Excuse[]>([]);
   const [selectedStatus, setSelectedStatus] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -181,24 +155,27 @@ export default function ExcusesReviewScreen() {
 
   return (
     <View style={[ers.safe, { backgroundColor: bg }]}>
-      <TouchableOpacity onPress={() => router.back()} style={ers.backBtn}>
-        <Ionicons name="arrow-back" size={20} color={text} />
-        <Text style={[ers.backText, { color: text }]}>{t('common.back')}</Text>
-      </TouchableOpacity>
-      
-      <Text style={[ers.title, { color: text, paddingHorizontal: 16, marginTop: 8 }]}>{t('reports.excuses.title')}</Text>
-
-      <View style={[ers.filtersToggle, { backgroundColor: cardBg, borderColor: border, marginHorizontal: 16 }]}>
-        <TouchableOpacity onPress={() => setShowFilters(!showFilters)} style={ers.toggleBtn}>
-          <Text style={[ers.toggleText, { color: text }]}>
-            {t('reports.actions.filter')} {' ▼'}
-          </Text>
-          <Ionicons name={showFilters ? 'remove' : 'add'} size={20} color={muted} />
+      <View style={ers.pageWrap}>
+        <TouchableOpacity onPress={() => router.back()} style={ers.backBtn}>
+          <Ionicons name="arrow-back" size={20} color={text} />
+          <Text style={[ers.backText, { color: text }]}>{t('common.back')}</Text>
         </TouchableOpacity>
+
+        <Text style={[ers.title, { color: text }]}>{t('reports.excuses.title')}</Text>
+
+        <View style={[ers.filtersToggle, { backgroundColor: cardBg, borderColor: border }]}>
+          <TouchableOpacity onPress={() => setShowFilters(!showFilters)} style={ers.toggleBtn}>
+            <View style={ers.filterToggleTitle}>
+              <Ionicons name="filter-outline" size={18} color={theme.primary} />
+              <Text style={[ers.toggleText, { color: text }]}>{t('reports.actions.filter')}</Text>
+            </View>
+            <Ionicons name={showFilters ? 'chevron-up' : 'chevron-down'} size={20} color={muted} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {showFilters && (
-        <View style={ers.filtersContent}>
+        <View style={[ers.filtersContent, { backgroundColor: cardBg, borderColor: border }]}>
           <View style={ers.filterRow}>
             <SelectField
               label={t('reports.filters.ficha')}
@@ -245,7 +222,7 @@ export default function ExcusesReviewScreen() {
       <FlatList
         data={filteredExcuses}
         keyExtractor={e => e.id}
-        contentContainerStyle={{ padding: 16, gap: 8 }}
+        contentContainerStyle={ers.listContent}
         renderItem={({ item }) => (
           <View style={[ers.card, { backgroundColor: cardBg, borderColor: border }]}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -358,16 +335,19 @@ export default function ExcusesReviewScreen() {
 
 const ers = StyleSheet.create({
   safe: { flex: 1 },
-  backBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 16, paddingTop: 12 },
+  pageWrap: { width: '100%', maxWidth: 1472, alignSelf: 'center', paddingHorizontal: 16 },
+  backBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingTop: 12 },
   backText: { fontWeight: '700' },
-  title: { fontSize: FontSize['2xl'], fontWeight: FontWeight.black, marginBottom: 12 },
+  title: { fontSize: FontSize['2xl'], fontWeight: FontWeight.black, marginTop: 10, marginBottom: 12 },
   filtersToggle: { borderRadius: 12, borderWidth: 1, padding: 12, marginBottom: 12 },
   toggleBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  filterToggleTitle: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   toggleText: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
-  filtersContent: { paddingHorizontal: 16, paddingBottom: 12, gap: 12 },
-  filterRow: { gap: 12 },
-  filterField: { width: '100%' },
-  clearBtn: { alignSelf: 'flex-start' },
+  filtersContent: { width: '100%', maxWidth: 1440, alignSelf: 'center', borderRadius: 12, borderWidth: 1, padding: 18, marginBottom: 4 },
+  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  filterField: { flexBasis: 200, flexGrow: 1, minWidth: 180 },
+  clearBtn: { alignSelf: 'flex-start', minWidth: 150 },
+  listContent: { width: '100%', maxWidth: 1472, alignSelf: 'center', padding: 16, gap: 10, paddingBottom: 32 },
   card: { borderRadius: 12, borderWidth: 1, padding: 14 },
   cardTitle: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
   statusBadge: { borderRadius: 20, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 4 },

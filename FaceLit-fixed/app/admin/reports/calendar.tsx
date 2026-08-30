@@ -10,7 +10,7 @@ import { useSyncExternalStore } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState, useMemo, useCallback } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Modal, TextInput } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Modal, TextInput, useWindowDimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import * as DocumentPicker from 'expo-document-picker';
 import AppButton from '@/shared/components/ui/AppButton';
@@ -47,8 +47,10 @@ interface Excuse {
 export default function CalendarReportScreen() {
   const { user } = useAuth();
   const { theme, isDark } = useTheme();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const attendance = useAttendance();
+  const { width } = useWindowDimensions();
+  const isCompact = width < 560;
   
   useSyncExternalStore(subscribeAcademic, getFichasSnapshot);
   useSyncExternalStore(subscribeSchedules, getSchedulesSnapshot);
@@ -157,7 +159,17 @@ export default function CalendarReportScreen() {
     setShowDayModal(true);
   };
 
+  const closeDayModal = () => {
+    setShowDayModal(false);
+    setSelectedDay(null);
+    setDayRecords([]);
+  };
+
   const handleSendExcuse = (record: DayRecord) => {
+    if (record.status !== 'absent' || hasExcuseForDate(record.date)) {
+      alert(t('reports.excuses.onlyForAbsence'));
+      return;
+    }
     setSelectedAbsenceRecord(record);
     setExcuseMessage('');
     setExcusePdf(null);
@@ -185,7 +197,15 @@ export default function CalendarReportScreen() {
   };
 
   const submitExcuse = () => {
-    if (!excuseMessage.trim() || !excusePdf || !selectedAbsenceRecord || !user) return;
+    if (!selectedAbsenceRecord || selectedAbsenceRecord.status !== 'absent') {
+      alert(t('reports.excuses.onlyForAbsence'));
+      return;
+    }
+    if (!excusePdf) {
+      alert(t('reports.excuses.pdfMissing'));
+      return;
+    }
+    if (!excuseMessage.trim() || !user) return;
     
     setSubmittingExcuse(true);
     setTimeout(() => {
@@ -209,7 +229,7 @@ export default function CalendarReportScreen() {
   };
 
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    return date.toLocaleDateString(i18n.language, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   };
 
   const getStatusColor = (status: string) => {
@@ -237,32 +257,35 @@ export default function CalendarReportScreen() {
         <Text style={[crs.backText, { color: text }]}>{t('common.back')}</Text>
       </TouchableOpacity>
 
-      <View style={[crs.header, { backgroundColor: cardBg, borderColor: border, marginHorizontal: 16, marginTop: 8, marginBottom: 12 }]}>
-        <TouchableOpacity onPress={prevMonth} style={crs.navBtn} activeOpacity={0.7}>
-          <Ionicons name="chevron-back" size={24} color={text} />
-        </TouchableOpacity>
-        <Text style={[crs.monthTitle, { color: text }]}>
-          {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-        </Text>
-        <TouchableOpacity onPress={nextMonth} style={crs.navBtn} activeOpacity={0.7}>
-          <Ionicons name="chevron-forward" size={24} color={text} />
-        </TouchableOpacity>
+      <View style={crs.monthNavWrap}>
+        <View style={[crs.header, { backgroundColor: cardBg, borderColor: border }]}>
+          <TouchableOpacity onPress={prevMonth} style={crs.navBtn} activeOpacity={0.7}>
+            <Ionicons name="chevron-back" size={24} color={text} />
+          </TouchableOpacity>
+          <Text style={[crs.monthTitle, { color: text }]}>
+            {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+          </Text>
+          <TouchableOpacity onPress={nextMonth} style={crs.navBtn} activeOpacity={0.7}>
+            <Ionicons name="chevron-forward" size={24} color={text} />
+          </TouchableOpacity>
+        </View>
       </View>
 
-      <View style={[crs.legend, { paddingHorizontal: 16, marginBottom: 8 }]}>
+      <View style={crs.calendarWrap}>
+      <View style={crs.legend}>
         {[
           { c: Colors.success, l: t('reports.calendarLegend.present') },
           { c: Colors.warning, l: t('reports.calendarLegend.late') },
           { c: Colors.error, l: t('reports.calendarLegend.absent') },
         ].map((x, i) => (
-          <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <View style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: x.c }} />
-            <Text style={{ color: muted, fontSize: 12 }}>{x.l}</Text>
+          <View key={i} style={crs.legendItem}>
+            <View style={[crs.legendDot, { backgroundColor: x.c }]} />
+            <Text style={{ color: muted, fontSize: FontSize.sm }}>{x.l}</Text>
           </View>
         ))}
       </View>
 
-      <View style={[crs.grid, { paddingHorizontal: 16 }]}>
+      <View style={[crs.grid, { backgroundColor: cardBg, borderColor: border }]}>
         {dayNames.map((d, i) => (
           <View key={i} style={crs.dayHeader}>
             <Text style={[crs.dayHeaderText, { color: muted }]}>{d}</Text>
@@ -288,6 +311,7 @@ export default function CalendarReportScreen() {
               disabled={!dayData.currentMonth}
               style={[
                 crs.dayCell,
+                { minHeight: isCompact ? 54 : 86 },
                 { backgroundColor: bgColor, borderColor: borderColor },
                 !dayData.currentMonth && crs.dayCellDisabled,
               ]}
@@ -305,13 +329,15 @@ export default function CalendarReportScreen() {
           );
         })}
       </View>
+      </View>
 
-      <Modal visible={showDayModal} transparent animationType="fade">
-        <View style={crs.modalOverlay} onTouchStart={() => setShowDayModal(false)}>
+      {selectedDay && (
+      <Modal visible={showDayModal} transparent animationType="fade" onRequestClose={closeDayModal}>
+        <View style={crs.modalOverlay} onTouchStart={closeDayModal}>
           <View style={[crs.modalCard, { backgroundColor: cardBg, borderColor: border }]} onTouchStart={() => {}}>
             <View style={crs.modalHeader}>
-              <Text style={[crs.modalTitle, { color: text }]}>{formatDate(selectedDay!)}</Text>
-              <TouchableOpacity onPress={() => setShowDayModal(false)} style={crs.modalClose}>
+              <Text style={[crs.modalTitle, { color: text }]}>{formatDate(selectedDay)}</Text>
+              <TouchableOpacity onPress={closeDayModal} style={crs.modalClose}>
                 <Ionicons name="close" size={24} color={muted} />
               </TouchableOpacity>
             </View>
@@ -319,7 +345,7 @@ export default function CalendarReportScreen() {
             {dayRecords.length === 0 ? (
               <View style={crs.modalEmpty}>
                 <Ionicons name="calendar-clear-outline" size={48} color={muted} />
-                <Text style={{ color: muted, marginTop: 8, textAlign: 'center' }}>{t('reports.noDataPeriod')}</Text>
+                <Text style={{ color: muted, marginTop: 8, textAlign: 'center' }}>{t('reports.noRecordsPeriod')}</Text>
               </View>
             ) : (
               <ScrollView style={crs.modalContent} showsVerticalScrollIndicator={false}>
@@ -378,6 +404,7 @@ export default function CalendarReportScreen() {
           </View>
         </View>
       </Modal>
+      )}
 
       <AppDialog
         visible={excuseDialogVisible}
@@ -413,14 +440,18 @@ const crs = StyleSheet.create({
   safe: { flex: 1 },
   backBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 16, paddingTop: 12 },
   backText: { fontWeight: '700' },
+  monthNavWrap: { width: '100%', maxWidth: 992, alignSelf: 'center', paddingHorizontal: 16, marginTop: 8, marginBottom: 12 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: 12, borderWidth: 1, padding: 16 },
   navBtn: { padding: 4 },
   monthTitle: { fontSize: FontSize.xl, fontWeight: FontWeight.black },
-  legend: { flexDirection: 'row', gap: 16, flexWrap: 'wrap' },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
-  dayHeader: { width: '14.28%', aspectRatio: 1, alignItems: 'center', justifyContent: 'center' },
+  calendarWrap: { width: '100%', maxWidth: 960, alignSelf: 'center', paddingHorizontal: 16 },
+  legend: { flexDirection: 'row', gap: 16, flexWrap: 'wrap', marginBottom: 12 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  legendDot: { width: 10, height: 10, borderRadius: 3 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', borderRadius: 14, borderWidth: 1, overflow: 'hidden' },
+  dayHeader: { width: '14.285714%', height: 38, alignItems: 'center', justifyContent: 'center' },
   dayHeaderText: { fontSize: FontSize.xs, fontWeight: FontWeight.bold },
-  dayCell: { width: '14.28%', aspectRatio: 1, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center', padding: 4 },
+  dayCell: { width: '14.285714%', borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', justifyContent: 'center', padding: 4 },
   dayCellDisabled: { opacity: 0.3 },
   dayNum: { fontSize: 14, fontWeight: FontWeight.bold },
   statusDots: { flexDirection: 'row', gap: 2, marginTop: 2 },

@@ -3,9 +3,6 @@ import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useAttendance } from '@/features/attendance/useAttendance';
-import { getFichasSnapshot, subscribe as subscribeAcademic } from '@/features/academic/academicStore';
-import { getSchedulesSnapshot, subscribe as subscribeSchedules } from '@/features/schedules/schedulesStore';
-import { useSyncExternalStore } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState, useMemo } from 'react';
@@ -25,13 +22,8 @@ interface MonthlyStat {
 export default function MyPerformanceScreen() {
   const { user } = useAuth();
   const { theme, isDark } = useTheme();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const attendance = useAttendance();
-  
-  useSyncExternalStore(subscribeAcademic, getFichasSnapshot);
-  useSyncExternalStore(subscribeSchedules, getSchedulesSnapshot);
-
-  const schedules = getSchedulesSnapshot();
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -44,26 +36,19 @@ export default function MyPerformanceScreen() {
     return attendance.filter(r => r.userId === user.id).sort((a, b) => a.date.localeCompare(b.date));
   }, [attendance, user?.id]);
 
-  const userSchedules = useMemo(() => {
-    if (!user) return [];
-    const userFichas = getFichasSnapshot().filter(f => f.learners.some(l => l.id === user.id)).map(f => f.number);
-    return schedules.filter(s => userFichas.includes(s.fichaNumber));
-  }, [schedules, user?.id]);
-
   const overallStats = useMemo(() => {
     const total = userAttendance.length;
-    const attendances = userAttendance.filter(r => r.status === 'punctual').length;
+    // Un retraso sigue siendo una asistencia; el estado ya viene resuelto por RF-6.
+    const attendances = userAttendance.filter(r => r.status === 'punctual' || r.status === 'late').length;
     const lateCount = userAttendance.filter(r => r.status === 'late').length;
     const absences = userAttendance.filter(r => r.status === 'absent').length;
     const avgDelay = userAttendance.filter(r => r.status === 'late').reduce((sum, r) => sum + r.delayMinutes, 0) / Math.max(lateCount, 1);
     const percentage = total > 0 ? Math.round((attendances / total) * 100) : 0;
     
-    const uniqueDatesWithRecords = new Set(userAttendance.map(r => r.date)).size;
-    const totalExpected = userSchedules.length * Math.max(uniqueDatesWithRecords, 1);
-    const daysNoAttendance = Math.max(totalExpected - total, 0);
+    const daysNoAttendance = new Set(userAttendance.filter(r => r.status === 'absent').map(r => r.date)).size;
 
     return { total, attendances, lateCount, absences, avgDelay: Math.round(avgDelay), percentage, daysNoAttendance, totalClasses: total };
-  }, [userAttendance, userSchedules]);
+  }, [userAttendance]);
 
   const monthlyStats = useMemo((): MonthlyStat[] => {
     const monthsMap = new Map<string, MonthlyStat>();
@@ -71,8 +56,8 @@ export default function MyPerformanceScreen() {
       const monthKey = r.date.substring(0, 7);
       const existing = monthsMap.get(monthKey) || { month: monthKey, attendances: 0, absences: 0, lateCount: 0, totalClasses: 0, percentage: 0 };
       existing.totalClasses++;
-      if (r.status === 'punctual') existing.attendances++;
-      else if (r.status === 'late') existing.lateCount++;
+      if (r.status === 'punctual' || r.status === 'late') existing.attendances++;
+      if (r.status === 'late') existing.lateCount++;
       else if (r.status === 'absent') existing.absences++;
       existing.percentage = existing.totalClasses > 0 ? Math.round((existing.attendances / existing.totalClasses) * 100) : 0;
       monthsMap.set(monthKey, existing);
@@ -86,7 +71,7 @@ export default function MyPerformanceScreen() {
   const formatMonth = (monthStr: string) => {
     const [year, month] = monthStr.split('-');
     const date = new Date(parseInt(year), parseInt(month) - 1);
-    return date.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' });
+    return date.toLocaleDateString(i18n.language, { month: 'short', year: '2-digit' });
   };
 
   return (
