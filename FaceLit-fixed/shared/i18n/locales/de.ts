@@ -60,7 +60,7 @@ const de = {
   // ─────────────────────────────────────────────
   sidebar: {
     dashboard: 'Dashboard',
-    users: 'Benutzer',
+    users: 'Benutzer', online: 'Online', currentlyOnline: 'Derzeit online', currentlyOffline: 'Derzeit offline',
     userManagement: 'Benutzerverwaltung',
     environments: 'Umgebungen',
     academic: 'Akademisch',
@@ -89,7 +89,7 @@ const de = {
     quickActions: 'Schnellaktionen',
     recentActivity: 'Letzte Aktivität',
   },
-  users: { title: 'Benutzerverwaltung', subtitle: 'Benutzer mit mindestens einer registrierten Sitzung', adminLabel: 'Verwaltungsbereich', total: 'Gesamt', active: 'Aktiv', apprentices: 'Lernende', registered: 'Registrierte Benutzer', results: 'Ergebnisse', all: 'Alle', search: 'Nach Name oder E-Mail suchen', empty: 'Keine Benutzer gefunden', pendingFicha: 'Ficha ausstehend', noFicha: 'Keine Ficha zugewiesen', details: 'Benutzerdetails', editData: 'Bearbeitbare Daten', readonlyData: 'Referenzinformationen', document: 'Dokument', birthDate: 'Geburtsdatum', ficha: 'Ficha', program: 'Programm', status: 'Status', role: 'Rolle', statuses: { ACTIVE: 'Aktiv', INACTIVE: 'Inaktiv', PENDING_CONSENT: 'Zustimmung ausstehend', BLOCKED: 'Gesperrt' }, roles: { APPRENTICE: 'Lernender', INSTRUCTOR: 'Ausbilder', ADMINISTRATOR: 'Administrator', COORDINATOR: 'Koordinator' }, firstName: 'Vorname', lastName: 'Nachname', view: 'Details anzeigen', delete: 'Löschen', deleteTitle: 'Benutzer löschen', deleteConfirm: 'Möchten Sie diesen Benutzer wirklich löschen?', loadError: 'Benutzer konnten nicht geladen werden', saveError: 'Benutzer konnte nicht aktualisiert werden', deleteError: 'Benutzer konnte nicht gelöscht werden' },
+  users: { title: 'Benutzerverwaltung', subtitle: 'Benutzer mit mindestens einer registrierten Sitzung', adminLabel: 'Verwaltungsbereich', total: 'Gesamt', active: 'Aktiv', apprentices: 'Lernende', registered: 'Registrierte Benutzer', results: 'Ergebnisse', all: 'Alle', search: 'Nach Name oder E-Mail suchen', empty: 'Keine Benutzer gefunden', pendingFicha: 'Ficha ausstehend', noFicha: 'Keine Ficha zugewiesen', details: 'Benutzerdetails', editData: 'Bearbeitbare Daten', readonlyData: 'Referenzinformationen', document: 'Dokument', birthDate: 'Geburtsdatum', ficha: 'Ficha', program: 'Programm', status: 'Status', role: 'Rolle', statuses: { ACTIVE: 'Aktiv', INACTIVE: 'Inaktiv', PENDING_CONSENT: 'Zustimmung ausstehend', BLOCKED: 'Gesperrt' }, roles: { APPRENTICE: 'Lernender', INSTRUCTOR: 'Ausbilder', ADMINISTRATOR: 'Administrator', COORDINATOR: 'Koordinator' }, firstName: 'Vorname', lastName: 'Nachname', view: 'Details anzeigen', delete: 'Löschen', deleteTitle: 'Benutzer löschen', deleteConfirm: 'Möchten Sie diesen Benutzer wirklich löschen?', loadError: 'Benutzer konnten nicht geladen werden', saveError: 'Benutzer konnte nicht aktualisiert werden', deleteError: 'Benutzer konnte nicht gelöscht werden', blockAccount: 'Konto sperren', unblockAccount: 'Konto entsperren', blockedNote: 'Der Benutzer kann sich nicht anmelden, solange das Konto gesperrt ist.', sessionNote: 'Der Status Aktiv/Inaktiv wird automatisch anhand der Benutzersitzung berechnet und kann nicht manuell bearbeitet werden.', blockConfirmTitle: 'Konto sperren', blockConfirmMessage: 'Möchten Sie {{name}} wirklich sperren? Die Anmeldung ist erst nach der Entsperrung wieder möglich.', unblockConfirmTitle: 'Konto entsperren', unblockConfirmMessage: 'Möchten Sie {{name}} wirklich entsperren?' },
   environments: {
     title: 'Umgebungsverwaltung',
     subtitle: 'Verwalten Sie institutionelle Umgebungen',

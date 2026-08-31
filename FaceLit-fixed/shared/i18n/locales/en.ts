@@ -485,11 +485,19 @@ const en = {
     recentActivity: 'Recent activity',
   },
   users: {
+    online: 'Online',
+    currentlyOnline: 'Currently online',
+    currentlyOffline: 'Currently offline',
     title: 'User management', subtitle: 'Users with at least one registered session', adminLabel: 'Administration panel', total: 'Total', active: 'Active', apprentices: 'Apprentices', registered: 'Registered users', results: 'results', all: 'All', search: 'Search by name or email',
     empty: 'No users found with that criterion', pendingFicha: 'Ficha pending', noFicha: 'No ficha assigned', details: 'User details', editData: 'Editable data', readonlyData: 'Reference information', document: 'Document', birthDate: 'Birth date', ficha: 'Ficha', program: 'Program', status: 'Status', role: 'Role', statuses: { ACTIVE: 'Active', INACTIVE: 'Inactive', PENDING_CONSENT: 'Consent pending', BLOCKED: 'Blocked' }, roles: { APPRENTICE: 'Apprentice', INSTRUCTOR: 'Instructor', ADMINISTRATOR: 'Administrator', COORDINATOR: 'Coordinator' },
     firstName: 'First name', lastName: 'Last name', view: 'View details', delete: 'Delete', deleteTitle: 'Delete user',
     deleteConfirm: 'Are you sure you want to delete this user?', loadError: 'Users could not be loaded',
     saveError: 'User could not be updated', deleteError: 'User could not be deleted',
+    blockAccount: 'Block account', unblockAccount: 'Unblock account',
+    blockedNote: 'The user will not be able to log in while the account is blocked.',
+    sessionNote: 'The Active/Inactive status is calculated automatically from the user session and cannot be edited manually.',
+    blockConfirmTitle: 'Block account', blockConfirmMessage: 'Are you sure you want to block {{name}}? They will not be able to log in until unblocked.',
+    unblockConfirmTitle: 'Unblock account', unblockConfirmMessage: 'Are you sure you want to unblock {{name}}?',
   },
   environments: {
     title: 'Environment Management',
@@ -560,7 +568,7 @@ const en = {
   profile: {
     title: 'My Profile', personalInfo: 'Personal Information', accountInfo: 'Account Information', settings: 'Settings',
     fields: { name: 'Name', lastname: 'Last Name', documentType: 'Document Type', document: 'Document Number', email: 'Email', role: 'Role', status: 'Status' },
-    settingsOptions: { preferences: 'Preferences', language: 'Language', subtitle: 'Manage your account and preferences', theme: 'Theme', notifications: 'Notifications', accessibility: 'Accessibility', changePassword: 'Change Password', saveChanges: 'Save changes', saved: 'Saved'},
+    settingsOptions: { preferences: 'Preferences', language: 'Language', subtitle: 'Manage your account and preferences', theme: 'Theme', notifications: 'Notifications', accessibility: 'Accessibility', changePassword: 'Change Password', saveChanges: 'Save changes', saved: 'Saved' },
     logout: 'Log out', logoutConfirm: 'Are you sure you want to log out?',
   },
 

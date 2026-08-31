@@ -21,6 +21,7 @@ interface ManagedUser {
   email: string;
   role?: string;
   accountStatus?: AccountStatus;
+  sessionStatus?: 'ACTIVE' | 'INACTIVE';
   documentNumber?: string;
   documentType?: string;
   birthDate?: string;
@@ -31,7 +32,6 @@ interface ManagedUser {
   hasSession?: boolean;
 }
 
-const statusValues: AccountStatus[] = ['ACTIVE', 'INACTIVE', 'PENDING_CONSENT', 'BLOCKED'];
 const roleValues: UserRole[] = ['APPRENTICE', 'INSTRUCTOR', 'ADMINISTRATOR', 'COORDINATOR'];
 
 function getApiErrorMessage(error: any, fallback: string) {
@@ -42,6 +42,16 @@ function getApiErrorMessage(error: any, fallback: string) {
     if (messages.length) return messages.join('\n');
   }
   return fallback;
+}
+
+// El admin ya no fija ACTIVE/INACTIVE a mano: esos dos estados se calculan a partir
+// de "sessionStatus" (si el token del usuario sigue vigente o no). BLOCKED y
+// PENDING_CONSENT siguen siendo estados reales de la cuenta (BLOCKED es la única
+// acción manual que le queda al admin sobre el estado).
+function getEffectiveStatus(item: ManagedUser): AccountStatus {
+  if (item.accountStatus === 'BLOCKED') return 'BLOCKED';
+  if (item.accountStatus === 'PENDING_CONSENT') return 'PENDING_CONSENT';
+  return item.sessionStatus === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE';
 }
 
 export default function UserManagementScreen() {
@@ -68,7 +78,7 @@ export default function UserManagementScreen() {
   const softBlue = isDark ? 'rgba(74,144,217,0.16)' : '#EAF3FC';
   const softAmber = isDark ? 'rgba(232,155,44,0.16)' : '#FFF5DF';
   const filteredUsers = users.filter(item => {
-    const status = item.accountStatus ?? 'ACTIVE';
+    const status = getEffectiveStatus(item);
     return (statusFilter === 'ALL' || status === statusFilter) && (roleFilter === 'ALL' || item.role === roleFilter);
   });
   const statusLabel = (status: AccountStatus) => t(`users.statuses.${status}`);
@@ -128,16 +138,22 @@ export default function UserManagementScreen() {
   const removeUser = (item: ManagedUser) => {
     alert(t('users.deleteTitle'), t('users.deleteConfirm'), [
       { text: t('common.cancel'), style: 'cancel' },
-      { text: t('users.delete'), style: 'destructive', onPress: async () => {
-        try { await deleteManagedUser(item.userId); await loadUsers(); }
-        catch (error: any) { alert(t('common.error'), getApiErrorMessage(error, t('users.deleteError'))); }
-      } },
+      {
+        text: t('users.delete'), style: 'destructive', onPress: async () => {
+          try { await deleteManagedUser(item.userId); await loadUsers(); }
+          catch (error: any) { alert(t('common.error'), getApiErrorMessage(error, t('users.deleteError'))); }
+        }
+      },
     ]);
   };
 
   const renderUser = ({ item }: { item: ManagedUser }) => {
-    const status = item.accountStatus ?? 'ACTIVE';
+    const status = getEffectiveStatus(item);
     const displayName = [item.firstName, item.lastName].filter(Boolean).join(' ') || item.email;
+    const isTokenDriven = status === 'ACTIVE' || status === 'INACTIVE';
+    const statusText = isTokenDriven
+      ? (status === 'ACTIVE' ? t('users.currentlyOnline') : t('users.currentlyOffline'))
+      : statusLabel(status);
     const statusColor = status === 'ACTIVE' ? Colors.success : status === 'BLOCKED' ? Colors.error : Colors.warning;
     const statusBg = status === 'ACTIVE' ? softGreen : status === 'BLOCKED' ? Colors.error + '18' : softAmber;
     return (
@@ -146,9 +162,18 @@ export default function UserManagementScreen() {
           <Text style={styles.avatarText}>{displayName.charAt(0).toUpperCase()}</Text>
         </View>
         <View style={styles.userBody}>
+
           <View style={styles.nameLine}>
-            <Text style={[styles.userName, { color: text }]} numberOfLines={1}>{displayName}</Text>
-            <View style={[styles.statusPill, { backgroundColor: statusBg }]}><View style={[styles.statusDot, { backgroundColor: statusColor }]} /><Text style={[styles.statusText, { color: statusColor }]}>{statusLabel(status)}</Text></View>
+            <Text style={[styles.userName, { color: text }]} numberOfLines={1}>
+              {displayName}
+            </Text>
+
+            <View style={[styles.statusPill, { backgroundColor: statusBg }]}>
+              <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+              <Text style={[styles.statusText, { color: statusColor }]}>
+                {statusText}
+              </Text>
+            </View>
           </View>
           <Text style={[styles.email, { color: muted }]} numberOfLines={1}>{item.email}</Text>
           <View style={styles.detailLine}>
@@ -170,7 +195,7 @@ export default function UserManagementScreen() {
   };
 
   return (
-    <View style={[styles.safe, { backgroundColor: bg }]}> 
+    <View style={[styles.safe, { backgroundColor: bg }]}>
       <FlatList
         data={filteredUsers}
         keyExtractor={item => item.userId}
@@ -189,7 +214,7 @@ export default function UserManagementScreen() {
             </View>
             <View style={styles.statsRow}>
               <View style={[styles.statCard, { backgroundColor: softGreen }]}><View style={[styles.statIcon, { backgroundColor: theme.primary + '24' }]}><Ionicons name="people-outline" size={18} color={theme.primary} /></View><Text style={[styles.statValue, { color: text }]}>{users.length}</Text><Text style={[styles.statLabel, { color: muted }]}>{t('users.total')}</Text></View>
-              <View style={[styles.statCard, { backgroundColor: softBlue }]}><View style={[styles.statIcon, { backgroundColor: '#4A90D9' + '24' }]}><Ionicons name="checkmark-circle-outline" size={18} color="#4A90D9" /></View><Text style={[styles.statValue, { color: text }]}>{users.filter(item => item.accountStatus === 'ACTIVE').length}</Text><Text style={[styles.statLabel, { color: muted }]}>{t('users.active')}</Text></View>
+              <View style={[styles.statCard, { backgroundColor: softBlue }]}><View style={[styles.statIcon, { backgroundColor: '#4A90D9' + '24' }]}><Ionicons name="checkmark-circle-outline" size={18} color="#4A90D9" /></View><Text style={[styles.statValue, { color: text }]}>{users.filter(item => getEffectiveStatus(item) === 'ACTIVE').length}</Text><Text style={[styles.statLabel, { color: muted }]}>{t('users.active')}</Text></View>
               <View style={[styles.statCard, { backgroundColor: softAmber }]}><View style={[styles.statIcon, { backgroundColor: Colors.warning + '24' }]}><Ionicons name="school-outline" size={18} color={Colors.warning} /></View><Text style={[styles.statValue, { color: text }]}>{users.filter(item => item.role === 'APPRENTICE').length}</Text><Text style={[styles.statLabel, { color: muted }]}>{t('users.apprentices')}</Text></View>
             </View>
             <View style={[styles.toolbar, { backgroundColor: card, borderColor: border }]}>
@@ -220,7 +245,33 @@ export default function UserManagementScreen() {
           <Text style={[styles.sectionLabel, { color: theme.primary }]}>{t('users.readonlyData')}</Text>
           <View style={styles.infoGrid}><Text style={[styles.infoItem, { color: muted }]}>{t('users.document')}: {selected?.documentNumber ?? '-'}</Text><Text style={[styles.infoItem, { color: muted }]}>{t('users.birthDate')}: {selected?.birthDate ?? '-'}</Text><Text style={[styles.infoItem, { color: muted }]}>{t('users.ficha')}: {selected?.chipName ?? t('users.noFicha')}</Text><Text style={[styles.infoItem, { color: muted }]}>{t('users.program')}: {selected?.programName ?? '-'}</Text></View>
           <Text style={[styles.sectionLabel, { color: theme.primary }]}>{t('users.status')}</Text>
-          <View style={styles.statusRow}>{statusValues.map(status => <TouchableOpacity key={status} onPress={() => setDraft(current => ({ ...current, accountStatus: status }))} style={[styles.statusOption, { borderColor: draft.accountStatus === status ? theme.primary : border, backgroundColor: draft.accountStatus === status ? theme.primary + '18' : 'transparent' }]}><Text style={{ color: draft.accountStatus === status ? theme.primary : text, fontSize: 12, fontWeight: '600' }}>{statusLabel(status)}</Text></TouchableOpacity>)}</View>
+          <View style={[styles.sessionInfoRow, { backgroundColor: selected?.sessionStatus === 'ACTIVE' ? softGreen : softAmber }]}>
+            <View style={[styles.statusDot, { backgroundColor: selected?.sessionStatus === 'ACTIVE' ? Colors.success : Colors.warning }]} />
+            <Text style={[styles.sessionInfoText, { color: selected?.sessionStatus === 'ACTIVE' ? Colors.success : Colors.warning }]}>
+              {selected?.sessionStatus === 'ACTIVE' ? t('users.currentlyOnline') : t('users.currentlyOffline')}
+            </Text>
+          </View>
+          <Text style={[styles.helperText, { color: muted }]}>{t('users.sessionNote')}</Text>
+          <TouchableOpacity
+            onPress={() => {
+              const willBlock = draft.accountStatus !== 'BLOCKED';
+              alert(
+                willBlock ? t('users.blockConfirmTitle') : t('users.unblockConfirmTitle'),
+                t(willBlock ? 'users.blockConfirmMessage' : 'users.unblockConfirmMessage', { name: [selected?.firstName, selected?.lastName].filter(Boolean).join(' ') }),
+                [
+                  { text: t('common.cancel'), style: 'cancel' },
+                  { text: t('common.save'), onPress: () => setDraft(current => ({ ...current, accountStatus: willBlock ? 'BLOCKED' : 'ACTIVE' })) },
+                ]
+              );
+            }}
+            style={[styles.blockToggle, { borderColor: draft.accountStatus === 'BLOCKED' ? Colors.error : border, backgroundColor: draft.accountStatus === 'BLOCKED' ? Colors.error + '18' : 'transparent' }]}
+          >
+            <Ionicons name={draft.accountStatus === 'BLOCKED' ? 'lock-closed' : 'lock-open-outline'} size={16} color={draft.accountStatus === 'BLOCKED' ? Colors.error : text} />
+            <Text style={{ color: draft.accountStatus === 'BLOCKED' ? Colors.error : text, fontSize: 13, fontWeight: '700' }}>
+              {draft.accountStatus === 'BLOCKED' ? t('users.unblockAccount') : t('users.blockAccount')}
+            </Text>
+          </TouchableOpacity>
+          {draft.accountStatus === 'BLOCKED' && <Text style={[styles.helperText, { color: Colors.error }]}>{t('users.blockedNote')}</Text>}
           <Text style={[styles.sectionLabel, { color: theme.primary }]}>{t('users.role')}</Text>
           <View style={styles.roleGrid}>{roleValues.map(role => <TouchableOpacity key={role} onPress={() => setDraft(current => ({ ...current, role }))} style={[styles.roleOption, { borderColor: draft.role === role ? theme.primary : border, backgroundColor: draft.role === role ? theme.primary + '18' : 'transparent' }]}><Text style={{ color: draft.role === role ? theme.primary : text, fontSize: 12, fontWeight: '600' }}>{roleLabel(role)}</Text></TouchableOpacity>)}</View>
           <View style={styles.modalActions}><TouchableOpacity onPress={() => setSelected(null)} style={styles.cancelAction}><Text style={{ color: muted }}>{t('common.cancel')}</Text></TouchableOpacity><TouchableOpacity onPress={saveUser} disabled={saving} style={[styles.saveAction, { backgroundColor: theme.primary }]}><Ionicons name="save-outline" size={17} color={Colors.white} /><Text style={styles.saveActionText}>{saving ? t('common.loading') : t('common.save')}</Text></TouchableOpacity></View>
@@ -289,8 +340,10 @@ const styles = StyleSheet.create({
   field: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14 },
   infoGrid: { gap: 6, padding: 11, borderRadius: 11, backgroundColor: 'rgba(127,127,127,0.08)' },
   infoItem: { fontSize: 12 },
-  statusRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  statusOption: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 8 },
+  sessionInfoRow: { flexDirection: 'row', alignItems: 'center', gap: 7, borderRadius: 10, paddingHorizontal: 11, paddingVertical: 9, alignSelf: 'flex-start' },
+  sessionInfoText: { fontSize: 12, fontWeight: '700' },
+  helperText: { fontSize: 11, marginTop: -4, marginBottom: 2 },
+  blockToggle: { flexDirection: 'row', alignItems: 'center', gap: 7, borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, alignSelf: 'flex-start' },
   roleGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   roleOption: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 8 },
   modalActions: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 16, marginTop: 8 },
