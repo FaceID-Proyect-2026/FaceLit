@@ -83,12 +83,14 @@ export const Routes = {
 
   // Módulo 7: Reportes y Consultas
   REPORTS: {
-    DASHBOARD:    '/admin/reports',
-    BY_USER:      '/admin/reports/by-user',
-    BY_FICHA:     '/admin/reports/by-ficha',
-    CALENDAR:     '/admin/reports/calendar',
-    INSTRUCTOR:   '/instructor/reports',
-    APPRENTICE:   '/apprentice/reports',
+    DASHBOARD:       '/admin/reports',
+    BY_USER:         '/admin/reports/by-user',
+    BY_FICHA:        '/admin/reports/by-ficha',
+    CALENDAR:        '/admin/reports/calendar',
+    MY_PERFORMANCE:  '/admin/reports/my-performance',
+    EXCUSES_REVIEW:  '/admin/reports/excuses-review',
+    INSTRUCTOR:      '/instructor/reports',
+    APPRENTICE:      '/apprentice/reports',
   },
 
   // Módulo 8: Notificaciones

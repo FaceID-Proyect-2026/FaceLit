@@ -11,8 +11,8 @@ import { LanguageSelector } from '@/shared/components/ui';
 import { ThemeToggle } from '@/shared/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, router } from 'expo-router';
-import { useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useState, useEffect } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
@@ -21,10 +21,27 @@ export default function AdminLayout() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  // Protección: si no está autenticado, redirigir a login
+  // Protección: si no está autenticado, redirigir a login (después del mount)
+  useEffect(() => {
+    setMounted(true);
+    if (!isAuthenticated) {
+      router.replace('/auth/login' as any);
+    }
+  }, [isAuthenticated]);
+
+  if (!mounted) {
+    return (
+      <SafeAreaView style={[sal.safe, { backgroundColor: isDark ? Colors.dark.background : Colors.light.background }]}>
+        <View style={sal.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   if (!isAuthenticated) {
-    router.replace('/auth/login' as any);
     return null;
   }
 
@@ -87,6 +104,8 @@ export default function AdminLayout() {
         <Stack.Screen name="reports/by-user" />
         <Stack.Screen name="reports/by-ficha" />
         <Stack.Screen name="reports/calendar" />
+        <Stack.Screen name="reports/my-performance" />
+        <Stack.Screen name="reports/excuses-review" />
         <Stack.Screen name="profile/index" />
         <Stack.Screen name="profile/settings" />
       </Stack>
@@ -96,6 +115,7 @@ export default function AdminLayout() {
 
 const sal = StyleSheet.create({
   safe: { flex: 1 },
+  loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
