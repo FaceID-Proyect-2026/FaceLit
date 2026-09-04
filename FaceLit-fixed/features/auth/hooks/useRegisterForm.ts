@@ -4,10 +4,11 @@
 //  de la pantalla (clean code) — misma
 //  convención que useLoginForm.ts
 // ─────────────────────────────────────────────
+import { recordPrivacyAcceptance } from '@/features/auth/privacyAcceptanceStore';
+import { Routes } from '@/shared/constants/routes';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { router } from 'expo-router';
-import { Routes } from '@/shared/constants/routes';
 
 // ── Regex de validación ────────────────────────
 const ONLY_LETTERS   = /^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]+$/;
@@ -191,6 +192,8 @@ export function useRegisterForm({ validatedEmail }: UseRegisterFormParams) {
 
     setErrors(e);
     if (Object.values(e).some(v => v !== '')) return;
+
+    recordPrivacyAcceptance(d.email);
 
     const age = getAge(birthdate!);
     if (age >= 18) {

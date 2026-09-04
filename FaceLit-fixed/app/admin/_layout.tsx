@@ -2,19 +2,18 @@
 //  app/admin/_layout.tsx
 //  Layout principal admin con sidebar y header
 // ─────────────────────────────────────────────
-import { useAuth } from '@/shared/contexts/AuthContext';
-import { useTheme } from '@/shared/contexts/ThemeContext';
+import Sidebar from '@/shared/components/layout/Sidebar';
+import { LanguageSelector, ThemeToggle } from '@/shared/components/ui';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
-import Sidebar from '@/shared/components/layout/Sidebar';
-import { LanguageSelector } from '@/shared/components/ui';
-import { ThemeToggle } from '@/shared/components/ui';
+import { useAuth } from '@/shared/contexts/AuthContext';
+import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, router } from 'expo-router';
-import { useState, useEffect } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function AdminLayout() {
   const { user, isAuthenticated } = useAuth();
@@ -84,7 +83,14 @@ export default function AdminLayout() {
       >
         <Stack.Screen name="index" />
         <Stack.Screen name="environments/index" />
-        <Stack.Screen name="environments/register" />
+        <Stack.Screen
+          name="environments/register"
+          options={{
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+            contentStyle: { backgroundColor: 'transparent' },
+          }}
+        />
         <Stack.Screen name="environments/[id]" />
         <Stack.Screen name="environments/assign" />
         <Stack.Screen name="academic/index" />

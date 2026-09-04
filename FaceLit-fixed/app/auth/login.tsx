@@ -1,23 +1,23 @@
 // ─────────────────────────────────────────────
 //  app/auth/login.tsx — código limpio + i18n
 // ─────────────────────────────────────────────
-import { useState } from 'react';
+import NavLink from '@/features/auth/components/NavLink';
+import { useLoginForm } from '@/features/auth/hooks/useLoginForm';
+import { Colors } from '@/shared/constants/colors';
+import { Routes } from '@/shared/constants/routes';
+import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  ActivityIndicator, Dimensions, KeyboardAvoidingView, Platform,
-  ScrollView, StyleSheet, Text, TextInput,
-  TouchableOpacity, View,
+    ActivityIndicator, Dimensions, KeyboardAvoidingView, Platform,
+    ScrollView, StyleSheet, Text, TextInput,
+    TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Routes } from '@/shared/constants/routes';
-import { Colors } from '@/shared/constants/colors';
-import { FontSize, FontWeight } from '@/shared/constants/typography';
-import { useLoginForm } from '@/features/auth/hooks/useLoginForm';
-import NavLink from '@/features/auth/components/NavLink';
 
 // ── Constantes ────────────────────────────────
 const { width } = Dimensions.get('window');
@@ -28,7 +28,7 @@ export default function LoginScreen() {
   const { theme, isDark } = useTheme();
   const { t }             = useTranslation();
   const router            = useRouter();
-  const { form, errors, loading, setField, handleSubmit } = useLoginForm();
+  const { form, errors, loading, setField, handleSubmit, privacyAlreadyAccepted } = useLoginForm();
 
   const [showPassword, setShowPassword] = useState(false);
   const [focused,      setFocused]      = useState<string | null>(null);
@@ -150,7 +150,7 @@ export default function LoginScreen() {
               </View>
 
               {/* ── Política de privacidad ── */}
-              <View style={[s.policyCard, {
+              {!privacyAlreadyAccepted && <View style={[s.policyCard, {
                 backgroundColor: isDark
                   ? 'rgba(255,255,255,0.04)'
                   : '#F3F8F3',
@@ -201,7 +201,7 @@ export default function LoginScreen() {
                       {t('login.policyError')}
                     </Text>
                   : null}
-              </View>
+              </View>}
 
               {/* ── Botón iniciar sesión ── */}
               <TouchableOpacity

@@ -2,20 +2,21 @@
 //  app/admin/environments/index.tsx
 //  Listado de ambientes con búsqueda y filtro
 // ─────────────────────────────────────────────
-import { useTheme } from '@/shared/contexts/ThemeContext';
+import { EnvironmentStatusFilter, useEnvironments } from '@/features/environments/useEnvironments';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
-import { useEnvironments, EnvironmentStatusFilter } from '@/features/environments/useEnvironments';
+import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
+import { isRecent, wasEditedRecently } from '@/shared/utils/dates';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 
 export default function EnvironmentsListScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
-  const { environments, search, setSearch, statusFilter, setStatusFilter, deactivate, deletePermanently } = useEnvironments();
+  const { environments, search, setSearch, statusFilter, setStatusFilter, deactivate, reactivate, deletePermanently } = useEnvironments();
   const { alert, DialogUI } = useAppDialog();
   const { width } = useWindowDimensions();
   const isMobile = width < 480;
@@ -74,6 +75,17 @@ export default function EnvironmentsListScreen() {
     );
   };
 
+  const handleReactivate = (id: string, code: string) => {
+    alert(t('environments.reactivate'), `${code}\n\n${t('environments.confirmReactivate')}`, [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('environments.reactivate'), onPress: () => {
+        const result = reactivate(id);
+        if (result.success) alert('✓', t('environments.reactivateSuccess'));
+        else if (result.error) alert(t('common.error'), t(result.error));
+      } },
+    ]);
+  };
+
   const renderItem = ({ item }: any) => (
     <TouchableOpacity
       onPress={() => router.push(`/admin/environments/${item.id}` as any)}
@@ -92,12 +104,27 @@ export default function EnvironmentsListScreen() {
           </Text>
         </View>
       </View>
-      <Text style={[els.cardTitle, { color: text }]}>{t('environments.cardTitle', { code: item.code })}</Text>
+      {(isRecent(item.createdAt) || wasEditedRecently(item.createdAt, item.updatedAt)) && (
+        <View style={els.badgeRow}>
+          {isRecent(item.createdAt) && <View style={[els.infoBadge, { backgroundColor: theme.primary + '18' }]}>
+            <Ionicons name="sparkles-outline" size={12} color={theme.primary} />
+            <Text style={[els.infoBadgeText, { color: theme.primary }]}>{t('environments.recentBadge')}</Text>
+          </View>}
+          {wasEditedRecently(item.createdAt, item.updatedAt) && <View style={[els.infoBadge, { backgroundColor: '#8A6D3B18' }]}>
+            <Ionicons name="create-outline" size={12} color="#B8860B" />
+            <Text style={[els.infoBadgeText, { color: '#B8860B' }]}>{t('environments.editedRecentlyBadge')}</Text>
+          </View>}
+        </View>
+      )}
+      <View style={els.titleRow}>
+        <Text style={[els.cardTitle, { color: text }]}>{t('environments.cardTitle', { code: item.code })}</Text>
+      </View>
       <Text style={[els.cardSub, { color: muted }]}>{t('environments.fields.quantity')}: {item.quantity}</Text>
       <View style={els.cardActions}>
         <TouchableOpacity
           onPress={() => router.push(`/admin/environments/${item.id}` as any)}
           style={[els.actionBtn, { backgroundColor: theme.primary + '15' }]}
+          accessibilityLabel={t('common.view')}
         >
           <Ionicons name="eye-outline" size={16} color={theme.primary} />
         </TouchableOpacity>
@@ -105,17 +132,20 @@ export default function EnvironmentsListScreen() {
           <TouchableOpacity
             onPress={() => handleDeactivate(item.id, item.code)}
             style={[els.actionBtn, { backgroundColor: Colors.error + '15' }]}
+            accessibilityLabel={t('environments.delete')}
           >
             <Ionicons name="trash-outline" size={16} color={Colors.error} />
           </TouchableOpacity>
         )}
         {item.status === 'inactive' && (
-          <TouchableOpacity
-            onPress={() => handleDeletePermanently(item.id, item.code)}
-            style={[els.actionBtn, { backgroundColor: Colors.error + '15' }]}
-          >
-            <Ionicons name="trash" size={16} color={Colors.error} />
-          </TouchableOpacity>
+          <>
+            <TouchableOpacity onPress={() => handleReactivate(item.id, item.code)} style={[els.actionBtn, { backgroundColor: theme.primary + '15' }]} accessibilityLabel={t('environments.reactivate')}>
+              <Ionicons name="refresh-outline" size={16} color={theme.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => handleDeletePermanently(item.id, item.code)} style={[els.actionBtn, { backgroundColor: Colors.error + '15' }]} accessibilityLabel={t('environments.deleteCompletely')}>
+              <Ionicons name="trash" size={16} color={Colors.error} />
+            </TouchableOpacity>
+          </>
         )}
       </View>
     </TouchableOpacity>
@@ -124,7 +154,10 @@ export default function EnvironmentsListScreen() {
   return (
     <View style={[els.safe, { backgroundColor: isDark ? Colors.dark.background : Colors.light.background }]}>
       <View style={[els.header, isMobile && els.headerMobile]}>
-        <Text style={[els.title, { color: text }]}>{t('environments.title')}</Text>
+        <View style={els.headingCopy}>
+          <Text style={[els.title, { color: text }]}>{t('environments.title')}</Text>
+          <Text style={[els.subtitle, { color: muted }]}>{t('environments.listSubtitle', 'Consulta, filtra y administra los ambientes de formación registrados en la institución.')}</Text>
+        </View>
         <TouchableOpacity
           onPress={() => router.push('/admin/environments/register' as any)}
           style={[els.addBtn, isMobile && els.addBtnMobile, { backgroundColor: theme.primary }]}
@@ -138,7 +171,7 @@ export default function EnvironmentsListScreen() {
       <View style={[els.searchWrap, { backgroundColor: inputBg, borderColor: border }]}>
         <Ionicons name="search-outline" size={18} color={muted} />
         <TextInput
-          style={[{backgroundColor: inputBg, borderColor: border }]}
+          style={[els.searchInput, { color: text }]}
           value={search}
           onChangeText={setSearch}
           placeholder={t('environments.search')}
@@ -166,6 +199,7 @@ export default function EnvironmentsListScreen() {
           </TouchableOpacity>
         ))}
       </View>
+      <Text style={[els.filterHelp, { color: muted }]}>{t('environments.filterHelp', 'Los ambientes inactivos no están disponibles para horarios ni fichas.')}</Text>
 
       <FlatList
         data={environments}
@@ -195,6 +229,8 @@ const els = StyleSheet.create({
     flexDirection: 'column', alignItems: 'stretch', gap: 12,
   },
   title: { fontSize: FontSize['2xl'], fontWeight: FontWeight.black },
+  headingCopy: { flex: 1 },
+  subtitle: { fontSize: FontSize.sm, marginTop: 3 },
   addBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12,
@@ -209,10 +245,11 @@ const els = StyleSheet.create({
     height: 44, borderRadius: 12, borderWidth: 1, paddingHorizontal: 14,
   },
   filterRow: { flexDirection: 'row', gap: 8, marginHorizontal: 16, marginTop: 10 },
+  filterHelp: { marginHorizontal: 16, marginTop: 6, fontSize: FontSize.xs },
   filterChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, borderWidth: 1.2 },
   filterChipText: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
   list: { padding: 16, gap: 12 },
-  card: { borderRadius: 14, borderWidth: 1, padding: 16 },
+  card: { borderRadius: 14, borderWidth: 1, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   typeBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   typeText: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
@@ -220,6 +257,11 @@ const els = StyleSheet.create({
   statusDot: { width: 10, height: 10, borderRadius: 5 },
   statusLabel: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
   cardTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, marginBottom: 2 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  badgeRow: { flexDirection: 'row', gap: 6, marginBottom: 8, flexWrap: 'wrap' },
+  infoBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
+  infoBadgeText: { fontSize: FontSize.xs, fontWeight: FontWeight.bold },
+  searchInput: { flex: 1, fontSize: FontSize.md, paddingVertical: 4 },
   cardSub: { fontSize: FontSize.sm, marginBottom: 8 },
   cardActions: { flexDirection: 'row', gap: 8, justifyContent: 'flex-end' },
   actionBtn: { width: 34, height: 34, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },

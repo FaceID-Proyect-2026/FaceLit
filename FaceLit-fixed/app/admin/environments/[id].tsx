@@ -2,16 +2,16 @@
 //  app/admin/environments/[id].tsx
 //  Detalle de ambiente + edición + asignación
 // ─────────────────────────────────────────────
-import { useTheme } from '@/shared/contexts/ThemeContext';
+import { MOCK_FICHAS } from '@/features/environments/types';
+import { useEnvironments } from '@/features/environments/useEnvironments';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
-import { useEnvironments } from '@/features/environments/useEnvironments';
-import { MOCK_FICHAS } from '@/features/environments/types';
+import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function EnvironmentDetailScreen() {
   const { theme, isDark } = useTheme();
@@ -29,16 +29,25 @@ export default function EnvironmentDetailScreen() {
 
   if (!env) {
     return (
-      <View style={[eds.safe, { backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }]}>
-        <Text style={{ color: muted }}>Ambiente no encontrado</Text>
+      <View style={[eds.safe, { backgroundColor: bg, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24 }]}>
+        <Ionicons name="alert-circle-outline" size={48} color={muted} />
+        <Text style={{ color: text, fontSize: FontSize.lg, fontWeight: FontWeight.bold, textAlign: 'center' }}>
+          {t('environments.detail.notFound')}
+        </Text>
+        <TouchableOpacity onPress={() => router.back()} style={[eds.editBtn, { borderColor: theme.primary, marginTop: 8 }]}>
+          <Ionicons name="arrow-back" size={18} color={theme.primary} />
+          <Text style={[eds.editBtnText, { color: theme.primary }]}>{t('common.back')}</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
   const statusColor = env.status === 'active' ? Colors.success : Colors.error;
 
-  const assignedFichasData = MOCK_FICHAS.filter(f => env.assignedFichas.includes(f.code));
-  const availableFichas = MOCK_FICHAS.filter(f => !env.assignedFichas.includes(f.code));
+  const activeAssignments = env.assignedFichas.filter(item => !item.unassignedAt);
+  const historicalAssignments = env.assignedFichas.filter(item => item.unassignedAt);
+  const assignedFichasData = MOCK_FICHAS.filter(f => activeAssignments.some(item => item.fichaCode === f.code));
+  const availableFichas = MOCK_FICHAS.filter(f => !activeAssignments.some(item => item.fichaCode === f.code));
 
   const handleRemoveFicha = (fichaId: string, fichaName: string) => {
     alert(
@@ -66,7 +75,15 @@ export default function EnvironmentDetailScreen() {
           <Text style={[eds.backText, { color: text }]}>{t('common.back')}</Text>
         </TouchableOpacity>
 
-        <Text style={[eds.title, { color: text }]}>{t('environments.detail.title')}</Text>
+        <View style={eds.heading}>
+          <View style={[eds.headingIcon, { backgroundColor: theme.primary + '18', borderColor: theme.primary + '55' }]}>
+            <Ionicons name="business-outline" size={26} color={theme.primary} />
+          </View>
+          <View style={eds.headingCopy}>
+            <Text style={[eds.title, { color: text }]}>{t('environments.detail.title')}</Text>
+            <Text style={[eds.subtitle, { color: muted }]}>{t('environments.detail.subtitle', 'Información y fichas asociadas')}</Text>
+          </View>
+        </View>
 
         {/* Info card */}
         <View style={[eds.card, { backgroundColor: cardBg, borderColor: border }]}>
@@ -78,12 +95,20 @@ export default function EnvironmentDetailScreen() {
             <Text style={[eds.infoLabel, { color: muted }]}>{t('environments.fields.quantity')}</Text>
             <Text style={[eds.infoValue, { color: text }]}>{env.quantity}</Text>
           </View>
-          <View style={[eds.infoRow, { borderBottomWidth: 0 }]}>
+          <View style={eds.infoRow}>
             <Text style={[eds.infoLabel, { color: muted }]}>{t('environments.fields.status')}</Text>
             <View style={[eds.statusBadge, { backgroundColor: statusColor + '20' }]}>
               <View style={[eds.statusDot, { backgroundColor: statusColor }]} />
               <Text style={[eds.statusText, { color: statusColor }]}>{t(`environments.statuses.${env.status}`)}</Text>
             </View>
+          </View>
+          <View style={eds.infoRow}>
+            <Text style={[eds.infoLabel, { color: muted }]}>{t('environments.detail.createdAt')}</Text>
+            <Text style={[eds.infoValue, { color: text }]}>{new Date(env.createdAt).toLocaleString()}</Text>
+          </View>
+          <View style={[eds.infoRow, { borderBottomWidth: 0 }]}>
+            <Text style={[eds.infoLabel, { color: muted }]}>{t('environments.detail.updatedAt')}</Text>
+            <Text style={[eds.infoValue, { color: text }]}>{new Date(env.updatedAt).toLocaleString()}</Text>
           </View>
         </View>
 
@@ -98,15 +123,26 @@ export default function EnvironmentDetailScreen() {
         </TouchableOpacity>
 
         {/* Assigned fichas */}
-        <Text style={[eds.sectionTitle, { color: text }]}>{t('environments.detail.assignedFichas')}</Text>
+        <View style={eds.sectionHeading}>
+          <View style={[eds.sectionIcon, { backgroundColor: theme.primary + '18' }]}>
+            <Ionicons name="layers-outline" size={18} color={theme.primary} />
+          </View>
+          <View style={eds.sectionHeadingCopy}>
+            <Text style={[eds.sectionTitle, { color: text }]}>{t('environments.detail.assignedFichas')}</Text>
+            <Text style={[eds.sectionHelp, { color: muted }]}>{t('environments.detail.assignedFichasHelp', 'Fichas que actualmente usan este ambiente. Puedes asignar nuevas o retirar las existentes.')}</Text>
+          </View>
+        </View>
         {assignedFichasData.length === 0 ? (
           <Text style={[eds.empty, { color: muted }]}>{t('environments.detail.noFichas')}</Text>
         ) : (
-          assignedFichasData.map(f => (
+          assignedFichasData.map(f => {
+            const relation = activeAssignments.find(item => item.fichaCode === f.code);
+            return (
             <View key={f.id} style={[eds.fichaCard, { backgroundColor: cardBg, borderColor: border }]}>
               <View style={{ flex: 1 }}>
                 <Text style={[eds.fichaName, { color: text }]}>{f.name}</Text>
-                <Text style={[eds.fichaInfo, { color: muted }]}>{f.program} · {f.learners} aprendices</Text>
+                <Text style={[eds.fichaInfo, { color: muted }]}>{f.program} · {f.learners} {t('environments.detail.learners')}</Text>
+                {relation && <Text style={[eds.fichaAssignedAt, { color: muted }]}>{t('environments.detail.assignedAt')}: {new Date(relation.assignedAt).toLocaleDateString()}</Text>}
               </View>
               <TouchableOpacity
                 onPress={() => handleRemoveFicha(f.code, f.name)}
@@ -115,13 +151,22 @@ export default function EnvironmentDetailScreen() {
                 <Ionicons name="close-circle-outline" size={18} color={Colors.error} />
               </TouchableOpacity>
             </View>
-          ))
+            );
+          })
         )}
 
         {/* Assign ficha */}
         {availableFichas.length > 0 && (
           <>
-            <Text style={[eds.sectionTitle, { color: text, marginTop: 16 }]}>{t('environments.assign.title')}</Text>
+            <View style={[eds.sectionHeading, { marginTop: 20 }]}>
+              <View style={[eds.sectionIcon, { backgroundColor: theme.primary + '18' }]}>
+                <Ionicons name="add-circle-outline" size={18} color={theme.primary} />
+              </View>
+              <View style={eds.sectionHeadingCopy}>
+                <Text style={[eds.sectionTitle, { color: text }]}>{t('environments.assign.title')}</Text>
+                <Text style={[eds.sectionHelp, { color: muted }]}>{t('environments.detail.assignHelp', 'Selecciona una ficha para vincularla con este ambiente.')}</Text>
+              </View>
+            </View>
             {availableFichas.map(f => (
               <TouchableOpacity
                 key={f.id}
@@ -134,11 +179,30 @@ export default function EnvironmentDetailScreen() {
               >
                 <View style={{ flex: 1 }}>
                   <Text style={[eds.fichaName, { color: text }]}>{f.name}</Text>
-                  <Text style={[eds.fichaInfo, { color: muted }]}>{f.program} · {f.learners} aprendices</Text>
+                  <Text style={[eds.fichaInfo, { color: muted }]}>{f.program} · {f.learners} {t('environments.detail.learners')}</Text>
                 </View>
                 <Ionicons name="add-circle-outline" size={24} color={theme.primary} />
               </TouchableOpacity>
             ))}
+          </>
+        )}
+
+        {historicalAssignments.length > 0 && (
+          <>
+            <Text style={[eds.sectionTitle, { color: text, marginTop: 20 }]}>{t('environments.detail.assignmentHistory')}</Text>
+            {historicalAssignments.map(assignment => {
+              const ficha = MOCK_FICHAS.find(item => item.code === assignment.fichaCode);
+              return (
+                <View key={`${assignment.fichaCode}-${assignment.assignedAt}`} style={[eds.historyCard, { backgroundColor: cardBg, borderColor: border }]}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[eds.fichaName, { color: text }]}>{ficha?.name ?? assignment.fichaCode}</Text>
+                    <Text style={[eds.fichaInfo, { color: muted }]}>{t('environments.detail.assignedAt')}: {new Date(assignment.assignedAt).toLocaleDateString()}</Text>
+                    <Text style={[eds.fichaAssignedAt, { color: muted }]}>{t('environments.detail.unassignedAt')}: {new Date(assignment.unassignedAt!).toLocaleDateString()}</Text>
+                  </View>
+                  <Ionicons name="time-outline" size={20} color={muted} />
+                </View>
+              );
+            })}
           </>
         )}
       </ScrollView>
@@ -151,8 +215,12 @@ const eds = StyleSheet.create({
   safe: { flex: 1 },
   scroll: { padding: 16, paddingBottom: 40 },
   backBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 12 },
+  heading: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 18 },
+  headingIcon: { width: 52, height: 52, borderRadius: 16, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  headingCopy: { flex: 1 },
   backText: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
-  title: { fontSize: FontSize['2xl'], fontWeight: FontWeight.black, marginBottom: 16 },
+  title: { fontSize: FontSize['2xl'], fontWeight: FontWeight.black },
+  subtitle: { fontSize: FontSize.sm, marginTop: 3 },
   card: { borderRadius: 14, borderWidth: 1, padding: 16, marginBottom: 16 },
   infoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' },
   infoLabel: { fontSize: FontSize.md, flex: 1 },
@@ -163,10 +231,16 @@ const eds = StyleSheet.create({
   editBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 12, borderWidth: 1.5, paddingVertical: 12, marginBottom: 20 },
   editBtnText: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
   sectionTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.black, marginBottom: 10 },
+  sectionHelp: { fontSize: FontSize.sm, lineHeight: 19, marginTop: -4, marginBottom: 10 },
+  sectionHeading: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  sectionIcon: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  sectionHeadingCopy: { flex: 1 },
   empty: { fontSize: FontSize.md, textAlign: 'center', paddingVertical: 20 },
   fichaCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, borderWidth: 1, padding: 14, marginBottom: 8, gap: 10 },
   fichaName: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
   fichaInfo: { fontSize: FontSize.sm, marginTop: 2 },
+  fichaAssignedAt: { fontSize: FontSize.xs, marginTop: 2, fontStyle: 'italic' },
+  historyCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, borderWidth: 1, padding: 14, marginBottom: 8, gap: 10, opacity: 0.82 },
   removeBtn: { width: 34, height: 34, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   assignCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, borderWidth: 1, padding: 14, marginBottom: 8, gap: 10 },
 });

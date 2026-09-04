@@ -1,13 +1,13 @@
-import { useTheme } from '@/shared/contexts/ThemeContext';
+import { useAcademic } from '@/features/academic/useAcademic';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
-import { useAcademic } from '@/features/academic/useAcademic';
+import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function ProgramRegisterScreen() {
   const { theme, isDark } = useTheme();
@@ -28,11 +28,8 @@ export default function ProgramRegisterScreen() {
 
   const handleSave = () => {
     if (!name.trim()) { setError('Requerido'); return; }
-    if (existing) {
-      updateProgram(existing.id, name, status);
-    } else {
-      addProgram(name);
-    }
+    if (existing) updateProgram(existing.id, name, status);
+    else if (!addProgram(name)) { setError(t('academic.duplicateProgram')); return; }
     alert('✓', existing ? 'Programa actualizado' : 'Programa registrado', [{ text: 'OK', onPress: () => router.back() }]);
   };
 

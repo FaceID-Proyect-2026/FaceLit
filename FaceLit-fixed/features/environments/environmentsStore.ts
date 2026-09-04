@@ -28,12 +28,15 @@ export function getById(id: string) {
 }
 
 export function registerEnvironment(form: EnvironmentForm) {
+  const now = new Date().toISOString();
   const newEnv: Environment = {
     id: Date.now().toString(),
     code: form.code.trim(),
     status: form.status ?? 'active',
     quantity: form.quantity ?? 0,
     assignedFichas: [],
+    createdAt: now,
+    updatedAt: now,
   };
   environments = [...environments, newEnv];
   emit();
@@ -46,6 +49,7 @@ export function updateEnvironment(id: string, form: EnvironmentForm) {
     code: form.code.trim(),
     status: form.status ?? e.status,
     quantity: form.quantity ?? e.quantity,
+    updatedAt: new Date().toISOString(),
   } : e);
   emit();
 }
@@ -54,8 +58,17 @@ export function updateEnvironment(id: string, form: EnvironmentForm) {
 // para conservar la integridad de los datos relacionados (fichas asignadas).
 export function deactivateEnvironment(id: string) {
   const env = environments.find(e => e.id === id);
-  if (!env) return { success: false, error: 'Ambiente no encontrado' };
-  environments = environments.map(e => e.id === id ? { ...e, status: 'inactive' as const } : e);
+  if (!env) return { success: false, error: 'environments.errors.notFound' };
+  environments = environments.map(e => e.id === id ? { ...e, status: 'inactive' as const, updatedAt: new Date().toISOString() } : e);
+  emit();
+  return { success: true };
+}
+
+export function reactivateEnvironment(id: string) {
+  const env = environments.find(e => e.id === id);
+  if (!env) return { success: false, error: 'environments.errors.notFound' };
+  if (env.status !== 'inactive') return { success: false, error: 'environments.alreadyActive' };
+  environments = environments.map(e => e.id === id ? { ...e, status: 'active' as const, updatedAt: new Date().toISOString() } : e);
   emit();
   return { success: true };
 }
@@ -67,15 +80,23 @@ export function deleteEnvironmentPermanently(id: string) {
   const env = environments.find(e => e.id === id);
   if (!env) return { success: false, error: 'environments.errors.notFound' };
   if (env.status !== 'inactive') return { success: false, error: 'environments.noDeleteActive' };
+  if (env.assignedFichas.some(assignment => !assignment.unassignedAt)) return { success: false, error: 'environments.noDeleteHasRelations' };
   environments = environments.filter(e => e.id !== id);
   emit();
   return { success: true };
 }
 
-export function assignFichaToEnvironment(envId: string, fichaId: string) {
+export function assignFichaToEnvironment(envId: string, fichaCode: string) {
+  const now = new Date().toISOString();
   environments = environments.map(e =>
-    e.id === envId && !e.assignedFichas.includes(fichaId)
-      ? { ...e, assignedFichas: [...e.assignedFichas, fichaId] }
+    e.id === envId
+      ? {
+          ...e,
+          assignedFichas: e.assignedFichas.some(item => item.fichaCode === fichaCode)
+            ? e.assignedFichas.map(item => item.fichaCode === fichaCode ? { ...item, assignedAt: now, unassignedAt: undefined } : item)
+            : [...e.assignedFichas, { fichaCode, assignedAt: now }],
+          updatedAt: now,
+        }
       : e
   );
   emit();
@@ -84,10 +105,10 @@ export function assignFichaToEnvironment(envId: string, fichaId: string) {
 
 // Desasigna una ficha del ambiente. La ficha NO se elimina del sistema,
 // únicamente se quita la relación con este ambiente.
-export function unassignFichaFromEnvironment(envId: string, fichaId: string) {
+export function unassignFichaFromEnvironment(envId: string, fichaCode: string) {
   environments = environments.map(e =>
     e.id === envId
-      ? { ...e, assignedFichas: e.assignedFichas.filter(f => f !== fichaId) }
+      ? { ...e, assignedFichas: e.assignedFichas.map(f => f.fichaCode === fichaCode && !f.unassignedAt ? { ...f, unassignedAt: new Date().toISOString() } : f), updatedAt: new Date().toISOString() }
       : e
   );
   emit();

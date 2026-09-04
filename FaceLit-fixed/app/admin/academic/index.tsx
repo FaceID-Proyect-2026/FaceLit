@@ -1,25 +1,26 @@
 // ─────────────────────────────────────────────
 //  app/admin/academic/index.tsx — Programas (Admin)
 // ─────────────────────────────────────────────
-import { useTheme } from '@/shared/contexts/ThemeContext';
+import { getProgramDisplayName } from '@/features/academic/types';
+import { ProgramStatusFilter, useAcademic } from '@/features/academic/useAcademic';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
-import { useAcademic, ProgramStatusFilter } from '@/features/academic/useAcademic';
-import { getProgramDisplayName } from '@/features/academic/types';
+import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
+import { isRecent } from '@/shared/utils/dates';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 
-type ViewMode = 'programs' | 'unlinked';
+type ViewMode = 'programs' | 'fichas' | 'unlinked';
 
 export default function AcademicProgramsScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const {
-    programs, search, setSearch, statusFilter, setStatusFilter, deactivateProgram, deleteProgram,
+    programs, allFichas, search, setSearch, statusFilter, setStatusFilter, deactivateProgram, reactivateProgram, deleteProgram, deactivateFicha, reactivateFicha, deleteFicha,
     unlinkedFichas, linkFichaToProgram,
   } = useAcademic();
   const { alert, DialogUI } = useAppDialog();
@@ -66,6 +67,27 @@ export default function AcademicProgramsScreen() {
     ]);
   };
 
+  const handleReactivate = (id: string, name: string) => {
+    alert(t('academic.alreadyActive'), `${name}\n\n${t('environments.reactivateConfirm')}`, [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('environments.reactivate'), onPress: () => reactivateProgram(id) },
+    ]);
+  };
+
+  const handleReactivateFicha = (id: string, number: string) => {
+    alert(t('academic.alreadyActive'), `${number}\n\n${t('environments.reactivateConfirm')}`, [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('environments.reactivate'), onPress: () => reactivateFicha(id) },
+    ]);
+  };
+
+  const handleDeactivateFicha = (id: string, number: string) => {
+    alert(t('academic.deactivateFicha'), `${number}\n\n${t('academic.confirmDeactivateFicha')}`, [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('academic.deactivateFicha'), style: 'destructive', onPress: () => deactivateFicha(id) },
+    ]);
+  };
+
   // Vincular una ficha desvinculada a un programa — misma lógica de
   // confirmación que se usa en el resto del módulo (Gestión de Ambientes).
   const handleLinkFicha = (fichaId: string, fichaNumber: string, programId: string, programName: string) => {
@@ -97,6 +119,14 @@ export default function AcademicProgramsScreen() {
       </View>
 
       <View style={aps.tabRow}>
+        <TouchableOpacity
+          onPress={() => setViewMode('fichas')}
+          style={[aps.tabChip, { backgroundColor: viewMode === 'fichas' ? theme.primary + '20' : inputBg, borderColor: viewMode === 'fichas' ? theme.primary : border }]}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="document-text-outline" size={16} color={viewMode === 'fichas' ? theme.primary : muted} />
+          <Text style={[aps.tabChipText, { color: viewMode === 'fichas' ? theme.primary : muted }]}>{t('academic.fichas')}</Text>
+        </TouchableOpacity>
         <TouchableOpacity
           onPress={() => setViewMode('programs')}
           style={[aps.tabChip, { backgroundColor: viewMode === 'programs' ? theme.primary + '20' : inputBg, borderColor: viewMode === 'programs' ? theme.primary : border }]}
@@ -154,7 +184,7 @@ export default function AcademicProgramsScreen() {
                     <Ionicons name="school-outline" size={22} color={theme.primary} />
                   </View>
                   <View>
-                    <Text style={[aps.cardTitle, { color: text }]}>{getProgramDisplayName(item, t)}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}><Text style={[aps.cardTitle, { color: text }]}>{getProgramDisplayName(item, t)}</Text>{isRecent(item.updatedAt) && <Text style={[aps.recentBadge, { color: theme.primary, borderColor: theme.primary }]}>{item.updatedAt !== item.createdAt ? t('environments.editedRecentlyBadge') : t('environments.recentBadge')}</Text>}</View>
                     <Text style={[aps.cardMeta, { color: muted }]}>{item.fichas.length} {t('academic.fichas').toLowerCase()} · {t(`environments.statuses.${item.status}`)}</Text>
                   </View>
                 </View>
@@ -168,9 +198,7 @@ export default function AcademicProgramsScreen() {
                     </TouchableOpacity>
                   )}
                   {item.status === 'inactive' && (
-                    <TouchableOpacity onPress={() => handleDeleteCompletely(item.id, getProgramDisplayName(item, t))} style={[aps.actionBtn, { backgroundColor: Colors.error + '15' }]}>
-                      <Ionicons name="trash" size={16} color={Colors.error} />
-                    </TouchableOpacity>
+                    <><TouchableOpacity onPress={() => handleReactivate(item.id, getProgramDisplayName(item, t))} style={[aps.actionBtn, { backgroundColor: theme.primary + '15' }]}><Ionicons name="refresh-outline" size={16} color={theme.primary} /></TouchableOpacity><TouchableOpacity onPress={() => handleDeleteCompletely(item.id, getProgramDisplayName(item, t))} style={[aps.actionBtn, { backgroundColor: Colors.error + '15' }]}><Ionicons name="trash" size={16} color={Colors.error} /></TouchableOpacity></>
                   )}
                 </View>
               </TouchableOpacity>
@@ -233,6 +261,13 @@ export default function AcademicProgramsScreen() {
         />
       )}
 
+      {viewMode === 'fichas' && (
+        <FlatList data={allFichas} keyExtractor={ficha => ficha.id} contentContainerStyle={aps.list}
+          renderItem={({ item }) => <View style={[aps.card, { backgroundColor: cardBg, borderColor: border }]}><View style={aps.cardLeft}><View style={[aps.iconCircle, { backgroundColor: theme.primary + '20' }]}><Ionicons name="document-text-outline" size={22} color={theme.primary} /></View><View><Text style={[aps.cardTitle, { color: text }]}>{item.number}</Text><View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}><Text style={[aps.cardMeta, { color: muted }]}>{item.code} · {t(`environments.statuses.${item.status}`)}</Text>{isRecent(item.updatedAt) && <Text style={[aps.recentBadge, { color: theme.primary, borderColor: theme.primary }]}>{item.updatedAt !== item.createdAt ? t('environments.editedRecentlyBadge') : t('environments.recentBadge')}</Text>}</View></View></View><View style={aps.cardActions}>{item.status === 'active' && <TouchableOpacity onPress={() => handleDeactivateFicha(item.id, item.number)} style={[aps.actionBtn, { backgroundColor: Colors.error + '15' }]}><Ionicons name="pause-outline" size={16} color={Colors.error} /></TouchableOpacity>}{item.status === 'inactive' && <><TouchableOpacity onPress={() => handleReactivateFicha(item.id, item.number)} style={[aps.actionBtn, { backgroundColor: theme.primary + '15' }]}><Ionicons name="refresh-outline" size={16} color={theme.primary} /></TouchableOpacity><TouchableOpacity onPress={() => deleteFicha(item.id)} style={[aps.actionBtn, { backgroundColor: Colors.error + '15' }]}><Ionicons name="trash" size={16} color={Colors.error} /></TouchableOpacity></>}</View></View>}
+          ListEmptyComponent={<View style={aps.empty}><Text style={[aps.emptyText, { color: muted }]}>{t('academic.fichaEmpty')}</Text></View>}
+        />
+      )}
+
       {DialogUI}
     </View>
   );
@@ -263,6 +298,7 @@ const aps = StyleSheet.create({
   iconCircle: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   cardTitle: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
   cardMeta: { fontSize: FontSize.sm, marginTop: 2 },
+  recentBadge: { fontSize: FontSize.xs, fontWeight: FontWeight.bold, borderWidth: 1, borderRadius: 5, paddingHorizontal: 5, paddingVertical: 2 },
   cardActions: { flexDirection: 'row', gap: 8 },
   actionBtn: { width: 34, height: 34, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   programPicker: { marginTop: 12, gap: 8, borderTopWidth: 1, borderTopColor: 'rgba(101,179,97,0.15)', paddingTop: 12 },

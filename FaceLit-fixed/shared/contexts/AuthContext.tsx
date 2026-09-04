@@ -2,12 +2,13 @@
 //  shared/contexts/AuthContext.tsx
 //  Maneja sesión, rol y datos del usuario
 // ─────────────────────────────────────────────
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { router } from 'expo-router';
 import { Routes } from '@/shared/constants/routes';
+import { router } from 'expo-router';
+import React, { createContext, ReactNode, useCallback, useContext, useState } from 'react';
 
 // ── Tipos ─────────────────────────────────────
-export type UserRole = 'administrador' | 'instructor' | 'aprendiz';
+export type UserRole = 'administrador' | 'coordinador' | 'instructor' | 'aprendiz';
+type OperationalRole = Exclude<UserRole, 'coordinador'>;
 
 export interface User {
   id: string;
@@ -16,10 +17,12 @@ export interface User {
   email: string;
   documentType: string;
   document: string;
-  role: UserRole;
+  role: OperationalRole;
   status: 'active' | 'inactive';
   photo?: string;
 }
+
+export type SystemUser = User;
 
 interface AuthContextType {
   user: User | null;
@@ -71,12 +74,18 @@ const MOCK_USERS: Record<string, { user: User; password: string }> = {
       status: 'active',
     },
   },
+  'coordinador@facelit.com': {
+    password: 'Coord1234!',
+    user: { id: '3', name: 'Laura', lastname: 'Coordinadora', email: 'coordinador@facelit.com', documentType: 'CC', document: '6677889900', role: 'coordinador' as OperationalRole, status: 'active' },
+  },
 };
 
 // Directorio de usuarios del sistema disponible para los módulos que deben
 // resolver un rol sin duplicar información de identidad.
-export function getSystemUsers(): User[] {
-  return Object.values(MOCK_USERS).map(entry => entry.user);
+export function getSystemUsers(): SystemUser[] {
+  return Object.values(MOCK_USERS).map(entry => entry.user).filter(
+    (user): user is SystemUser => (user.role as string) !== 'coordinador',
+  );
 }
 
 // ── Contexto ──────────────────────────────────
@@ -115,6 +124,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       router.replace(Routes.ADMIN.DASHBOARD as any);
     } else if (entry.user.role === 'instructor') {
       router.replace('/instructor' as any);
+    } else if ((entry.user.role as string) === 'coordinador') {
+      router.replace(Routes.COORDINATOR.DASHBOARD as any);
     } else {
       router.replace('/apprentice' as any);
     }

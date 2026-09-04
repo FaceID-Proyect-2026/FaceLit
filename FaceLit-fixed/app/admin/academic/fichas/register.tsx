@@ -1,15 +1,14 @@
-import { useTheme } from '@/shared/contexts/ThemeContext';
+import { getProgramDisplayName, JornadaType } from '@/features/academic/types';
+import { useAcademic } from '@/features/academic/useAcademic';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
-import { useAcademic } from '@/features/academic/useAcademic';
-import { JornadaType } from '@/features/academic/types';
-import { getProgramDisplayName } from '@/features/academic/types';
+import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState, useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 const JORNADAS: { value: JornadaType; icon: string }[] = [
   { value: 'morning', icon: 'sunny-outline' },
@@ -50,10 +49,9 @@ export default function FichaRegisterScreen() {
   const handleSave = () => {
     if (!validate()) return;
     if (existing) {
-      updateFicha(existing.id, { number, jornada, programId: selectedProgram });
-    } else {
-      addFicha(number, jornada, selectedProgram);
-    }
+      const result = updateFicha(existing.id, { number, jornada, programId: selectedProgram });
+      if (!result.success) { setErrors({ number: result.error ? t(result.error) : t('academic.fichaSaveError') }); return; }
+    } else if (!addFicha(number, jornada, selectedProgram)) { setErrors({ number: t('academic.duplicateFicha') }); return; }
     alert('✓', existing ? 'Ficha actualizada' : 'Ficha registrada', [{ text: 'OK', onPress: () => router.back() }]);
   };
 

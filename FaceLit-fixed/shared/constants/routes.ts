@@ -32,6 +32,13 @@ export const Routes = {
     SETTINGS:     '/admin/profile/settings',
   },
 
+  // Coordinación académica
+  COORDINATOR: {
+    DASHBOARD: '/coordinator',
+    INSTITUTIONAL_IMPORT: '/coordinator/institutional-import',
+    TRANSFER_REQUESTS: '/coordinator/transfer-requests',
+  },
+
   // Módulo 2: Gestión de Ambientes
   ENVIRONMENTS: {
     LIST:         '/admin/environments',
@@ -51,7 +58,9 @@ export const Routes = {
     FICHA_REGISTER:     '/admin/academic/fichas/register',
     FICHA_DETAIL:       '/admin/academic/fichas/[id]',
     FICHA_EDIT:         '/admin/academic/fichas/[id]/edit',
-    JOIN_FICHA:         '/apprentice/join-ficha',
+    TRANSFER_REQUEST:   '/apprentice/transfer-request',
+    COORDINATOR_REQUESTS: '/coordinator/transfer-requests',
+    INSTITUTIONAL_IMPORT: '/coordinator/institutional-import',
     LEARNERS_BY_FICHA:  '/admin/academic/fichas/[id]/learners',
   },
 

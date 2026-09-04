@@ -7,25 +7,29 @@
 //  que useEnvironments con environmentsStore.
 // ─────────────────────────────────────────────
 import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
-import { Ficha, Program } from './types';
 import {
-  subscribe,
-  getProgramsSnapshot,
-  getFichasSnapshot,
-  getProgramById,
-  getFichaById,
-  registerProgram,
-  updateProgramStore,
-  deactivateProgramStore,
-  deleteProgramStore,
-  registerFicha,
-  updateFichaStore,
-  deleteFichaStore,
-  unlinkFichaFromProgramStore,
-  linkFichaToProgramStore,
-  addLearnerStore,
-  removeLearnerStore,
+    addLearnerStore,
+    deactivateFichaStore,
+    deactivateProgramStore,
+    deleteFichaStore,
+    deleteProgramStore,
+    getFichaById,
+    getFichasSnapshot,
+    getProgramById,
+    getProgramsSnapshot,
+    linkFichaToProgramStore,
+    markLearnerValidation,
+    reactivateFichaStore,
+    reactivateProgramStore,
+    registerFicha,
+    registerProgram,
+    removeLearnerStore,
+    subscribe,
+    unlinkFichaFromProgramStore,
+    updateFichaStore,
+    updateProgramStore,
 } from './academicStore';
+import { Ficha, Program, ValidationStatus } from './types';
 
 export type ProgramStatusFilter = 'all' | Program['status'];
 
@@ -56,28 +60,32 @@ export function useAcademic() {
   // asociarse a un programa de formación.
   const unlinkedFichas = useMemo(() => fichas.filter(f => !f.programId), [fichas]);
 
-  const getProgram = useCallback((id: string) => getProgramById(id), [programs]);
-  const getFicha = useCallback((id: string) => getFichaById(id), [fichas]);
+  const getProgram = useCallback((id: string) => getProgramById(id), []);
+  const getFicha = useCallback((id: string) => getFichaById(id), []);
 
   const addProgram = useCallback((name: string) => registerProgram(name), []);
   const updateProgram = useCallback((id: string, name: string, status: 'active' | 'inactive') => updateProgramStore(id, name, status), []);
   const deactivateProgram = useCallback((id: string) => deactivateProgramStore(id), []);
+  const reactivateProgram = useCallback((id: string) => reactivateProgramStore(id), []);
   const deleteProgram = useCallback((id: string) => deleteProgramStore(id), []);
 
   const addFicha = useCallback((number: string, jornada: Ficha['jornada'], programId: string) => registerFicha(number, jornada, programId), []);
   const updateFicha = useCallback((id: string, data: Partial<Ficha>) => updateFichaStore(id, data), []);
   const deleteFicha = useCallback((id: string) => deleteFichaStore(id), []);
+  const deactivateFicha = useCallback((id: string) => deactivateFichaStore(id), []);
+  const reactivateFicha = useCallback((id: string) => reactivateFichaStore(id), []);
 
   const unlinkFichaFromProgram = useCallback((fichaId: string, programId: string) => unlinkFichaFromProgramStore(fichaId, programId), []);
   const linkFichaToProgram = useCallback((fichaId: string, programId: string) => linkFichaToProgramStore(fichaId, programId), []);
   const addLearner = useCallback((fichaId: string, learner: Ficha['learners'][0]) => addLearnerStore(fichaId, learner), []);
   const removeLearner = useCallback((fichaId: string, learnerId: string) => removeLearnerStore(fichaId, learnerId), []);
+  const markValidation = useCallback((learnerId: string, status: ValidationStatus) => markLearnerValidation(learnerId, status), []);
 
   return {
     programs: filteredPrograms, fichas: filteredFichas, allFichas: fichas, unlinkedFichas,
     search, setSearch, statusFilter, setStatusFilter, getProgram, getFicha,
-    addProgram, updateProgram, deactivateProgram, deleteProgram,
-    addFicha, updateFicha, deleteFicha,
-    unlinkFichaFromProgram, linkFichaToProgram, addLearner, removeLearner,
+    addProgram, updateProgram, deactivateProgram, reactivateProgram, deleteProgram,
+    addFicha, updateFicha, deleteFicha, deactivateFicha, reactivateFicha,
+    unlinkFichaFromProgram, linkFichaToProgram, addLearner, removeLearner, markValidation,
   };
 }

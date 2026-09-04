@@ -2,15 +2,15 @@
 //  shared/components/layout/Sidebar.tsx
 //  Sidebar de navegación para admin/instructor
 // ─────────────────────────────────────────────
+import { Colors } from '@/shared/constants/colors';
+import { Routes } from '@/shared/constants/routes';
+import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
-import { Routes } from '@/shared/constants/routes';
-import { Colors } from '@/shared/constants/colors';
-import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { Ionicons } from '@expo/vector-icons';
 import { router, usePathname } from 'expo-router';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -35,7 +35,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
   const activeBg = isDark ? 'rgba(101,179,97,0.15)' : 'rgba(101,179,97,0.10)';
-  const hoverBg = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)';
   const bg = isDark ? Colors.dark.surface : Colors.light.surface;
   const border = isDark ? Colors.dark.border : Colors.light.border;
 
@@ -62,7 +61,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const apprenticeMenu: MenuItem[] = [
     { icon: 'grid-outline', label: t('sidebar.dashboard'), route: '/apprentice', module: 'dashboard' },
-    { icon: 'school-outline', label: t('sidebar.joinFicha'), route: Routes.ACADEMIC.JOIN_FICHA, module: 'academic' },
+    { icon: 'swap-horizontal-outline', label: t('sidebar.transferRequest'), route: Routes.ACADEMIC.TRANSFER_REQUEST, module: 'academic' },
     { icon: 'time-outline', label: t('sidebar.mySchedule'), route: Routes.SCHEDULES.APPRENTICE, module: 'schedules' },
     { icon: 'checkmark-circle-outline', label: t('sidebar.myAttendance'), route: Routes.ATTENDANCE.APPRENTICE, module: 'attendance' },
     { icon: 'bar-chart-outline', label: t('sidebar.myReports'), route: Routes.REPORTS.APPRENTICE, module: 'reports' },
@@ -70,7 +69,15 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     { icon: 'person-outline', label: t('sidebar.profile'), route: Routes.PROFILE.VIEW, module: 'profile' },
   ];
 
-  const menu = user?.role === 'administrador' ? adminMenu
+  const coordinatorMenu: MenuItem[] = [
+    { icon: 'grid-outline', label: t('sidebar.dashboard'), route: Routes.COORDINATOR.DASHBOARD, module: 'dashboard' },
+    { icon: 'cloud-upload-outline', label: t('sidebar.institutionalImport'), route: Routes.COORDINATOR.INSTITUTIONAL_IMPORT, module: 'academic' },
+    { icon: 'swap-horizontal-outline', label: t('sidebar.transferRequests'), route: Routes.COORDINATOR.TRANSFER_REQUESTS, module: 'academic' },
+    { icon: 'person-outline', label: t('sidebar.profile'), route: Routes.PROFILE.VIEW, module: 'profile' },
+  ];
+
+  const menu = (user?.role as string) === 'coordinador' ? coordinatorMenu
+    : user?.role === 'administrador' ? adminMenu
     : user?.role === 'instructor' ? instructorMenu
     : apprenticeMenu;
 

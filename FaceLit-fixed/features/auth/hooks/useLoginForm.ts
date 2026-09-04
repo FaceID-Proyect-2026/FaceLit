@@ -3,9 +3,10 @@
 //  Lógica del formulario de login separada
 //  de la pantalla (clean code)
 // ─────────────────────────────────────────────
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { hasAcceptedPrivacy } from '@/features/auth/privacyAcceptanceStore';
 import { useAuth } from '@/shared/contexts/AuthContext';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const EMAIL_REGEX            = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const EMAIL_ALLOWED_REGEX    = /^[A-Za-z0-9._%+\-@]+$/;
@@ -42,6 +43,13 @@ export function useLoginForm() {
   const [form, setForm] = useState<LoginForm>(initialForm);
   const [errors, setErrors] = useState<LoginErrors>(initialErrors);
   const [loading, setLoading] = useState(false);
+  const [privacyAlreadyAccepted, setPrivacyAlreadyAccepted] = useState(false);
+
+  useEffect(() => {
+    if (EMAIL_REGEX.test(form.email.trim())) {
+      setPrivacyAlreadyAccepted(hasAcceptedPrivacy(form.email));
+    }
+  }, [form.email]);
 
   const setField = <K extends keyof LoginForm>(
     key: K,
@@ -49,6 +57,9 @@ export function useLoginForm() {
   ) => {
     setForm(prev => ({ ...prev, [key]: value }));
     setErrors(prev => ({ ...prev, [key]: '' }));
+    if (key === 'email' && !EMAIL_REGEX.test(String(value).trim())) {
+      setPrivacyAlreadyAccepted(false);
+    }
   };
 
   const validate = (): LoginErrors => {
@@ -73,7 +84,7 @@ export function useLoginForm() {
     else if (form.password.length > 20)
       e.password = t('login.errors.passwordLong');
 
-    if (!form.accepted)
+    if (!privacyAlreadyAccepted && !form.accepted)
       e.policy = t('login.policyError');
 
     return e;
@@ -104,5 +115,6 @@ export function useLoginForm() {
     loading,
     setField,
     handleSubmit,
+    privacyAlreadyAccepted,
   };
 }
