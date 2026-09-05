@@ -15,7 +15,6 @@ export default function CoordinatorHome() {
   const bg = isDark ? Colors.dark.background : Colors.light.background;
   const card = isDark ? Colors.dark.surface : Colors.white;
   const cards = [
-    { icon: 'cloud-upload-outline', title: t('academic.institutionalImportTitle'), description: t('academic.institutionalImportDescription'), route: Routes.COORDINATOR.INSTITUTIONAL_IMPORT },
     { icon: 'swap-horizontal-outline', title: t('academic.transferRequestsTitle'), description: t('academic.transferRequestsDescription'), route: Routes.COORDINATOR.TRANSFER_REQUESTS },
   ];
   return <View style={[styles.safe, { backgroundColor: bg }]}><View style={styles.content}><Text style={[styles.title, { color: text }]}>{t('academic.coordinatorDashboardTitle')}</Text><Text style={[styles.subtitle, { color: muted }]}>{t('academic.coordinatorDashboardSubtitle')}</Text><View style={styles.grid}>{cards.map(item => <TouchableOpacity key={item.route} onPress={() => router.push(item.route as any)} style={[styles.card, { backgroundColor: card, borderColor: theme.primary + '35' }]}><View style={[styles.icon, { backgroundColor: theme.primary + '18' }]}><Ionicons name={item.icon as any} size={26} color={theme.primary} /></View><Text style={[styles.cardTitle, { color: text }]}>{item.title}</Text><Text style={[styles.cardText, { color: muted }]}>{item.description}</Text></TouchableOpacity>)}</View></View></View>;

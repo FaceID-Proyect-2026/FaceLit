@@ -42,7 +42,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     { icon: 'grid-outline', label: t('sidebar.dashboard'), route: Routes.ADMIN.DASHBOARD, module: 'dashboard' },
     { icon: 'business-outline', label: t('sidebar.environments'), route: Routes.ENVIRONMENTS.LIST, module: 'environments' },
     { icon: 'school-outline', label: t('sidebar.academic'), route: Routes.ACADEMIC.PROGRAMS, module: 'academic' },
-    { icon: 'cloud-upload-outline', label: t('sidebar.institutionalImport'), route: Routes.COORDINATOR.INSTITUTIONAL_IMPORT, module: 'academic' },
     { icon: 'swap-horizontal-outline', label: t('sidebar.transferRequests'), route: Routes.COORDINATOR.TRANSFER_REQUESTS, module: 'academic' },
     { icon: 'time-outline', label: t('sidebar.schedules'), route: Routes.SCHEDULES.LIST, module: 'schedules' },
     { icon: 'scan-outline', label: t('sidebar.facial'), route: Routes.FACIAL.MANAGEMENT, module: 'facial' },
@@ -73,7 +72,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const coordinatorMenu: MenuItem[] = [
     { icon: 'grid-outline', label: t('sidebar.dashboard'), route: Routes.COORDINATOR.DASHBOARD, module: 'dashboard' },
-    { icon: 'cloud-upload-outline', label: t('sidebar.institutionalImport'), route: Routes.COORDINATOR.INSTITUTIONAL_IMPORT, module: 'academic' },
     { icon: 'swap-horizontal-outline', label: t('sidebar.transferRequests'), route: Routes.COORDINATOR.TRANSFER_REQUESTS, module: 'academic' },
     { icon: 'person-outline', label: t('sidebar.profile'), route: Routes.PROFILE.VIEW, module: 'profile' },
   ];

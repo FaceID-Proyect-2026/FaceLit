@@ -2,6 +2,7 @@
 //  app/admin/environments/[id].tsx
 //  Detalle de ambiente + edición + asignación
 // ─────────────────────────────────────────────
+import EnvironmentFormModal from '@/features/environments/components/EnvironmentFormModal';
 import { MOCK_FICHAS } from '@/features/environments/types';
 import { useEnvironments } from '@/features/environments/useEnvironments';
 import { Colors } from '@/shared/constants/colors';
@@ -10,6 +11,7 @@ import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -19,6 +21,7 @@ export default function EnvironmentDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { getById, assignFicha, unassignFicha } = useEnvironments();
   const { alert, DialogUI } = useAppDialog();
+  const [editModalOpen, setEditModalOpen] = useState(false);
   const env = getById(id ?? '');
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
@@ -114,7 +117,7 @@ export default function EnvironmentDetailScreen() {
 
         {/* Edit button (único) */}
         <TouchableOpacity
-          onPress={() => router.push(`/admin/environments/register?id=${env.id}` as any)}
+          onPress={() => setEditModalOpen(true)}
           style={[eds.editBtn, { borderColor: theme.primary }]}
           activeOpacity={0.7}
         >
@@ -207,6 +210,7 @@ export default function EnvironmentDetailScreen() {
         )}
       </ScrollView>
       {DialogUI}
+      <EnvironmentFormModal visible={editModalOpen} editId={env.id} onClose={() => setEditModalOpen(false)} />
     </View>
   );
 }
@@ -219,8 +223,8 @@ const eds = StyleSheet.create({
   headingIcon: { width: 52, height: 52, borderRadius: 16, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   headingCopy: { flex: 1 },
   backText: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
-  title: { fontSize: FontSize['2xl'], fontWeight: FontWeight.black },
-  subtitle: { fontSize: FontSize.sm, marginTop: 3 },
+  title: { fontSize: FontSize['2xl'], fontWeight: FontWeight.black, marginBottom: 6 },
+  subtitle: { fontSize: FontSize.sm, lineHeight: 19 },
   card: { borderRadius: 14, borderWidth: 1, padding: 16, marginBottom: 16 },
   infoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' },
   infoLabel: { fontSize: FontSize.md, flex: 1 },

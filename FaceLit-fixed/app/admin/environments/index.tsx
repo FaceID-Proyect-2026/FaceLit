@@ -2,6 +2,7 @@
 //  app/admin/environments/index.tsx
 //  Listado de ambientes con búsqueda y filtro
 // ─────────────────────────────────────────────
+import EnvironmentFormModal from '@/features/environments/components/EnvironmentFormModal';
 import { EnvironmentStatusFilter, useEnvironments } from '@/features/environments/useEnvironments';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
@@ -10,6 +11,7 @@ import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { isRecent, wasEditedRecently } from '@/shared/utils/dates';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 
@@ -20,6 +22,7 @@ export default function EnvironmentsListScreen() {
   const { alert, DialogUI } = useAppDialog();
   const { width } = useWindowDimensions();
   const isMobile = width < 480;
+  const [formModalOpen, setFormModalOpen] = useState(false);
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -160,7 +163,7 @@ export default function EnvironmentsListScreen() {
           <Text style={[els.subtitle, { color: muted }]}>{t('environments.listSubtitle', 'Consulta, filtra y administra los ambientes de formación registrados en la institución.')}</Text>
         </View>
         <TouchableOpacity
-          onPress={() => router.push('/admin/environments/register' as any)}
+          onPress={() => setFormModalOpen(true)}
           style={[els.addBtn, isMobile && els.addBtnMobile, { backgroundColor: theme.primary }]}
           activeOpacity={0.85}
         >
@@ -216,6 +219,7 @@ export default function EnvironmentsListScreen() {
         }
       />
       {DialogUI}
+      <EnvironmentFormModal visible={formModalOpen} onClose={() => setFormModalOpen(false)} />
     </View>
   );
 }
@@ -229,9 +233,9 @@ const els = StyleSheet.create({
   headerMobile: {
     flexDirection: 'column', alignItems: 'stretch', gap: 12,
   },
-  title: { fontSize: FontSize['2xl'], fontWeight: FontWeight.black },
+  title: { fontSize: FontSize['2xl'], fontWeight: FontWeight.black, marginBottom: 6 },
   headingCopy: { flex: 1 },
-  subtitle: { fontSize: FontSize.sm, marginTop: 3 },
+  subtitle: { fontSize: FontSize.sm, lineHeight: 19 },
   addBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12,
@@ -245,7 +249,7 @@ const els = StyleSheet.create({
     marginHorizontal: 16, marginTop: 10,
     height: 44, borderRadius: 12, borderWidth: 1, paddingHorizontal: 14,
   },
-  filterRow: { flexDirection: 'row', gap: 8, marginHorizontal: 16, marginTop: 10 },
+  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginHorizontal: 16, marginTop: 10 },
   filterHelp: { marginHorizontal: 16, marginTop: 6, fontSize: FontSize.xs },
   filterChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, borderWidth: 1.2 },
   filterChipText: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
