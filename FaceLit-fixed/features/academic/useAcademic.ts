@@ -12,13 +12,17 @@ import {
     deactivateFichaStore,
     deactivateProgramStore,
     deleteFichaStore,
+    deleteOrphanLearnerStore,
     deleteProgramStore,
     getFichaById,
     getFichasSnapshot,
+    getOrphanLearnersSnapshot,
     getProgramById,
     getProgramsSnapshot,
+    joinFichaByCodeStore,
     linkFichaToProgramStore,
     markLearnerValidation,
+    moveLearnerToOrphanPoolStore,
     reactivateFichaStore,
     reactivateProgramStore,
     registerFicha,
@@ -36,6 +40,7 @@ export type ProgramStatusFilter = 'all' | Program['status'];
 export function useAcademic() {
   const programs = useSyncExternalStore(subscribe, getProgramsSnapshot);
   const fichas = useSyncExternalStore(subscribe, getFichasSnapshot);
+  const orphanLearners = useSyncExternalStore(subscribe, getOrphanLearnersSnapshot);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<ProgramStatusFilter>('all');
 
@@ -81,11 +86,18 @@ export function useAcademic() {
   const removeLearner = useCallback((fichaId: string, learnerId: string) => removeLearnerStore(fichaId, learnerId), []);
   const markValidation = useCallback((learnerId: string, status: ValidationStatus) => markLearnerValidation(learnerId, status), []);
 
+  // Traslado iniciado por el Coordinador/Admin: el aprendiz sale de su
+  // ficha actual y queda disponible para unirse a otra mediante código.
+  const moveLearnerToOrphanPool = useCallback((fichaId: string, learnerId: string) => moveLearnerToOrphanPoolStore(fichaId, learnerId), []);
+  const joinFichaByCode = useCallback((learnerId: string, code: string) => joinFichaByCodeStore(learnerId, code), []);
+  const deleteOrphanLearner = useCallback((learnerId: string) => deleteOrphanLearnerStore(learnerId), []);
+
   return {
-    programs: filteredPrograms, fichas: filteredFichas, allFichas: fichas, unlinkedFichas,
+    programs: filteredPrograms, fichas: filteredFichas, allFichas: fichas, unlinkedFichas, orphanLearners,
     search, setSearch, statusFilter, setStatusFilter, getProgram, getFicha,
     addProgram, updateProgram, deactivateProgram, reactivateProgram, deleteProgram,
     addFicha, updateFicha, deleteFicha, deactivateFicha, reactivateFicha,
     unlinkFichaFromProgram, linkFichaToProgram, addLearner, removeLearner, markValidation,
+    moveLearnerToOrphanPool, joinFichaByCode, deleteOrphanLearner,
   };
 }

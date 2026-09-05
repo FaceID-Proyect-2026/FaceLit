@@ -15,6 +15,7 @@
 //  correctamente en `features/environments/environmentsStore.ts`.
 // ─────────────────────────────────────────────
 import { DocumentChangeLogEntry, Ficha, JornadaType, Learner, MOCK_FICHAS, MOCK_PROGRAMS, Program, ValidationStatus } from './types';
+import { getSchedulesSnapshot } from '../schedules/schedulesStore';
 
 type Listener = () => void;
 
@@ -82,9 +83,12 @@ export function reactivateProgramStore(id: string) {
 }
 
 // Eliminación física — solo debe usarse desde la pestaña de Inactivos.
+// Requiere que el programa esté INACTIVE y sin fichas asociadas (RF-3.1).
 export function deleteProgramStore(id: string) {
   const prog = programs.find(p => p.id === id);
-  if (prog && prog.fichas.length > 0) return { success: false, error: 'academic.programHasFichas' };
+  if (!prog) return { success: false, error: 'academic.programNotFound' };
+  if (prog.status !== 'inactive') return { success: false, error: 'academic.noDeleteActiveProgram' };
+  if (prog.fichas.length > 0) return { success: false, error: 'academic.programHasFichas' };
   programs = programs.filter(p => p.id !== id);
   emit();
   return { success: true };
@@ -137,6 +141,7 @@ export function deleteFichaStore(id: string) {
   if (!ficha) return { success: false, error: 'academic.fichaNotFound' };
   if (ficha.status !== 'inactive') return { success: false, error: 'academic.noDeleteActiveFicha' };
   if (ficha?.learners.length) return { success: false, error: 'academic.fichaHasLearners' };
+  if (getSchedulesSnapshot().some(schedule => schedule.fichaId === id)) return { success: false, error: 'academic.fichaHasSchedules' };
   fichas = fichas.filter(f => f.id !== id);
   programs = programs.map(p => ({ ...p, fichas: p.fichas.filter(fid => fid !== id) }));
   emit();
@@ -165,6 +170,9 @@ export function reactivateFichaStore(id: string) {
 // ficha). La ficha y su información (código, aprendices, etc.) se
 // conservan intactas y quedan disponibles para vincularse nuevamente.
 export function unlinkFichaFromProgramStore(fichaId: string, programId: string) {
+  const ficha = fichas.find(f => f.id === fichaId);
+  if (!ficha) return { success: false, error: 'academic.fichaNotFound' };
+  if (ficha.learners.length > 0) return { success: false, error: 'academic.fichaHasLearnersUnlink' };
   programs = programs.map(p => (p.id === programId ? { ...p, fichas: p.fichas.filter(fid => fid !== fichaId) } : p));
   fichas = fichas.map(f => (f.id === fichaId ? { ...f, programId: '', updatedAt: new Date().toISOString() } : f));
   emit();
@@ -231,5 +239,61 @@ export function correctInstitutionalLearnerStore(fichaId: string, learnerId: str
   const result = updateLearnerDocument(fichaId, learnerId, document, changedBy, normalizedReason);
   if (!result.success) return result;
   markLearnerValidation(learnerId, 'validated');
+  return { success: true };
+}
+
+// ── Aprendices sin ficha (traslado iniciado por el Coordinador/Admin) ──
+// Cuando se desvincula a un aprendiz por motivo de traslado (y no porque
+// ya no pertenezca al SENA), queda en este pool: sale de la ficha actual
+// pero se conserva su información. El Coordinador le comparte (fuera del
+// sistema, por correo) el código de la ficha destino, y el propio
+// aprendiz lo ingresa desde su cuenta en "Unirse a Ficha" para quedar
+// asociado, sin pasar por una solicitud/aprobación adicional.
+export interface OrphanLearner extends Learner {
+  fromFichaId?: string;
+  fromFichaNumber?: string;
+  movedAt: string;
+}
+
+let orphanLearners: OrphanLearner[] = [];
+
+export function getOrphanLearnersSnapshot() {
+  return orphanLearners;
+}
+
+export function moveLearnerToOrphanPoolStore(fichaId: string, learnerId: string) {
+  const ficha = fichas.find(f => f.id === fichaId);
+  const learner = ficha?.learners.find(item => item.id === learnerId);
+  if (!ficha || !learner) return { success: false, error: 'academic.learnerNotFound' };
+  const now = new Date().toISOString();
+  fichas = fichas.map(f => (f.id === fichaId ? { ...f, learners: f.learners.filter(item => item.id !== learnerId), updatedAt: now } : f));
+  orphanLearners = [...orphanLearners, { ...learner, fromFichaId: ficha.id, fromFichaNumber: ficha.number, movedAt: now }];
+  emit();
+  return { success: true };
+}
+
+// El propio aprendiz, ya sin ficha, ingresa el código que le compartió
+// el Coordinador y queda asociado a la ficha correspondiente.
+export function joinFichaByCodeStore(learnerId: string, code: string) {
+  const learner = orphanLearners.find(item => item.id === learnerId);
+  if (!learner) return { success: false, error: 'academic.learnerNotFound' };
+  const normalizedCode = code.trim().toLowerCase();
+  const target = fichas.find(f => f.code.toLowerCase() === normalizedCode || f.number === code.trim());
+  if (!target) return { success: false, error: 'academic.fichaCodeNotFound' };
+  if (target.status !== 'active') return { success: false, error: 'academic.fichaInactive' };
+  const { fromFichaId, fromFichaNumber, movedAt, ...plainLearner } = learner;
+  const result = addLearnerStore(target.id, plainLearner);
+  if (!result.success) return result;
+  orphanLearners = orphanLearners.filter(item => item.id !== learnerId);
+  emit();
+  return { success: true, fichaNumber: target.number };
+}
+
+// Eliminación definitiva de un aprendiz sin ficha (ya no pertenece al
+// SENA ni a ninguna ficha).
+export function deleteOrphanLearnerStore(learnerId: string) {
+  if (!orphanLearners.some(item => item.id === learnerId)) return { success: false, error: 'academic.learnerNotFound' };
+  orphanLearners = orphanLearners.filter(item => item.id !== learnerId);
+  emit();
   return { success: true };
 }

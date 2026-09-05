@@ -4,8 +4,10 @@ import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAcademic } from '@/features/academic/useAcademic';
 import { getProgramDisplayName } from '@/features/academic/types';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
+import ProgramFormModal from '@/features/academic/components/ProgramFormModal';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -15,6 +17,7 @@ export default function ProgramDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { getProgram, allFichas, unlinkFichaFromProgram } = useAcademic();
   const { alert, DialogUI } = useAppDialog();
+  const [editModalOpen, setEditModalOpen] = useState(false);
   const program = getProgram(id ?? '');
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -36,12 +39,15 @@ export default function ProgramDetailScreen() {
             <TouchableOpacity onPress={() => router.back()} style={pds.backBtn}><Ionicons name="arrow-back" size={20} color={text} /><Text style={[pds.backText, { color: text }]}>{t('common.back')}</Text></TouchableOpacity>
             <View style={pds.titleRow}>
               <Text style={[pds.title, { color: text }]}>{getProgramDisplayName(program, t)}</Text>
+              <Text style={[pds.subtitle, { color: muted }]}>{t('academic.programDetailSubtitle')}</Text>
             </View>
             <View style={[pds.statusBadge, { backgroundColor: program.status === 'active' ? Colors.success + '20' : Colors.error + '20', alignSelf: 'flex-start', marginBottom: 8 }]}>
               <Text style={{ color: program.status === 'active' ? Colors.success : Colors.error, fontWeight: '700', fontSize: 13 }}>{t(`environments.statuses.${program.status}`)}</Text>
             </View>
+            <Text style={[pds.cardMeta, { color: muted }]}>{t('environments.detail.createdAt')}: {new Date(program.createdAt).toLocaleString()}</Text>
+            <Text style={[pds.cardMeta, { color: muted, marginBottom: 8 }]}>{t('environments.detail.updatedAt')}: {new Date(program.updatedAt).toLocaleString()}</Text>
             <View style={pds.headerActions}>
-              <TouchableOpacity onPress={() => router.push(`/admin/academic/programs/register?id=${program.id}` as any)} style={[pds.actionBtn, { borderColor: theme.primary }]} activeOpacity={0.7}>
+              <TouchableOpacity onPress={() => setEditModalOpen(true)} style={[pds.actionBtn, { borderColor: theme.primary }]} activeOpacity={0.7}>
                 <Ionicons name="create-outline" size={16} color={theme.primary} /><Text style={{ color: theme.primary, fontWeight: '700', fontSize: 13 }}>{t('academic.programEdit')}</Text>
               </TouchableOpacity>
             </View>
@@ -58,13 +64,20 @@ export default function ProgramDetailScreen() {
                 <Text style={[pds.cardMeta, { color: muted }]}>{t(`academic.jornadas.${item.jornada}`)} · {item.learners.length} aprendices · Código: {item.code}</Text>
               </View>
             </View>
-            <TouchableOpacity onPress={() => { alert(t('academic.unlinkConfirm')??'', '', [{ text: t('common.cancel'), style: 'cancel' }, { text: t('academic.unlinkFromProgram'), style: 'destructive', onPress: () => unlinkFichaFromProgram(item.id, program.id) }]); }}
+            <TouchableOpacity onPress={() => {
+              if (item.learners.length > 0) { alert(t('common.error'), t('academic.fichaHasLearnersUnlink')); return; }
+              alert(t('academic.unlinkConfirm')??'', '', [{ text: t('common.cancel'), style: 'cancel' }, { text: t('academic.unlinkFromProgram'), style: 'destructive', onPress: () => {
+                const result = unlinkFichaFromProgram(item.id, program.id);
+                if (!result.success && result.error) alert(t('common.error'), t(result.error));
+              } }]);
+            }}
               style={{ padding: 6 }}><Ionicons name="link-outline" size={18} color={Colors.warning} /></TouchableOpacity>
           </TouchableOpacity>
         )}
         ListEmptyComponent={<View style={pds.empty}><Text style={{ color: muted }}>{t('academic.fichaEmpty')}</Text></View>}
       />
       {DialogUI}
+      <ProgramFormModal visible={editModalOpen} editId={program.id} onClose={() => setEditModalOpen(false)} />
     </View>
   );
 }
@@ -73,7 +86,8 @@ const pds = StyleSheet.create({
   safe: { flex: 1 }, scroll: { padding: 16, paddingBottom: 40 },
   backBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 12 },
   backText: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
-  title: { fontSize: FontSize['3xl'], fontWeight: FontWeight.black, marginBottom: 8, flexShrink: 1, flexWrap: 'wrap' },
+  title: { fontSize: FontSize['3xl'], fontWeight: FontWeight.black, marginBottom: 4, flexShrink: 1, flexWrap: 'wrap' },
+  subtitle: { fontSize: FontSize.sm, marginBottom: 8 },
   titleRow: { width: '100%' },
   statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   headerActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 },

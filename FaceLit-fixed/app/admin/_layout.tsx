@@ -94,9 +94,23 @@ export default function AdminLayout() {
         <Stack.Screen name="environments/[id]" />
         <Stack.Screen name="environments/assign" />
         <Stack.Screen name="academic/index" />
-        <Stack.Screen name="academic/programs/register" />
+        <Stack.Screen
+          name="academic/programs/register"
+          options={{
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+            contentStyle: { backgroundColor: 'transparent' },
+          }}
+        />
         <Stack.Screen name="academic/programs/[id]" />
-        <Stack.Screen name="academic/fichas/register" />
+        <Stack.Screen
+          name="academic/fichas/register"
+          options={{
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+            contentStyle: { backgroundColor: 'transparent' },
+          }}
+        />
         <Stack.Screen name="academic/fichas/[id]" />
         <Stack.Screen name="academic/fichas/[id]/learners" />
         <Stack.Screen name="schedules/index" />

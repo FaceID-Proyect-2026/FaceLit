@@ -46,6 +46,8 @@ export default function AdminDashboard() {
   const quickActions: QuickAction[] = [
     { icon: 'business-outline', label: t('sidebar.environments'), route: Routes.ENVIRONMENTS.LIST, color: '#4A90D9' },
     { icon: 'school-outline', label: t('sidebar.academic'), route: Routes.ACADEMIC.PROGRAMS, color: '#27AE60' },
+    { icon: 'cloud-upload-outline', label: t('sidebar.institutionalImport'), route: Routes.COORDINATOR.INSTITUTIONAL_IMPORT, color: '#16A085' },
+    { icon: 'swap-horizontal-outline', label: t('sidebar.transferRequests'), route: Routes.COORDINATOR.TRANSFER_REQUESTS, color: '#D68910' },
     { icon: 'time-outline', label: t('sidebar.schedules'), route: Routes.SCHEDULES.LIST, color: '#E89B2C' },
     { icon: 'scan-outline', label: t('sidebar.facial'), route: Routes.FACIAL.MANAGEMENT, color: '#9B59B6' },
     { icon: 'checkmark-circle-outline', label: t('sidebar.attendance'), route: Routes.ATTENDANCE.LIST, color: '#1ABC9C' },

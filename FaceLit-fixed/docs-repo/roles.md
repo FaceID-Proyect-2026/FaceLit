@@ -9,6 +9,7 @@
 - Reportes globales (por usuario, ficha, calendario)
 - Gestión de notificaciones del sistema
 - Gestión de aprendices (editar, desvincular)
+- Coordinación académica: importar y validar listados institucionales, y gestionar solicitudes de traslado
 
 ## Instructor
 

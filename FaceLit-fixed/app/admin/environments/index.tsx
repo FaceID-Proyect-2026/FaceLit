@@ -120,6 +120,7 @@ export default function EnvironmentsListScreen() {
         <Text style={[els.cardTitle, { color: text }]}>{t('environments.cardTitle', { code: item.code })}</Text>
       </View>
       <Text style={[els.cardSub, { color: muted }]}>{t('environments.fields.quantity')}: {item.quantity}</Text>
+      <Text style={[els.cardDates, { color: muted }]}>{t('environments.detail.createdAt')}: {new Date(item.createdAt).toLocaleString()} · {t('environments.detail.updatedAt')}: {new Date(item.updatedAt).toLocaleString()}</Text>
       <View style={els.cardActions}>
         <TouchableOpacity
           onPress={() => router.push(`/admin/environments/${item.id}` as any)}
@@ -263,6 +264,7 @@ const els = StyleSheet.create({
   infoBadgeText: { fontSize: FontSize.xs, fontWeight: FontWeight.bold },
   searchInput: { flex: 1, fontSize: FontSize.md, paddingVertical: 4 },
   cardSub: { fontSize: FontSize.sm, marginBottom: 8 },
+  cardDates: { fontSize: FontSize.xs, marginBottom: 8 },
   cardActions: { flexDirection: 'row', gap: 8, justifyContent: 'flex-end' },
   actionBtn: { width: 34, height: 34, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   empty: { alignItems: 'center', paddingVertical: 60, gap: 12 },
