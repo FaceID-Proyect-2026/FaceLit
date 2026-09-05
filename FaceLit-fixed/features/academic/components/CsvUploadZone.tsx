@@ -3,8 +3,7 @@
 //  Zona para cargar el listado institucional (CSV) de una ficha
 //  puntual (RF-3.3). En Web permite arrastrar y soltar el archivo
 //  o hacer clic para abrir el explorador; en Móvil usa el selector
-//  de documentos nativo (expo-document-picker), igual que ya se usa
-//  en otras pantallas del proyecto (p. ej. app/coordinator/institutional-import.tsx).
+//  de documentos nativo (expo-document-picker).
 //
 //  Componente nuevo y autocontenido: no modifica ningún store ni
 //  pantalla existente, solo expone `onFileRead(text, fileName)`.

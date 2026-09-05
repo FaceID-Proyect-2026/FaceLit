@@ -37,21 +37,40 @@ export default function ProgramDetailScreen() {
         ListHeaderComponent={
           <View>
             <TouchableOpacity onPress={() => router.back()} style={pds.backBtn}><Ionicons name="arrow-back" size={20} color={text} /><Text style={[pds.backText, { color: text }]}>{t('common.back')}</Text></TouchableOpacity>
-            <View style={pds.titleRow}>
-              <Text style={[pds.title, { color: text }]}>{getProgramDisplayName(program, t)}</Text>
-              <Text style={[pds.subtitle, { color: muted }]}>{t('academic.programDetailSubtitle')}</Text>
-            </View>
-            <View style={[pds.statusBadge, { backgroundColor: program.status === 'active' ? Colors.success + '20' : Colors.error + '20', alignSelf: 'flex-start', marginBottom: 8 }]}>
-              <Text style={{ color: program.status === 'active' ? Colors.success : Colors.error, fontWeight: '700', fontSize: 13 }}>{t(`environments.statuses.${program.status}`)}</Text>
-            </View>
-            <Text style={[pds.cardMeta, { color: muted }]}>{t('environments.detail.createdAt')}: {new Date(program.createdAt).toLocaleString()}</Text>
-            <Text style={[pds.cardMeta, { color: muted, marginBottom: 8 }]}>{t('environments.detail.updatedAt')}: {new Date(program.updatedAt).toLocaleString()}</Text>
-            <View style={pds.headerActions}>
-              <TouchableOpacity onPress={() => setEditModalOpen(true)} style={[pds.actionBtn, { borderColor: theme.primary }]} activeOpacity={0.7}>
+            <View style={[pds.headerCard, { backgroundColor: cardBg, borderColor: border }]}>
+              <View style={pds.headerTop}>
+                <View style={[pds.iconCircleLg, { backgroundColor: theme.primary + '20' }]}>
+                  <Ionicons name="school" size={26} color={theme.primary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[pds.title, { color: text }]}>{getProgramDisplayName(program, t)}</Text>
+                  <Text style={[pds.subtitle, { color: muted }]}>{t('academic.programDetailSubtitle')}</Text>
+                </View>
+                <View style={[pds.statusBadge, { backgroundColor: program.status === 'active' ? Colors.success + '20' : Colors.error + '20' }]}>
+                  <View style={[pds.statusDot, { backgroundColor: program.status === 'active' ? Colors.success : Colors.error }]} />
+                  <Text style={{ color: program.status === 'active' ? Colors.success : Colors.error, fontWeight: '700', fontSize: 13 }}>{t(`environments.statuses.${program.status}`)}</Text>
+                </View>
+              </View>
+
+              <View style={[pds.infoRow, { borderBottomColor: border }]}>
+                <Text style={[pds.infoLabel, { color: muted }]}>{t('academic.fichas')}</Text>
+                <Text style={[pds.infoValue, { color: text }]}>{programFichas.length}</Text>
+              </View>
+              <View style={[pds.infoRow, { borderBottomColor: border }]}>
+                <Text style={[pds.infoLabel, { color: muted }]}>{t('environments.detail.createdAt')}</Text>
+                <Text style={[pds.infoValue, { color: text }]}>{new Date(program.createdAt).toLocaleString()}</Text>
+              </View>
+              <View style={[pds.infoRow, { borderBottomWidth: 0 }]}>
+                <Text style={[pds.infoLabel, { color: muted }]}>{t('environments.detail.updatedAt')}</Text>
+                <Text style={[pds.infoValue, { color: text }]}>{new Date(program.updatedAt).toLocaleString()}</Text>
+              </View>
+
+              <TouchableOpacity onPress={() => setEditModalOpen(true)} style={[pds.editBtn, { borderColor: theme.primary }]} activeOpacity={0.7}>
                 <Ionicons name="create-outline" size={16} color={theme.primary} /><Text style={{ color: theme.primary, fontWeight: '700', fontSize: 13 }}>{t('academic.programEdit')}</Text>
               </TouchableOpacity>
             </View>
-            <Text style={[pds.sectionTitle, { color: text, marginTop: 20 }]}>{t('academic.fichas')} ({programFichas.length})</Text>
+
+            <Text style={[pds.sectionTitle, { color: text }]}>{t('academic.fichas')} ({programFichas.length})</Text>
           </View>
         }
         renderItem={({ item }) => (
@@ -86,12 +105,17 @@ const pds = StyleSheet.create({
   safe: { flex: 1 }, scroll: { padding: 16, paddingBottom: 40 },
   backBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 12 },
   backText: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
-  title: { fontSize: FontSize['3xl'], fontWeight: FontWeight.black, marginBottom: 8, flexShrink: 1, flexWrap: 'wrap' },
-  subtitle: { fontSize: FontSize.sm, marginBottom: 8, lineHeight: 19 },
-  titleRow: { width: '100%' },
-  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  headerActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 },
-  actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1.5, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 },
+  headerCard: { borderRadius: 16, borderWidth: 1, padding: 18, marginBottom: 20 },
+  headerTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 14, marginBottom: 14 },
+  iconCircleLg: { width: 52, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  title: { fontSize: FontSize.xl, fontWeight: FontWeight.black, marginBottom: 4, flexShrink: 1, flexWrap: 'wrap' },
+  subtitle: { fontSize: FontSize.sm, lineHeight: 18 },
+  statusBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
+  statusDot: { width: 6, height: 6, borderRadius: 3 },
+  infoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 9, borderBottomWidth: 1 },
+  infoLabel: { fontSize: FontSize.sm },
+  infoValue: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
+  editBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 1.5, borderRadius: 10, paddingVertical: 10, marginTop: 16 },
   sectionTitle: { fontSize: FontSize.xl, fontWeight: FontWeight.black, marginBottom: 10 },
   card: { borderRadius: 14, borderWidth: 1, padding: 16, flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   iconCircle: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },

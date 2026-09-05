@@ -35,7 +35,6 @@ export const Routes = {
   // Coordinación académica
   COORDINATOR: {
     DASHBOARD: '/coordinator',
-    INSTITUTIONAL_IMPORT: '/coordinator/institutional-import',
     TRANSFER_REQUESTS: '/coordinator/transfer-requests',
   },
 
@@ -59,8 +58,8 @@ export const Routes = {
     FICHA_DETAIL:       '/admin/academic/fichas/[id]',
     FICHA_EDIT:         '/admin/academic/fichas/[id]/edit',
     TRANSFER_REQUEST:   '/apprentice/transfer-request',
+    JOIN_FICHA:         '/apprentice/join-ficha',
     COORDINATOR_REQUESTS: '/coordinator/transfer-requests',
-    INSTITUTIONAL_IMPORT: '/coordinator/institutional-import',
     LEARNERS_BY_FICHA:  '/admin/academic/fichas/[id]/learners',
   },
 
