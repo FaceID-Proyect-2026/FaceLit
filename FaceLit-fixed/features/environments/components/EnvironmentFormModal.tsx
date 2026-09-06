@@ -86,7 +86,7 @@ export default function EnvironmentFormModal({ visible, onClose, editId }: Envir
           </TouchableOpacity>
           <TouchableOpacity onPress={handleSave} style={[efm.footerBtn, { backgroundColor: theme.primary, flexDirection: 'row', gap: 6 }]} activeOpacity={0.85}>
             <Ionicons name="checkmark-outline" size={18} color={Colors.white} />
-            <Text style={{ color: Colors.white, fontWeight: '700' }}>{isEditing ? t('common.save') : t('environments.register')}</Text>
+            <Text style={{ color: Colors.white, fontWeight: '700' }}>{t('common.save')}</Text>
           </TouchableOpacity>
         </>
       }

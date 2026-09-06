@@ -1,8 +1,8 @@
 // ─────────────────────────────────────────────
 //  app/admin/academic/index.tsx — Programas (Admin)
 // ─────────────────────────────────────────────
-import ProgramFormModal from '@/features/academic/components/ProgramFormModal';
 import FichaFormModal from '@/features/academic/components/FichaFormModal';
+import ProgramFormModal from '@/features/academic/components/ProgramFormModal';
 import { getProgramDisplayName } from '@/features/academic/types';
 import { ProgramStatusFilter, useAcademic } from '@/features/academic/useAcademic';
 import { Colors } from '@/shared/constants/colors';
@@ -220,20 +220,33 @@ export default function AcademicProgramsScreen() {
             renderItem={({ item }) => (
               <TouchableOpacity onPress={() => router.push(`/admin/academic/programs/${item.id}` as any)}
                 style={[aps.card, { backgroundColor: cardBg, borderColor: border }]} activeOpacity={0.7}>
-                <View style={aps.cardLeft}>
-                  <View style={[aps.iconCircle, { backgroundColor: theme.primary + '20' }]}>
-                    <Ionicons name="school-outline" size={22} color={theme.primary} />
+                <View style={aps.cardHeader}>
+                  <View style={[aps.typeBadge, { backgroundColor: theme.primary + '20' }]}>
+                    <Ionicons name="school-outline" size={16} color={theme.primary} />
+                    <Text style={[aps.typeText, { color: theme.primary }]}>{item.fichas.length} {t('academic.fichas').toLowerCase()}</Text>
                   </View>
-                  <View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}><Text style={[aps.cardTitle, { color: text }]}>{getProgramDisplayName(item, t)}</Text>{isRecent(item.createdAt) && <Text style={[aps.recentBadge, { color: theme.primary, borderColor: theme.primary }]}>{t('environments.recentBadge')}</Text>}{wasEditedRecently(item.createdAt, item.updatedAt) && <Text style={[aps.recentBadge, { color: '#B8860B', borderColor: '#B8860B' }]}>{t('environments.editedRecentlyBadge')}</Text>}</View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                      <Text style={[aps.cardMeta, { color: muted }]}>{item.fichas.length} {t('academic.fichas').toLowerCase()}</Text>
-                      <View style={[aps.statusDot, { backgroundColor: item.status === 'active' ? Colors.success : Colors.error }]} />
-                      <Text style={[aps.cardMeta, { color: item.status === 'active' ? Colors.success : Colors.error, fontWeight: '700' }]}>{t(`environments.statuses.${item.status}`)}</Text>
-                    </View>
-                    <Text style={[aps.cardDates, { color: muted }]}>{t('environments.detail.createdAt')}: {new Date(item.createdAt).toLocaleString()} · {t('environments.detail.updatedAt')}: {new Date(item.updatedAt).toLocaleString()}</Text>
+                  <View style={aps.statusWrap}>
+                    <View style={[aps.statusDot, { backgroundColor: item.status === 'active' ? Colors.success : Colors.error }]} />
+                    <Text style={[aps.statusLabel, { color: item.status === 'active' ? Colors.success : Colors.error }]}>{t(`environments.statuses.${item.status}`)}</Text>
                   </View>
                 </View>
+                {(isRecent(item.createdAt) || wasEditedRecently(item.createdAt, item.updatedAt)) && (
+                  <View style={aps.badgeRow}>
+                    {isRecent(item.createdAt) && <View style={[aps.infoBadge, { backgroundColor: theme.primary + '18' }]}>
+                      <Ionicons name="sparkles-outline" size={12} color={theme.primary} />
+                      <Text style={[aps.infoBadgeText, { color: theme.primary }]}>{t('environments.recentBadge')}</Text>
+                    </View>}
+                    {wasEditedRecently(item.createdAt, item.updatedAt) && <View style={[aps.infoBadge, { backgroundColor: '#8A6D3B18' }]}>
+                      <Ionicons name="create-outline" size={12} color="#B8860B" />
+                      <Text style={[aps.infoBadgeText, { color: '#B8860B' }]}>{t('environments.editedRecentlyBadge')}</Text>
+                    </View>}
+                  </View>
+                )}
+                <View style={aps.titleRow}>
+                  <Text style={[aps.cardTitle, { color: text }]}>{getProgramDisplayName(item, t)}</Text>
+                </View>
+                <Text style={[aps.cardSub, { color: muted }]}>{t('environments.detail.createdAt')}: {new Date(item.createdAt).toLocaleString()}</Text>
+                <Text style={[aps.cardDates, { color: muted }]}>{t('environments.detail.updatedAt')}: {new Date(item.updatedAt).toLocaleString()}</Text>
                 <View style={aps.cardActions}>
                   <TouchableOpacity onPress={() => router.push(`/admin/academic/programs/${item.id}` as any)} style={[aps.actionBtn, { backgroundColor: theme.primary + '15' }]}>
                     <Ionicons name="eye-outline" size={16} color={theme.primary} />
@@ -260,42 +273,47 @@ export default function AcademicProgramsScreen() {
           renderItem={({ item }) => {
             const isExpanded = expandedFichaId === item.id;
             return (
-              <View style={[aps.card, aps.unlinkedCard, { backgroundColor: cardBg, borderColor: border }]}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <TouchableOpacity onPress={() => router.push(`/admin/academic/fichas/${item.id}` as any)} style={aps.cardLeft} activeOpacity={0.7}>
-                    <View style={[aps.iconCircle, { backgroundColor: Colors.warning + '20' }]}>
-                      <Ionicons name="document-text-outline" size={22} color={Colors.warning} />
-                    </View>
-                    <View>
-                      <Text style={[aps.cardTitle, { color: text }]}>Ficha {item.number}</Text>
-                      <Text style={[aps.cardMeta, { color: muted }]}>{t(`academic.jornadas.${item.jornada}`)} · {item.learners.length} {t('academic.learners').toLowerCase()} · {item.code} · {t(`environments.statuses.${item.status}`)}</Text>
-                      <Text style={[aps.cardDates, { color: muted }]}>{t('environments.detail.createdAt')}: {new Date(item.createdAt).toLocaleString()} · {t('environments.detail.updatedAt')}: {new Date(item.updatedAt).toLocaleString()}</Text>
-                    </View>
-                  </TouchableOpacity>
-                  <View style={{ flexDirection: 'row', gap: 8 }}>
-                    <TouchableOpacity
-                      onPress={() => setExpandedFichaId(isExpanded ? null : item.id)}
-                      style={[aps.actionBtn, { backgroundColor: theme.primary + '15' }]}
-                      activeOpacity={0.7}
-                    >
-                      <Ionicons name="link-outline" size={16} color={theme.primary} />
-                    </TouchableOpacity>
-                    {item.status === 'active' && (
-                      <TouchableOpacity onPress={() => handleDeactivateFicha(item.id, item.number)} style={[aps.actionBtn, { backgroundColor: Colors.error + '15' }]}>
-                        <Ionicons name="pause-outline" size={16} color={Colors.error} />
-                      </TouchableOpacity>
-                    )}
-                    {item.status === 'inactive' && (
-                      <>
-                        <TouchableOpacity onPress={() => handleReactivateFicha(item.id, item.number)} style={[aps.actionBtn, { backgroundColor: theme.primary + '15' }]}>
-                          <Ionicons name="refresh-outline" size={16} color={theme.primary} />
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => handleDeleteFichaCompletely(item.id, item.number)} style={[aps.actionBtn, { backgroundColor: Colors.error + '15' }]}>
-                          <Ionicons name="trash" size={16} color={Colors.error} />
-                        </TouchableOpacity>
-                      </>
-                    )}
+              <View style={[aps.card, { backgroundColor: cardBg, borderColor: border }]}>
+                <View style={aps.cardHeader}>
+                  <View style={[aps.typeBadge, { backgroundColor: Colors.warning + '20' }]}>
+                    <Ionicons name="document-text-outline" size={16} color={Colors.warning} />
+                    <Text style={[aps.typeText, { color: Colors.warning }]}>{item.code}</Text>
                   </View>
+                  <View style={aps.statusWrap}>
+                    <View style={[aps.statusDot, { backgroundColor: item.status === 'active' ? Colors.success : Colors.error }]} />
+                    <Text style={[aps.statusLabel, { color: item.status === 'active' ? Colors.success : Colors.error }]}>{t(`environments.statuses.${item.status}`)}</Text>
+                  </View>
+                </View>
+                <TouchableOpacity onPress={() => router.push(`/admin/academic/fichas/${item.id}` as any)} activeOpacity={0.7}>
+                  <View style={aps.titleRow}>
+                    <Text style={[aps.cardTitle, { color: text }]}>Ficha {item.number}</Text>
+                  </View>
+                  <Text style={[aps.cardSub, { color: muted }]}>{t(`academic.jornadas.${item.jornada}`)} · {item.learners.length} {t('academic.learners').toLowerCase()}</Text>
+                  <Text style={[aps.cardDates, { color: muted }]}>{t('environments.detail.createdAt')}: {new Date(item.createdAt).toLocaleString()} · {t('environments.detail.updatedAt')}: {new Date(item.updatedAt).toLocaleString()}</Text>
+                </TouchableOpacity>
+                <View style={aps.cardActions}>
+                  <TouchableOpacity
+                    onPress={() => setExpandedFichaId(isExpanded ? null : item.id)}
+                    style={[aps.actionBtn, { backgroundColor: theme.primary + '15' }]}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="link-outline" size={16} color={theme.primary} />
+                  </TouchableOpacity>
+                  {item.status === 'active' && (
+                    <TouchableOpacity onPress={() => handleDeactivateFicha(item.id, item.number)} style={[aps.actionBtn, { backgroundColor: Colors.error + '15' }]}>
+                      <Ionicons name="pause-outline" size={16} color={Colors.error} />
+                    </TouchableOpacity>
+                  )}
+                  {item.status === 'inactive' && (
+                    <>
+                      <TouchableOpacity onPress={() => handleReactivateFicha(item.id, item.number)} style={[aps.actionBtn, { backgroundColor: theme.primary + '15' }]}>
+                        <Ionicons name="refresh-outline" size={16} color={theme.primary} />
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={() => handleDeleteFichaCompletely(item.id, item.number)} style={[aps.actionBtn, { backgroundColor: Colors.error + '15' }]}>
+                        <Ionicons name="trash" size={16} color={Colors.error} />
+                      </TouchableOpacity>
+                    </>
+                  )}
                 </View>
 
                 {isExpanded && (
@@ -342,19 +360,22 @@ export default function AcademicProgramsScreen() {
           }
           renderItem={({ item }) => (
             <View style={[aps.card, { backgroundColor: cardBg, borderColor: border }]}>
-              <View style={aps.cardLeft}>
-                <View style={[aps.iconCircle, { backgroundColor: Colors.warning + '20' }]}>
-                  <Ionicons name="person-outline" size={22} color={Colors.warning} />
-                </View>
-                <View>
-                  <Text style={[aps.cardTitle, { color: text }]}>{item.name} {item.lastname}</Text>
-                  <Text style={[aps.cardMeta, { color: muted }]}>Doc: {item.document}{item.fromFichaNumber ? ` · ${t('academic.orphanFrom')}: Ficha ${item.fromFichaNumber}` : ''}</Text>
-                  <Text style={[aps.cardDates, { color: muted }]}>{t('academic.orphanMovedAt')}: {new Date(item.movedAt).toLocaleString()}</Text>
+              <View style={aps.cardHeader}>
+                <View style={[aps.typeBadge, { backgroundColor: Colors.warning + '20' }]}>
+                  <Ionicons name="person-outline" size={16} color={Colors.warning} />
+                  <Text style={[aps.typeText, { color: Colors.warning }]}>Doc: {item.document}</Text>
                 </View>
               </View>
-              <TouchableOpacity onPress={() => handleDeleteOrphan(item.id, `${item.name} ${item.lastname}`)} style={[aps.actionBtn, { backgroundColor: Colors.error + '15' }]}>
-                <Ionicons name="trash-outline" size={16} color={Colors.error} />
-              </TouchableOpacity>
+              <View style={aps.titleRow}>
+                <Text style={[aps.cardTitle, { color: text }]}>{item.name} {item.lastname}</Text>
+              </View>
+              {item.fromFichaNumber ? <Text style={[aps.cardSub, { color: muted }]}>{t('academic.orphanFrom')}: Ficha {item.fromFichaNumber}</Text> : null}
+              <Text style={[aps.cardDates, { color: muted }]}>{t('academic.orphanMovedAt')}: {new Date(item.movedAt).toLocaleString()}</Text>
+              <View style={aps.cardActions}>
+                <TouchableOpacity onPress={() => handleDeleteOrphan(item.id, `${item.name} ${item.lastname}`)} style={[aps.actionBtn, { backgroundColor: Colors.error + '15' }]}>
+                  <Ionicons name="trash-outline" size={16} color={Colors.error} />
+                </TouchableOpacity>
+              </View>
             </View>
           )}
           ListEmptyComponent={<View style={aps.empty}><Ionicons name="person-remove-outline" size={48} color={muted} /><Text style={[aps.emptyText, { color: muted }]}>{t('academic.orphanEmpty')}</Text></View>}
@@ -388,17 +409,27 @@ const aps = StyleSheet.create({
   filterRow: { flexDirection: 'row', gap: 8, marginHorizontal: 16, marginBottom: 10 },
   filterChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, borderWidth: 1.2 },
   filterChipText: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
-  list: { padding: 16, gap: 10 },
-  card: { borderRadius: 14, borderWidth: 1, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  list: { padding: 16, gap: 12 },
+  card: { borderRadius: 14, borderWidth: 1, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+  typeBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  typeText: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
+  statusWrap: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  badgeRow: { flexDirection: 'row', gap: 6, marginBottom: 8, flexWrap: 'wrap' },
+  infoBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
+  infoBadgeText: { fontSize: FontSize.xs, fontWeight: FontWeight.bold },
   unlinkedCard: { flexDirection: 'column', alignItems: 'stretch' },
   cardLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
   iconCircle: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  cardTitle: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
+  cardTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, marginBottom: 2 },
+  cardSub: { fontSize: FontSize.sm, marginBottom: 4 },
   cardMeta: { fontSize: FontSize.sm, marginTop: 2 },
-  cardDates: { fontSize: FontSize.xs, marginTop: 4 },
-  statusDot: { width: 8, height: 8, borderRadius: 4 },
+  cardDates: { fontSize: FontSize.xs, marginBottom: 8 },
+  statusDot: { width: 10, height: 10, borderRadius: 5 },
+  statusLabel: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
   recentBadge: { fontSize: FontSize.xs, fontWeight: FontWeight.bold, borderWidth: 1, borderRadius: 5, paddingHorizontal: 5, paddingVertical: 2 },
-  cardActions: { flexDirection: 'row', gap: 8 },
+  cardActions: { flexDirection: 'row', gap: 8, justifyContent: 'flex-end' },
   actionBtn: { width: 34, height: 34, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   programPicker: { marginTop: 12, gap: 8, borderTopWidth: 1, borderTopColor: 'rgba(101,179,97,0.15)', paddingTop: 12 },
   hintBox: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 10, borderWidth: 1, padding: 12, marginBottom: 12 },
