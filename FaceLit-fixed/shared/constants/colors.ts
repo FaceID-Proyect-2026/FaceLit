@@ -48,6 +48,7 @@ export const Colors = {
   warning:  '#E89B2C',
   success:  '#27AE60',
   info:     '#4A90D9',
+  accentPurple: '#8E44AD',
 
   // Fijos
   white:    '#FFFFFF',

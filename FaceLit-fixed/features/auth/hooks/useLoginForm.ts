@@ -5,6 +5,8 @@
 // ─────────────────────────────────────────────
 import { hasAcceptedPrivacy } from '@/features/auth/privacyAcceptanceStore';
 import { useAuth } from '@/shared/contexts/AuthContext';
+import { Routes } from '@/shared/constants/routes';
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -38,7 +40,7 @@ const initialErrors: LoginErrors = {
 
 export function useLoginForm() {
   const { t } = useTranslation();
-  const { login } = useAuth();
+  const { login, user, isAuthenticated } = useAuth();
 
   const [form, setForm] = useState<LoginForm>(initialForm);
   const [errors, setErrors] = useState<LoginErrors>(initialErrors);
@@ -50,6 +52,19 @@ export function useLoginForm() {
       setPrivacyAlreadyAccepted(hasAcceptedPrivacy(form.email));
     }
   }, [form.email]);
+
+  // Redirige a cada rol a su panel SOLO después de que React confirmó
+  // el nuevo estado de sesión (isAuthenticated/user), nunca antes. Esto
+  // evita la condición de carrera de navegar mientras el contexto
+  // todavía tiene el valor anterior (lo que producía errores
+  // intermitentes al iniciar sesión).
+  useEffect(() => {
+    if (!isAuthenticated || !user) return;
+    if (user.role === 'administrador') router.replace(Routes.ADMIN.DASHBOARD as any);
+    else if (user.role === 'instructor') router.replace('/instructor' as any);
+    else if ((user.role as string) === 'coordinador') router.replace(Routes.COORDINATOR.DASHBOARD as any);
+    else router.replace('/apprentice' as any);
+  }, [isAuthenticated, user]);
 
   const setField = <K extends keyof LoginForm>(
     key: K,

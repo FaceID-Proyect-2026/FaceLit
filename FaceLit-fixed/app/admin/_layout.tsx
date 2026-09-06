@@ -8,29 +8,22 @@ import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
+import { useAuthGuard } from '@/shared/hooks/useAuthGuard';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function AdminLayout() {
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const { canRenderContent } = useAuthGuard(isAuthenticated);
 
-  // Protección: si no está autenticado, redirigir a login (después del mount)
-  useEffect(() => {
-    setMounted(true);
-    if (!isAuthenticated) {
-      router.replace('/auth/login' as any);
-    }
-  }, [isAuthenticated]);
-
-  if (!mounted) {
+  if (!canRenderContent) {
     return (
       <SafeAreaView style={[sal.safe, { backgroundColor: isDark ? Colors.dark.background : Colors.light.background }]}>
         <View style={sal.loadingContainer}>
@@ -38,10 +31,6 @@ export default function AdminLayout() {
         </View>
       </SafeAreaView>
     );
-  }
-
-  if (!isAuthenticated) {
-    return null;
   }
 
   const text = isDark ? Colors.dark.text : Colors.light.text;

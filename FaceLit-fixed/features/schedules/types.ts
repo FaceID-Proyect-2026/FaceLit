@@ -1,7 +1,13 @@
 export interface Schedule {
   id: string; fichaId: string; fichaNumber: string; programName: string;
-  day: string; startTime: string; endTime: string; environmentId: string;
-  environmentName: string; instructorId: string; instructorName: string;
+  day: string; startTime: string; endTime: string;
+  environmentId: string;   // '' = sin ambiente asignado (RF-4.6)
+  environmentName: string;
+  instructorId: string;    // '' = sin instructor asignado (RF-4.5)
+  instructorName: string;
+  status: 'active' | 'inactive';
+  createdAt: string; // ISO datetime
+  updatedAt: string; // ISO datetime
 }
 
 // Tipos de excepción admitidos (HU-06). "other" se removió: el formulario
@@ -63,9 +69,9 @@ export const MOCK_INSTRUCTORS = [
   { id: 'i3', name: 'Laura Torres' }, { id: 'i4', name: 'Diego Herrera' },
 ];
 export const MOCK_SCHEDULES: Schedule[] = [
-  { id: 's1', fichaId: '1', fichaNumber: '3145555', programName: 'ADSO', day: 'monday', startTime: '07:00', endTime: '12:00', environmentId: '1', environmentName: 'Salón 101', instructorId: 'i1', instructorName: 'María González' },
-  { id: 's2', fichaId: '1', fichaNumber: '3145555', programName: 'ADSO', day: 'tuesday', startTime: '07:00', endTime: '12:00', environmentId: '3', environmentName: 'Lab. Sistemas', instructorId: 'i1', instructorName: 'María González' },
-  { id: 's3', fichaId: '2', fichaNumber: '3145556', programName: 'ADSO', day: 'monday', startTime: '13:00', endTime: '18:00', environmentId: '2', environmentName: 'Salón 102', instructorId: 'i2', instructorName: 'Pedro Ramírez' },
+  { id: 's1', fichaId: '1', fichaNumber: '3145555', programName: 'ADSO', day: 'monday', startTime: '07:00', endTime: '12:00', environmentId: '1', environmentName: 'Salón 101', instructorId: 'i1', instructorName: 'María González', status: 'active', createdAt: '2026-01-08T05:00:00.000Z', updatedAt: '2026-01-08T05:00:00.000Z' },
+  { id: 's2', fichaId: '1', fichaNumber: '3145555', programName: 'ADSO', day: 'tuesday', startTime: '07:00', endTime: '12:00', environmentId: '3', environmentName: 'Lab. Sistemas', instructorId: 'i1', instructorName: 'María González', status: 'active', createdAt: '2026-01-08T05:00:00.000Z', updatedAt: '2026-01-08T05:00:00.000Z' },
+  { id: 's3', fichaId: '2', fichaNumber: '3145556', programName: 'ADSO', day: 'monday', startTime: '13:00', endTime: '18:00', environmentId: '2', environmentName: 'Salón 102', instructorId: 'i2', instructorName: 'Pedro Ramírez', status: 'active', createdAt: '2026-01-08T05:00:00.000Z', updatedAt: '2026-01-08T05:00:00.000Z' },
 ];
 export const MOCK_EXCEPTIONS: ScheduleException[] = [
   {

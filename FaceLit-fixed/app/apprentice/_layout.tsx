@@ -4,6 +4,7 @@
 // ─────────────────────────────────────────────
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
+import { useAuthGuard } from '@/shared/hooks/useAuthGuard';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import Sidebar from '@/shared/components/layout/Sidebar';
@@ -11,14 +12,22 @@ import { LanguageSelector, ThemeToggle } from '@/shared/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ApprenticeLayout() {
   const { isAuthenticated } = useAuth();
   const { theme, isDark } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  if (!isAuthenticated) { router.replace('/auth/login' as any); return null; }
+  const { canRenderContent } = useAuthGuard(isAuthenticated);
+
+  if (!canRenderContent) {
+    return (
+      <SafeAreaView style={[al.safe, { backgroundColor: isDark ? Colors.dark.background : Colors.light.background }]}>
+        <View style={al.loadingContainer}><ActivityIndicator size="large" color={theme.primary} /></View>
+      </SafeAreaView>
+    );
+  }
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const headerBg = isDark ? Colors.dark.surface : Colors.light.surface;
@@ -54,6 +63,7 @@ export default function ApprenticeLayout() {
 
 const al = StyleSheet.create({
   safe: { flex: 1 },
+  loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1 },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   menuBtn: { padding: 4 },

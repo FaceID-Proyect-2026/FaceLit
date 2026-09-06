@@ -2,8 +2,6 @@
 //  shared/contexts/AuthContext.tsx
 //  Maneja sesión, rol y datos del usuario
 // ─────────────────────────────────────────────
-import { Routes } from '@/shared/constants/routes';
-import { router } from 'expo-router';
 import React, { createContext, ReactNode, useCallback, useContext, useState } from 'react';
 
 // ── Tipos ─────────────────────────────────────
@@ -118,24 +116,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     
     setUser(entry.user);
-    
-    // Redirigir según rol
-    if (entry.user.role === 'administrador') {
-      router.replace(Routes.ADMIN.DASHBOARD as any);
-    } else if (entry.user.role === 'instructor') {
-      router.replace('/instructor' as any);
-    } else if ((entry.user.role as string) === 'coordinador') {
-      router.replace(Routes.COORDINATOR.DASHBOARD as any);
-    } else {
-      router.replace('/apprentice' as any);
-    }
-    
+
     return { success: true };
   }, []);
 
   const logout = useCallback(() => {
     setUser(null);
-    router.replace(Routes.AUTH.LOGIN as any);
+    // No navegamos aquí: los layouts de cada rol (useAuthGuard) detectan
+    // isAuthenticated=false y redirigen a login ellos mismos, una vez el
+    // router raíz ya está listo. Navegar aquí directamente corría el
+    // riesgo de hacerlo antes de que React confirmara el nuevo estado.
   }, []);
 
   const updateUser = useCallback((data: Partial<User>) => {
