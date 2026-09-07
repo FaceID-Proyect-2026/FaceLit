@@ -44,7 +44,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     { icon: 'school-outline', label: t('sidebar.academic'), route: Routes.ACADEMIC.PROGRAMS, module: 'academic' },
     { icon: 'swap-horizontal-outline', label: t('sidebar.transferRequests'), route: Routes.COORDINATOR.TRANSFER_REQUESTS, module: 'academic' },
     { icon: 'time-outline', label: t('sidebar.schedules'), route: Routes.SCHEDULES.LIST, module: 'schedules' },
-    { icon: 'scan-outline', label: t('sidebar.facial'), route: Routes.FACIAL.MANAGEMENT, module: 'facial' },
     { icon: 'checkmark-circle-outline', label: t('sidebar.attendance'), route: Routes.ATTENDANCE.LIST, module: 'attendance' },
     { icon: 'bar-chart-outline', label: t('sidebar.reports'), route: Routes.REPORTS.DASHBOARD, module: 'reports' },
     { icon: 'notifications-outline', label: t('sidebar.notifications'), route: Routes.NOTIFICATIONS.CENTER, module: 'notifications' },

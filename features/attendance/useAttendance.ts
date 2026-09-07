@@ -8,6 +8,7 @@ export interface ResolvedAttendance extends AttendanceEvent {
   userName: string;
   userDocument: string;
   userEmail: string;
+  fichaId: string;
   fichaNumber: string;
   programId: string;
   programName: string;
@@ -47,6 +48,7 @@ export function resolveAttendance(events = ATTENDANCE_EVENTS): ResolvedAttendanc
       userName: `${learner.name} ${learner.lastname}`,
       userDocument: learner.document,
       userEmail: learner.email,
+      fichaId: ficha.id,
       fichaNumber: ficha.number,
       programId: program.id,
       programName: program.name,

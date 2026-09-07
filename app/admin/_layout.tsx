@@ -106,7 +106,6 @@ export default function AdminLayout() {
         <Stack.Screen name="schedules/register" />
         <Stack.Screen name="schedules/[id]" />
         <Stack.Screen name="schedules/exceptions" />
-        <Stack.Screen name="facial/index" />
         <Stack.Screen name="attendance/index" />
         <Stack.Screen name="attendance/[id]" />
         <Stack.Screen name="reports/index" />

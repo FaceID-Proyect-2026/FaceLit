@@ -3,12 +3,16 @@
 // ─────────────────────────────────────────────
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
+import { useAcademic } from '@/features/academic/useAcademic';
+import { useEnvironments } from '@/features/environments/useEnvironments';
+import { useAttendance } from '@/features/attendance/useAttendance';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { Routes } from '@/shared/constants/routes';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -29,6 +33,9 @@ export default function AdminDashboard() {
   const { user } = useAuth();
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
+  const { allFichas, orphanLearners } = useAcademic();
+  const { environments } = useEnvironments();
+  const attendanceRecords = useAttendance();
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -36,11 +43,31 @@ export default function AdminDashboard() {
   const border = isDark ? 'rgba(101,179,97,0.18)' : 'rgba(101,179,97,0.20)';
   const bg = isDark ? Colors.dark.background : Colors.light.background;
 
+  // Al admin (Coordinador) le interesa esencialmente: cuántos aprendices
+  // hay registrados en el sistema y qué tan puntuales han sido — el
+  // detalle de asistencia por usuario lo cubre el módulo de Asistencia,
+  // aquí solo se resume.
+  const { totalLearners, activeFichasCount, activeEnvironmentsCount, attendanceRate } = useMemo(() => {
+    const learnerIds = new Set<string>();
+    allFichas.forEach(f => f.learners.forEach(l => learnerIds.add(l.id)));
+    orphanLearners.forEach(l => learnerIds.add(l.id));
+
+    const total = attendanceRecords.length;
+    const present = attendanceRecords.filter(r => r.status !== 'absent').length;
+
+    return {
+      totalLearners: learnerIds.size,
+      activeFichasCount: allFichas.filter(f => f.status === 'active').length,
+      activeEnvironmentsCount: environments.filter(e => e.status === 'active').length,
+      attendanceRate: total > 0 ? Math.round((present / total) * 100) : 0,
+    };
+  }, [allFichas, orphanLearners, environments, attendanceRecords]);
+
   const stats: StatCard[] = [
-    { icon: 'people-outline', value: '1,248', label: t('dashboard.totalUsers') },
-    { icon: 'school-outline', value: '48', label: t('dashboard.activeFichas') },
-    { icon: 'business-outline', value: '32', label: t('dashboard.environments') },
-    { icon: 'checkmark-circle-outline', value: '96%', label: t('dashboard.attendanceRate') },
+    { icon: 'people-outline', value: String(totalLearners), label: t('dashboard.totalUsers') },
+    { icon: 'school-outline', value: String(activeFichasCount), label: t('dashboard.activeFichas') },
+    { icon: 'business-outline', value: String(activeEnvironmentsCount), label: t('dashboard.environments') },
+    { icon: 'checkmark-circle-outline', value: `${attendanceRate}%`, label: t('dashboard.attendanceRate') },
   ];
 
   const quickActions: QuickAction[] = [
@@ -48,7 +75,6 @@ export default function AdminDashboard() {
     { icon: 'school-outline', label: t('sidebar.academic'), route: Routes.ACADEMIC.PROGRAMS, color: '#27AE60' },
     { icon: 'swap-horizontal-outline', label: t('sidebar.transferRequests'), route: Routes.COORDINATOR.TRANSFER_REQUESTS, color: '#D68910' },
     { icon: 'time-outline', label: t('sidebar.schedules'), route: Routes.SCHEDULES.LIST, color: '#E89B2C' },
-    { icon: 'scan-outline', label: t('sidebar.facial'), route: Routes.FACIAL.MANAGEMENT, color: '#9B59B6' },
     { icon: 'checkmark-circle-outline', label: t('sidebar.attendance'), route: Routes.ATTENDANCE.LIST, color: '#1ABC9C' },
     { icon: 'book-outline', label: t('sidebar.programs'), route: Routes.ACADEMIC.PROGRAMS, color: '#E74C3C' },
   ];

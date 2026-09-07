@@ -557,11 +557,11 @@ const en = {
     users: 'Users', noDate: 'No date', empty: 'No users in this category', filters: { registered: 'Registered', pending: 'Pending' }, roles: { administrador: 'Administrator', instructor: 'Instructor', aprendiz: 'Apprentice' }, statuses: { registered: 'Registered', pending: 'Pending', failed: 'Failed' }, validation: { noFace: 'No face was detected.', userNotFound: 'The user does not exist.', invalidRole: 'The user does not have a valid role.', trainingFailed: 'Model training failed.', alreadyRegistered: 'The user already has a registered face.' },
   },
   attendance: {
-    title: 'Attendance Control', empty: 'No attendance records', detail: 'Attendance Detail',
+    title: 'Attendance Control', adminSubtitle: 'Search or type a training program name to see its fichas, then pick a ficha to check its attendance control.', searchPlaceholder: 'Search by name, document or ficha', empty: 'No attendance records', detail: 'Attendance Detail', selectProgram: 'Training Program', selectProgramPlaceholder: 'Select a training program', selectFicha: 'Ficha', selectFichaPlaceholder: 'Select a ficha', selectPrompt: 'Select a training program and a ficha to view attendance control results.', selectProgramFirst: 'Select a program first', noProgramsFound: 'No programs found with that name', noFichasInProgram: 'This program has no active fichas registered.',
     sections: { learner: 'Learner Information', record: 'Attendance Record', academic: 'Academic Information' },
     fields: { user: 'Apprentice', document: 'Identification', email: 'Email', ficha: 'Ficha', program: 'Training program', environment: 'Environment', date: 'Date', entryTime: 'Entry time', exitTime: 'Exit time', scheduledTime: 'Scheduled time', instructor: 'Instructor', status: 'Status', delay: 'Delay' },
     statuses: { punctual: 'Punctual', late: 'Late', absent: 'Absent', invalidEnv: 'Wrong Environment' },
-    stats: { total: 'Total records', punctual: 'Punctual', late: 'Late', absent: 'Absent' }, notFound: 'Information is not available from the current source.',
+    stats: { total: 'Total records', punctual: 'Punctual', late: 'Late', absent: 'Absent', invalidEnv: 'Anomalies' }, notFound: 'Information is not available from the current source.',
   },
   reports: {
     title: 'Reports & Queries', byUser: 'Report by User', filtersTitle: 'Filters', results: 'Results', invalidDateRange: 'The start date cannot be after the end date.', noRecords: 'No records found.', selectFicha: 'Select a ficha to view the report.', noAttendanceRecords: 'The learners in this ficha have no attendance records.', summaryVisual: 'Visual summary', byFicha: 'Report by Ficha', calendar: 'Calendar View', myPerformance: 'My Performance',
