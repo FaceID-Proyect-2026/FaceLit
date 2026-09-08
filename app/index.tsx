@@ -273,8 +273,8 @@ export default function LandingScreen() {
 
             {/* Mockup */}
             <View style={[s.heroVisual, {
-              backgroundColor: isDark ? 'rgba(101,179,97,0.04)' : 'rgba(101,179,97,0.06)',
-              borderColor: border,
+              backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : Colors.white,
+              borderColor: isDark ? 'rgba(255,255,255,0.14)' : 'rgba(16,38,16,0.06)',
             }]}>
               <View style={[s.mockPhone, {
                 borderColor: theme.primary,
@@ -449,7 +449,12 @@ const s = StyleSheet.create({
 
   metrics: { flexDirection: 'row', flexWrap: 'wrap', gap: 28, marginTop: 36 },
 
-  heroVisual:    { flex: 1, width: '100%', minHeight: 460, borderRadius: 16, borderWidth: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  heroVisual:    {
+    flex: 1, width: '100%', minHeight: 460, borderRadius: 16, borderWidth: 1,
+    alignItems: 'center', justifyContent: 'center', padding: 24,
+    shadowColor: '#0D2B1A', shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.10, shadowRadius: 24, elevation: 6,
+  },
   mockPhone:     { width: 280, maxWidth: '100%', borderRadius: 36, borderWidth: 2, alignItems: 'center', padding: 20, paddingTop: 24, paddingBottom: 20 },
   phoneBrand:    { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
   phoneLogo:     { width: 120, height: 44 },
