@@ -40,6 +40,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const adminMenu: MenuItem[] = [
     { icon: 'grid-outline', label: t('sidebar.dashboard'), route: Routes.ADMIN.DASHBOARD, module: 'dashboard' },
+    ...(user?.role === 'ADMINISTRATOR' || user?.role === 'COORDINATOR'
+      ? [{ icon: 'people-outline', label: t('sidebar.users'), route: Routes.ADMIN.USERS, module: 'users' }]
+      : []),
     { icon: 'business-outline', label: t('sidebar.environments'), route: Routes.ENVIRONMENTS.LIST, module: 'environments' },
     { icon: 'school-outline', label: t('sidebar.academic'), route: Routes.ACADEMIC.PROGRAMS, module: 'academic' },
     { icon: 'swap-horizontal-outline', label: t('sidebar.transferRequests'), route: Routes.COORDINATOR.TRANSFER_REQUESTS, module: 'academic' },
@@ -69,15 +72,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     { icon: 'person-outline', label: t('sidebar.profile'), route: Routes.PROFILE.VIEW, module: 'profile' },
   ];
 
-  const coordinatorMenu: MenuItem[] = [
-    { icon: 'grid-outline', label: t('sidebar.dashboard'), route: Routes.COORDINATOR.DASHBOARD, module: 'dashboard' },
-    { icon: 'swap-horizontal-outline', label: t('sidebar.transferRequests'), route: Routes.COORDINATOR.TRANSFER_REQUESTS, module: 'academic' },
-    { icon: 'person-outline', label: t('sidebar.profile'), route: Routes.PROFILE.VIEW, module: 'profile' },
-  ];
-
-  const menu = (user?.role as string) === 'coordinador' ? coordinatorMenu
-    : user?.role === 'administrador' ? adminMenu
-    : user?.role === 'instructor' ? instructorMenu
+  // ✅ FIX: roles del backend vienen en MAYÚSCULAS
+  const menu = user?.role === 'ADMINISTRATOR' || user?.role === 'COORDINATOR' ? adminMenu
+    : user?.role === 'INSTRUCTOR' ? instructorMenu
     : apprenticeMenu;
 
   const isActive = (route: string) => {
@@ -85,6 +82,22 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       return pathname === route;
     }
     return pathname.startsWith(route.split('[')[0]);
+  };
+
+  // ✅ FIX: iniciales con respaldo si no hay firstName/lastName
+  const getInitials = () => {
+    if (user?.firstName) {
+      return `${user.firstName.charAt(0)}${user.lastName?.charAt(0) ?? ''}`.toUpperCase();
+    }
+    return user?.email?.charAt(0).toUpperCase() ?? '?';
+  };
+
+  // ✅ FIX: nombre a mostrar con respaldo al email
+  const getDisplayName = () => {
+    if (user?.firstName) {
+      return `${user.firstName} ${user.lastName ?? ''}`.trim();
+    }
+    return user?.email ?? '';
   };
 
   return (
@@ -103,14 +116,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         {user && (
           <View style={[ss.userSection, { borderBottomColor: border }]}>
             <View style={[ss.avatar, { backgroundColor: theme.primary }]}>
-              <Text style={ss.avatarText}>
-                {user.name.charAt(0)}{user.lastname.charAt(0)}
-              </Text>
+              <Text style={ss.avatarText}>{getInitials()}</Text>
             </View>
             <View style={ss.userInfo}>
-              <Text style={[ss.userName, { color: text }]}>{user.name} {user.lastname}</Text>
+              <Text style={[ss.userName, { color: text }]} numberOfLines={1}>
+                {getDisplayName()}
+              </Text>
               <Text style={[ss.userRole, { color: muted }]}>
-                {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                {user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase()}
               </Text>
             </View>
           </View>

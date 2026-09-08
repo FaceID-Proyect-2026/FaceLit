@@ -71,6 +71,7 @@ export default function AdminLayout() {
         }}
       >
         <Stack.Screen name="index" />
+        <Stack.Screen name="users/index" />
         <Stack.Screen name="environments/index" />
         <Stack.Screen
           name="environments/register"

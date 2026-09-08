@@ -24,3 +24,8 @@ Password: Admin123!
 
 === CÓDIGO DE VERIFICACIÓN ===
 Token:    264255
+
+=== COMO EJECUTAR  ===
+Ctrl + C
+npx expo install expo@~54.0.37 expo-constants@~18.0.14
+npx expo start -c

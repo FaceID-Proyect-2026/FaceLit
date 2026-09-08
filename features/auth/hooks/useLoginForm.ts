@@ -2,12 +2,10 @@
 //  features/auth/hooks/useLoginForm.ts
 //  Lógica del formulario de login separada
 //  de la pantalla (clean code)
+// Ya esta conectado con el backend
 // ─────────────────────────────────────────────
-import { hasAcceptedPrivacy } from '@/features/auth/privacyAcceptanceStore';
 import { useAuth } from '@/shared/contexts/AuthContext';
-import { Routes } from '@/shared/constants/routes';
-import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const EMAIL_REGEX            = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -40,31 +38,11 @@ const initialErrors: LoginErrors = {
 
 export function useLoginForm() {
   const { t } = useTranslation();
-  const { login, user, isAuthenticated } = useAuth();
+  const { login } = useAuth();
 
   const [form, setForm] = useState<LoginForm>(initialForm);
   const [errors, setErrors] = useState<LoginErrors>(initialErrors);
   const [loading, setLoading] = useState(false);
-  const [privacyAlreadyAccepted, setPrivacyAlreadyAccepted] = useState(false);
-
-  useEffect(() => {
-    if (EMAIL_REGEX.test(form.email.trim())) {
-      setPrivacyAlreadyAccepted(hasAcceptedPrivacy(form.email));
-    }
-  }, [form.email]);
-
-  // Redirige a cada rol a su panel SOLO después de que React confirmó
-  // el nuevo estado de sesión (isAuthenticated/user), nunca antes. Esto
-  // evita la condición de carrera de navegar mientras el contexto
-  // todavía tiene el valor anterior (lo que producía errores
-  // intermitentes al iniciar sesión).
-  useEffect(() => {
-    if (!isAuthenticated || !user) return;
-    if (user.role === 'administrador') router.replace(Routes.ADMIN.DASHBOARD as any);
-    else if (user.role === 'instructor') router.replace('/instructor' as any);
-    else if ((user.role as string) === 'coordinador') router.replace(Routes.COORDINATOR.DASHBOARD as any);
-    else router.replace('/apprentice' as any);
-  }, [isAuthenticated, user]);
 
   const setField = <K extends keyof LoginForm>(
     key: K,
@@ -72,9 +50,6 @@ export function useLoginForm() {
   ) => {
     setForm(prev => ({ ...prev, [key]: value }));
     setErrors(prev => ({ ...prev, [key]: '' }));
-    if (key === 'email' && !EMAIL_REGEX.test(String(value).trim())) {
-      setPrivacyAlreadyAccepted(false);
-    }
   };
 
   const validate = (): LoginErrors => {
@@ -99,7 +74,7 @@ export function useLoginForm() {
     else if (form.password.length > 20)
       e.password = t('login.errors.passwordLong');
 
-    if (!privacyAlreadyAccepted && !form.accepted)
+    if (!form.accepted)
       e.policy = t('login.policyError');
 
     return e;
@@ -130,6 +105,5 @@ export function useLoginForm() {
     loading,
     setField,
     handleSubmit,
-    privacyAlreadyAccepted,
   };
 }

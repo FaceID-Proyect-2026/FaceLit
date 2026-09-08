@@ -1,63 +1,69 @@
 // ─────────────────────────────────────────────
 //  features/auth/hooks/usePasswordRecoveryForm.ts
-//  Lógica del formulario de recuperación de
-//  contraseña, separada de la pantalla (clean code)
-//  — misma convención que useLoginForm / useRegisterForm
 // ─────────────────────────────────────────────
+import { Routes } from '@/shared/constants/routes';
+import { requestRecovery } from '@/shared/services/passwordRecoveryService';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Mock temporal: simula la validación contra el backend
-// (debe reemplazarse por la llamada real al servicio de auth)
-const REGISTERED_EMAILS = [
-  'admin@facelit.com',
-  'usuario@empresa.com',
-  'valery@gmail.com',
-  'juan@gmail.com',
-];
-
 export function usePasswordRecoveryForm() {
   const { t } = useTranslation();
 
-  const [email, setEmailValue]   = useState('');
-  const [error, setError]        = useState('');
-  const [showModal, setShowModal] = useState(false);
+  const [email, setEmailValue]     = useState('');
+  const [error, setError]          = useState('');
+  const [showModal, setShowModal]  = useState(false);
+  const [loading, setLoading]      = useState(false);
 
   const setEmail = (v: string) => {
     setEmailValue(v);
     setError('');
   };
 
-  const handleSubmit = () => {
-    if (!EMAIL_REGEX.test(email)) {
+  const handleSubmit = async () => {
+    const e = email.trim();
+
+    if (!e) {
+      setError(t('passwordRecovery.errors.emailEmpty') ?? 'El correo es obligatorio');
+      return;
+    }
+    if (!EMAIL_REGEX.test(e)) {
       setError(t('passwordRecovery.errors.invalidEmail'));
       return;
     }
-    if (!REGISTERED_EMAILS.includes(email)) {
-      setError(t('passwordRecovery.errors.emailNotFound'));
-      return;
-    }
+
+    setLoading(true);
     setError('');
-    setShowModal(true);
+    try {
+      await requestRecovery(e);
+      setShowModal(true);
+    } catch (err: any) {
+      const message = err.response?.data?.message || t('passwordRecovery.errors.emailNotFound');
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Cierra el modal sin navegar (ej. botón "atrás" de Android)
   const closeModal = () => setShowModal(false);
 
   const handleModalContinue = () => {
     setShowModal(false);
-    router.push('/auth/verify-identity');
+    router.push({
+      pathname: Routes.AUTH.VERIFY_IDENTITY as any,
+      params: { email: email.trim() },
+    });
   };
 
-  const handleCancel = () => router.replace('/auth/login');
+  const handleCancel = () => router.replace(Routes.AUTH.LOGIN as any);
 
   return {
     email,
     error,
     showModal,
+    loading,
     setEmail,
     handleSubmit,
     closeModal,

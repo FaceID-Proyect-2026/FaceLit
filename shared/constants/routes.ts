@@ -30,6 +30,7 @@ export const Routes = {
     DASHBOARD:    '/admin',
     PROFILE:      '/admin/profile',
     SETTINGS:     '/admin/profile/settings',
+    USERS:        '/admin/users',
   },
 
   // Coordinación académica

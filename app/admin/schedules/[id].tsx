@@ -1,19 +1,19 @@
 // ─────────────────────────────────────────────
 //  app/admin/schedules/[id].tsx — Detalle de Horario
 // ─────────────────────────────────────────────
-import { useTheme } from '@/shared/contexts/ThemeContext';
+import { useAcademic } from '@/features/academic/useAcademic';
+import { useEnvironments } from '@/features/environments/useEnvironments';
+import ScheduleFormModal from '@/features/schedules/components/ScheduleFormModal';
+import { useSchedules } from '@/features/schedules/useSchedules';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
-import { useSchedules } from '@/features/schedules/useSchedules';
-import ScheduleFormModal from '@/features/schedules/components/ScheduleFormModal';
-import { useEnvironments } from '@/features/environments/useEnvironments';
-import { useAcademic } from '@/features/academic/useAcademic';
+import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function ScheduleDetailScreen() {
   const { theme, isDark } = useTheme();
@@ -31,6 +31,16 @@ export default function ScheduleDetailScreen() {
   const cardBg = isDark ? '#0D1F14' : Colors.white;
   const border = isDark ? 'rgba(101,179,97,0.18)' : 'rgba(101,179,97,0.20)';
   const bg = isDark ? Colors.dark.background : Colors.light.background;
+
+  // Paleta de acciones — colores con buen contraste en ambos temas
+  // (verificados con Adobe Color Contrast Analyzer, ratio ≥ 5:1 en los dos modos)
+  // y separados del verde de marca para que no se pierdan contra el fondo.
+  const colorExceptions           = isDark ? '#FFC15E' : '#8A5300'; // ámbar
+  const colorUnassignInstructor   = isDark ? '#7EB6FF' : '#1D5FD1'; // azul cielo
+  const colorUnassignEnvironment  = isDark ? '#5EEAD4' : '#0F766E'; // teal
+  const colorEdit                 = isDark ? '#D0A7F0' : '#7A3FB0'; // violeta
+  const colorDanger               = isDark ? '#FF7A7A' : '#B3261E'; // rojo (desactivar / eliminar)
+  const colorReactivate           = isDark ? '#8ED987' : '#2E7D32'; // verde reservado solo para reactivar
 
   if (!schedule) {
     return (
@@ -130,9 +140,9 @@ export default function ScheduleDetailScreen() {
         </View>
 
         <TouchableOpacity onPress={() => router.push(`/admin/schedules/exceptions?scheduleId=${schedule.id}` as any)}
-          style={[sds.exceptionsBtn, { borderColor: Colors.warning }]} activeOpacity={0.7}>
-          <Ionicons name="alert-circle-outline" size={18} color={Colors.warning} />
-          <Text style={{ color: Colors.warning, fontWeight: '700' }}>{t('schedules.exceptions')}</Text>
+          style={[sds.exceptionsBtn, { borderColor: colorExceptions }]} activeOpacity={0.7}>
+          <Ionicons name="alert-circle-outline" size={18} color={colorExceptions} />
+          <Text style={{ color: colorExceptions, fontWeight: '700' }}>{t('schedules.exceptions')}</Text>
         </TouchableOpacity>
 
         {/* RF-4.5 / RF-4.6 — Desvincular instructor / ambiente sin eliminar
@@ -141,15 +151,15 @@ export default function ScheduleDetailScreen() {
         {schedule.status === 'active' && (schedule.instructorId || schedule.environmentId) && (
           <View style={sds.unassignRow}>
             {!!schedule.instructorId && (
-              <TouchableOpacity onPress={handleUnassignInstructor} style={[sds.actionBtn, { borderColor: Colors.info }]} activeOpacity={0.7}>
-                <Ionicons name="person-remove-outline" size={16} color={Colors.info} />
-                <Text style={{ color: Colors.info, fontWeight: '700' }}>{t('schedules.unassignInstructor')}</Text>
+              <TouchableOpacity onPress={handleUnassignInstructor} style={[sds.actionBtn, { borderColor: colorUnassignInstructor }]} activeOpacity={0.7}>
+                <Ionicons name="person-remove-outline" size={16} color={colorUnassignInstructor} />
+                <Text style={{ color: colorUnassignInstructor, fontWeight: '700' }}>{t('schedules.unassignInstructor')}</Text>
               </TouchableOpacity>
             )}
             {!!schedule.environmentId && (
-              <TouchableOpacity onPress={handleUnassignEnvironment} style={[sds.actionBtn, { borderColor: Colors.accentPurple }]} activeOpacity={0.7}>
-                <Ionicons name="business-outline" size={16} color={Colors.accentPurple} />
-                <Text style={{ color: Colors.accentPurple, fontWeight: '700' }}>{t('schedules.unassignEnvironment')}</Text>
+              <TouchableOpacity onPress={handleUnassignEnvironment} style={[sds.actionBtn, { borderColor: colorUnassignEnvironment }]} activeOpacity={0.7}>
+                <Ionicons name="business-outline" size={16} color={colorUnassignEnvironment} />
+                <Text style={{ color: colorUnassignEnvironment, fontWeight: '700' }}>{t('schedules.unassignEnvironment')}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -158,24 +168,24 @@ export default function ScheduleDetailScreen() {
         <View style={sds.actions}>
           {schedule.status === 'active' ? (
             <>
-              <TouchableOpacity onPress={() => setEditModalOpen(true)} style={[sds.actionBtn, { borderColor: theme.primary }]} activeOpacity={0.7}>
-                <Ionicons name="create-outline" size={16} color={theme.primary} />
-                <Text style={{ color: theme.primary, fontWeight: '700' }}>{t('schedules.edit')}</Text>
+              <TouchableOpacity onPress={() => setEditModalOpen(true)} style={[sds.actionBtn, { borderColor: colorEdit }]} activeOpacity={0.7}>
+                <Ionicons name="create-outline" size={16} color={colorEdit} />
+                <Text style={{ color: colorEdit, fontWeight: '700' }}>{t('schedules.edit')}</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={handleDeactivate} style={[sds.actionBtn, { borderColor: Colors.error }]} activeOpacity={0.7}>
-                <Ionicons name="pause-outline" size={16} color={Colors.error} />
-                <Text style={{ color: Colors.error, fontWeight: '700' }}>{t('schedules.deactivate')}</Text>
+              <TouchableOpacity onPress={handleDeactivate} style={[sds.actionBtn, { borderColor: colorDanger }]} activeOpacity={0.7}>
+                <Ionicons name="pause-outline" size={16} color={colorDanger} />
+                <Text style={{ color: colorDanger, fontWeight: '700' }}>{t('schedules.deactivate')}</Text>
               </TouchableOpacity>
             </>
           ) : (
             <>
-              <TouchableOpacity onPress={handleReactivate} style={[sds.actionBtn, { borderColor: theme.primary }]} activeOpacity={0.7}>
-                <Ionicons name="refresh-outline" size={16} color={theme.primary} />
-                <Text style={{ color: theme.primary, fontWeight: '700' }}>{t('schedules.reactivate')}</Text>
+              <TouchableOpacity onPress={handleReactivate} style={[sds.actionBtn, { borderColor: colorReactivate }]} activeOpacity={0.7}>
+                <Ionicons name="refresh-outline" size={16} color={colorReactivate} />
+                <Text style={{ color: colorReactivate, fontWeight: '700' }}>{t('schedules.reactivate')}</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={handleDeletePermanently} style={[sds.actionBtn, { borderColor: Colors.error }]} activeOpacity={0.7}>
-                <Ionicons name="trash-outline" size={16} color={Colors.error} />
-                <Text style={{ color: Colors.error, fontWeight: '700' }}>{t('schedules.deletePermanently')}</Text>
+              <TouchableOpacity onPress={handleDeletePermanently} style={[sds.actionBtn, { borderColor: colorDanger }]} activeOpacity={0.7}>
+                <Ionicons name="trash-outline" size={16} color={colorDanger} />
+                <Text style={{ color: colorDanger, fontWeight: '700' }}>{t('schedules.deletePermanently')}</Text>
               </TouchableOpacity>
             </>
           )}
