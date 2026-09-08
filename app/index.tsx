@@ -45,13 +45,13 @@ const OBJECTIVE_KEYS = [
 ] as const;
 
 // ─── Sub-components ───────────────────────────
-function MetricCard({ icon, value, label, color, muted }: {
-  icon: string; value: string; label: string; color: string; muted: string;
+function MetricCard({ icon, value, label, color, valueColor = color, muted }: {
+  icon: string; value: string; label: string; color: string; valueColor?: string; muted: string;
 }) {
   return (
     <View style={mc.wrap}>
       <Ionicons name={icon as any} size={18} color={color} style={{ marginBottom: 4 }} />
-      <Text style={[mc.value, { color }]}>{value}</Text>
+      <Text style={[mc.value, { color: valueColor }]}>{value}</Text>
       <Text style={[mc.label, { color: muted }]}>{label}</Text>
     </View>
   );
@@ -134,6 +134,8 @@ export default function LandingScreen() {
   const body       = isDark ? Colors.dark.textSecondary : '#3D5C3A';
   const muted      = isDark ? Colors.dark.textMuted     : Colors.light.textMuted;
   const border     = isDark ? 'rgba(101,179,97,0.18)'   : 'rgba(101,179,97,0.25)';
+  const metricValueColor = isDark ? Colors.white : Colors.light.link;
+  const faceFrameColor   = isDark ? 'rgba(255,255,255,0.65)' : Colors.primaryDark;
 
   // ── Arrays con t() ────────────────────────────
   const PROBLEMS: FeatureItem[] = [
@@ -262,10 +264,10 @@ export default function LandingScreen() {
               </View>
 
               <View style={s.metrics}>
-                <MetricCard icon="time-outline"             value="24/7" label={t('hero.metric1')} color={theme.primary} muted={muted} />
-                <MetricCard icon="scan-outline"             value="IA"   label={t('hero.metric2')} color={theme.primary} muted={muted} />
-                <MetricCard icon="checkmark-circle-outline" value="100%" label={t('hero.metric3')} color={theme.primary} muted={muted} />
-                <MetricCard icon="shield-checkmark-outline" value="0"    label={t('hero.metric4')} color={theme.primary} muted={muted} />
+                <MetricCard icon="time-outline"             value="24/7" label={t('hero.metric1')} color={theme.primary} valueColor={metricValueColor} muted={muted} />
+                <MetricCard icon="scan-outline"             value="IA"   label={t('hero.metric2')} color={theme.primary} valueColor={metricValueColor} muted={muted} />
+                <MetricCard icon="checkmark-circle-outline" value="100%" label={t('hero.metric3')} color={theme.primary} valueColor={metricValueColor} muted={muted} />
+                <MetricCard icon="shield-checkmark-outline" value="0"    label={t('hero.metric4')} color={theme.primary} valueColor={metricValueColor} muted={muted} />
               </View>
             </View>
 
@@ -281,11 +283,11 @@ export default function LandingScreen() {
                 <View style={s.phoneBrand}>
                   <Image source={logoSource} style={s.phoneLogo} resizeMode="contain" />
                 </View>
-                <View style={[s.faceArea, { borderColor: theme.primary }]}>
-                  <View style={[s.cornerTL, { borderColor: theme.primary }]} />
-                  <View style={[s.cornerTR, { borderColor: theme.primary }]} />
-                  <View style={[s.cornerBL, { borderColor: theme.primary }]} />
-                  <View style={[s.cornerBR, { borderColor: theme.primary }]} />
+                <View style={[s.faceArea, { borderColor: faceFrameColor }]}>
+                  <View style={[s.cornerTL, { borderColor: faceFrameColor }]} />
+                  <View style={[s.cornerTR, { borderColor: faceFrameColor }]} />
+                  <View style={[s.cornerBL, { borderColor: faceFrameColor }]} />
+                  <View style={[s.cornerBR, { borderColor: faceFrameColor }]} />
                   <Ionicons name="scan-circle-outline" size={90} color={theme.primary} style={{ opacity: 0.85 }} />
                   <View style={[s.scanLine, { backgroundColor: theme.primary }]} />
                 </View>
