@@ -8,6 +8,7 @@ import { useSchedules } from '@/features/schedules/useSchedules';
 import ScheduleFormModal from '@/features/schedules/components/ScheduleFormModal';
 import { useEnvironments } from '@/features/environments/useEnvironments';
 import { useAcademic } from '@/features/academic/useAcademic';
+import { useAcademicPeriods } from '@/features/academic/periods/useAcademicPeriods';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -22,6 +23,7 @@ export default function ScheduleDetailScreen() {
   const { getById, deactivate, reactivate, removePermanently, unassignInstructor, unassignEnvironment } = useSchedules();
   const { getById: getEnvironment } = useEnvironments();
   const { getFicha } = useAcademic();
+  const { getPeriod } = useAcademicPeriods();
   const { alert, DialogUI } = useAppDialog();
   const [editModalOpen, setEditModalOpen] = useState(false);
   const schedule = getById(id);
@@ -111,6 +113,7 @@ export default function ScheduleDetailScreen() {
         <View style={[sds.card, { backgroundColor: cardBg, borderColor: border }]}>
           {[
             { icon: 'document-text-outline', label: t('schedules.fields.ficha'), value: `Ficha ${fichaNumber} — ${schedule.programName}` },
+            { icon: 'calendar-clear-outline', label: t('schedules.fields.academicPeriod'), value: getPeriod(schedule.academicPeriodId)?.name ?? schedule.academicPeriodId },
             { icon: 'calendar-outline', label: t('schedules.fields.day'), value: t(`schedules.days.${schedule.day}`) },
             { icon: 'time-outline', label: t('schedules.fields.startTime'), value: schedule.startTime },
             { icon: 'time-outline', label: t('schedules.fields.endTime'), value: schedule.endTime },

@@ -3,6 +3,9 @@ import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAcademic } from '@/features/academic/useAcademic';
 import { getProgramDisplayName } from '@/features/academic/types';
+import { useAreas } from '@/features/academic/areas/useAreas';
+import { useInstructors } from '@/features/academic/instructors/useInstructors';
+import { getInstructorFullName } from '@/features/academic/instructors/types';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import ProgramFormModal from '@/features/academic/components/ProgramFormModal';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,6 +19,8 @@ export default function ProgramDetailScreen() {
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { getProgram, allFichas, unlinkFichaFromProgram } = useAcademic();
+  const { areas } = useAreas();
+  const { eligibleForProgram } = useInstructors();
   const { alert, DialogUI } = useAppDialog();
   const [editModalOpen, setEditModalOpen] = useState(false);
   const program = getProgram(id ?? '');
@@ -27,6 +32,7 @@ export default function ProgramDetailScreen() {
   if (!program) return <View style={[pds.safe, { backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }]}><Text style={{ color: muted }}>Programa no encontrado</Text></View>;
 
   const programFichas = allFichas.filter(f => program.fichas.includes(f.id));
+  const eligibleInstructors = eligibleForProgram(program.id);
 
   return (
     <View style={[pds.safe, { backgroundColor: bg }]}>
@@ -53,6 +59,10 @@ export default function ProgramDetailScreen() {
               </View>
 
               <View style={[pds.infoRow, { borderBottomColor: border }]}>
+                <Text style={[pds.infoLabel, { color: muted }]}>{t('academic.fields.area')}</Text>
+                <Text style={[pds.infoValue, { color: text }]}>{program.areaId ? (areas.find(a => a.id === program.areaId)?.name ?? '—') : t('academic.areas.none')}</Text>
+              </View>
+              <View style={[pds.infoRow, { borderBottomColor: border }]}>
                 <Text style={[pds.infoLabel, { color: muted }]}>{t('academic.fichas')}</Text>
                 <Text style={[pds.infoValue, { color: text }]}>{programFichas.length}</Text>
               </View>
@@ -69,6 +79,21 @@ export default function ProgramDetailScreen() {
                 <Ionicons name="create-outline" size={16} color={theme.primary} /><Text style={{ color: theme.primary, fontWeight: '700', fontSize: 13 }}>{t('academic.programEdit')}</Text>
               </TouchableOpacity>
             </View>
+
+            <Text style={[pds.sectionTitle, { color: text }]}>{t('academic.instructors.title')} ({eligibleInstructors.length})</Text>
+            {eligibleInstructors.length === 0 ? (
+              <Text style={{ color: muted, paddingHorizontal: 16, marginBottom: 16 }}>{t('academic.instructors.emptyState')}</Text>
+            ) : (
+              <View style={{ paddingHorizontal: 16, marginBottom: 16, gap: 8 }}>
+                {eligibleInstructors.map(instructor => (
+                  <View key={instructor.id} style={[pds.card, { backgroundColor: cardBg, borderColor: border, flexDirection: 'row', alignItems: 'center', gap: 10 }]}>
+                    <Ionicons name={instructor.type === 'ESPECIFICO' ? 'person-outline' : 'people-outline'} size={18} color={theme.primary} />
+                    <Text style={{ color: text, fontWeight: '600', flex: 1 }}>{getInstructorFullName(instructor)}</Text>
+                    <Text style={{ color: muted, fontSize: 12 }}>{t(`academic.instructors.types.${instructor.type}`)}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
 
             <Text style={[pds.sectionTitle, { color: text }]}>{t('academic.fichas')} ({programFichas.length})</Text>
           </View>

@@ -9,6 +9,7 @@ export { default as PasswordField }    from './PasswordField';
 export { default as ThemeToggle }      from './ThemeToggle';
 export { default as LanguageSelector } from './LanguageSelector';
 export { default as SelectField }      from './SelectField';
+export { default as MultiSelectField } from './MultiSelectField';
 export { default as SearchableSelect } from './SearchableSelect';
 export { default as TimeInput }        from './TimeInput';
 export { default as DateField, formatDateDisplay } from './DateField';

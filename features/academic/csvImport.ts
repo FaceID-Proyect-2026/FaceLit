@@ -37,7 +37,9 @@ export function normalizeDocument(value: string): string {
 }
 
 // Parser de una línea CSV que respeta comillas y comas dentro de comillas.
-function parseCsvLine(line: string): string[] {
+// Exportado para reutilizarse en otros parsers CSV del módulo académico
+// (ej. csvImportInstructors.ts) sin duplicar esta lógica.
+export function parseCsvLine(line: string): string[] {
   const values: string[] = [];
   let value = '';
   let quoted = false;

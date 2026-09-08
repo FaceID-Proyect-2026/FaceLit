@@ -35,6 +35,7 @@ export interface Program {
   name: string;
   status: 'active' | 'inactive';
   fichas: string[];
+  areaId?: string; // Área de formación (opcional para no romper programas ya existentes sin área asignada aún)
   createdAt: string;
   updatedAt: string;
 }
@@ -66,9 +67,9 @@ export interface Learner {
 }
 
 export const MOCK_PROGRAMS: Program[] = [
-  { id: '1', name: 'Análisis y Desarrollo de Software', status: 'active', fichas: ['1', '2', '3', '4'], createdAt: '2026-08-01T10:00:00.000Z', updatedAt: '2026-08-01T10:00:00.000Z' },
-  { id: '2', name: 'Gestión Administrativa', status: 'active', fichas: ['5'], createdAt: '2026-08-10T10:00:00.000Z', updatedAt: '2026-08-10T10:00:00.000Z' },
-  { id: '3', name: 'Mantenimiento de Equipos de Cómputo', status: 'inactive', fichas: [], createdAt: '2026-08-15T10:00:00.000Z', updatedAt: '2026-08-15T10:00:00.000Z' },
+  { id: '1', name: 'Análisis y Desarrollo de Software', status: 'active', fichas: ['1', '2', '3', '4'], areaId: 'a1', createdAt: '2026-08-01T10:00:00.000Z', updatedAt: '2026-08-01T10:00:00.000Z' },
+  { id: '2', name: 'Gestión Administrativa', status: 'active', fichas: ['5'], areaId: 'a2', createdAt: '2026-08-10T10:00:00.000Z', updatedAt: '2026-08-10T10:00:00.000Z' },
+  { id: '3', name: 'Mantenimiento de Equipos de Cómputo', status: 'inactive', fichas: [], areaId: 'a3', createdAt: '2026-08-15T10:00:00.000Z', updatedAt: '2026-08-15T10:00:00.000Z' },
   { id: '4', name: 'Producción Multimedia', status: 'active', fichas: ['6'], createdAt: '2026-09-02T10:00:00.000Z', updatedAt: '2026-09-02T10:00:00.000Z' },
 ];
 

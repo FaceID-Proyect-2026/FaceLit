@@ -68,8 +68,8 @@ export function useAcademic() {
   const getProgram = useCallback((id: string) => getProgramById(id), []);
   const getFicha = useCallback((id: string) => getFichaById(id), []);
 
-  const addProgram = useCallback((name: string) => registerProgram(name), []);
-  const updateProgram = useCallback((id: string, name: string, status: 'active' | 'inactive') => updateProgramStore(id, name, status), []);
+  const addProgram = useCallback((name: string, areaId?: string) => registerProgram(name, areaId), []);
+  const updateProgram = useCallback((id: string, name: string, status: 'active' | 'inactive', areaId?: string) => updateProgramStore(id, name, status, areaId), []);
   const deactivateProgram = useCallback((id: string) => deactivateProgramStore(id), []);
   const reactivateProgram = useCallback((id: string) => reactivateProgramStore(id), []);
   const deleteProgram = useCallback((id: string) => deleteProgramStore(id), []);

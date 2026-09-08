@@ -45,14 +45,19 @@ export interface ScheduleConflict {
 }
 
 // Verifica choques de horario: mismo ambiente o mismo instructor con
-// franjas que se solapan el mismo día. `excludeId` se usa al editar,
-// para no comparar el horario contra sí mismo. Un horario INACTIVO no
-// ocupa el ambiente/instructor (no genera choque), y un campo vacío
-// ("sin asignar", RF-4.5/4.6) tampoco compite por nada.
+// franjas que se solapan el mismo día, DENTRO DEL MISMO PERÍODO
+// ACADÉMICO (Prompt maestro, sección 18: el mismo horario en períodos
+// académicos distintos NO es un conflicto). `excludeId` se usa al
+// editar, para no comparar el horario contra sí mismo. Un horario
+// INACTIVO no ocupa el ambiente/instructor (no genera choque), y un
+// campo vacío ("sin asignar", RF-4.5/4.6) tampoco compite por nada.
 export function checkScheduleConflict(data: {
-  day: string; startTime: string; endTime: string; environmentId: string; instructorId: string; excludeId?: string;
+  day: string; startTime: string; endTime: string; environmentId: string; instructorId: string;
+  academicPeriodId: string; excludeId?: string;
 }): ScheduleConflict {
-  const sameDay = schedules.filter(s => s.day === data.day && s.id !== data.excludeId && s.status === 'active');
+  const sameDay = schedules.filter(
+    s => s.day === data.day && s.academicPeriodId === data.academicPeriodId && s.id !== data.excludeId && s.status === 'active'
+  );
   const envOccupied = !!data.environmentId && sameDay.some(
     s => !!s.environmentId && s.environmentId === data.environmentId && timesOverlap(data.startTime, data.endTime, s.startTime, s.endTime)
   );

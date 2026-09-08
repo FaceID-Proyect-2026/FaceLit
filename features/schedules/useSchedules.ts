@@ -49,7 +49,7 @@ export function useSchedules() {
 
   const getById = useCallback((id: string) => getScheduleById(id), [schedules]);
   const checkConflict = useCallback(
-    (data: { day: string; startTime: string; endTime: string; environmentId: string; instructorId: string; excludeId?: string }) =>
+    (data: { day: string; startTime: string; endTime: string; environmentId: string; instructorId: string; academicPeriodId: string; excludeId?: string }) =>
       checkScheduleConflict(data),
     [schedules]
   );

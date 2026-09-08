@@ -48,18 +48,18 @@ export function getFichaById(id: string) {
   return fichas.find(f => f.id === id);
 }
 
-export function registerProgram(name: string) {
+export function registerProgram(name: string, areaId?: string) {
   const normalizedName = name.trim();
   if (!normalizedName || programs.some(program => program.name.toLowerCase() === normalizedName.toLowerCase())) return null;
   const now = new Date().toISOString();
-  const p: Program = { id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, name: normalizedName, status: 'active', fichas: [], createdAt: now, updatedAt: now };
+  const p: Program = { id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, name: normalizedName, status: 'active', fichas: [], areaId, createdAt: now, updatedAt: now };
   programs = [...programs, p];
   emit();
   return p;
 }
 
-export function updateProgramStore(id: string, name: string, status: 'active' | 'inactive') {
-  programs = programs.map(p => (p.id === id ? { ...p, name: name.trim(), status, updatedAt: new Date().toISOString() } : p));
+export function updateProgramStore(id: string, name: string, status: 'active' | 'inactive', areaId?: string) {
+  programs = programs.map(p => (p.id === id ? { ...p, name: name.trim(), status, areaId, updatedAt: new Date().toISOString() } : p));
   emit();
 }
 

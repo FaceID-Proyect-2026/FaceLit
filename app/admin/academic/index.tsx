@@ -186,6 +186,24 @@ export default function AcademicProgramsScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Accesos a los nuevos módulos de Gestión Académica. No forman parte
+          del sistema de pestañas (viewMode) de Programas/Fichas: son
+          pantallas independientes, para no alterar esa lógica existente. */}
+      <View style={aps.quickLinksRow}>
+        <TouchableOpacity onPress={() => router.push('/admin/academic/instructors' as any)} style={[aps.quickLinkChip, { backgroundColor: inputBg, borderColor: border }]} activeOpacity={0.7}>
+          <Ionicons name="people-outline" size={16} color={theme.primary} />
+          <Text style={[aps.quickLinkText, { color: text }]}>{t('academic.instructors.title')}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push('/admin/academic/transversals' as any)} style={[aps.quickLinkChip, { backgroundColor: inputBg, borderColor: border }]} activeOpacity={0.7}>
+          <Ionicons name="git-network-outline" size={16} color={theme.primary} />
+          <Text style={[aps.quickLinkText, { color: text }]}>{t('academic.transversals.title')}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push('/admin/academic/periods' as any)} style={[aps.quickLinkChip, { backgroundColor: inputBg, borderColor: border }]} activeOpacity={0.7}>
+          <Ionicons name="calendar-clear-outline" size={16} color={theme.primary} />
+          <Text style={[aps.quickLinkText, { color: text }]}>{t('academic.periods.title')}</Text>
+        </TouchableOpacity>
+      </View>
+
       {viewMode === 'programs' && (
         <>
           <View style={[aps.searchWrap, { backgroundColor: inputBg, borderColor: border }]}>
@@ -406,6 +424,9 @@ const aps = StyleSheet.create({
   tabRow: { flexDirection: 'row', gap: 8, marginHorizontal: 16, marginTop: 4, marginBottom: 8, flexWrap: 'wrap' },
   tabChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 9, borderRadius: 10, borderWidth: 1.2, flexShrink: 1 },
   tabChipText: { fontSize: FontSize.sm, fontWeight: FontWeight.bold, flexShrink: 1 },
+  quickLinksRow: { flexDirection: 'row', gap: 8, marginHorizontal: 16, marginBottom: 12, flexWrap: 'wrap' },
+  quickLinkChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, borderWidth: 1 },
+  quickLinkText: { fontSize: FontSize.xs, fontWeight: FontWeight.bold },
   filterRow: { flexDirection: 'row', gap: 8, marginHorizontal: 16, marginBottom: 10 },
   filterChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, borderWidth: 1.2 },
   filterChipText: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
