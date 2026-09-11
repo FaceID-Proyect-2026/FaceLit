@@ -1,12 +1,12 @@
 // ─────────────────────────────────────────────
 //  features/auth/hooks/useVerificationCode.ts
 //
-//  RF-1.5 / RF-1 V4 §5 — Código de verificación
+//  RF-1.5 / RF-1 V4 5 — Código de verificación
 //  · Exactamente 6 dígitos numéricos
 //  · Tiempo de vigencia: 5 minutos (300 s)
 //  · Máximo 5 intentos de validación antes de invalidar el código
 //  · Reenvío: cooldown mínimo de 60 segundos entre solicitudes
-//  · Mensajes exactos definidos en RF-1 V4 §5
+//  · Mensajes exactos definidos en RF-1 V4 5
 // ─────────────────────────────────────────────
 import { logFailure, logSuccess } from '@/shared/services/auditLogger';
 import { useEffect, useRef, useState } from 'react';
@@ -104,7 +104,7 @@ export function useVerificationCode({
       setExhausted(false);
       attemptsRef.current = 0;
       setTimeLeft(initialTime);
-      // Cooldown de reenvío: 60 s mínimo (RF-1 V4 §5)
+      // Cooldown de reenvío: 60 s mínimo (RF-1 V4 5)
       setResendCooldown(RESEND_COOLDOWN_SECONDS);
       logSuccess('PASSWORD_RECOVERY_REQUESTED', { detail: 'Código reenviado' });
     } catch (err: any) {

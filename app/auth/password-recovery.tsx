@@ -1,139 +1,139 @@
 // ─────────────────────────────────────────────
 //  app/auth/password-recovery.tsx
-//  Solo VISTA — toda la lógica de negocio vive en
-//  features/auth/hooks/usePasswordRecoveryForm.ts
+//  RF-1.5 — Paso 1: ingreso de correo
+//  Solo VISTA — lógica en usePasswordRecoveryForm
 // ─────────────────────────────────────────────
-import { useState } from 'react';
-import {View,Text, StyleSheet,TouchableOpacity, TextInput, ScrollView, KeyboardAvoidingView, Platform,Image,Modal} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { useTranslation } from 'react-i18next';
-import { useTheme } from '@/shared/contexts/ThemeContext';
 import { usePasswordRecoveryForm } from '@/features/auth/hooks/usePasswordRecoveryForm';
+import { Colors } from '@/shared/constants/colors';
+import { useTheme } from '@/shared/contexts/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-const BUTTON_GRADIENT = ['#72C96D', '#65B361', '#4FA14B'] as const;
+const BTN_COLORS = ['#72C96D', '#65B361', '#4FA14B'] as const;
 
 export default function PasswordRecoveryScreen() {
   const { t } = useTranslation();
   const { theme, isDark } = useTheme();
 
-  // ── Toda la lógica de negocio viene del hook ──
   const {
-    email, error, showModal,
+    email, error, showModal, loading,
     setEmail, handleSubmit, closeModal, handleModalContinue, handleCancel,
   } = usePasswordRecoveryForm();
 
-  // ── Estado puramente de UI (no es lógica de negocio) ──
   const [focused, setFocused] = useState(false);
 
-  // ── Colores locales (presentación) ─────────────
-  const text        = isDark ? '#FFFFFF' : '#000000';
-  const muted       = isDark ? '#CAD6C8' : '#1E1E1E';
-  const cardBg      = isDark ? '#07120D' : '#FFFFFF';
-  const inputBorder = isDark ? 'rgba(255,255,255,0.78)' : '#000000';
-  const inputBg     = isDark ? 'rgba(255,255,255,0.04)' : '#FFFFFF';
-  const errorColor  = '#D92027';
+  // Colores
+  const text = isDark ? '#FFFFFF' : '#111111';
+  const muted = isDark ? '#CAD6C8' : '#3D5C3A';
+  const cardBg = isDark ? '#07120D' : '#FFFFFF';
+  const inputBg = isDark ? 'rgba(255,255,255,0.04)' : '#F9FFF9';
+  const inputBdr = isDark ? 'rgba(255,255,255,0.20)' : 'rgba(0,0,0,0.15)';
+  const errorClr = Colors.error;
 
   return (
     <>
       <LinearGradient
-        colors={
-          isDark
-            ? ['#000000', '#06170F', '#0B2D17']
-            : ['#F7FFF4', '#E5F7DF', '#1E4C28']
-        }
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.gradient}
+        colors={isDark ? ['#000000', '#06170F', '#0B2D17'] : ['#F7FFF4', '#E5F7DF', '#1E4C28']}
+        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+        style={s.gradient}
       >
-        <View
-          style={[
-            styles.backgroundArcTop,
-            { backgroundColor: isDark ? 'rgba(101,179,97,0.08)' : 'rgba(20,70,28,0.18)' },
-          ]}
-        />
-        <View
-          style={[
-            styles.backgroundArcBottom,
-            { backgroundColor: isDark ? 'rgba(101,179,97,0.22)' : 'rgba(101,179,97,0.28)' },
-          ]}
-        />
+        {/* Arcos decorativos */}
+        <View style={[s.arcTop, { backgroundColor: isDark ? 'rgba(101,179,97,0.08)' : 'rgba(20,70,28,0.18)' }]} />
+        <View style={[s.arcBottom, { backgroundColor: isDark ? 'rgba(101,179,97,0.22)' : 'rgba(101,179,97,0.28)' }]} />
 
-        <SafeAreaView style={styles.safe}>
-          <KeyboardAvoidingView
-            style={styles.kav}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          >
-            <ScrollView contentContainerStyle={styles.scroll}>
-              <View style={[styles.card, { backgroundColor: cardBg }]}>
+        <SafeAreaView style={s.safe}>
+          <KeyboardAvoidingView style={s.kav} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+            <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
 
-                {/* Título */}
-                <Text style={[styles.title, { color: text }]}>
-                  {t('passwordRecovery.title')}
-                </Text>
-                <Text style={[styles.subtitle, { color: muted }]}>
-                  {t('passwordRecovery.subtitle')}
-                </Text>
+              <View style={[s.card, { backgroundColor: cardBg }]}>
 
-                {/* Campo correo */}
-                <View style={styles.fieldGroup}>
-                  <Text style={[styles.label, { color: text }]}>
-                    {t('passwordRecovery.emailLabel')}
-                  </Text>
+                {/* ── Botón volver ── */}
+                <TouchableOpacity onPress={handleCancel} style={s.backRow} activeOpacity={0.7}>
+                  <Text style={[s.backText, { color: theme.primary }]}>{t('verifyIdentity.backBtn')}</Text>
+                </TouchableOpacity>
 
-                  <View
-                    style={[
-                      styles.inputWrap,
-                      {
-                        backgroundColor: inputBg,
-                        borderColor: error ? errorColor : focused ? theme.primary : inputBorder,
-                      },
-                    ]}
-                  >
-                    <Ionicons
-                      name="mail-outline"
-                      size={20}
-                      color={error ? errorColor : text}
-                    />
+                {/* ── Ícono ── */}
+                <View style={s.iconWrap}>
+                  <View style={[s.iconCircle, { borderColor: theme.primary + '55', backgroundColor: theme.primary + '14' }]}>
+                    <Ionicons name="mail-outline" size={38} color={theme.primary} />
+                  </View>
+                </View>
+
+                {/* ── Título ── */}
+                <Text style={[s.title, { color: text }]}>{t('passwordRecovery.title')}</Text>
+                <Text style={[s.subtitle, { color: muted }]}>{t('passwordRecovery.subtitle')}</Text>
+
+                {/* ── Campo correo ── */}
+                <View style={s.fieldGroup}>
+                  <Text style={[s.label, { color: text }]}>{t('passwordRecovery.emailLabel')}</Text>
+                  <View style={[s.inputRow, {
+                    backgroundColor: inputBg,
+                    borderColor: error ? errorClr : focused ? theme.primary : inputBdr,
+                  }]}>
+                    <Ionicons name="mail-outline" size={18} color={error ? errorClr : muted} />
                     <TextInput
-                      style={[styles.input, { color: text }]}
+                      style={[s.input, { color: text }] as any}
                       placeholder={t('passwordRecovery.emailPlaceholder')}
-                      placeholderTextColor={isDark ? '#AEB6C2' : '#323232'}
+                      placeholderTextColor={isDark ? '#5A7258' : '#AAAAAA'}
                       value={email}
                       onChangeText={setEmail}
                       keyboardType="email-address"
                       autoCapitalize="none"
+                      autoCorrect={false}
                       onFocus={() => setFocused(true)}
                       onBlur={() => setFocused(false)}
+                      editable={!loading}
                     />
+                    {email.length > 0 && !loading && (
+                      <TouchableOpacity onPress={() => setEmail('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                        <Ionicons name="close-circle" size={16} color={muted} />
+                      </TouchableOpacity>
+                    )}
                   </View>
-
-                  {error ? (
-                    <Text style={styles.errorText}>{error}</Text>
-                  ) : null}
+                  {error ? <Text style={[s.errorText, { color: errorClr }]}>{error}</Text> : null}
                 </View>
 
-                {/* Botones */}
-                <View style={styles.row}>
-                  <TouchableOpacity style={styles.primaryBtn} onPress={handleSubmit}>
-                    <LinearGradient
-                      colors={['#72C96D', '#65B361', '#4FA14B']}
-                      style={styles.btnGradient}
-                    >
-                      <Text style={styles.btnText}>
-                        {t('passwordRecovery.sendBtn')}
+                {/* ── Botones ── */}
+                <View style={s.btnRow}>
+                  <TouchableOpacity
+                    style={[s.primaryBtn, loading && s.btnDisabled]}
+                    onPress={handleSubmit}
+                    disabled={loading}
+                    activeOpacity={0.85}
+                  >
+                    <LinearGradient colors={BTN_COLORS} style={s.btnGradient}>
+                      {loading
+                        ? <ActivityIndicator size="small" color="#FFFFFF" />
+                        : <Ionicons name="send-outline" size={16} color="#FFFFFF" />
+                      }
+                      <Text style={s.btnText}>
+                        {loading ? t('passwordRecovery.sendingBtn') : t('passwordRecovery.sendBtn')}
                       </Text>
                     </LinearGradient>
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={styles.secondaryBtn}
+                    style={[s.secondaryBtn, { borderColor: theme.primary }]}
                     onPress={handleCancel}
+                    disabled={loading}
+                    activeOpacity={0.8}
                   >
-                    <Text style={styles.secondaryText}>
-                      {t('passwordRecovery.cancelBtn')}
-                    </Text>
+                    <Text style={[s.secondaryText, { color: theme.primary }]}>{t('passwordRecovery.cancelBtn')}</Text>
                   </TouchableOpacity>
                 </View>
 
@@ -143,49 +143,42 @@ export default function PasswordRecoveryScreen() {
         </SafeAreaView>
       </LinearGradient>
 
-      <Modal
-        visible={showModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={closeModal}
-      >
-        <View style={styles.modalOverlay}>
-          <View
-            style={[
-              styles.modalCard,
-              {
-                backgroundColor: cardBg,
-                shadowColor: isDark ? '#000000' : '#1C3A1D',
-              },
-            ]}
-          >
-            <View style={styles.modalHeader}>
-              <Image
-                source={require('@/assets/images/token.png')}
-                style={styles.modalImage}
-                resizeMode="contain"
-              />
+      {/* ── Modal: código enviado ── */}
+      <Modal visible={showModal} transparent animationType="fade" onRequestClose={closeModal}>
+        <View style={m.overlay}>
+          <View style={[m.card, { backgroundColor: cardBg, borderColor: theme.primary + '33' }]}>
+
+            {/* Ícono central */}
+            <View style={[m.iconCircle, { backgroundColor: theme.primary + '18', borderColor: theme.primary + '44' }]}>
+              <Ionicons name="mail-open-outline" size={40} color={theme.primary} />
             </View>
 
-            <View style={styles.modalBody}>
-              <Text style={[styles.modalTitle, { color: text }]}>
-                {t('tokenSent.title')}
-              </Text>
+            {/* Título y descripción */}
+            <Text style={[m.title, { color: text }]}>{t('tokenSent.title')}</Text>
+            <Text style={[m.subtitle, { color: muted }]}>{t('tokenSent.subtitle')}</Text>
 
-              <Text style={[styles.modalSubtitle, { color: muted }]}>
-                {t('tokenSent.subtitle')}
-              </Text>
-
-              <TouchableOpacity
-                style={styles.modalButton}
-                onPress={handleModalContinue}
-                activeOpacity={0.85}
-              >
-                <LinearGradient colors={BUTTON_GRADIENT} style={styles.modalButtonGradient}>
-                  <Text style={styles.modalButtonText}>{t('tokenSent.btn')}</Text>
-                </LinearGradient>
-              </TouchableOpacity>
+            {/* Correo ingresado */}
+            <View style={[m.emailRow, { backgroundColor: theme.primary + '10', borderColor: theme.primary + '33' }]}>
+              <Ionicons name="at-circle-outline" size={16} color={theme.primary} />
+              <Text style={[m.emailText, { color: theme.primary }]} numberOfLines={1}>{email}</Text>
             </View>
+
+            {/* Separador */}
+            <View style={[m.divider, { backgroundColor: theme.primary + '22' }]} />
+
+            {/* Botón continuar */}
+            <TouchableOpacity style={m.btn} onPress={handleModalContinue} activeOpacity={0.85}>
+              <LinearGradient colors={BTN_COLORS} style={m.btnGradient}>
+                <Ionicons name="keypad-outline" size={16} color="#FFFFFF" />
+                <Text style={m.btnText}>{t('tokenSent.btn')}</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            {/* Link cancelar */}
+            <TouchableOpacity onPress={closeModal} style={m.cancelBtn} activeOpacity={0.7}>
+              <Text style={[m.cancelText, { color: muted }]}>{t('passwordRecovery.cancelBtn')}</Text>
+            </TouchableOpacity>
+
           </View>
         </View>
       </Modal>
@@ -193,73 +186,75 @@ export default function PasswordRecoveryScreen() {
   );
 }
 
-// ── Estilos (solo presentación) ────────────────
-const styles = StyleSheet.create({
-  gradient:          { flex: 1 },
-  safe:              { flex: 1 },
-  kav:               { flex: 1 },
-  backgroundArcTop: {
-    position: 'absolute', width: 300, height: 420,
-    right: -120, top: -90, borderRadius: 200,
-  },
-  backgroundArcBottom: {
-    position: 'absolute', width: 420, height: 220,
-    left: -120, bottom: -30, borderRadius: 180,
-  },
-  scroll: {
-    flexGrow: 1, justifyContent: 'center',
-    alignItems: 'center', paddingHorizontal: 20, paddingVertical: 30,
-  },
+// ── Estilos ───────────────────────────────────
+const s = StyleSheet.create({
+  gradient: { flex: 1 },
+  safe: { flex: 1 },
+  kav: { flex: 1 },
+  arcTop: { position: 'absolute', width: 300, height: 420, right: -120, top: -90, borderRadius: 200 },
+  arcBottom: { position: 'absolute', width: 420, height: 220, left: -120, bottom: -30, borderRadius: 180 },
+  scroll: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20, paddingVertical: 30 },
+
   card: {
     width: '100%', maxWidth: 460,
     borderRadius: 26, paddingHorizontal: 24, paddingVertical: 30,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12, shadowRadius: 14, elevation: 6,
   },
-  title:      { fontSize: 28, fontWeight: '900', textAlign: 'center', marginBottom: 8 },
-  subtitle:   { fontSize: 14, textAlign: 'center', marginBottom: 24, lineHeight: 20 },
-  fieldGroup: { marginTop: 12 },
-  label:      { fontSize: 14, fontWeight: '700', marginBottom: 6 },
-  inputWrap: {
-    height: 46, borderWidth: 1.2, borderRadius: 12,
-    paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 10,
-  },
-  input:       { flex: 1, fontSize: 16, outlineStyle: 'none' } as any,
-  errorText:   { color: '#D92027', fontSize: 11, marginTop: 4, fontWeight: '700' },
-  row:         { flexDirection: 'row', gap: 12, marginTop: 28 },
-  primaryBtn:  { flex: 1, borderRadius: 14, overflow: 'hidden' },
-  btnGradient: { paddingVertical: 12, alignItems: 'center' },
-  btnText:     { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
-  secondaryBtn: {
-    flex: 1, borderRadius: 14, borderWidth: 1.5,
-    borderColor: '#65B361', justifyContent: 'center', alignItems: 'center',
-  },
-  secondaryText: { color: '#65B361', fontSize: 16, fontWeight: '700' },
 
-  // Modal styles
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
+  backRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 20 },
+  backText: { fontSize: 13, fontWeight: '700' },
+
+  iconWrap: { alignItems: 'center', marginBottom: 18 },
+  iconCircle: { width: 72, height: 72, borderRadius: 36, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+
+  title: { fontSize: 26, fontWeight: '900', textAlign: 'center', marginBottom: 8 },
+  subtitle: { fontSize: 14, textAlign: 'center', lineHeight: 21, marginBottom: 24 },
+
+  fieldGroup: { marginBottom: 20 },
+  label: { fontSize: 14, fontWeight: '700', marginBottom: 6 },
+  inputRow: { height: 48, borderWidth: 1.2, borderRadius: 12, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  input: { flex: 1, fontSize: 15, outlineStyle: 'none' } as any,
+  errorText: { fontSize: 12, fontWeight: '700', marginTop: 5 },
+
+  btnRow: { gap: 10 },
+  primaryBtn: { borderRadius: 14, overflow: 'hidden' },
+  btnGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 13 },
+  btnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+  btnDisabled: { opacity: 0.65 },
+  secondaryBtn: { borderRadius: 14, borderWidth: 1.5, paddingVertical: 12, alignItems: 'center' },
+  secondaryText: { fontSize: 15, fontWeight: '700' },
+});
+
+const m = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.60)', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
+  card: {
+    width: '100%', maxWidth: 400,
+    borderRadius: 24, borderWidth: 1,
+    paddingHorizontal: 28, paddingVertical: 32,
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.25, shadowRadius: 20, elevation: 10,
   },
-  modalCard: {
-    width: '85%', maxWidth: 420, borderRadius: 26, overflow: 'hidden',
-    shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.18,
-    shadowRadius: 18, elevation: 8,
+  iconCircle: {
+    width: 80, height: 80, borderRadius: 40,
+    borderWidth: 1.5,
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: 18,
   },
-  modalHeader: {
-    backgroundColor: '#65B361', paddingVertical: 32, alignItems: 'center',
+  title: { fontSize: 22, fontWeight: '900', textAlign: 'center', marginBottom: 8 },
+  subtitle: { fontSize: 13, lineHeight: 20, textAlign: 'center', marginBottom: 16, paddingHorizontal: 8 },
+  emailRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    borderRadius: 20, borderWidth: 1,
+    paddingHorizontal: 14, paddingVertical: 9,
+    marginBottom: 20, maxWidth: '100%',
   },
-  modalImage: { width: 95, height: 95 },
-  modalBody: {
-    paddingHorizontal: 28, paddingVertical: 30, alignItems: 'center',
-  },
-  modalTitle: {
-    fontSize: 28, fontWeight: '900', textAlign: 'center', marginBottom: 12,
-  },
-  modalSubtitle: {
-    fontSize: 14, lineHeight: 22, textAlign: 'center', marginBottom: 26,
-  },
-  modalButton: { width: '70%', borderRadius: 16, overflow: 'hidden' },
-  modalButtonGradient: { paddingVertical: 12, alignItems: 'center' },
-  modalButtonText: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
+  emailText: { fontSize: 13, fontWeight: '700', flexShrink: 1 },
+  divider: { width: '100%', height: 1, marginBottom: 20 },
+  btn: { width: '100%', borderRadius: 14, overflow: 'hidden', marginBottom: 10 },
+  btnGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14 },
+  btnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+  cancelBtn: { paddingVertical: 8 },
+  cancelText: { fontSize: 13 },
 });

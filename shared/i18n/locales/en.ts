@@ -166,40 +166,46 @@
 
   //Password Recovery
   passwordRecovery: {
-    title: 'Recover password',
-    subtitle: 'Enter your email address to receive password recovery instructions',
+    title: 'Reset password',
+    subtitle: 'Enter your registered email address to receive a verification code.',
     emailLabel: 'Email address',
     emailPlaceholder: 'email@example.com',
     sendBtn: 'Send code',
+    sendingBtn: 'Sending…',
     cancelBtn: 'Cancel',
     errors: {
-      emailEmpty:    'Email address is required.',
+      emailEmpty:    'Please enter your email address.',
       invalidEmail:  'Invalid email address.',
-      emailNotFound: 'If the email is registered, we will send you a verification code.',
+      emailNotFound: 'If this email is registered in the system, we will send you a verification code.',
       serverError:   'An unexpected error occurred. Please try again in a few minutes.',
-      invalidCredentials: 'Incorrect document or password.',
-      networkError:  'Could not connect to the server. Check your connection.',
+      networkError:  'Could not connect to the server. Check your connection and try again.',
     },
   },
 
   //Token Sent
   tokenSent: {
     title: 'Code sent',
-    subtitle: 'We sent a verification code to your email. Check your inbox to continue.',
-    btn: 'Got it',
+    subtitle: 'If your email is registered, you will receive a 6-digit code. Check your inbox.',
+    btn: 'Enter code',
   },
 
   //Verify Identity
   verifyIdentity: {
-    backBtn: '← Request a new code',
     title: 'Verify your identity',
-    subtitle: 'A 6-digit code has been sent to',
-    timerLabel: '⏰ Time remaining ',
+    subtitle: 'Enter the 6-digit code sent to',
+    timerLabel: 'Time remaining: ',
+    timerExpired: 'The code has expired',
     resendBtn: 'Resend code',
+    resendingBtn: 'Resending…',
+    resendAvailable: 'Available in {{seconds}}s',
     inputLabel: 'Verification code',
-    placeholder: 'XXXXXX',
-    hint: 'Enter the 6-digit code',
+    placeholder: '000000',
+    hint: 'Enter the 6 digits from the code you received by email',
     verifyBtn: 'Verify code',
+    verifyingBtn: 'Verifying…',
+    backBtn: 'Back',
+    exhaustedTitle: 'Too many attempts',
+    exhaustedMsg: 'Request a new code to continue.',
     errors: {
       emptyCode:     'Please enter the verification code.',
       length:        'The code must be exactly 6 numeric digits.',
@@ -214,7 +220,7 @@
 
   //New Password
   newPassword: {
-    backBtn: '← Request a new code',
+    backBtn: 'Request a new code',
     title: 'New password',
     subtitle: 'Create a secure password that meets the system policies.',
     reqTitle: 'Password requirements:',
@@ -230,6 +236,7 @@
     confirmLabel: 'Confirm password',
     confirmPlaceholder: 'Repeat your new password',
     submitBtn: 'Reset password',
+    submittingBtn: 'Saving…',
     errors: {
       passwordRequired: 'Please enter a new password.',
       passwordLength:   'The password must be between 8 and 15 characters.',
@@ -242,15 +249,16 @@
       tokenExpired:     'The code has expired. Please request a new one.',
       tokenUsed:        'This code has already been used. Please request a new one.',
       serverError:      'An unexpected error occurred. Please try again in a few minutes.',
+      networkError:     'Could not connect to the server. Check your connection.',
       genericError:     'Could not reset the password.',
     },
   },
 
   //Password Reset Done
   passwordResetDone: {
-    title: 'Password reset',
-    subtitle1: 'Your password has been successfully updated.',
-    subtitle2: 'You can now sign in with your new password.',
+    title: 'Password updated',
+    subtitle1: 'Your password was updated successfully.',
+    subtitle2: 'Sign in with your new password.',
     securityTitle: 'Security log:',
     security: {
       item1: '✓ Password encrypted and securely stored',
@@ -672,4 +680,7 @@
 } as const;
 
 export default en;
+
+
+
 
