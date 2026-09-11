@@ -12,6 +12,11 @@
 //  Layout component" al recargar una ruta profunda, y puede volver a
 //  dispararse en cualquier re-render (cambiar tema/idioma, login,
 //  etc.), ya que cada re-render reevalúa esa condición.
+//
+//  RF-1.15 — Separación de responsabilidades:
+//  Este hook verifica SOLO autenticación (¿quién eres?).
+//  Para verificar autorización por rol (¿qué puedes hacer?),
+//  usar useRoleGuard en su lugar.
 // ─────────────────────────────────────────────
 import { router, useRootNavigationState } from 'expo-router';
 import { useEffect, useRef } from 'react';

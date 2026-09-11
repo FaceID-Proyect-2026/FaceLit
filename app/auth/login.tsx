@@ -29,7 +29,7 @@ export default function LoginScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const router = useRouter();
-  const { form, errors, loading, setField, handleSubmit } = useLoginForm();
+  const { form, errors, loading, alreadyAccepted, setField, setDocumentField, handleSubmit } = useLoginForm();
 
   const [showPassword, setShowPassword] = useState(false);
   const [focused, setFocused] = useState<string | null>(null);
@@ -82,33 +82,33 @@ export default function LoginScreen() {
               <Text style={[s.title, { color: text }]}>{t('login.title')}</Text>
               <Text style={[s.subtitle, { color: muted }]}>{t('login.subtitle')}</Text>
 
-              {/* ── Email ── */}
+              {/* ── Documento ── */}
               <View style={s.fieldGroup}>
-                <Text style={[s.label, { color: text }]}>{t('login.email')}</Text>
+                <Text style={[s.label, { color: text }]}>{t('login.document')}</Text>
                 <View style={[s.inputWrap, {
                   backgroundColor: inputBg,
-                  borderColor: errors.email
+                  borderColor: errors.document
                     ? Colors.error
-                    : focused === 'email'
+                    : focused === 'document'
                       ? theme.primary
                       : inputBorder,
                 }]}>
-                  <Ionicons name="mail-outline" size={18} color={muted} />
+                  <Ionicons name="card-outline" size={18} color={muted} />
                   <TextInput
                     style={[s.input, { color: text }] as any}
-                    value={form.email}
-                    onChangeText={v => setField('email', v)}
-                    placeholder={t('login.emailPlaceholder')}
+                    value={form.document}
+                    onChangeText={setDocumentField}
+                    placeholder={t('login.documentPlaceholder')}
                     placeholderTextColor={isDark ? '#5A7258' : '#AAAAAA'}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
+                    keyboardType="number-pad"
                     autoCorrect={false}
-                    onFocus={() => setFocused('email')}
+                    maxLength={10}
+                    onFocus={() => setFocused('document')}
                     onBlur={() => setFocused(null)}
                   />
                 </View>
-                {errors.email
-                  ? <Text style={s.errorText}>{errors.email}</Text>
+                {errors.document
+                  ? <Text style={s.errorText}>{errors.document}</Text>
                   : null}
               </View>
 
@@ -152,6 +152,7 @@ export default function LoginScreen() {
               </View>
 
               {/* ── Política de privacidad ── */}
+              {!alreadyAccepted && (
               <View style={[s.policyCard, {
                 backgroundColor: isDark
                   ? 'rgba(255,255,255,0.04)'
@@ -204,6 +205,18 @@ export default function LoginScreen() {
                   </Text>
                   : null}
               </View>
+              )}
+
+              {/* ── Mensaje de cuenta bloqueada (RNF-1.3) ── */}
+              {errors.blocked ? (
+                <View style={[s.blockedBanner, {
+                  backgroundColor: isDark ? 'rgba(217,32,39,0.12)' : '#FFF0F0',
+                  borderColor: Colors.error,
+                }]}>
+                  <Ionicons name="lock-closed" size={16} color={Colors.error} />
+                  <Text style={[s.blockedText, { color: Colors.error }]}>{errors.blocked}</Text>
+                </View>
+              ) : null}
 
               {/* ── Botón iniciar sesión ── */}
               <TouchableOpacity
@@ -235,15 +248,6 @@ export default function LoginScreen() {
                   href={Routes.AUTH.PASSWORD_RECOVERY}
                   label={t('login.forgotPassword')}
                 />
-                <View style={s.registerRow}>
-                  <Text style={[s.bottomText, { color: muted }]}>
-                    {t('login.noAccount')}{' '}
-                  </Text>
-                  <NavLink
-                    href={Routes.AUTH.REGISTER}
-                    label={t('login.registerLink')}
-                  />
-                </View>
               </View>
 
             </View>
@@ -324,6 +328,18 @@ const s = StyleSheet.create({
     textDecorationLine: 'underline',
     lineHeight: 22,
   },
+
+  // ── Bloqueo de cuenta ──
+  blockedBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 12,
+    marginBottom: 4,
+  },
+  blockedText: { flex: 1, fontSize: FontSize.sm, lineHeight: 20, fontWeight: FontWeight.bold },
 
   // ── Botón ──
   loginBtn: { width: '100%', maxWidth: 320, alignSelf: 'center', borderRadius: 16, overflow: 'hidden', marginTop: 20, marginBottom: 10 },

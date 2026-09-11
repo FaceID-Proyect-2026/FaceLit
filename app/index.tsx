@@ -1,21 +1,23 @@
 // ─────────────────────────────────────────────
 //  app/index.tsx — Landing Page FaceLit
 // ─────────────────────────────────────────────
-import { useRef, useState } from 'react';
-import {
-  Image, Platform, ScrollView, StyleSheet, Text,
-  TouchableOpacity, useWindowDimensions, View,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTranslation } from 'react-i18next';
-import { useTheme } from '@/shared/contexts/ThemeContext';
+import { LanguageSelector, ThemeToggle } from '@/shared/components/ui';
 import { Colors } from '@/shared/constants/colors';
-import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { Routes } from '@/shared/constants/routes';
-import { ThemeToggle, LanguageSelector } from '@/shared/components/ui';
+import { FontSize, FontWeight } from '@/shared/constants/typography';
+import { useTheme } from '@/shared/contexts/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+  Animated,
+  Easing,
+  Image, Platform, ScrollView, StyleSheet, Text,
+  TouchableOpacity, useWindowDimensions, View
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // ─── Tipos ────────────────────────────────────
 interface FeatureItem  { icon: string; number: string; title: string; text: string; }
@@ -85,6 +87,155 @@ const fc = StyleSheet.create({
   text:     { fontSize: FontSize.md, lineHeight: 21 },
 });
 
+// ─── Componente: Rostro biométrico animado ─────
+// Icono person-circle limpio con anillo pulsante y línea de escaneo.
+// El texto de estado usa t() directamente en cada render → se traduce
+// inmediatamente al cambiar el idioma (RF i18n).
+function BiometricFace({ color, isDark }: { color: string; isDark: boolean }) {
+  const { t } = useTranslation();
+
+  const pulseAnim  = useRef(new Animated.Value(0)).current;
+  const scanAnim   = useRef(new Animated.Value(0)).current;
+  const dotAnim    = useRef(new Animated.Value(0.3)).current;
+  const glowAnim   = useRef(new Animated.Value(0)).current;
+
+  // Índice numérico en estado — el texto se obtiene con t() en cada render
+  // para que responda al cambio de idioma sin reiniciar el timer.
+  const [statusIdx, setStatusIdx] = useState(0);
+  const STATUS_COUNT = 5;
+
+  // t() keys en orden fijo — nunca se modifican
+  const statusLabel = t(`hero.faceStatus.s${statusIdx}` as any,
+    // fallback por si la clave aún no tiene traducción
+    { defaultValue: ['Inicializando...','Analizando...','Verificando...','Calculando...','Listo'][statusIdx] }
+  );
+
+  useEffect(() => {
+    Animated.loop(Animated.sequence([
+      Animated.timing(pulseAnim, { toValue: 1, duration: 1800, useNativeDriver: true, easing: Easing.inOut(Easing.sin) }),
+      Animated.timing(pulseAnim, { toValue: 0, duration: 1800, useNativeDriver: true, easing: Easing.inOut(Easing.sin) }),
+    ])).start();
+
+    Animated.loop(Animated.sequence([
+      Animated.timing(scanAnim, { toValue: 1, duration: 2200, useNativeDriver: true, easing: Easing.inOut(Easing.quad) }),
+      Animated.delay(300),
+      Animated.timing(scanAnim, { toValue: 0, duration: 2200, useNativeDriver: true, easing: Easing.inOut(Easing.quad) }),
+      Animated.delay(300),
+    ])).start();
+
+    Animated.loop(Animated.sequence([
+      Animated.timing(dotAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+      Animated.timing(dotAnim, { toValue: 0.3, duration: 500, useNativeDriver: true }),
+      Animated.delay(1000),
+    ])).start();
+
+    Animated.loop(Animated.sequence([
+      Animated.timing(glowAnim, { toValue: 1, duration: 2800, useNativeDriver: true }),
+      Animated.timing(glowAnim, { toValue: 0, duration: 2800, useNativeDriver: true }),
+    ])).start();
+
+    const timer = setInterval(() => {
+      setStatusIdx(i => (i + 1) % STATUS_COUNT);
+    }, 2200);
+    return () => clearInterval(timer);
+  }, []);
+
+  const pulseScale   = pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.92, 1.08] });
+  const pulseOpacity = pulseAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.1, 0.45, 0.1] });
+  const scanY        = scanAnim.interpolate({ inputRange: [0, 1], outputRange: [-72, 72] });
+  const glowOpacity  = glowAnim.interpolate({ inputRange: [0, 1], outputRange: [0.03, 0.12] });
+
+  const SIZE  = 180;
+  const bg    = isDark ? '#030C06' : '#F0FBF0';
+  const pill  = color + '1A';
+  const pillB = color + '44';
+
+  return (
+    <View style={{ alignItems: 'center' }}>
+      {/* Anillo pulsante exterior */}
+      <Animated.View style={{
+        position: 'absolute',
+        width: SIZE + 40, height: SIZE + 40,
+        borderRadius: (SIZE + 40) / 2,
+        borderWidth: 1.5, borderColor: color,
+        transform: [{ scale: pulseScale }],
+        opacity: pulseOpacity,
+        top: -20,
+      }} />
+
+      {/* Círculo principal */}
+      <View style={{
+        width: SIZE, height: SIZE,
+        borderRadius: SIZE / 2,
+        borderWidth: 2, borderColor: color,
+        backgroundColor: bg,
+        overflow: 'hidden',
+        alignItems: 'center', justifyContent: 'center',
+      }}>
+        {/* Brillo */}
+        <Animated.View style={{
+          position: 'absolute', width: '100%', height: '100%',
+          backgroundColor: color, opacity: glowOpacity, borderRadius: SIZE / 2,
+        }} />
+
+        {/* Línea de escaneo */}
+        <Animated.View style={{
+          position: 'absolute', width: '78%', height: 1.5,
+          backgroundColor: color, opacity: 0.75,
+          transform: [{ translateY: scanY }],
+        }} />
+
+        {/* Ícono de persona — limpio, sin detalles raros */}
+        <Ionicons name="person-circle-outline" size={108} color={color} style={{ opacity: 0.92 }} />
+
+        {/* Esquinas de encuadre */}
+        {[
+          { top: 10, left: 10 },
+          { top: 10, right: 10 },
+          { bottom: 10, left: 10 },
+          { bottom: 10, right: 10 },
+        ].map((pos, i) => {
+          const isTop    = 'top'    in pos;
+          const isLeft   = 'left'   in pos;
+          return (
+            <View key={i} style={[{
+              position: 'absolute', width: 16, height: 16,
+              borderColor: color,
+              borderTopWidth:    isTop  ? 2.5 : 0,
+              borderBottomWidth: !isTop ? 2.5 : 0,
+              borderLeftWidth:   isLeft ? 2.5 : 0,
+              borderRightWidth:  !isLeft ? 2.5 : 0,
+              borderTopLeftRadius:     (isTop  && isLeft)  ? 3 : 0,
+              borderTopRightRadius:    (isTop  && !isLeft) ? 3 : 0,
+              borderBottomLeftRadius:  (!isTop && isLeft)  ? 3 : 0,
+              borderBottomRightRadius: (!isTop && !isLeft) ? 3 : 0,
+            }, pos as any]} />
+          );
+        })}
+
+        {/* Puntos biométricos laterales */}
+        <Animated.View style={{ position: 'absolute', width: 5, height: 5, borderRadius: 2.5, backgroundColor: color, opacity: dotAnim, top: 52, left: 36 }} />
+        <Animated.View style={{ position: 'absolute', width: 5, height: 5, borderRadius: 2.5, backgroundColor: color, opacity: dotAnim, top: 52, right: 36 }} />
+        <Animated.View style={{ position: 'absolute', width: 5, height: 5, borderRadius: 2.5, backgroundColor: color, opacity: dotAnim, top: 90, left: 30 }} />
+        <Animated.View style={{ position: 'absolute', width: 5, height: 5, borderRadius: 2.5, backgroundColor: color, opacity: dotAnim, top: 90, right: 30 }} />
+      </View>
+
+      {/* Barra de estado — texto desde t() → reactivo al cambio de idioma */}
+      <View style={{
+        flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10,
+        borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6,
+        backgroundColor: pill, borderWidth: 1, borderColor: pillB,
+      }}>
+        <Animated.View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: color, opacity: dotAnim }} />
+        <Text style={{ fontSize: 11, fontWeight: '700', color, letterSpacing: 0.5 }}>
+          {statusLabel}
+        </Text>
+        <Animated.View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: color, opacity: dotAnim }} />
+      </View>
+    </View>
+  );
+}
+
 // ─── Screen ───────────────────────────────────
 export default function LandingScreen() {
   const { t }             = useTranslation();
@@ -101,9 +252,27 @@ export default function LandingScreen() {
   // ── Estado botón flotante ─────────────────────
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // ── Navegación al login desde el logo ─────────
+  // ── Animación de transición al login ──────────
+  // Efecto: la pantalla hace un zoom-out + fade-out profesional
+  // mientras el login aparece deslizándose desde la derecha
+  // (expo-router maneja la animación del stack, aquí solo
+  // animamos el contenido de la landing antes de navegar)
+  const transAnim  = useRef(new Animated.Value(1)).current;
+  const transAlpha = useRef(new Animated.Value(1)).current;
+  const transY     = useRef(new Animated.Value(0)).current;
+
   const goToLogin = () => {
-    router.push(Routes.AUTH.LOGIN as any);
+    Animated.parallel([
+      Animated.timing(transAnim,  { toValue: 0.93, duration: 320, useNativeDriver: true, easing: Easing.out(Easing.ease) }),
+      Animated.timing(transAlpha, { toValue: 0,    duration: 280, useNativeDriver: true }),
+      Animated.timing(transY,     { toValue: -24,  duration: 320, useNativeDriver: true, easing: Easing.out(Easing.ease) }),
+    ]).start(() => {
+      router.push(Routes.AUTH.LOGIN as any);
+      // Resetear para cuando vuelvan
+      transAnim.setValue(1);
+      transAlpha.setValue(1);
+      transY.setValue(0);
+    });
   };
 
   // ── Sube al inicio de la página ───────────────
@@ -177,8 +346,12 @@ export default function LandingScreen() {
         style={StyleSheet.absoluteFill}
         pointerEvents="none"
       />
-
-      <SafeAreaView style={s.safe}>
+      {/* Capa contenido — animada al navegar al login */}
+      <Animated.View style={[s.safe, {
+        transform: [{ scale: transAnim }, { translateY: transY }],
+        opacity: transAlpha,
+      }]}>
+        <SafeAreaView style={s.safeInner}>
         <ScrollView
           ref={scrollRef}
           contentContainerStyle={s.scroll}
@@ -189,13 +362,10 @@ export default function LandingScreen() {
 
           {/* ── Header ── */}
           <View style={[s.header, { borderBottomColor: border }]}>
-
-            {/* Logo → navega al login */}
             <TouchableOpacity onPress={goToLogin} activeOpacity={0.8} style={s.logoBtn}>
               <Image source={logoSource} style={s.logo} resizeMode="contain" />
             </TouchableOpacity>
 
-            {/* Nav links */}
             {isWide && (
               <View style={s.nav}>
                 <TouchableOpacity onPress={() => scrollToSection(offersRef)} activeOpacity={0.75} style={s.navBtn}>
@@ -234,7 +404,7 @@ export default function LandingScreen() {
 
               <View style={s.ctaRow}>
                 <TouchableOpacity
-                  onPress={() => router.push(Routes.AUTH.REGISTER as any)}
+                  onPress={goToLogin}
                   activeOpacity={0.85}
                   style={s.primaryBtnWrap}
                 >
@@ -243,21 +413,9 @@ export default function LandingScreen() {
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                     style={s.primaryBtn}
                   >
-                    <Ionicons name="person-add-outline" size={18} color={Colors.white} />
-                    <Text style={s.primaryBtnText}>{t('hero.createAccount')}</Text>
+                    <Ionicons name="person-outline" size={18} color={Colors.white} />
+                    <Text style={s.primaryBtnText}>{t('hero.login')}</Text>
                   </LinearGradient>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => router.push(Routes.AUTH.LOGIN as any)}
-                  activeOpacity={0.85}
-                  style={[s.secondaryBtn, {
-                    borderColor:     theme.primary,
-                    backgroundColor: isDark ? 'rgba(101,179,97,0.06)' : 'rgba(101,179,97,0.04)',
-                  }]}
-                >
-                  <Ionicons name="person-outline" size={18} color={theme.primary} />
-                  <Text style={[s.secondaryBtnText, { color: theme.primary }]}>{t('hero.login')}</Text>
                 </TouchableOpacity>
               </View>
 
@@ -269,30 +427,41 @@ export default function LandingScreen() {
               </View>
             </View>
 
-            {/* Mockup */}
+            {/* ── Mockup con rostro animado ── */}
             <View style={[s.heroVisual, {
-              backgroundColor: isDark ? 'rgba(101,179,97,0.04)' : 'rgba(101,179,97,0.06)',
+              backgroundColor: isDark ? 'rgba(101,179,97,0.03)' : 'rgba(101,179,97,0.05)',
               borderColor: border,
             }]}>
+              {/* Teléfono mock */}
               <View style={[s.mockPhone, {
                 borderColor: theme.primary,
-                backgroundColor: isDark ? '#080F0B' : Colors.white,
+                backgroundColor: isDark ? '#060D08' : '#FAFFF9',
               }]}>
+                {/* Header del teléfono */}
                 <View style={s.phoneBrand}>
                   <Image source={logoSource} style={s.phoneLogo} resizeMode="contain" />
                 </View>
-                <View style={[s.faceArea, { borderColor: theme.primary }]}>
-                  <View style={[s.cornerTL, { borderColor: theme.primary }]} />
-                  <View style={[s.cornerTR, { borderColor: theme.primary }]} />
-                  <View style={[s.cornerBL, { borderColor: theme.primary }]} />
-                  <View style={[s.cornerBR, { borderColor: theme.primary }]} />
-                  <Ionicons name="scan-circle-outline" size={90} color={theme.primary} style={{ opacity: 0.85 }} />
-                  <View style={[s.scanLine, { backgroundColor: theme.primary }]} />
+
+                {/* Área de escaneo con rostro animado */}
+                <View style={[s.faceArea, { borderColor: theme.primary + '44', backgroundColor: isDark ? '#030908' : '#F3FCF3' }]}>
+                  <BiometricFace color={theme.primary} isDark={isDark} />
                 </View>
+
+                {/* Footer del teléfono */}
                 <View style={[s.phoneInfo, { borderTopColor: border }]}>
-                  <Ionicons name="shield-checkmark-outline" size={20} color={theme.primary} />
+                  <Ionicons name="shield-checkmark-outline" size={16} color={theme.primary} />
                   <Text style={[s.phoneInfoText, { color: muted }]}>{t('hero.phoneInfo')}</Text>
                 </View>
+              </View>
+
+              {/* Decoración exterior — puntos flotantes */}
+              <View style={[s.floatBadge, s.floatBadgeTR, { backgroundColor: isDark ? '#0D1F0D' : '#E8F8E4', borderColor: border }]}>
+                <Ionicons name="finger-print-outline" size={14} color={theme.primary} />
+                <Text style={[s.floatBadgeText, { color: theme.primary }]}>Biometría</Text>
+              </View>
+              <View style={[s.floatBadge, s.floatBadgeBL, { backgroundColor: isDark ? '#0D1F0D' : '#E8F8E4', borderColor: border }]}>
+                <Ionicons name="lock-closed-outline" size={14} color={theme.primary} />
+                <Text style={[s.floatBadgeText, { color: theme.primary }]}>Seguro</Text>
               </View>
             </View>
           </View>
@@ -383,14 +552,6 @@ export default function LandingScreen() {
           {/* ── Footer ── */}
           <View style={s.footer}>
             <Text style={[s.footerText, { color: muted }]}>FaceLit © 2026</Text>
-            <View style={s.footerLinks}>
-              <TouchableOpacity onPress={() => router.push(Routes.AUTH.PRIVACY_NOTICE as any)}>
-                <Text style={[s.footerLink, { color: theme.primary }]}>{t('landing.footerPrivacy')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => router.push(Routes.AUTH.RIGHTS as any)}>
-                <Text style={[s.footerLink, { color: theme.primary }]}>{t('landing.footerRights')}</Text>
-              </TouchableOpacity>
-            </View>
           </View>
 
         </ScrollView>
@@ -409,14 +570,16 @@ export default function LandingScreen() {
         )}
 
       </SafeAreaView>
+      </Animated.View>
     </View>
   );
 }
 
 // ─── Styles ───────────────────────────────────
 const s = StyleSheet.create({
-  page:   { flex: 1 },
-  safe:   { flex: 1, backgroundColor: 'transparent' },
+  page:      { flex: 1 },
+  safe:      { flex: 1, backgroundColor: 'transparent' },
+  safeInner: { flex: 1, backgroundColor: 'transparent' },
   scroll: { width: '100%', alignItems: 'center', paddingHorizontal: 20, paddingBottom: 34 },
 
   header:        { width: '100%', maxWidth: 1120, minHeight: 78, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 14, borderBottomWidth: 1, paddingVertical: 14, zIndex: 999 },
@@ -438,27 +601,27 @@ const s = StyleSheet.create({
   heroDivider:   { width: 56, height: 4, borderRadius: 2, marginVertical: 20 },
   heroText:      { fontSize: FontSize.lg, lineHeight: 26, maxWidth: 620 },
 
-  ctaRow:           { flexDirection: 'row', flexWrap: 'wrap', gap: 14, marginTop: 30 },
-  primaryBtnWrap:   { borderRadius: 10, overflow: 'hidden', minWidth: 170 },
-  primaryBtn:       { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 22, paddingVertical: 15, justifyContent: 'center' },
-  primaryBtnText:   { color: Colors.white, fontSize: FontSize.base, fontWeight: FontWeight.black },
-  secondaryBtn:     { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 10, borderWidth: 1.5, paddingHorizontal: 22, paddingVertical: 14, minWidth: 170, justifyContent: 'center' },
-  secondaryBtnText: { fontSize: FontSize.base, fontWeight: FontWeight.black },
+  ctaRow:         { flexDirection: 'row', flexWrap: 'wrap', gap: 14, marginTop: 30 },
+  primaryBtnWrap: { borderRadius: 10, overflow: 'hidden', minWidth: 170 },
+  primaryBtn:     { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 22, paddingVertical: 15, justifyContent: 'center' },
+  primaryBtnText: { color: Colors.white, fontSize: FontSize.base, fontWeight: FontWeight.black },
 
   metrics: { flexDirection: 'row', flexWrap: 'wrap', gap: 28, marginTop: 36 },
 
-  heroVisual:    { flex: 1, width: '100%', minHeight: 460, borderRadius: 16, borderWidth: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  mockPhone:     { width: 280, maxWidth: '100%', borderRadius: 36, borderWidth: 2, alignItems: 'center', padding: 20, paddingTop: 24, paddingBottom: 20 },
-  phoneBrand:    { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
-  phoneLogo:     { width: 120, height: 44 },
-  faceArea:      { width: 190, height: 190, borderRadius: 16, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', marginBottom: 16, position: 'relative' },
-  cornerTL:      { position: 'absolute', top: -2,    left: -2,  width: 22, height: 22, borderTopWidth: 3,    borderLeftWidth: 3,  borderRadius: 4 },
-  cornerTR:      { position: 'absolute', top: -2,    right: -2, width: 22, height: 22, borderTopWidth: 3,    borderRightWidth: 3, borderRadius: 4 },
-  cornerBL:      { position: 'absolute', bottom: -2, left: -2,  width: 22, height: 22, borderBottomWidth: 3, borderLeftWidth: 3,  borderRadius: 4 },
-  cornerBR:      { position: 'absolute', bottom: -2, right: -2, width: 22, height: 22, borderBottomWidth: 3, borderRightWidth: 3, borderRadius: 4 },
-  scanLine:      { position: 'absolute', height: 2, width: '80%', borderRadius: 1, opacity: 0.8 },
-  phoneInfo:     { flexDirection: 'row', alignItems: 'flex-start', gap: 8, borderTopWidth: 1, paddingTop: 14, width: '100%' },
-  phoneInfoText: { flex: 1, fontSize: FontSize.xs, lineHeight: 16, textAlign: 'center' },
+  // ── Mockup ──
+  heroVisual:    { flex: 1, width: '100%', minHeight: 480, borderRadius: 20, borderWidth: 1, alignItems: 'center', justifyContent: 'center', padding: 24, position: 'relative' },
+  mockPhone:     { width: 290, maxWidth: '95%', borderRadius: 38, borderWidth: 2, alignItems: 'center', padding: 18, paddingTop: 22, paddingBottom: 18,
+                   shadowColor: '#65B361', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 12 },
+  phoneBrand:    { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
+  phoneLogo:     { width: 120, height: 40 },
+  faceArea:      { width: 220, height: 240, borderRadius: 20, borderWidth: 1, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', marginBottom: 14 },
+  phoneInfo:     { flexDirection: 'row', alignItems: 'center', gap: 8, borderTopWidth: 1, paddingTop: 12, width: '100%', justifyContent: 'center' },
+  phoneInfoText: { fontSize: FontSize.xs, lineHeight: 16, textAlign: 'center', flex: 1 },
+  // Badges flotantes
+  floatBadge:     { position: 'absolute', flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 12, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 6 },
+  floatBadgeTR:   { top: 16, right: 16 },
+  floatBadgeBL:   { bottom: 16, left: 16 },
+  floatBadgeText: { fontSize: 11, fontWeight: '800' },
 
   section:      { width: '100%', maxWidth: 1120, paddingVertical: 46 },
   sectionTitle: { fontSize: FontSize['3xl'], lineHeight: 38, fontWeight: FontWeight.black, maxWidth: 720, marginBottom: 10 },
@@ -497,26 +660,13 @@ const s = StyleSheet.create({
 
   footer:      { width: '100%', maxWidth: 1120, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16, paddingVertical: 18 },
   footerText:  { fontSize: FontSize.md, fontWeight: FontWeight.bold },
-  footerLinks: { flexDirection: 'row', gap: 16 },
-  footerLink:  { fontSize: FontSize.md, fontWeight: FontWeight.extrabold },
 
   // ── Botón flotante ──
   fabWrap: {
-    position: 'absolute',
-    bottom: 32,
-    right: 32,
-    borderRadius: 28,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    position: 'absolute', bottom: 32, right: 32,
+    borderRadius: 28, overflow: 'hidden',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3, shadowRadius: 8, elevation: 8,
   },
-  fab: {
-    width: 52,
-    height: 52,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  fab: { width: 52, height: 52, alignItems: 'center', justifyContent: 'center' },
 });

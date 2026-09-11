@@ -29,14 +29,16 @@ export interface RegisterErrors {
   rights:          string;
 }
 
+// RF-1.1 V3: el identificador de acceso es el número de documento,
+// no el correo electrónico. El correo se conserva solo para recuperación.
 export interface LoginForm {
-  email:    string;
+  document: string;
   password: string;
   accepted: boolean;
 }
 
 export interface LoginErrors {
-  email:    string;
+  document: string;
   password: string;
   policy:   string;
 }

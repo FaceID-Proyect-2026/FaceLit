@@ -46,16 +46,20 @@ function RootLayoutInner() {
           animation: 'slide_from_right',
         }}
       >
-        <Stack.Screen name="index" />
-        <Stack.Screen name="auth/login" />
-        <Stack.Screen name="auth/register" />
-        <Stack.Screen name="auth/email-validation" />
-        <Stack.Screen name="auth/password-recovery" />
-        <Stack.Screen name="auth/verify-identity" />
-        <Stack.Screen name="auth/new-password" />
-        <Stack.Screen name="auth/teenager-registration" />
-        <Stack.Screen name="auth/minor-consent" />
-        <Stack.Screen name="auth/guardian-verification" />
+        <Stack.Screen name="index" options={{ animation: 'fade' }} />
+        {/* Auth — RF-1: solo login y recuperación de contraseña */}
+        <Stack.Screen
+          name="auth/login"
+          options={{
+            // Deslizamiento hacia arriba al entrar, más profundidad visual
+            animation: 'slide_from_bottom',
+            animationDuration: 380,
+          }}
+        />
+        <Stack.Screen name="auth/password-recovery" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="auth/verify-identity"   options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="auth/new-password"      options={{ animation: 'slide_from_right' }} />
+        {/* Dashboards por rol */}
         <Stack.Screen name="admin" options={{ animation: 'fade' }} />
         <Stack.Screen name="instructor" options={{ animation: 'fade' }} />
         <Stack.Screen name="apprentice" options={{ animation: 'fade' }} />

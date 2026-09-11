@@ -1,4 +1,4 @@
-const en = {
+﻿const en = {
   // ─────────────────────────────────────────────
   //  Module 1 - Authentication
   // ─────────────────────────────────────────────
@@ -57,6 +57,13 @@ const en = {
     metric3: 'Automated',
     metric4: 'Impersonations',
     phoneInfo: 'Real-time biometric identification for SENA',
+    faceStatus: {
+      s0: 'Initializing...',
+      s1: 'Analyzing...',
+      s2: 'Verifying points',
+      s3: 'Calculating...',
+      s4: 'Ready',
+    },
   },
   problems: {
     sectionTitle: 'Why was FaceLit created?',
@@ -117,8 +124,8 @@ const en = {
   login: {
     title: 'Sign in',
     subtitle: 'Enter your credentials',
-    email: 'Email address',
-    emailPlaceholder: 'email@example.com',
+    document: 'Document number',
+    documentPlaceholder: 'E.g: 1002345678',
     password: 'Password',
     passwordPlaceholder: '********',
     policyPrefix: 'I have read and accept the',
@@ -126,12 +133,19 @@ const en = {
     policySuffix: '',
     policyError: 'You must accept the privacy notice',
     loginBtn: 'Sign in',
+    loggingIn: 'Signing in…',
     forgotPassword: 'Forgot your password?',
     noAccount: 'Don\'t have an account?',
     registerLink: 'Register here',
     errors: {
-      emailNotFound: 'Email address not registered',
-      wrongPassword: 'Incorrect password',
+      documentNotFound: 'Document not registered',
+      wrongPassword: 'Incorrect document or password',
+      emptyDocument: 'Document number is required',
+      emptyPassword: 'Password is required',
+      invalidDocument: 'Document must contain numbers only',
+      documentLength: 'Document must be 6 to 15 digits long',
+      passwordShort: 'Min. 6 characters',
+      passwordLong: 'Max. 20 characters',
     },
   },
 
@@ -159,8 +173,12 @@ const en = {
     sendBtn: 'Send code',
     cancelBtn: 'Cancel',
     errors: {
-      invalidEmail: 'Invalid email address',
-      emailNotFound: 'This email address is not registered',
+      emailEmpty:    'Email address is required.',
+      invalidEmail:  'Invalid email address.',
+      emailNotFound: 'If the email is registered, we will send you a verification code.',
+      serverError:   'An unexpected error occurred. Please try again in a few minutes.',
+      invalidCredentials: 'Incorrect document or password.',
+      networkError:  'Could not connect to the server. Check your connection.',
     },
   },
 
@@ -183,8 +201,14 @@ const en = {
     hint: 'Enter the 6-digit code',
     verifyBtn: 'Verify code',
     errors: {
-      length: 'You must enter 6 digits',
-      invalid: 'Invalid token',
+      emptyCode:     'Please enter the verification code.',
+      length:        'The code must be exactly 6 numeric digits.',
+      invalid:       'Incorrect code.',
+      expired:       'The code has expired. Please request a new one.',
+      alreadyUsed:   'This code has already been used. Please request a new one.',
+      exhausted:     'You have exceeded the maximum number of attempts. Please request a new code.',
+      resendCooldown:'Please wait before requesting a new code.',
+      resendFailed:  'Could not resend the code. Please try again.',
     },
   },
 
@@ -195,11 +219,11 @@ const en = {
     subtitle: 'Create a secure password that meets the system policies.',
     reqTitle: 'Password requirements:',
     req: {
-      length: 'Between 8 and 15 characters',
-      upper: 'At least one uppercase letter',
-      lower: 'At least one lowercase letter',
-      number: 'At least one number',
-      symbol: 'At least one special symbol',
+      length:   'Between 8 and 15 characters',
+      letter:   'At least one letter',
+      number:   'At least one number',
+      symbol:   'At least one special symbol',
+      noSpaces: 'No spaces allowed',
     },
     passwordLabel: 'New password',
     passwordPlaceholder: 'Create your new password',
@@ -207,10 +231,18 @@ const en = {
     confirmPlaceholder: 'Repeat your new password',
     submitBtn: 'Reset password',
     errors: {
-      passwordRequired: 'Password is required',
-      passwordInvalid: 'Does not meet security requirements',
-      confirmRequired: 'You must confirm your password',
-      confirmMismatch: 'Passwords do not match',
+      passwordRequired: 'Please enter a new password.',
+      passwordLength:   'The password must be between 8 and 15 characters.',
+      passwordWeak:     'The password must include at least one letter, one number and one symbol.',
+      noSpaces:         'The password cannot contain spaces.',
+      passwordInvalid:  'Does not meet security requirements.',
+      confirmRequired:  'Please confirm your new password.',
+      confirmMismatch:  'Passwords do not match.',
+      tokenMissing:     'Verification code not found.',
+      tokenExpired:     'The code has expired. Please request a new one.',
+      tokenUsed:        'This code has already been used. Please request a new one.',
+      serverError:      'An unexpected error occurred. Please try again in a few minutes.',
+      genericError:     'Could not reset the password.',
     },
   },
 
@@ -385,7 +417,8 @@ const en = {
       ageMax:             'Maximum age is 100 years',
       tiAdult:            'TI is only for people under 18 years old',
       ccMinor:            'CC is only for people 18 years old or older',
-      policyRequired:     'You must read and accept the policies',
+      policyRequired:     'You must accept the privacy notice to continue.',
+      accountLocked:      'For security reasons, this account has been temporarily locked. Try again in {{minutes}} minutes.',
       rightsRequired:     'You must answer this question',
     },
   },
@@ -639,3 +672,4 @@ const en = {
 } as const;
 
 export default en;
+

@@ -3,18 +3,16 @@
 //  Selector de fecha reutilizable con calendario:
 //  en Web usa <input type="date"> nativo del navegador,
 //  en Móvil abre el DateTimePicker nativo del sistema.
-//  Mismo patrón que el selector de fecha de nacimiento
-//  usado en app/auth/register.tsx.
 // ─────────────────────────────────────────────
-import { useState } from 'react';
-import {
-  Platform, StyleSheet, Text, TouchableOpacity, View, ViewStyle,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
+import { useTheme } from '@/shared/contexts/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { useState } from 'react';
+import {
+    Platform, StyleSheet, Text, TouchableOpacity, View, ViewStyle,
+} from 'react-native';
 
 interface DateFieldProps {
   label: string;

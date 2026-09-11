@@ -8,21 +8,12 @@ export const Routes = {
   // Landing
   LANDING: '/' as const,
 
-  // Auth — Módulo 1
+  // Auth — RF-1: solo login y recuperación de contraseña
   AUTH: {
-    LOGIN:                  '/auth/login',
-    REGISTER:               '/auth/register',
-    EMAIL_VALIDATION:       '/auth/email-validation',
-    EMAIL_VALIDATED:        '/auth/email-validated-success',
-    PASSWORD_RECOVERY:      '/auth/password-recovery',
-    VERIFY_IDENTITY:        '/auth/verify-identity',
-    NEW_PASSWORD:           '/auth/new-password',
-    PASSWORD_RESET_DONE:    '/auth/password-reset-done',
-    REGISTRATION_SUCCESS:   '/auth/registration-success',
-    TEENAGER_REGISTRATION:  '/auth/teenager-registration',
-    MINOR_CONSENT:          '/auth/minor-consent',
-    RIGHTS:                 '/auth/rights',
-    PRIVACY_NOTICE:         '/auth/privacy-notice',
+    LOGIN:               '/auth/login',
+    PASSWORD_RECOVERY:   '/auth/password-recovery',
+    VERIFY_IDENTITY:     '/auth/verify-identity',
+    NEW_PASSWORD:        '/auth/new-password',
   },
 
   // Admin Dashboard
@@ -31,12 +22,6 @@ export const Routes = {
     PROFILE:      '/admin/profile',
     SETTINGS:     '/admin/profile/settings',
     USERS:        '/admin/users',
-  },
-
-  // Coordinación académica
-  COORDINATOR: {
-    DASHBOARD: '/coordinator',
-    TRANSFER_REQUESTS: '/coordinator/transfer-requests',
   },
 
   // Módulo 2: Gestión de Ambientes
@@ -60,7 +45,7 @@ export const Routes = {
     FICHA_EDIT:         '/admin/academic/fichas/[id]/edit',
     TRANSFER_REQUEST:   '/apprentice/transfer-request',
     JOIN_FICHA:         '/apprentice/join-ficha',
-    COORDINATOR_REQUESTS: '/coordinator/transfer-requests',
+    COORDINATOR_REQUESTS: '/admin/transfer-requests',
     LEARNERS_BY_FICHA:  '/admin/academic/fichas/[id]/learners',
   },
 

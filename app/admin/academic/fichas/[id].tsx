@@ -5,7 +5,6 @@ import { getProgramDisplayName } from '@/features/academic/types';
 import { useAcademic } from '@/features/academic/useAcademic';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
-import { getSystemUsers } from '@/shared/contexts/AuthContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { Ionicons } from '@expo/vector-icons';
@@ -64,8 +63,6 @@ export default function FichaDetailScreen() {
     let alreadyLinked = 0;
     let conflict = 0;
     let fichaMismatch = 0;
-    let inconsistencies = 0;
-    const systemUsers = getSystemUsers();
 
     result.rows.forEach((row, index) => {
       if (row.fichaCode) {
@@ -82,29 +79,15 @@ export default function FichaDetailScreen() {
         if (existingFicha.status === 'active' && existingLearner.status === 'active') { conflict += 1; return; }
       }
 
-      // Si el documento del CSV coincide con una cuenta de usuario ya
-      // registrada en el sistema, el aprendiz se asocia a esa cuenta
-      // (mismo id) para saber siempre quién ingresa a la ficha — esto es
-      // clave para el flujo de traslado ("Unirse a Ficha"). Si además el
-      // nombre no coincide con lo registrado, queda como INCONSISTENCY
-      // para revisión de un Coordinador, tal como indica el RF-3.3.
-      const matchedUser = systemUsers.find(u => normalizeDocument(u.document) === row.document);
-      let validationStatus: 'validated' | 'inconsistency' = 'validated';
-      if (matchedUser) {
-        const nameMatches = normalizeText(matchedUser.name) === normalizeText(row.name) && normalizeText(matchedUser.lastname) === normalizeText(row.lastname);
-        if (!nameMatches) validationStatus = 'inconsistency';
-      }
-      if (validationStatus === 'inconsistency') { inconsistencies += 1; return; }
-
       const learner = {
-        id: matchedUser?.id ?? `csv-${Date.now()}-${index}-${Math.random().toString(36).slice(2, 7)}`,
+        id: `csv-${Date.now()}-${index}-${Math.random().toString(36).slice(2, 7)}`,
         name: row.name,
         lastname: row.lastname,
         document: row.document,
-        email: matchedUser?.email ?? '',
+        email: '',
         role: 'aprendiz',
         status: 'active' as const,
-        validationStatus,
+        validationStatus: 'validated' as const,
       };
       const outcome = addLearner(ficha.id, learner);
       if (outcome.success) added += 1; else conflict += 1;
@@ -115,7 +98,6 @@ export default function FichaDetailScreen() {
       `${t('academic.csvAlreadyLinked')}: ${alreadyLinked}`,
       `${t('academic.csvConflict')}: ${conflict}`,
     ];
-    if (inconsistencies > 0) parts.push(`${t('academic.csvInconsistency')}: ${inconsistencies}`);
     if (fichaMismatch > 0) parts.push(`${t('academic.csvFichaMismatch')}: ${fichaMismatch}`);
     if (result.invalidRows > 0) parts.push(`${t('academic.csvInvalidRows')}: ${result.invalidRows}`);
 
