@@ -1,6 +1,7 @@
-import { Platform, Alert } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+import { Alert, Platform } from 'react-native';
+import * as XLSX from 'xlsx';
 
 export interface ExportData {
   title: string;
@@ -65,108 +66,85 @@ function generateCSV(data: ExportData): string {
   return csv;
 }
 
-function generateExcelXML(data: ExportData): string {
-  let xml = `<?xml version="1.0" encoding="UTF-8"?>
-<?mso-application progid="Excel.Sheet"?>
-<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
- xmlns:o="urn:schemas-microsoft-com:office:office"
- xmlns:x="urn:schemas-microsoft-com:office:excel"
- xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
- xmlns:html="http://www.w3.org/TR/REC-html40">
-<Styles>
-<Style ss:ID="Default" ss:Name="Normal">
-<Alignment ss:Vertical="Bottom"/>
-<Borders/>
-<Font ss:FontName="Calibri" x:Family="Swiss" ss:Size="11" ss:Color="#000000"/>
-<Interior/>
-<NumberFormat/>
-<Protection/>
-</Style>
-<Style ss:ID="Header">
-<Font ss:FontName="Calibri" x:Family="Swiss" ss:Size="11" ss:Color="#FFFFFF" ss:Bold="1"/>
-<Interior ss:Color="#65B361" ss:Pattern="Solid"/>
-<Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
-</Style>
-<Style ss:ID="Title">
-<Font ss:FontName="Calibri" x:Family="Swiss" ss:Size="14" ss:Bold="1"/>
-</Style>
-<Style ss:ID="Subtitle">
-<Font ss:FontName="Calibri" x:Family="Swiss" ss:Size="11" ss:Italic="1"/>
-</Style>
-</Styles>
-<Worksheet ss:Name="Reporte">
-<Table ss:ExpandedColumnCount="${data.headers.length}" x:FullColumns="1" x:FullRows="1">`;
+// ── Excel real (.xlsx) con xlsx (SheetJS) ──
+// A diferencia del XML de Excel 2003 escrito a mano que había antes,
+// esto genera un .xlsx real. La edición gratuita de xlsx NO permite
+// pintar fondos/negritas por celda (eso es de pago), pero sí:
+//   • fijar el ancho de cada columna (ws['!cols']) — arregla las
+//     columnas angostas/cortadas que salían antes.
+//   • fusionar celdas (ws['!merges']) — para que el título y los
+//     encabezados de sección ("Filtros aplicados", "Resumen", "Datos")
+//     ocupen todo el ancho de la tabla, en vez de una sola celda.
+function buildExcelWorkbook(data: ExportData): XLSX.WorkBook {
+  const colCount = Math.max(data.headers.length, 1);
+  const sheetRows: (string | number)[][] = [];
+  const merges: XLSX.Range[] = [];
 
-  let rowIndex = 1;
-  
-  if (data.title) {
-    xml += `<Row><Cell ss:StyleID="Title" ss:MergeAcross="${data.headers.length - 1}"><Data ss:Type="String">${escapeXml(data.title)}</Data></Cell></Row>`;
-    rowIndex++;
-  }
-  if (data.subtitle) {
-    xml += `<Row><Cell ss:StyleID="Subtitle" ss:MergeAcross="${data.headers.length - 1}"><Data ss:Type="String">${escapeXml(data.subtitle)}</Data></Cell></Row>`;
-    rowIndex++;
-  }
-  rowIndex++;
-  
+  const pushMergedRow = (text: string) => {
+    sheetRows.push([text]);
+    merges.push({ s: { r: sheetRows.length - 1, c: 0 }, e: { r: sheetRows.length - 1, c: colCount - 1 } });
+  };
+  const pushBlankRow = () => sheetRows.push([]);
+
+  if (data.title) pushMergedRow(data.title);
+  if (data.subtitle) pushMergedRow(data.subtitle);
+  pushBlankRow();
+
   if (data.filters && data.filters.length > 0) {
-    xml += `<Row><Cell ss:StyleID="Title" ss:MergeAcross="${data.headers.length - 1}"><Data ss:Type="String">Filtros aplicados</Data></Cell></Row>`;
-    rowIndex++;
-    data.filters.forEach(f => {
-      xml += `<Row><Cell><Data ss:Type="String">${escapeXml(f.label)}</Data></Cell><Cell><Data ss:Type="String">${escapeXml(f.value)}</Data></Cell></Row>`;
-      rowIndex++;
-    });
-    rowIndex++;
+    pushMergedRow('Filtros aplicados');
+    data.filters.forEach(f => sheetRows.push([f.label, f.value]));
+    pushBlankRow();
   }
-  
+
   if (data.summary && data.summary.length > 0) {
-    xml += `<Row><Cell ss:StyleID="Title" ss:MergeAcross="${data.headers.length - 1}"><Data ss:Type="String">Resumen</Data></Cell></Row>`;
-    rowIndex++;
-    data.summary.forEach(s => {
-      xml += `<Row><Cell><Data ss:Type="String">${escapeXml(s.label)}</Data></Cell><Cell><Data ss:Type="String">${escapeXml(s.value)}</Data></Cell></Row>`;
-      rowIndex++;
-    });
-    rowIndex++;
+    pushMergedRow('Resumen');
+    data.summary.forEach(s => sheetRows.push([s.label, s.value]));
+    pushBlankRow();
   }
-  
-  xml += `<Row><Cell ss:StyleID="Title" ss:MergeAcross="${data.headers.length - 1}"><Data ss:Type="String">Datos</Data></Cell></Row>`;
-  rowIndex++;
-  
-  xml += '<Row>';
-  data.headers.forEach(h => {
-    xml += `<Cell ss:StyleID="Header"><Data ss:Type="String">${escapeXml(h)}</Data></Cell>`;
-  });
-  xml += '</Row>';
-  rowIndex++;
-  
-  data.rows.forEach(row => {
-    xml += '<Row>';
-    row.forEach(cell => {
-      xml += `<Cell><Data ss:Type="String">${escapeXml(cell)}</Data></Cell>`;
-    });
-    xml += '</Row>';
-    rowIndex++;
-  });
-  
-  rowIndex++;
-  xml += `<Row><Cell><Data ss:Type="String">Generado el</Data></Cell><Cell><Data ss:Type="String">${escapeXml(data.generatedAt)}</Data></Cell></Row>`;
-  
-  xml += `</Table></Worksheet></Workbook>`;
-  
-  return xml;
+
+  pushMergedRow('Datos');
+  sheetRows.push([...data.headers]);
+  data.rows.forEach(row => sheetRows.push(row));
+  pushBlankRow();
+  sheetRows.push(['Generado el', data.generatedAt]);
+
+  const worksheet = XLSX.utils.aoa_to_sheet(sheetRows);
+  worksheet['!cols'] = computeColumnWidths(data.headers, data.rows);
+  if (merges.length > 0) worksheet['!merges'] = merges;
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Reporte');
+  return workbook;
 }
 
-function escapeXml(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '<')
-    .replace(/>/g, '>')
-    .replace(/"/g, '"')
-    .replace(/'/g, '&apos;');
+// Ancho por columna en base al contenido más largo (encabezado o
+// cualquier fila), con un mínimo y un máximo razonables para que
+// no queden ni angostas ni gigantes.
+function computeColumnWidths(headers: string[], rows: string[][]): { wch: number }[] {
+  const colCount = Math.max(headers.length, 1);
+  const widths = new Array(colCount).fill(8);
+
+  headers.forEach((h, i) => {
+    widths[i] = Math.max(widths[i], String(h ?? '').length);
+  });
+  rows.forEach(row => {
+    row.forEach((cell, i) => {
+      if (i < colCount) widths[i] = Math.max(widths[i], String(cell ?? '').length);
+    });
+  });
+
+  return widths.map(w => ({ wch: Math.min(Math.max(w + 2, 10), 40) }));
 }
 
 export async function exportReport(data: ExportData, options: ExportOptions): Promise<boolean> {
   try {
+    // El Excel es un caso aparte: es un archivo binario (.xlsx) generado
+    // por xlsx (SheetJS), no un string de texto plano como CSV/PDF —
+    // por eso tiene su propia rama en vez de compartir el switch de abajo.
+    if (options.format === 'excel') {
+      return await exportExcelWorkbook(data, options.filename);
+    }
+
     let content: string;
     let mimeType: string;
     let fileExtension: string;
@@ -176,11 +154,6 @@ export async function exportReport(data: ExportData, options: ExportOptions): Pr
         content = generateCSV(data);
         mimeType = 'text/csv';
         fileExtension = '.csv';
-        break;
-      case 'excel':
-        content = generateExcelXML(data);
-        mimeType = 'application/vnd.ms-excel';
-        fileExtension = '.xls';
         break;
       case 'pdf':
         content = generatePDFContent(data);
@@ -221,6 +194,39 @@ export async function exportReport(data: ExportData, options: ExportOptions): Pr
   } catch (error) {
     console.error('Export error:', error);
     Alert.alert('Error', 'No fue posible generar el reporte. Inténtelo nuevamente.');
+    return false;
+  }
+}
+
+async function exportExcelWorkbook(data: ExportData, baseFilename: string): Promise<boolean> {
+  try {
+    const workbook = buildExcelWorkbook(data);
+    const filename = `${baseFilename}.xlsx`;
+    const mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+    if (Platform.OS === 'web') {
+      // writeFile arma el .xlsx y dispara la descarga del navegador solo,
+      // sin necesidad de armar un Blob/URL manualmente.
+      XLSX.writeFile(workbook, filename, { bookType: 'xlsx' });
+      return true;
+    }
+
+    // En nativo no hay "descarga del navegador": se escribe el binario
+    // como base64 a un archivo real y se comparte con la hoja del sistema.
+    const base64 = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
+    const file = new FileSystem.File(FileSystem.Paths.cache, filename);
+    file.write(base64, { encoding: 'base64' });
+
+    if (await Sharing.isAvailableAsync()) {
+      await Sharing.shareAsync(file.uri, { mimeType, dialogTitle: 'Exportar Excel' });
+    } else {
+      Alert.alert('Exportación no disponible', 'Este dispositivo no permite compartir el archivo generado.');
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error('Excel export error:', error);
+    Alert.alert('Error', 'No fue posible generar el archivo de Excel. Inténtelo nuevamente.');
     return false;
   }
 }
