@@ -83,9 +83,9 @@ export default function ProfileScreen() {
   const infoRows = [
     { icon: 'person-outline', label: t('profile.fields.name'), value: displayName },
     { icon: 'people-outline', label: t('profile.fields.lastname'), value: displayLastName },
-    { icon: 'card-outline', label: t('profile.fields.documentType'), value: documentType },
     { icon: 'document-text-outline', label: t('profile.fields.document'), value: document },
     { icon: 'mail-outline', label: t('profile.fields.email'), value: email },
+    { icon: 'shield-checkmark-outline', label: t('profile.fields.role'), value: roleLabel },
   ];
 
   if (loading) {

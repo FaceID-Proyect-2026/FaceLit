@@ -39,18 +39,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const border = isDark ? Colors.dark.border : Colors.light.border;
 
   const adminMenu: MenuItem[] = [
-    { icon: 'grid-outline', label: t('sidebar.dashboard'), route: Routes.ADMIN.DASHBOARD, module: 'dashboard' },
+    { icon: 'grid-outline',              label: t('sidebar.dashboard'),  route: Routes.ADMIN.DASHBOARD,    module: 'dashboard'  },
     ...(user?.role === 'ADMINISTRATOR' || user?.role === 'COORDINATOR'
       ? [{ icon: 'people-outline', label: t('sidebar.users'), route: Routes.ADMIN.USERS, module: 'users' }]
       : []),
-    { icon: 'business-outline', label: t('sidebar.environments'), route: Routes.ENVIRONMENTS.LIST, module: 'environments' },
-    { icon: 'school-outline', label: t('sidebar.academic'), route: Routes.ACADEMIC.PROGRAMS, module: 'academic' },
-    { icon: 'swap-horizontal-outline', label: t('sidebar.transferRequests'), route: Routes.COORDINATOR.TRANSFER_REQUESTS, module: 'academic' },
-    { icon: 'time-outline', label: t('sidebar.schedules'), route: Routes.SCHEDULES.LIST, module: 'schedules' },
-    { icon: 'checkmark-circle-outline', label: t('sidebar.attendance'), route: Routes.ATTENDANCE.LIST, module: 'attendance' },
-    { icon: 'bar-chart-outline', label: t('sidebar.reports'), route: Routes.REPORTS.DASHBOARD, module: 'reports' },
-    { icon: 'notifications-outline', label: t('sidebar.notifications'), route: Routes.NOTIFICATIONS.CENTER, module: 'notifications' },
-    { icon: 'person-outline', label: t('sidebar.profile'), route: Routes.PROFILE.VIEW, module: 'profile' },
+    { icon: 'school-outline',            label: t('sidebar.academic'),   route: Routes.ACADEMIC.PROGRAMS,  module: 'academic'   },
+    { icon: 'checkmark-circle-outline',  label: t('sidebar.attendance'), route: Routes.ATTENDANCE.LIST,    module: 'attendance' },
+    { icon: 'notifications-outline',     label: t('sidebar.notifications'), route: Routes.NOTIFICATIONS.CENTER, module: 'notifications' },
+    { icon: 'person-outline',            label: t('sidebar.profile'),    route: Routes.PROFILE.VIEW,       module: 'profile'    },
   ];
 
   const instructorMenu: MenuItem[] = [

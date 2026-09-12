@@ -1,20 +1,20 @@
 // ─────────────────────────────────────────────
 //  app/admin/index.tsx — Dashboard Admin
 // ─────────────────────────────────────────────
+import { useAcademic } from '@/features/academic/useAcademic';
+import { useAttendance } from '@/features/attendance/useAttendance';
+import { useEnvironments } from '@/features/environments/useEnvironments';
+import { Colors } from '@/shared/constants/colors';
+import { Routes } from '@/shared/constants/routes';
+import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
-import { useAcademic } from '@/features/academic/useAcademic';
-import { useEnvironments } from '@/features/environments/useEnvironments';
-import { useAttendance } from '@/features/attendance/useAttendance';
-import { Colors } from '@/shared/constants/colors';
-import { FontSize, FontWeight } from '@/shared/constants/typography';
-import { Routes } from '@/shared/constants/routes';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface StatCard {
   icon: string;
@@ -66,17 +66,15 @@ export default function AdminDashboard() {
   const stats: StatCard[] = [
     { icon: 'people-outline', value: String(totalLearners), label: t('dashboard.totalUsers') },
     { icon: 'school-outline', value: String(activeFichasCount), label: t('dashboard.activeFichas') },
-    { icon: 'business-outline', value: String(activeEnvironmentsCount), label: t('dashboard.environments') },
     { icon: 'checkmark-circle-outline', value: `${attendanceRate}%`, label: t('dashboard.attendanceRate') },
   ];
 
   const quickActions: QuickAction[] = [
-    { icon: 'business-outline', label: t('sidebar.environments'), route: Routes.ENVIRONMENTS.LIST, color: '#4A90D9' },
+    { icon: 'people-outline', label: t('sidebar.users'), route: Routes.ADMIN.USERS, color: '#4A90D9' },
     { icon: 'school-outline', label: t('sidebar.academic'), route: Routes.ACADEMIC.PROGRAMS, color: '#27AE60' },
-    { icon: 'swap-horizontal-outline', label: t('sidebar.transferRequests'), route: Routes.COORDINATOR.TRANSFER_REQUESTS, color: '#D68910' },
-    { icon: 'time-outline', label: t('sidebar.schedules'), route: Routes.SCHEDULES.LIST, color: '#E89B2C' },
     { icon: 'checkmark-circle-outline', label: t('sidebar.attendance'), route: Routes.ATTENDANCE.LIST, color: '#1ABC9C' },
-    { icon: 'book-outline', label: t('sidebar.programs'), route: Routes.ACADEMIC.PROGRAMS, color: '#E74C3C' },
+    { icon: 'notifications-outline', label: t('sidebar.notifications'), route: Routes.NOTIFICATIONS.CENTER, color: '#9B59B6' },
+    { icon: 'person-outline', label: t('sidebar.profile'), route: Routes.PROFILE.VIEW, color: '#E89B2C' },
   ];
 
   // ── Datos mock ────────────────────────────
@@ -92,12 +90,13 @@ export default function AdminDashboard() {
       <ScrollView contentContainerStyle={ads.scroll} showsVerticalScrollIndicator={false}>
         {/* Welcome */}
         <LinearGradient
-          colors={['#65B361', '#4A9146']}
-          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+          colors={['#65A860', '#2B6728']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
           style={ads.welcomeBanner}
         >
           <View>
-            <Text style={ads.welcomeTitle}>{t('dashboard.welcome')}, {user?.name}!</Text>
+            <Text style={ads.welcomeTitle}>{t('dashboard.welcome')}, {user?.firstName}!</Text>
             <Text style={ads.welcomeSubtitle}>{t('dashboard.role')}: {user?.role.charAt(0).toUpperCase() + (user?.role ?? '').slice(1)}</Text>
           </View>
           <Ionicons name="shield-checkmark" size={40} color="rgba(255,255,255,0.3)" />
