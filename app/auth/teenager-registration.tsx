@@ -6,6 +6,11 @@
 //  • Móvil (Android/iOS): expo-camera (CameraView)
 //  • Web: MediaDevices API del navegador (WebCamera)
 // ─────────────────────────────────────────────
+import FaceGuideOverlay from '@/features/auth/components/FaceGuideOverlay';
+import ShutterButton from '@/features/auth/components/ShutterButton';
+import WebCamera from '@/features/auth/components/WebCamera';
+import { useFacialRegistration } from '@/features/auth/hooks/useFacialRegistration';
+import GradientBackground from '@/shared/components/layout/GradientBackground';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useTheme } from '@/shared/contexts/ThemeContext';
@@ -13,12 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { CameraType, CameraView } from 'expo-camera';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
-import {ActivityIndicator, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View} from 'react-native'; 
-import GradientBackground from '@/shared/components/layout/GradientBackground';
-import { useFacialRegistration } from '@/features/auth/hooks/useFacialRegistration';
-import WebCamera from '@/features/auth/components/WebCamera';
-import FaceGuideOverlay from '@/features/auth/components/FaceGuideOverlay';
-import ShutterButton from '@/features/auth/components/ShutterButton';
+import { ActivityIndicator, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 // ── Constantes de presentación ────────────────
 const INSTRUCTION_KEYS = [
@@ -42,7 +42,8 @@ export default function TeenagerRegistrationScreen() {
   const {
     screenState, photoUri, isTaking, quality, successModalVisible,
     isWeb, isPositioning, canFinish, cameraRef,
-    handleOpenCamera, handleTakePhotoNative, handleWebCapture, handleWebShutter,
+    handleOpenCamera, handleConfirmCamera, handleCancelCamera,
+    handleTakePhotoNative, handleWebCapture, handleWebShutter,
     handleRetake, handleFinish, handleCloseSuccessModal,
   } = useFacialRegistration();
 
@@ -66,15 +67,19 @@ export default function TeenagerRegistrationScreen() {
       );
     }
 
-    if (screenState === 'positioning' || screenState === 'ready') {
+    if (screenState === 'confirmationRequired' || screenState === 'positioning' || screenState === 'ready') {
       if (isWeb) {
         return (
           <WebCamera
             primaryColor={theme.primary}
             isTaking={isTaking}
             isPositioning={isPositioning}
+            screenState={screenState}
+            quality={quality}
             onCapture={handleWebCapture}
             onShutter={handleWebShutter}
+            onConfirm={handleConfirmCamera}
+            onCancel={handleCancelCamera}
           />
         );
       }
@@ -86,10 +91,17 @@ export default function TeenagerRegistrationScreen() {
             style={StyleSheet.absoluteFill}
             facing={'front' as CameraType}
           />
-          <FaceGuideOverlay primaryColor={theme.primary} isPositioning={isPositioning} />
+          <FaceGuideOverlay
+            primaryColor={theme.primary}
+            isPositioning={isPositioning}
+            screenState={screenState}
+            quality={quality}
+            onConfirm={handleConfirmCamera}
+            onCancel={handleCancelCamera}
+          />
           <ShutterButton
             primaryColor={theme.primary}
-            disabled={isTaking || isPositioning}
+            disabled={isTaking || isPositioning || screenState === 'confirmationRequired'}
             loading={isTaking}
             onPress={handleTakePhotoNative}
           />

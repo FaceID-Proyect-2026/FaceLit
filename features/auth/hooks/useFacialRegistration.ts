@@ -9,15 +9,15 @@
 //  y web), evaluación de calidad de imagen y la
 //  navegación resultante.
 // ─────────────────────────────────────────────
+import { registerFacialCapture } from '@/features/facial/facialStore';
+import { useAuth } from '@/shared/contexts/AuthContext';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import { router } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { router } from 'expo-router';
 import { Platform } from 'react-native';
-import { CameraView, useCameraPermissions } from 'expo-camera';
-import { useAuth } from '@/shared/contexts/AuthContext';
-import { registerFacialCapture } from '@/features/facial/facialStore';
 
-export type ScreenState = 'idle' | 'requesting' | 'positioning' | 'ready' | 'captured';
+export type ScreenState = 'idle' | 'requesting' | 'confirmationRequired' | 'positioning' | 'ready' | 'captured';
 export type CaptureQuality = 'checking' | 'good' | 'lowLight';
 
 const POSITIONING_DELAY_MS  = 1500; // tiempo simulado de "acércate más"
@@ -70,15 +70,15 @@ export function useFacialRegistration() {
     }, POSITIONING_DELAY_MS);
   }, []);
 
-  // ── Abrir cámara ──────────────────────────────
+  // ── Abrir cámara — para en confirmationRequired antes de posicionar ──
   const handleOpenCamera = useCallback(async () => {
     if (isWeb) {
-      startPositioningSimulation();
+      setScreenState('confirmationRequired');
       return;
     }
 
     if (permission?.granted) {
-      startPositioningSimulation();
+      setScreenState('confirmationRequired');
       return;
     }
 
@@ -90,12 +90,24 @@ export function useFacialRegistration() {
     setScreenState('requesting');
     const result = await requestPermission();
     if (result.granted) {
-      startPositioningSimulation();
+      setScreenState('confirmationRequired');
     } else {
       setScreenState('idle');
       alert(t('facialReg.permissionDenied'));
     }
-  }, [isWeb, permission, requestPermission, t, startPositioningSimulation]);
+  }, [isWeb, permission, requestPermission, t]);
+
+  // ── Aceptar confirmación → inicia posicionamiento ──
+  const handleConfirmCamera = useCallback(() => {
+    startPositioningSimulation();
+  }, [startPositioningSimulation]);
+
+  // ── Cancelar desde la confirmación → vuelve a idle ──
+  const handleCancelCamera = useCallback(() => {
+    setScreenState('idle');
+    setPhotoUri(null);
+    setQuality('checking');
+  }, []);
 
   // ── Evaluar calidad por brillo ────────────────
   const evaluateBrightness = useCallback((brightness: number) => {
@@ -148,7 +160,24 @@ export function useFacialRegistration() {
       return;
     }
     if (screenState !== 'captured' || quality !== 'good') return;
-    const result = registerFacialCapture(user ? { id: user.id, name: `${user.name} ${user.lastname}`, role: user.role } : undefined, photoUri);
+
+    // Mapea los roles del backend (MAYÚSCULAS) al formato que espera el facialStore
+    const ROLE_MAP: Record<string, string> = {
+      ADMINISTRATOR: 'administrador',
+      COORDINATOR:   'administrador', // coordinador tiene permisos equivalentes
+      INSTRUCTOR:    'instructor',
+      APPRENTICE:    'aprendiz',
+    };
+
+    const facialUser = user
+      ? {
+          id:   user.id,
+          name: `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim(),
+          role: (ROLE_MAP[user.role] ?? 'aprendiz') as import('@/features/facial/types').FacialRole,
+        }
+      : undefined;
+
+    const result = registerFacialCapture(facialUser, photoUri);
     if (!result.success) {
       alert(t(result.error));
       return;
@@ -176,6 +205,8 @@ export function useFacialRegistration() {
 
     // acciones
     handleOpenCamera,
+    handleConfirmCamera,
+    handleCancelCamera,
     handleTakePhotoNative,
     handleWebCapture,
     handleWebShutter,

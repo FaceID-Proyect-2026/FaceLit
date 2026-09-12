@@ -63,13 +63,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   ];
 
   const apprenticeMenu: MenuItem[] = [
-    { icon: 'grid-outline', label: t('sidebar.dashboard'), route: '/apprentice', module: 'dashboard' },
-    { icon: 'swap-horizontal-outline', label: t('sidebar.transferRequest'), route: Routes.ACADEMIC.TRANSFER_REQUEST, module: 'academic' },
-    { icon: 'time-outline', label: t('sidebar.mySchedule'), route: Routes.SCHEDULES.APPRENTICE, module: 'schedules' },
-    { icon: 'checkmark-circle-outline', label: t('sidebar.myAttendance'), route: Routes.ATTENDANCE.APPRENTICE, module: 'attendance' },
-    { icon: 'bar-chart-outline', label: t('sidebar.myReports'), route: Routes.REPORTS.APPRENTICE, module: 'reports' },
-    { icon: 'notifications-outline', label: t('sidebar.notifications'), route: Routes.NOTIFICATIONS.CENTER, module: 'notifications' },
-    { icon: 'person-outline', label: t('sidebar.profile'), route: Routes.PROFILE.VIEW, module: 'profile' },
+    { icon: 'grid-outline',             label: t('sidebar.dashboard'),       route: '/apprentice',                   module: 'dashboard'   },
+    { icon: 'checkmark-circle-outline', label: t('sidebar.myAttendance'),    route: Routes.ATTENDANCE.APPRENTICE,    module: 'attendance'  },
+    { icon: 'scan-outline',             label: t('sidebar.facialRecognition'),route: Routes.APPRENTICE.FACIAL,        module: 'facial'      },
+    { icon: 'notifications-outline',    label: t('sidebar.notifications'),   route: Routes.NOTIFICATIONS.CENTER,     module: 'notifications'},
+    { icon: 'person-outline',           label: t('sidebar.profile'),         route: Routes.PROFILE.VIEW,             module: 'profile'     },
   ];
 
   // ✅ FIX: roles del backend vienen en MAYÚSCULAS

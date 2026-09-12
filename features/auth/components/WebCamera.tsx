@@ -5,13 +5,14 @@
 //  negocio del flujo de registro, solo expone la
 //  captura vía props (onCapture / onShutter).
 // ─────────────────────────────────────────────
+import type { CaptureQuality, ScreenState } from '@/features/auth/hooks/useFacialRegistration';
+import { getAverageBrightness } from '@/features/auth/hooks/useFacialRegistration';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize } from '@/shared/constants/typography';
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import { getAverageBrightness } from '@/features/auth/hooks/useFacialRegistration';
 import FaceGuideOverlay from './FaceGuideOverlay';
 import ShutterButton from './ShutterButton';
 
@@ -19,12 +20,19 @@ interface WebCameraProps {
   primaryColor: string;
   isTaking: boolean;
   isPositioning: boolean;
+  screenState: ScreenState;
+  quality: CaptureQuality;
   onCapture: (dataUri: string, brightness: number) => void;
   onShutter: () => void;
+  /** Llamado cuando el usuario acepta la confirmación de responsabilidad */
+  onConfirm: () => void;
+  /** Llamado cuando el usuario cancela — cierra la cámara y vuelve atrás */
+  onCancel: () => void;
 }
 
 export default function WebCamera({
-  primaryColor, isTaking, isPositioning, onCapture, onShutter,
+  primaryColor, isTaking, isPositioning, screenState, quality, onCapture, onShutter,
+  onConfirm, onCancel,
 }: WebCameraProps) {
   const { t } = useTranslation();
   const videoRef  = useRef<HTMLVideoElement>(null);
@@ -115,13 +123,20 @@ export default function WebCamera({
       )}
 
       {ready && (
-        <FaceGuideOverlay primaryColor={primaryColor} isPositioning={isPositioning} />
+        <FaceGuideOverlay
+          primaryColor={primaryColor}
+          isPositioning={isPositioning}
+          screenState={screenState}
+          quality={quality}
+          onConfirm={onConfirm}
+          onCancel={onCancel}
+        />
       )}
 
       {ready && (
         <ShutterButton
           primaryColor={primaryColor}
-          disabled={isTaking || isPositioning}
+          disabled={isTaking || isPositioning || screenState === 'confirmationRequired'}
           loading={isTaking}
           onPress={capture}
         />

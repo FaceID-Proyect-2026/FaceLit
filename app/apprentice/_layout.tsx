@@ -54,6 +54,8 @@ export default function ApprenticeLayout() {
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}>
         <Stack.Screen name="index" />
+        <Stack.Screen name="attendance" />
+        <Stack.Screen name="facial" />
         <Stack.Screen name="transfer-request" />
         <Stack.Screen name="join-ficha" />
       </Stack>
