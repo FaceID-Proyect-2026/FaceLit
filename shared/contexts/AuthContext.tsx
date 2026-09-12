@@ -24,6 +24,10 @@ export interface User {
 
 export type SystemUser = User;
 
+const DEMO_APPRENTICE_EMAIL = 'aprendiz.demo@facelit.com';
+const DEMO_APPRENTICE_PASSWORD = 'Aprendiz123!';
+const DEMO_APPRENTICE_TOKEN = 'eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJ1c2VySWQiOiJkZW1vLWFwcHJlbnRpY2UiLCJlbWFpbCI6ImFwcmVuZGl6LmRlbW9AZmFjZWxpdC5jb20iLCJyb2xlIjoiQVBQUkVOVElDRSIsInBlcm1pc3Npb25zIjpbXSwiZmlyc3ROYW1lIjoiQXByZW5kaXoiLCJsYXN0TmFtZSI6IkRlbW8iLCJleHAiOjQxMDI0NDQ4MDB9.demo';
+
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
@@ -133,6 +137,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     try {
+      if (__DEV__ && email.trim().toLowerCase() === DEMO_APPRENTICE_EMAIL && password === DEMO_APPRENTICE_PASSWORD) {
+        await saveToken(DEMO_APPRENTICE_TOKEN);
+        setUser(buildUserFromToken(DEMO_APPRENTICE_TOKEN));
+        redirectByRole('APPRENTICE');
+        return { success: true };
+      }
+
       const { data } = await api.post('/api/auth/login', {
         email,
         password,
