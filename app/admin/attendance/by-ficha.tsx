@@ -2,46 +2,53 @@
 //  app/admin/attendance/by-ficha.tsx
 //  RF-6.1 — Consulta de asistencia por ficha
 //
-//  Pantalla 1: buscador de programa → tarjetas de fichas
-//              con % inasistencia y retardo del día.
-//  Pantalla 2: tabla aprendices × días coloreada
-//              (rojo = ausente, amarillo = retraso)
-//              + detalle de celda al tocar + exportación.
+//  Estado persistido en attendanceUIStore → sobrevive
+//  cambios de tab sin perder selecciones.
+//  Calendario: usa DateField (input date nativo web /
+//  DateTimePicker nativo móvil).
 // ─────────────────────────────────────────────
-import { useAcademic } from '@/features/academic/useAcademic';
 import { getProgramDisplayName } from '@/features/academic/types';
+import { useAcademic } from '@/features/academic/useAcademic';
 import {
-  useAttendanceRF6,
-  dateRange,
-  type FichaDaySummary,
-  type FichaTableRow,
-  type DayCell,
+    clearByFichaFicha,
+    getAttendanceUISnapshot,
+    setByFichaDateFrom,
+    setByFichaDateTo,
+    setByFichaFicha,
+    setByFichaProgram,
+    subscribeAttendanceUI,
+} from '@/features/attendance/attendanceUIStore';
+import {
+    dateRange,
+    useAttendanceRF6,
+    type DayCell,
+    type FichaDaySummary,
+    type FichaTableRow,
 } from '@/features/attendance/useAttendanceRF6';
 import { SearchableSelect } from '@/shared/components/ui';
 import AppButton from '@/shared/components/ui/AppButton';
+import DateField from '@/shared/components/ui/DateField';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { exportReport, type ExportData, type ExportOptions } from '@/shared/utils/export';
 import { Ionicons } from '@expo/vector-icons';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useSyncExternalStore } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  ActivityIndicator,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Modal,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 
-// ── Colores de celda ──────────────────────────
-const CELL_ABSENT  = Colors.error   + '30'; // rojo tenue
-const CELL_LATE    = Colors.warning + '30'; // amarillo tenue
-const BORDER_ABSENT  = Colors.error   + '80';
-const BORDER_LATE    = Colors.warning + '80';
+const CELL_ABSENT   = Colors.error   + '30';
+const CELL_LATE     = Colors.warning + '30';
+const BORDER_ABSENT = Colors.error   + '80';
+const BORDER_LATE   = Colors.warning + '80';
 
 export default function AttendanceByFichaScreen() {
   const { isDark, theme } = useTheme();
@@ -49,109 +56,75 @@ export default function AttendanceByFichaScreen() {
   const { programs, allFichas } = useAcademic();
   const { getFichaCardsForProgram, getFichaTable } = useAttendanceRF6();
 
-  const text    = isDark ? Colors.dark.text    : Colors.light.text;
+  // ── Estado persistido desde el store ─────────
+  const ui = useSyncExternalStore(subscribeAttendanceUI, getAttendanceUISnapshot);
+  const { selectedProgramId, selectedFichaId, dateFrom, dateTo } = ui.byFicha;
+
+  // ── Estado local (solo para el modal de detalle de celda) ──
+  const [cellDetail, setCellDetail] = useState<{ cell: DayCell; learnerName: string } | null>(null);
+  const [exporting,  setExporting]  = useState(false);
+
+  const text    = isDark ? Colors.dark.text      : Colors.light.text;
   const muted   = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
-  const cardBg  = isDark ? '#0D1F14'           : Colors.white;
+  const cardBg  = isDark ? '#0D1F14'             : Colors.white;
   const border  = isDark ? 'rgba(101,179,97,0.18)' : 'rgba(101,179,97,0.20)';
-  const bg      = isDark ? Colors.dark.background : Colors.light.background;
-  const inputBg = isDark ? 'rgba(255,255,255,0.05)' : '#FAFAFA';
+  const bg      = isDark ? Colors.dark.background  : Colors.light.background;
 
-  // ── Estado ────────────────────────────────
-  const [selectedProgramId, setSelectedProgramId] = useState('');
-  const [selectedFichaId,   setSelectedFichaId]   = useState('');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo,   setDateTo]   = useState('');
-  const [pickerTarget, setPickerTarget] = useState<'from'|'to'|null>(null);
-  const [pickerInput,  setPickerInput]  = useState('');
-  const [cellDetail,   setCellDetail]   = useState<{ cell: DayCell; learnerName: string } | null>(null);
-  const [exporting,    setExporting]    = useState(false);
-
-  // ── Opciones ──────────────────────────────
+  // ── Derivados ─────────────────────────────────
   const programOptions = useMemo(
     () => programs.map(p => ({ value: p.id, label: getProgramDisplayName(p, t) })),
     [programs, t],
   );
 
   const fichaCards: FichaDaySummary[] = useMemo(
-    () => (selectedProgramId ? getFichaCardsForProgram(selectedProgramId) : []),
+    () => selectedProgramId ? getFichaCardsForProgram(selectedProgramId) : [],
     [selectedProgramId, getFichaCardsForProgram],
   );
 
-  const selectedFicha = useMemo(
-    () => allFichas.find(f => f.id === selectedFichaId),
-    [allFichas, selectedFichaId],
-  );
+  const selectedFicha   = useMemo(() => allFichas.find(f => f.id === selectedFichaId), [allFichas, selectedFichaId]);
+  const selectedProgram = useMemo(() => programs.find(p => p.id === selectedProgramId), [programs, selectedProgramId]);
 
-  const selectedProgram = useMemo(
-    () => programs.find(p => p.id === selectedProgramId),
-    [programs, selectedProgramId],
-  );
-
-  // ── Tabla ─────────────────────────────────
   const tableRows: FichaTableRow[] = useMemo(
-    () => (selectedFichaId && dateFrom && dateTo ? getFichaTable(selectedFichaId, dateFrom, dateTo) : []),
+    () => selectedFichaId && dateFrom && dateTo && dateFrom <= dateTo
+      ? getFichaTable(selectedFichaId, dateFrom, dateTo)
+      : [],
     [selectedFichaId, dateFrom, dateTo, getFichaTable],
   );
 
   const dates: string[] = useMemo(
-    () => (dateFrom && dateTo ? dateRange(dateFrom, dateTo) : []),
+    () => dateFrom && dateTo && dateFrom <= dateTo ? dateRange(dateFrom, dateTo) : [],
     [dateFrom, dateTo],
   );
 
-  // ── Formato ───────────────────────────────
+  // ── Formato ───────────────────────────────────
   const fmtDate = (d: string) =>
-    new Intl.DateTimeFormat(i18n.language, { month: 'short', day: 'numeric' }).format(
-      new Date(`${d}T12:00:00Z`),
-    );
+    new Intl.DateTimeFormat(i18n.language, { month: 'short', day: 'numeric' }).format(new Date(`${d}T12:00:00Z`));
   const fmtDateLong = (d: string) =>
-    new Intl.DateTimeFormat(i18n.language, { dateStyle: 'long' }).format(
-      new Date(`${d}T12:00:00Z`),
-    );
+    new Intl.DateTimeFormat(i18n.language, { dateStyle: 'long' }).format(new Date(`${d}T12:00:00Z`));
   const fmtTime = (v: string) =>
-    v
-      ? new Intl.DateTimeFormat(i18n.language, { hour: 'numeric', minute: '2-digit', hour12: true }).format(
-          new Date(`1970-01-01T${v}:00`),
-        )
-      : '—';
+    v ? new Intl.DateTimeFormat(i18n.language, { hour: 'numeric', minute: '2-digit', hour12: true })
+          .format(new Date(`1970-01-01T${v}:00`)) : '—';
 
-  // ── Picker de fechas simple ───────────────
-  const openPicker = (target: 'from' | 'to') => {
-    setPickerTarget(target);
-    setPickerInput(target === 'from' ? dateFrom : dateTo);
-  };
-  const confirmPicker = () => {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(pickerInput)) return;
-    if (pickerTarget === 'from') {
-      setDateFrom(pickerInput);
-      if (dateTo && pickerInput > dateTo) setDateTo('');
-    } else {
-      setDateTo(pickerInput);
-    }
-    setPickerTarget(null);
-  };
-
-  // ── Exportación ───────────────────────────
+  // ── Exportación ───────────────────────────────
   const handleExport = async (format: 'excel' | 'csv') => {
-    if (!tableRows.length || !dates.length || !selectedFicha || !selectedProgram) return;
+    if (!tableRows.length || !selectedFicha || !selectedProgram) return;
     setExporting(true);
     try {
       const programLabel = getProgramDisplayName(selectedProgram, t);
       const headers = [t('attendance.rf6.learner'), t('attendance.rf6.document'), ...dates.map(fmtDate)];
       const rows = tableRows.map(row => [
-        row.learnerName,
-        row.learnerDocument,
+        row.learnerName, row.learnerDocument,
         ...row.days.map(cell => {
           if (!cell.status) return '—';
           if (cell.status === 'absent') return t('attendance.statuses.absent');
-          if (cell.status === 'late') return `${t('attendance.statuses.late')} ${cell.delayMinutes > 0 ? `(${cell.delayMinutes} min)` : ''}`.trim();
+          if (cell.status === 'late')   return `${t('attendance.statuses.late')} (${cell.delayMinutes} min)`;
           return t('attendance.statuses.punctual');
         }),
       ]);
       const data: ExportData = {
         title: t('attendance.rf6.exportTitle'),
         subtitle: `${t('attendance.rf6.program')}: ${programLabel} | ${t('attendance.rf6.ficha')}: ${selectedFicha.number}`,
-        headers,
-        rows,
+        headers, rows,
         filters: [
           { label: t('attendance.rf6.program'), value: programLabel },
           { label: t('attendance.rf6.ficha'),   value: selectedFicha.number },
@@ -160,37 +133,41 @@ export default function AttendanceByFichaScreen() {
         ],
         generatedAt: new Date().toLocaleString(),
       };
-      const opts: ExportOptions = {
+      await exportReport(data, {
         filename: `asistencia-ficha-${selectedFicha.number}-${dateFrom}_${dateTo}`,
         format,
-      };
-      await exportReport(data, opts);
+      } as ExportOptions);
     } finally {
       setExporting(false);
     }
   };
 
-  // ── Render ────────────────────────────────
+  // ─────────────────────────────────────────────
+  //  RENDER
+  // ─────────────────────────────────────────────
   return (
     <ScrollView
       style={[s.root, { backgroundColor: bg }]}
       contentContainerStyle={s.content}
       keyboardShouldPersistTaps="handled"
     >
-      {/* Selector de programa */}
-      <View style={[s.card, { backgroundColor: cardBg, borderColor: border, zIndex: 10 }]}>
-        <SearchableSelect
-          label={t('attendance.selectProgram')}
-          value={selectedProgramId}
-          options={programOptions}
-          onSelect={v => { setSelectedProgramId(v); setSelectedFichaId(''); setDateFrom(''); setDateTo(''); }}
-          placeholder={t('attendance.selectProgramPlaceholder')}
-          emptyText={t('attendance.noProgramsFound')}
-        />
-      </View>
 
-      {/* Estado vacío — sin programa */}
-      {!selectedProgramId && (
+      {/* ── Selector de programa — solo visible sin ficha activa ── */}
+      {!selectedFichaId && (
+        <View style={[s.card, { backgroundColor: cardBg, borderColor: border, zIndex: 10 }]}>
+          <SearchableSelect
+            label={t('attendance.selectProgram')}
+            value={selectedProgramId}
+            options={programOptions}
+            onSelect={setByFichaProgram}
+            placeholder={t('attendance.selectProgramPlaceholder')}
+            emptyText={t('attendance.noProgramsFound')}
+          />
+        </View>
+      )}
+
+      {/* Estado inicial — sin programa */}
+      {!selectedProgramId && !selectedFichaId && (
         <View style={s.prompt}>
           <View style={[s.promptIcon, { backgroundColor: theme.primary + '15' }]}>
             <Ionicons name="albums-outline" size={32} color={theme.primary} />
@@ -199,14 +176,15 @@ export default function AttendanceByFichaScreen() {
         </View>
       )}
 
-      {/* Tarjetas de fichas */}
-      {selectedProgramId && fichaCards.length === 0 && (
+      {/* Programa sin fichas */}
+      {selectedProgramId && !selectedFichaId && fichaCards.length === 0 && (
         <View style={s.emptyBox}>
           <Ionicons name="document-outline" size={28} color={muted} />
           <Text style={[s.emptyText, { color: muted }]}>{t('attendance.noFichasInProgram')}</Text>
         </View>
       )}
 
+      {/* ── Tarjetas de fichas ── */}
       {fichaCards.length > 0 && !selectedFichaId && (
         <>
           <Text style={[s.sectionLabel, { color: text }]}>{t('attendance.rf6.fichasToday')}</Text>
@@ -215,18 +193,14 @@ export default function AttendanceByFichaScreen() {
               <TouchableOpacity
                 key={card.fichaId}
                 activeOpacity={0.75}
-                onPress={() => setSelectedFichaId(card.fichaId)}
+                onPress={() => setByFichaFicha(card.fichaId)}
                 style={[s.fichaCard, { backgroundColor: cardBg, borderColor: border }]}
                 accessibilityRole="button"
-                accessibilityLabel={`${t('attendance.rf6.ficha')} ${card.fichaNumber}`}
               >
-                {/* Cabecera */}
                 <View style={[s.fichaCardHeader, { backgroundColor: theme.primary + '18' }]}>
                   <Ionicons name="people-outline" size={18} color={theme.primary} />
                   <Text style={[s.fichaNumber, { color: theme.primary }]}>{card.fichaNumber}</Text>
                 </View>
-
-                {/* Métricas — solo ausencias y retrasos */}
                 <View style={s.fichaMetrics}>
                   <View style={s.fichaMetric}>
                     <View style={[s.metricDot, { backgroundColor: Colors.error }]} />
@@ -240,12 +214,9 @@ export default function AttendanceByFichaScreen() {
                     <Text style={[s.metricLabel, { color: muted }]}>{t('attendance.rf6.late')}</Text>
                   </View>
                 </View>
-
-                {/* Totales */}
                 <Text style={[s.fichaTotal, { color: muted }]}>
                   {card.absentToday} {t('attendance.rf6.absentCount')} · {card.lateToday} {t('attendance.rf6.lateCount')} · {card.totalLearners} {t('attendance.rf6.total')}
                 </Text>
-
                 <View style={[s.fichaAction, { borderTopColor: border }]}>
                   <Text style={[s.fichaActionText, { color: theme.primary }]}>{t('attendance.rf6.viewDetail')}</Text>
                   <Ionicons name="chevron-forward" size={14} color={theme.primary} />
@@ -259,59 +230,59 @@ export default function AttendanceByFichaScreen() {
       {/* ── Pantalla 2: Detalle de ficha ── */}
       {selectedFichaId && (
         <>
-          {/* Breadcrumb / Back */}
+          {/* Breadcrumb */}
           <TouchableOpacity
-            onPress={() => { setSelectedFichaId(''); setDateFrom(''); setDateTo(''); }}
-            style={s.backRow}
+            onPress={clearByFichaFicha}
+            style={[s.backRow, { backgroundColor: cardBg, borderColor: border }]}
             accessibilityRole="button"
           >
-            <Ionicons name="arrow-back" size={18} color={theme.primary} />
-            <Text style={[s.backText, { color: theme.primary }]}>{t('attendance.rf6.backToFichas')}</Text>
+            <Ionicons name="arrow-back" size={16} color={theme.primary} />
+            <Text style={[s.backProgram, { color: muted }]} numberOfLines={1}>
+              {selectedProgram ? getProgramDisplayName(selectedProgram, t) : ''}
+            </Text>
+            <Ionicons name="chevron-forward" size={13} color={muted} />
+            <Text style={[s.backFicha, { color: theme.primary }]}>
+              {t('attendance.rf6.ficha')} {selectedFicha?.number}
+            </Text>
           </TouchableOpacity>
 
+          {/* Selectores de fecha con DateField */}
           <View style={[s.card, { backgroundColor: cardBg, borderColor: border }]}>
-            <View style={s.fichaBadge}>
-              <Ionicons name="school-outline" size={16} color={theme.primary} />
-              <Text style={[s.fichaBadgeText, { color: theme.primary }]}>
-                {t('attendance.rf6.ficha')} {selectedFicha?.number}
-              </Text>
-            </View>
-
-            {/* Selector de rango */}
             <Text style={[s.rangeLabel, { color: muted }]}>{t('attendance.rf6.selectRange')}</Text>
             <View style={s.rangeRow}>
-              <TouchableOpacity
-                style={[s.dateBtn, { backgroundColor: inputBg, borderColor: border }]}
-                onPress={() => openPicker('from')}
-              >
-                <Ionicons name="calendar-outline" size={14} color={muted} />
-                <Text style={[s.dateBtnText, { color: dateFrom ? text : muted }]}>
-                  {dateFrom || t('reports.filters.dateFrom')}
-                </Text>
-              </TouchableOpacity>
-              <Text style={[s.dateSep, { color: muted }]}>→</Text>
-              <TouchableOpacity
-                style={[s.dateBtn, { backgroundColor: inputBg, borderColor: border }]}
-                onPress={() => openPicker('to')}
-              >
-                <Ionicons name="calendar-outline" size={14} color={muted} />
-                <Text style={[s.dateBtnText, { color: dateTo ? text : muted }]}>
-                  {dateTo || t('reports.filters.dateTo')}
-                </Text>
-              </TouchableOpacity>
+              <View style={s.dateFieldWrap}>
+                <DateField
+                  label={t('reports.filters.dateFrom')}
+                  value={dateFrom}
+                  onChange={setByFichaDateFrom}
+                  placeholder="AAAA-MM-DD"
+                  containerStyle={s.noMargin}
+                />
+              </View>
+              <View style={s.dateSepWrap}>
+                <Text style={[s.dateSep, { color: muted }]}>→</Text>
+              </View>
+              <View style={s.dateFieldWrap}>
+                <DateField
+                  label={t('reports.filters.dateTo')}
+                  value={dateTo}
+                  onChange={setByFichaDateTo}
+                  minDate={dateFrom || undefined}
+                  placeholder="AAAA-MM-DD"
+                  containerStyle={s.noMargin}
+                />
+              </View>
             </View>
-
             {dateFrom && dateTo && dateFrom > dateTo && (
               <Text style={[s.dateError, { color: Colors.error }]}>{t('reports.invalidDateRange')}</Text>
             )}
           </View>
 
-          {/* Tabla */}
+          {/* ── Tabla ── */}
           {tableRows.length > 0 && dates.length > 0 && (
             <>
               <ScrollView horizontal showsHorizontalScrollIndicator style={s.tableScroll}>
                 <View>
-                  {/* Encabezado */}
                   <View style={s.tableHeaderRow}>
                     <View style={[s.cellName, s.thCell, { backgroundColor: theme.primary + '20', borderColor: border }]}>
                       <Text style={[s.thText, { color: theme.primary }]}>{t('attendance.rf6.learner')}</Text>
@@ -322,17 +293,15 @@ export default function AttendanceByFichaScreen() {
                       </View>
                     ))}
                   </View>
-
-                  {/* Filas */}
                   {tableRows.map((row, rIdx) => (
-                    <View key={row.learnerId} style={[s.tableRow, rIdx % 2 === 0 ? { backgroundColor: cardBg } : { backgroundColor: theme.primary + '08' }]}>
+                    <View key={row.learnerId} style={[s.tableRow, { backgroundColor: rIdx % 2 === 0 ? cardBg : theme.primary + '08' }]}>
                       <View style={[s.cellName, { borderColor: border }]}>
                         <Text style={[s.cellNameText, { color: text }]} numberOfLines={1}>{row.learnerName}</Text>
-                        <Text style={[s.cellDocText, { color: muted }]} numberOfLines={1}>{row.learnerDocument}</Text>
+                        <Text style={[s.cellDocText,  { color: muted }]} numberOfLines={1}>{row.learnerDocument}</Text>
                       </View>
                       {row.days.map((cell, dIdx) => {
-                        const isAbsent = cell.status === 'absent';
-                        const isLate   = cell.status === 'late';
+                        const isAbsent    = cell.status === 'absent';
+                        const isLate      = cell.status === 'late';
                         const isClickable = isAbsent || isLate;
                         return (
                           <TouchableOpacity
@@ -340,13 +309,11 @@ export default function AttendanceByFichaScreen() {
                             disabled={!isClickable}
                             onPress={() => isClickable && setCellDetail({ cell, learnerName: row.learnerName })}
                             style={[
-                              s.cellDay,
-                              { borderColor: border },
+                              s.cellDay, { borderColor: border },
                               isAbsent && { backgroundColor: CELL_ABSENT, borderColor: BORDER_ABSENT },
                               isLate   && { backgroundColor: CELL_LATE,   borderColor: BORDER_LATE },
                             ]}
                             accessibilityRole={isClickable ? 'button' : 'none'}
-                            accessibilityLabel={isClickable ? `${row.learnerName} - ${fmtDate(dates[dIdx])}` : undefined}
                           >
                             {isAbsent && <Ionicons name="close-circle" size={16} color={Colors.error} />}
                             {isLate   && <Ionicons name="time"         size={16} color={Colors.warning} />}
@@ -360,7 +327,6 @@ export default function AttendanceByFichaScreen() {
                 </View>
               </ScrollView>
 
-              {/* Leyenda */}
               <View style={s.legend}>
                 {[
                   { color: Colors.error,   label: t('attendance.statuses.absent') },
@@ -374,28 +340,13 @@ export default function AttendanceByFichaScreen() {
                 ))}
               </View>
 
-              {/* Botones exportar */}
-              <View style={[s.exportRow]}>
-                <AppButton
-                  title={exporting ? t('common.loading') : t('attendance.rf6.exportExcel')}
-                  onPress={() => handleExport('excel')}
-                  disabled={exporting}
-                  fullWidth={false}
-                  style={s.exportBtn}
-                />
-                <AppButton
-                  title={exporting ? t('common.loading') : t('attendance.rf6.exportCsv')}
-                  onPress={() => handleExport('csv')}
-                  disabled={exporting}
-                  variant="outline"
-                  fullWidth={false}
-                  style={s.exportBtn}
-                />
+              <View style={s.exportRow}>
+                <AppButton title={exporting ? t('common.loading') : t('attendance.rf6.exportExcel')} onPress={() => handleExport('excel')} disabled={exporting} fullWidth={false} style={s.exportBtn} />
+                <AppButton title={exporting ? t('common.loading') : t('attendance.rf6.exportCsv')} onPress={() => handleExport('csv')} disabled={exporting} variant="outline" fullWidth={false} style={s.exportBtn} />
               </View>
             </>
           )}
 
-          {/* Sin rango aún */}
           {(!dateFrom || !dateTo) && (
             <View style={s.emptyBox}>
               <Ionicons name="calendar-outline" size={28} color={muted} />
@@ -403,7 +354,6 @@ export default function AttendanceByFichaScreen() {
             </View>
           )}
 
-          {/* Rango sin registros */}
           {dateFrom && dateTo && dateFrom <= dateTo && tableRows.length === 0 && (
             <View style={s.emptyBox}>
               <Ionicons name="document-text-outline" size={28} color={muted} />
@@ -413,103 +363,36 @@ export default function AttendanceByFichaScreen() {
         </>
       )}
 
-      {/* ── Modal picker de fecha ── */}
-      <Modal visible={pickerTarget !== null} transparent animationType="fade">
-        <Pressable style={s.modalOverlay} onPress={() => setPickerTarget(null)}>
-          <Pressable style={[s.pickerBox, { backgroundColor: cardBg, borderColor: border }]}>
-            <Text style={[s.pickerTitle, { color: text }]}>
-              {pickerTarget === 'from' ? t('reports.filters.dateFrom') : t('reports.filters.dateTo')}
-            </Text>
-            <Text style={[s.pickerHint, { color: muted }]}>YYYY-MM-DD</Text>
-            <View style={[s.pickerInput, { backgroundColor: inputBg, borderColor: border }]}>
-              <Ionicons name="calendar-outline" size={16} color={muted} />
-              {/* Input nativo para web, simulado con estado para nativo */}
-              <Text
-                style={[s.pickerInputText, { color: pickerInput ? text : muted }]}
-                //@ts-ignore — onInput es válido en web
-                onInput={(e: any) => setPickerInput(e.nativeEvent?.text ?? e.target?.value ?? pickerInput)}
-                accessibilityLabel="fecha"
-              >
-                {pickerInput || 'YYYY-MM-DD'}
-              </Text>
-            </View>
-            {/* Atajos rápidos */}
-            <View style={s.pickerShortcuts}>
-              {[
-                { label: t('attendance.rf6.last7'), days: 7 },
-                { label: t('attendance.rf6.last14'), days: 14 },
-                { label: t('attendance.rf6.last30'), days: 30 },
-              ].map(sh => {
-                const d = new Date();
-                d.setDate(d.getDate() - sh.days);
-                const val = d.toISOString().slice(0, 10);
-                return (
-                  <TouchableOpacity
-                    key={sh.days}
-                    style={[s.shortcutBtn, { backgroundColor: theme.primary + '15', borderColor: theme.primary + '40' }]}
-                    onPress={() => {
-                      if (pickerTarget === 'from') {
-                        setPickerInput(val);
-                        setDateFrom(val);
-                        if (!dateTo) {
-                          const today = new Date().toISOString().slice(0, 10);
-                          setDateTo(today);
-                        }
-                      } else {
-                        setPickerInput(val);
-                        setDateTo(val);
-                      }
-                      setPickerTarget(null);
-                    }}
-                  >
-                    <Text style={[s.shortcutText, { color: theme.primary }]}>{sh.label}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-            <View style={s.pickerActions}>
-              <AppButton title={t('common.cancel')} onPress={() => setPickerTarget(null)} variant="outline" fullWidth={false} style={s.pickerBtn} />
-              <AppButton title={t('common.confirm')} onPress={confirmPicker} fullWidth={false} style={s.pickerBtn} />
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
-
       {/* ── Modal detalle de celda ── */}
       <Modal visible={!!cellDetail} transparent animationType="slide">
         <Pressable style={s.modalOverlay} onPress={() => setCellDetail(null)}>
           <Pressable style={[s.detailBox, { backgroundColor: cardBg, borderColor: border }]}>
             {cellDetail && (
               <>
-                <View style={[
-                  s.detailBanner,
-                  { backgroundColor: (cellDetail.cell.status === 'absent' ? Colors.error : Colors.warning) + '15' },
-                ]}>
+                <View style={[s.detailBanner, {
+                  backgroundColor: (cellDetail.cell.status === 'absent' ? Colors.error : Colors.warning) + '15',
+                }]}>
                   <Ionicons
-                    name={cellDetail.cell.status === 'absent' ? 'close-circle' : 'time'}
-                    size={36}
+                    name={cellDetail.cell.status === 'absent' ? 'close-circle' : 'time'} size={36}
                     color={cellDetail.cell.status === 'absent' ? Colors.error : Colors.warning}
                   />
                   <Text style={[s.detailStatus, {
                     color: cellDetail.cell.status === 'absent' ? Colors.error : Colors.warning,
                   }]}>
-                    {cellDetail.cell.status === 'absent'
-                      ? t('attendance.statuses.absent')
-                      : t('attendance.statuses.late')}
+                    {cellDetail.cell.status === 'absent' ? t('attendance.statuses.absent') : t('attendance.statuses.late')}
                   </Text>
                 </View>
-
-                {[
-                  ['person-outline',    t('attendance.rf6.learner'),     cellDetail.learnerName],
-                  ['calendar-outline',  t('attendance.fields.date'),      fmtDateLong(cellDetail.cell.date)],
-                  ['log-in-outline',    t('attendance.fields.entryTime'), fmtTime(cellDetail.cell.entryTime)],
+                {([
+                  ['person-outline',        t('attendance.rf6.learner'),       cellDetail.learnerName],
+                  ['calendar-outline',      t('attendance.fields.date'),        fmtDateLong(cellDetail.cell.date)],
+                  ['log-in-outline',        t('attendance.fields.entryTime'),   fmtTime(cellDetail.cell.entryTime)],
                   ...(cellDetail.cell.delayMinutes > 0
                     ? [['timer-outline', t('attendance.fields.delay'), `${cellDetail.cell.delayMinutes} min`]]
                     : []),
                   ['business-outline',      t('attendance.fields.environment'), cellDetail.cell.environmentName || '—'],
                   ['person-circle-outline', t('attendance.fields.instructor'),  cellDetail.cell.instructorName  || '—'],
-                ].map(([icon, label, value]) => (
-                  <View key={String(label)} style={[s.detailRow, { borderBottomColor: border }]}>
+                ] as [string, string, string][]).map(([icon, label, value]) => (
+                  <View key={label} style={[s.detailRow, { borderBottomColor: border }]}>
                     <View style={s.detailLabel}>
                       <Ionicons name={icon as any} size={15} color={muted} />
                       <Text style={[s.detailLabelText, { color: muted }]}>{label}</Text>
@@ -517,13 +400,7 @@ export default function AttendanceByFichaScreen() {
                     <Text style={[s.detailValue, { color: text }]}>{value}</Text>
                   </View>
                 ))}
-
-                <AppButton
-                  title={t('common.close')}
-                  onPress={() => setCellDetail(null)}
-                  variant="outline"
-                  style={{ marginTop: 14 }}
-                />
+                <AppButton title={t('common.close')} onPress={() => setCellDetail(null)} variant="outline" style={{ marginTop: 14 }} />
               </>
             )}
           </Pressable>
@@ -538,6 +415,7 @@ const s = StyleSheet.create({
   root:    { flex: 1 },
   content: { padding: 16, paddingBottom: 48, gap: 12 },
   card:    { borderRadius: 14, borderWidth: 1, padding: 16 },
+  noMargin: { marginBottom: 0 },
 
   prompt:     { alignItems: 'center', paddingVertical: 60, gap: 12 },
   promptIcon: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center' },
@@ -548,36 +426,31 @@ const s = StyleSheet.create({
 
   sectionLabel: { fontSize: FontSize.base, fontWeight: FontWeight.bold, marginBottom: 4 },
 
-  // Tarjetas de fichas
-  cardsGrid:    { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  fichaCard:    { flexBasis: 160, flexGrow: 1, borderRadius: 14, borderWidth: 1, overflow: 'hidden' },
+  cardsGrid:       { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  fichaCard:       { flexBasis: 160, flexGrow: 1, borderRadius: 14, borderWidth: 1, overflow: 'hidden' },
   fichaCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12 },
-  fichaNumber:  { fontSize: FontSize.base, fontWeight: FontWeight.black },
-  fichaMetrics: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 10 },
-  fichaMetric:  { flex: 1, alignItems: 'center', gap: 3 },
-  metricDot:    { width: 8, height: 8, borderRadius: 4 },
-  metricPct:    { fontSize: FontSize.xl, fontWeight: FontWeight.black },
-  metricLabel:  { fontSize: FontSize.xs, textAlign: 'center' },
-  metricDivider: { width: 1, height: 40, marginHorizontal: 8 },
-  fichaTotal:   { fontSize: FontSize.xs, textAlign: 'center', paddingHorizontal: 12, paddingBottom: 8 },
-  fichaAction:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, borderTopWidth: 1, padding: 10 },
+  fichaNumber:     { fontSize: FontSize.base, fontWeight: FontWeight.black },
+  fichaMetrics:    { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 10 },
+  fichaMetric:     { flex: 1, alignItems: 'center', gap: 3 },
+  metricDot:       { width: 8, height: 8, borderRadius: 4 },
+  metricPct:       { fontSize: FontSize.xl, fontWeight: FontWeight.black },
+  metricLabel:     { fontSize: FontSize.xs, textAlign: 'center' },
+  metricDivider:   { width: 1, height: 40, marginHorizontal: 8 },
+  fichaTotal:      { fontSize: FontSize.xs, textAlign: 'center', paddingHorizontal: 12, paddingBottom: 8 },
+  fichaAction:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, borderTopWidth: 1, padding: 10 },
   fichaActionText: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
 
-  // Breadcrumb
-  backRow:  { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4 },
-  backText: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
+  backRow:     { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 10, borderWidth: 1, padding: 10 },
+  backProgram: { fontSize: FontSize.xs, flex: 1 },
+  backFicha:   { fontSize: FontSize.sm, fontWeight: FontWeight.black },
 
-  fichaBadge:     { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 },
-  fichaBadgeText: { fontSize: FontSize.base, fontWeight: FontWeight.black },
+  rangeLabel:    { fontSize: FontSize.sm, marginBottom: 10 },
+  rangeRow:      { flexDirection: 'row', alignItems: 'flex-start', gap: 8, flexWrap: 'wrap' },
+  dateFieldWrap: { flex: 1, minWidth: 130 },
+  dateSepWrap:   { paddingTop: 34, alignItems: 'center' },
+  dateSep:       { fontSize: FontSize.lg },
+  dateError:     { fontSize: FontSize.xs, marginTop: 4 },
 
-  rangeLabel: { fontSize: FontSize.sm, marginBottom: 8 },
-  rangeRow:   { flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
-  dateBtn:    { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, borderWidth: 1, flex: 1, minWidth: 130 },
-  dateBtnText: { fontSize: FontSize.sm, flex: 1 },
-  dateSep:    { fontSize: FontSize.lg },
-  dateError:  { fontSize: FontSize.xs, marginTop: 6 },
-
-  // Tabla
   tableScroll:    { marginHorizontal: -16 },
   tableHeaderRow: { flexDirection: 'row' },
   tableRow:       { flexDirection: 'row' },
@@ -590,30 +463,15 @@ const s = StyleSheet.create({
   punctualDot:    { width: 8, height: 8, borderRadius: 4 },
   cellEmpty:      { fontSize: FontSize.xs },
 
-  // Leyenda
   legend:     { flexDirection: 'row', flexWrap: 'wrap', gap: 14, marginTop: 8 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   legendDot:  { width: 10, height: 10, borderRadius: 5 },
   legendText: { fontSize: FontSize.xs },
 
-  // Exportar
   exportRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 12 },
   exportBtn: { flexGrow: 1, minWidth: 140 },
 
-  // Modal picker
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', alignItems: 'center', padding: 24 },
-  pickerBox:    { width: '100%', maxWidth: 380, borderRadius: 16, borderWidth: 1, padding: 20, gap: 12 },
-  pickerTitle:  { fontSize: FontSize.lg, fontWeight: FontWeight.black },
-  pickerHint:   { fontSize: FontSize.xs },
-  pickerInput:  { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 10, borderWidth: 1, padding: 12 },
-  pickerInputText: { fontSize: FontSize.base, flex: 1 },
-  pickerShortcuts: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  shortcutBtn:  { borderRadius: 8, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 },
-  shortcutText: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
-  pickerActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
-  pickerBtn:    { flex: 1 },
-
-  // Modal detalle celda
   detailBox:    { width: '100%', maxWidth: 400, borderRadius: 16, borderWidth: 1, padding: 20 },
   detailBanner: { borderRadius: 12, padding: 20, alignItems: 'center', gap: 8, marginBottom: 16 },
   detailStatus: { fontSize: FontSize.xl, fontWeight: FontWeight.black },

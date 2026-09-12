@@ -1,353 +1,385 @@
+// ─────────────────────────────────────────────
+//  app/admin/users/index.tsx
+//  RF-10 — Panel de usuarios (datos quemados)
+// ─────────────────────────────────────────────
+import { MOCK_USERS, MockUser } from '@/features/users/mocks';
 import { Colors } from '@/shared/constants/colors';
-import { Routes } from '@/shared/constants/routes';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
-import { deleteManagedUser, getManagedUser, getManagedUsers, updateManagedUser } from '@/shared/services/userManagementService';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, FlatList, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+    FlatList,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 
-type AccountStatus = 'ACTIVE' | 'INACTIVE' | 'PENDING_CONSENT' | 'BLOCKED';
-type UserRole = 'APPRENTICE' | 'INSTRUCTOR' | 'ADMINISTRATOR' | 'COORDINATOR';
-interface ManagedUser {
-  userId: string;
-  firstName?: string;
-  lastName?: string;
-  name?: string;
-  email: string;
-  role?: string;
-  accountStatus?: AccountStatus;
-  sessionStatus?: 'ACTIVE' | 'INACTIVE';
-  documentNumber?: string;
-  documentType?: string;
-  birthDate?: string;
-  registrationDate?: string;
-  chipName?: string;
-  chipCode?: string;
-  programName?: string;
-  hasSession?: boolean;
-}
+type RoleFilter   = 'ALL' | 'INSTRUCTOR' | 'APPRENTICE';
+type StatusFilter = 'ALL' | 'active' | 'inactive';
 
-const roleValues: UserRole[] = ['APPRENTICE', 'INSTRUCTOR', 'ADMINISTRATOR', 'COORDINATOR'];
-
-function getApiErrorMessage(error: any, fallback: string) {
-  const data = error.response?.data;
-  if (data?.message) return data.message;
-  if (data && typeof data === 'object') {
-    const messages = Object.values(data).filter(value => typeof value === 'string');
-    if (messages.length) return messages.join('\n');
-  }
-  return fallback;
-}
-
-// El admin ya no fija ACTIVE/INACTIVE a mano: esos dos estados se calculan a partir
-// de "sessionStatus" (si el token del usuario sigue vigente o no). BLOCKED y
-// PENDING_CONSENT siguen siendo estados reales de la cuenta (BLOCKED es la única
-// acción manual que le queda al admin sobre el estado).
-function getEffectiveStatus(item: ManagedUser): AccountStatus {
-  if (item.accountStatus === 'BLOCKED') return 'BLOCKED';
-  if (item.accountStatus === 'PENDING_CONSENT') return 'PENDING_CONSENT';
-  return item.sessionStatus === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE';
-}
-
-export default function UserManagementScreen() {
-  const { user } = useAuth();
-  const { theme, isDark } = useTheme();
-  const { t } = useTranslation();
+export default function UsersPanel() {
+  const { user }            = useAuth();
+  const { theme, isDark }   = useTheme();
+  const { t }               = useTranslation();
   const { alert, DialogUI } = useAppDialog();
-  const [users, setUsers] = useState<ManagedUser[]>([]);
-  const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState<ManagedUser | null>(null);
-  const [draft, setDraft] = useState({ firstName: '', lastName: '', accountStatus: 'ACTIVE' as AccountStatus, role: 'APPRENTICE' as UserRole });
-  const [saving, setSaving] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<AccountStatus | 'ALL'>('ALL');
-  const [roleFilter, setRoleFilter] = useState<UserRole | 'ALL'>('ALL');
 
-  const text = isDark ? Colors.dark.text : Colors.light.text;
-  const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
-  const bg = isDark ? Colors.dark.background : Colors.light.background;
-  const card = isDark ? '#0D1F14' : Colors.white;
-  const border = isDark ? 'rgba(101,179,97,0.18)' : 'rgba(101,179,97,0.20)';
-  const inputBg = isDark ? 'rgba(255,255,255,0.05)' : '#FAFAFA';
-  const softGreen = isDark ? 'rgba(101,179,97,0.14)' : '#EAF7E8';
-  const softBlue = isDark ? 'rgba(74,144,217,0.16)' : '#EAF3FC';
-  const softAmber = isDark ? 'rgba(232,155,44,0.16)' : '#FFF5DF';
-  const filteredUsers = users.filter(item => {
-    const status = getEffectiveStatus(item);
-    return (statusFilter === 'ALL' || status === statusFilter) && (roleFilter === 'ALL' || item.role === roleFilter);
-  });
-  const statusLabel = (status: AccountStatus) => t(`users.statuses.${status}`);
-  const roleLabel = (role?: string) => role ? t(`users.roles.${role}`, { defaultValue: role }) : '-';
+  const [users, setUsers]         = useState<MockUser[]>(MOCK_USERS);
+  const [query, setQuery]         = useState('');
+  const [roleFilter, setRoleFilter]     = useState<RoleFilter>('ALL');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
 
-  const loadUsers = async () => {
-    setLoading(true);
-    try {
-      setUsers(await getManagedUsers(search));
-    } catch (error: any) {
-      setUsers([]);
-      alert(t('common.error'), getApiErrorMessage(error, t('users.loadError')));
-    } finally {
-      setLoading(false);
-    }
-  };
+  // ── Colores ────────────────────────────────
+  const text      = isDark ? Colors.dark.text       : Colors.light.text;
+  const muted     = isDark ? Colors.dark.textMuted  : Colors.light.textMuted;
+  const bg        = isDark ? Colors.dark.background : Colors.light.background;
+  const card      = isDark ? '#0D1F14'              : Colors.white;
+  const border    = isDark ? 'rgba(101,179,97,0.18)': 'rgba(101,179,97,0.20)';
+  const softGreen = isDark ? 'rgba(101,179,97,0.14)': '#EAF7E8';
+  const softBlue  = isDark ? 'rgba(74,144,217,0.16)': '#EAF3FC';
+  const softAmber = isDark ? 'rgba(232,155,44,0.16)': '#FFF5DF';
+  const softRed   = isDark ? 'rgba(217,32,39,0.14)' : '#FDECEA';
 
-  const canManageUsers = user?.role === 'ADMINISTRATOR' || user?.role === 'COORDINATOR';
-  const canDeleteUsers = user?.role === 'ADMINISTRATOR';
-
-  useEffect(() => { if (canManageUsers) loadUsers(); }, [canManageUsers]);
-
-  if (!canManageUsers) {
-    router.replace(Routes.ADMIN.DASHBOARD as any);
+  // Guard de rol
+  if (user?.role !== 'COORDINATOR' && user?.role !== 'ADMINISTRATOR') {
+    router.replace('/admin' as any);
     return null;
   }
 
-  const openDetails = async (item: ManagedUser) => {
-    try {
-      const details = await getManagedUser(item.userId);
-      setSelected(details);
-      setDraft({
-        firstName: details.firstName ?? '',
-        lastName: details.lastName ?? '',
-        accountStatus: details.accountStatus ?? 'ACTIVE',
-        role: details.role ?? 'APPRENTICE',
-      });
-    } catch (error: any) {
-      alert(t('common.error'), getApiErrorMessage(error, t('users.loadError')));
-    }
+  // ── Filtrado en memoria ────────────────────
+  const q = query.trim().toLowerCase();
+  const filtered = users.filter(u => {
+    const matchQuery =
+      !q ||
+      u.name.toLowerCase().includes(q)     ||
+      u.lastname.toLowerCase().includes(q) ||
+      u.document.includes(q)               ||
+      u.email.toLowerCase().includes(q);
+    const matchRole   = roleFilter   === 'ALL' || u.role   === roleFilter;
+    const matchStatus = statusFilter === 'ALL' || u.status === statusFilter;
+    return matchQuery && matchRole && matchStatus;
+  });
+
+  // ── Acciones locales ───────────────────────
+  const toggleStatus = (id: string) =>
+    setUsers(prev =>
+      prev.map(u =>
+        u.id === id
+          ? { ...u, status: u.status === 'active' ? 'inactive' : 'active' }
+          : u,
+      ),
+    );
+
+  const removeUser = (id: string) => {
+    const target = users.find(u => u.id === id);
+    if (!target) return;
+    alert(
+      t('users.panel.deleteTitle'),
+      t('users.panel.deleteConfirm', { name: `${target.name} ${target.lastname}` }),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('users.delete'),
+          style: 'destructive',
+          onPress: () => setUsers(prev => prev.filter(u => u.id !== id)),
+        },
+      ],
+    );
   };
 
-  const saveUser = async () => {
-    if (!selected) return;
-    setSaving(true);
-    try {
-      await updateManagedUser(selected.userId, draft);
-      setSelected(null);
-      await loadUsers();
-    } catch (error: any) {
-      alert(t('common.error'), getApiErrorMessage(error, t('users.saveError')));
-    } finally {
-      setSaving(false);
-    }
-  };
+  // ── Helpers de presentación ────────────────
+  const roleColor = (role: string) => (role === 'INSTRUCTOR' ? '#4A90D9' : theme.primary);
+  const roleBg    = (role: string) => (role === 'INSTRUCTOR' ? softBlue  : softGreen);
+  const roleLabel = (role: string) =>
+    role === 'INSTRUCTOR' ? t('users.create.roleInstructor') : t('users.create.roleApprentice');
 
-  const removeUser = (item: ManagedUser) => {
-    alert(t('users.deleteTitle'), t('users.deleteConfirm'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      {
-        text: t('users.delete'), style: 'destructive', onPress: async () => {
-          try { await deleteManagedUser(item.userId); await loadUsers(); }
-          catch (error: any) { alert(t('common.error'), getApiErrorMessage(error, t('users.deleteError'))); }
-        }
-      },
-    ]);
-  };
+  // ── Render fila ───────────────────────────
+  const renderItem = ({ item }: { item: MockUser }) => {
+    const isActive    = item.status === 'active';
+    const statusColor = isActive ? Colors.success : muted;
+    const statusBg    = isActive ? softGreen : (isDark ? 'rgba(255,255,255,0.06)' : '#F2F2F2');
+    const displayName = `${item.name} ${item.lastname}`;
 
-  const renderUser = ({ item }: { item: ManagedUser }) => {
-    const status = getEffectiveStatus(item);
-    const displayName = [item.firstName, item.lastName].filter(Boolean).join(' ') || item.email;
-    const isTokenDriven = status === 'ACTIVE' || status === 'INACTIVE';
-    const statusText = isTokenDriven
-      ? (status === 'ACTIVE' ? t('users.currentlyOnline') : t('users.currentlyOffline'))
-      : statusLabel(status);
-    const statusColor = status === 'ACTIVE' ? Colors.success : status === 'BLOCKED' ? Colors.error : Colors.warning;
-    const statusBg = status === 'ACTIVE' ? softGreen : status === 'BLOCKED' ? Colors.error + '18' : softAmber;
     return (
-      <TouchableOpacity onPress={() => openDetails(item)} style={[styles.userCard, { backgroundColor: card, borderColor: border }]} activeOpacity={0.82}>
-        <View style={[styles.avatar, { backgroundColor: item.role === 'APPRENTICE' ? theme.primary : '#4A90D9' }]}>
-          <Text style={styles.avatarText}>{displayName.charAt(0).toUpperCase()}</Text>
+      <TouchableOpacity
+        style={[styles.card, { backgroundColor: card, borderColor: border }]}
+        activeOpacity={0.82}
+        onPress={() => router.push({ pathname: '/admin/users/[id]', params: { id: item.id } } as any)}
+      >
+        {/* Avatar */}
+        <View style={[styles.avatar, { backgroundColor: roleColor(item.role) }]}>
+          <Text style={styles.avatarText}>{item.name.charAt(0).toUpperCase()}</Text>
         </View>
-        <View style={styles.userBody}>
 
+        {/* Cuerpo */}
+        <View style={styles.cardBody}>
           <View style={styles.nameLine}>
             <Text style={[styles.userName, { color: text }]} numberOfLines={1}>
               {displayName}
             </Text>
-
-            <View style={[styles.statusPill, { backgroundColor: statusBg }]}>
-              <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-              <Text style={[styles.statusText, { color: statusColor }]}>
-                {statusText}
+            {/* estado */}
+            <View style={[styles.pill, { backgroundColor: statusBg }]}>
+              <View style={[styles.dot, { backgroundColor: statusColor }]} />
+              <Text style={[styles.pillText, { color: statusColor }]}>
+                {isActive ? t('users.statuses.ACTIVE') : t('users.statuses.INACTIVE')}
               </Text>
             </View>
           </View>
-          <Text style={[styles.email, { color: muted }]} numberOfLines={1}>{item.email}</Text>
-          <View style={styles.detailLine}>
-            <Text style={[styles.roleText, { color: theme.primary }]}>{roleLabel(item.role)}</Text>
-            <Text style={[styles.meta, { color: muted }]}>{item.documentNumber ?? '-'}</Text>
+
+          <Text style={[styles.meta, { color: muted }]} numberOfLines={1}>{item.email}</Text>
+
+          <View style={styles.bottomLine}>
+            {/* rol */}
+            <View style={[styles.pill, { backgroundColor: roleBg(item.role) }]}>
+              <Text style={[styles.pillText, { color: roleColor(item.role) }]}>
+                {roleLabel(item.role)}
+              </Text>
+            </View>
+            <Text style={[styles.doc, { color: muted }]}>{item.document}</Text>
           </View>
-          {item.role === 'APPRENTICE' && <View style={styles.fichaLine}><Ionicons name="school-outline" size={13} color={muted} /><Text style={[styles.meta, { color: muted }]} numberOfLines={1}>{item.chipName ?? t('users.pendingFicha')}</Text></View>}
-        </View>
-        <View style={styles.actions}>
-          <Ionicons name="chevron-forward" size={19} color={muted} />
-          {canDeleteUsers && (
-            <TouchableOpacity onPress={(event) => { event.stopPropagation(); removeUser(item); }} style={[styles.iconButton, { backgroundColor: Colors.error + '18' }]} accessibilityLabel={t('users.delete')}>
-              <Ionicons name="trash-outline" size={17} color={Colors.error} />
-            </TouchableOpacity>
+
+          {/* tipo instructor */}
+          {item.role === 'INSTRUCTOR' && item.instructorType && (
+            <Text style={[styles.subMeta, { color: muted }]}>
+              {item.instructorType === 'especifico'
+                ? `${t('users.create.instructorTypeSpecific')}${item.programCode ? ` · ${item.programCode}` : ''}`
+                : t('users.create.instructorTypeTransversal')}
+            </Text>
           )}
+        </View>
+
+        {/* Acciones */}
+        <View style={styles.actions}>
+          <TouchableOpacity
+            onPress={e => { e.stopPropagation?.(); toggleStatus(item.id); }}
+            style={[
+              styles.iconBtn,
+              { backgroundColor: isActive ? softAmber : softGreen },
+            ]}
+            accessibilityLabel={isActive ? t('users.panel.deactivate') : t('users.panel.activate')}
+          >
+            <Ionicons
+              name={isActive ? 'pause-circle-outline' : 'play-circle-outline'}
+              size={18}
+              color={isActive ? Colors.warning : Colors.success}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={e => { e.stopPropagation?.(); removeUser(item.id); }}
+            style={[styles.iconBtn, { backgroundColor: softRed }]}
+            accessibilityLabel={t('users.delete')}
+          >
+            <Ionicons name="trash-outline" size={17} color={Colors.error} />
+          </TouchableOpacity>
         </View>
       </TouchableOpacity>
     );
   };
 
   return (
-    <View style={[styles.safe, { backgroundColor: bg }]}>
+    <View style={[styles.root, { backgroundColor: bg }]}>
       <FlatList
-        data={filteredUsers}
-        keyExtractor={item => item.userId}
-        renderItem={renderUser}
-        contentContainerStyle={styles.list}
+        data={filtered}
+        keyExtractor={u => u.id}
+        renderItem={renderItem}
+        contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
-        ListHeaderComponent={(
+        keyboardShouldPersistTaps="handled"
+        ListHeaderComponent={
           <>
+            {/* ── Cabecera ── */}
             <View style={styles.header}>
-              <View style={styles.headerCopy}>
-                <View style={[styles.eyebrow, { backgroundColor: softGreen }]}><Ionicons name="shield-checkmark-outline" size={14} color={theme.primary} /><Text style={[styles.eyebrowText, { color: theme.primary }]}>{t('users.adminLabel')}</Text></View>
-                <Text style={[styles.title, { color: text }]}>{t('users.title')}</Text>
-                <Text style={[styles.subtitle, { color: muted }]}>{t('users.subtitle')}</Text>
+              <View style={{ flex: 1 }}>
+                <View style={[styles.eyebrow, { backgroundColor: softBlue }]}>
+                  <Ionicons name="people-circle-outline" size={14} color="#4A90D9" />
+                  <Text style={[styles.eyebrowText, { color: '#4A90D9' }]}>
+                    {t('sidebar.userManagement')}
+                  </Text>
+                </View>
+                <Text style={[styles.title, { color: text }]}>{t('users.panel.title')}</Text>
+                <Text style={[styles.subtitle, { color: muted }]}>
+                  {filtered.length} {t('users.results')}
+                </Text>
               </View>
-              <TouchableOpacity onPress={() => router.back()} style={[styles.backButton, { backgroundColor: card, borderColor: border }]}><Ionicons name="arrow-back" size={20} color={text} /></TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => router.back()}
+                style={[styles.backBtn, { backgroundColor: card, borderColor: border }]}
+              >
+                <Ionicons name="arrow-back" size={20} color={text} />
+              </TouchableOpacity>
             </View>
+
+            {/* ── Stats ── */}
             <View style={styles.statsRow}>
-              <View style={[styles.statCard, { backgroundColor: softGreen }]}><View style={[styles.statIcon, { backgroundColor: theme.primary + '24' }]}><Ionicons name="people-outline" size={18} color={theme.primary} /></View><Text style={[styles.statValue, { color: text }]}>{users.length}</Text><Text style={[styles.statLabel, { color: muted }]}>{t('users.total')}</Text></View>
-              <View style={[styles.statCard, { backgroundColor: softBlue }]}><View style={[styles.statIcon, { backgroundColor: '#4A90D9' + '24' }]}><Ionicons name="checkmark-circle-outline" size={18} color="#4A90D9" /></View><Text style={[styles.statValue, { color: text }]}>{users.filter(item => getEffectiveStatus(item) === 'ACTIVE').length}</Text><Text style={[styles.statLabel, { color: muted }]}>{t('users.active')}</Text></View>
-              <View style={[styles.statCard, { backgroundColor: softAmber }]}><View style={[styles.statIcon, { backgroundColor: Colors.warning + '24' }]}><Ionicons name="school-outline" size={18} color={Colors.warning} /></View><Text style={[styles.statValue, { color: text }]}>{users.filter(item => item.role === 'APPRENTICE').length}</Text><Text style={[styles.statLabel, { color: muted }]}>{t('users.apprentices')}</Text></View>
+              {[
+                { label: t('users.total'),    value: users.length,                                  bg: softGreen, icon: 'people-outline',              color: theme.primary },
+                { label: t('users.active'),   value: users.filter(u => u.status === 'active').length,   bg: softBlue,  icon: 'checkmark-circle-outline', color: '#4A90D9'     },
+                { label: t('users.statuses.INACTIVE'), value: users.filter(u => u.status === 'inactive').length, bg: softAmber, icon: 'pause-circle-outline', color: Colors.warning },
+              ].map(s => (
+                <View key={s.label} style={[styles.statCard, { backgroundColor: s.bg }]}>
+                  <View style={[styles.statIcon, { backgroundColor: s.color + '22' }]}>
+                    <Ionicons name={s.icon as any} size={17} color={s.color} />
+                  </View>
+                  <Text style={[styles.statValue, { color: text }]}>{s.value}</Text>
+                  <Text style={[styles.statLabel, { color: muted }]}>{s.label}</Text>
+                </View>
+              ))}
             </View>
+
+            {/* ── Toolbar ── */}
             <View style={[styles.toolbar, { backgroundColor: card, borderColor: border }]}>
-              <View style={styles.search}>
+              {/* Buscador */}
+              <View style={styles.searchRow}>
                 <Ionicons name="search-outline" size={19} color={theme.primary} />
-                <TextInput value={search} onChangeText={setSearch} onSubmitEditing={loadUsers} placeholder={t('users.search')} placeholderTextColor={muted} style={[styles.searchInput, { color: text }]} returnKeyType="search" />
-                {search.length > 0 && <TouchableOpacity onPress={() => { setSearch(''); loadUsers(); }}><Ionicons name="close-circle" size={18} color={muted} /></TouchableOpacity>}
+                <TextInput
+                  value={query}
+                  onChangeText={setQuery}
+                  placeholder={t('users.panel.searchPlaceholder')}
+                  placeholderTextColor={muted}
+                  style={[styles.searchInput, { color: text }]}
+                  returnKeyType="search"
+                />
+                {query.length > 0 && (
+                  <TouchableOpacity onPress={() => setQuery('')}>
+                    <Ionicons name="close-circle" size={18} color={muted} />
+                  </TouchableOpacity>
+                )}
               </View>
-              <View style={styles.filterRow}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterContent}>
-                  {(['ALL', 'ACTIVE', 'INACTIVE', 'BLOCKED'] as const).map(filter => <TouchableOpacity key={filter} onPress={() => setStatusFilter(filter)} style={[styles.filterChip, { borderColor: statusFilter === filter ? theme.primary : border, backgroundColor: statusFilter === filter ? theme.primary + '18' : 'transparent' }]}><Text style={[styles.filterText, { color: statusFilter === filter ? theme.primary : muted }]}>{filter === 'ALL' ? t('users.all') : statusLabel(filter)}</Text></TouchableOpacity>)}
-                </ScrollView>
-              </View>
+
+              {/* Filtros */}
+              <View style={[styles.divider, { backgroundColor: border }]} />
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+                {/* Rol */}
+                {(['ALL', 'INSTRUCTOR', 'APPRENTICE'] as RoleFilter[]).map(f => (
+                  <TouchableOpacity
+                    key={f}
+                    onPress={() => setRoleFilter(f)}
+                    style={[
+                      styles.chip,
+                      {
+                        borderColor:     roleFilter === f ? theme.primary : border,
+                        backgroundColor: roleFilter === f ? theme.primary + '18' : 'transparent',
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.chipText, { color: roleFilter === f ? theme.primary : muted }]}>
+                      {f === 'ALL'
+                        ? t('users.all')
+                        : f === 'INSTRUCTOR'
+                          ? t('users.create.roleInstructor')
+                          : t('users.create.roleApprentice')}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+
+                <View style={[styles.chipSep, { backgroundColor: border }]} />
+
+                {/* Estado */}
+                {(['ALL', 'active', 'inactive'] as StatusFilter[]).map(f => (
+                  <TouchableOpacity
+                    key={f}
+                    onPress={() => setStatusFilter(f)}
+                    style={[
+                      styles.chip,
+                      {
+                        borderColor:     statusFilter === f ? theme.primary : border,
+                        backgroundColor: statusFilter === f ? theme.primary + '18' : 'transparent',
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.chipText, { color: statusFilter === f ? theme.primary : muted }]}>
+                      {f === 'ALL'
+                        ? t('users.all')
+                        : f === 'active'
+                          ? t('users.statuses.ACTIVE')
+                          : t('users.statuses.INACTIVE')}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
             </View>
-            <View style={styles.resultsHeader}><Text style={[styles.resultsTitle, { color: text }]}>{t('users.registered')}</Text><Text style={[styles.resultsCount, { color: muted }]}>{filteredUsers.length} {t('users.results')}</Text></View>
+
+            {/* ── Cabecera lista + botón crear ── */}
+            <View style={styles.listHeader}>
+              <Text style={[styles.listTitle, { color: text }]}>{t('users.registered')}</Text>
+              <TouchableOpacity
+                onPress={() => router.push('/admin/users/create' as any)}
+                style={[styles.createBtn, { backgroundColor: theme.primary }]}
+              >
+                <Ionicons name="person-add-outline" size={15} color={Colors.white} />
+                <Text style={styles.createBtnText}>{t('users.panel.createButton')}</Text>
+              </TouchableOpacity>
+            </View>
           </>
-        )}
-        ListEmptyComponent={!loading ? <Text style={[styles.empty, { color: muted }]}>{t('users.empty')}</Text> : null}
-      />
-      {loading && <ActivityIndicator color={theme.primary} size="large" style={styles.loader} />}
-      <Modal visible={selected !== null} transparent animationType="fade" onRequestClose={() => setSelected(null)}>
-        <View style={styles.modalBackdrop}><ScrollView contentContainerStyle={styles.modalScroll}><View style={[styles.modal, { backgroundColor: card }]}>
-          <View style={styles.modalHeader}><View><Text style={[styles.modalTitle, { color: text }]}>{t('users.details')}</Text><Text style={[styles.modalSubtitle, { color: muted }]}>{roleLabel(selected?.role)}</Text></View><TouchableOpacity onPress={() => setSelected(null)}><Ionicons name="close" size={22} color={muted} /></TouchableOpacity></View>
-          <View style={[styles.profileBanner, { backgroundColor: softGreen }]}><View style={[styles.modalAvatar, { backgroundColor: theme.primary }]}><Text style={styles.modalAvatarText}>{(selected?.firstName ?? '?').charAt(0).toUpperCase()}</Text></View><View style={{ flex: 1 }}><Text style={[styles.profileName, { color: text }]}>{selected?.firstName} {selected?.lastName}</Text><Text style={[styles.profileEmail, { color: muted }]}>{selected?.email}</Text></View></View>
-          <Text style={[styles.sectionLabel, { color: theme.primary }]}>{t('users.editData')}</Text>
-          <TextInput value={draft.firstName} onChangeText={value => setDraft(current => ({ ...current, firstName: value }))} placeholder={t('users.firstName')} placeholderTextColor={muted} style={[styles.field, { color: text, borderColor: border }]} />
-          <TextInput value={draft.lastName} onChangeText={value => setDraft(current => ({ ...current, lastName: value }))} placeholder={t('users.lastName')} placeholderTextColor={muted} style={[styles.field, { color: text, borderColor: border }]} />
-          <Text style={[styles.sectionLabel, { color: theme.primary }]}>{t('users.readonlyData')}</Text>
-          <View style={styles.infoGrid}><Text style={[styles.infoItem, { color: muted }]}>{t('users.document')}: {selected?.documentNumber ?? '-'}</Text><Text style={[styles.infoItem, { color: muted }]}>{t('users.birthDate')}: {selected?.birthDate ?? '-'}</Text><Text style={[styles.infoItem, { color: muted }]}>{t('users.ficha')}: {selected?.chipName ?? t('users.noFicha')}</Text><Text style={[styles.infoItem, { color: muted }]}>{t('users.program')}: {selected?.programName ?? '-'}</Text></View>
-          <Text style={[styles.sectionLabel, { color: theme.primary }]}>{t('users.status')}</Text>
-          <View style={[styles.sessionInfoRow, { backgroundColor: selected?.sessionStatus === 'ACTIVE' ? softGreen : softAmber }]}>
-            <View style={[styles.statusDot, { backgroundColor: selected?.sessionStatus === 'ACTIVE' ? Colors.success : Colors.warning }]} />
-            <Text style={[styles.sessionInfoText, { color: selected?.sessionStatus === 'ACTIVE' ? Colors.success : Colors.warning }]}>
-              {selected?.sessionStatus === 'ACTIVE' ? t('users.currentlyOnline') : t('users.currentlyOffline')}
-            </Text>
+        }
+        ListEmptyComponent={
+          <View style={styles.empty}>
+            <Ionicons name="people-outline" size={40} color={muted} style={{ opacity: 0.5 }} />
+            <Text style={[styles.emptyText, { color: muted }]}>{t('users.empty')}</Text>
           </View>
-          <Text style={[styles.helperText, { color: muted }]}>{t('users.sessionNote')}</Text>
-          <TouchableOpacity
-            onPress={() => {
-              const willBlock = draft.accountStatus !== 'BLOCKED';
-              alert(
-                willBlock ? t('users.blockConfirmTitle') : t('users.unblockConfirmTitle'),
-                t(willBlock ? 'users.blockConfirmMessage' : 'users.unblockConfirmMessage', { name: [selected?.firstName, selected?.lastName].filter(Boolean).join(' ') }),
-                [
-                  { text: t('common.cancel'), style: 'cancel' },
-                  { text: t('common.save'), onPress: () => setDraft(current => ({ ...current, accountStatus: willBlock ? 'BLOCKED' : 'ACTIVE' })) },
-                ]
-              );
-            }}
-            style={[styles.blockToggle, { borderColor: draft.accountStatus === 'BLOCKED' ? Colors.error : border, backgroundColor: draft.accountStatus === 'BLOCKED' ? Colors.error + '18' : 'transparent' }]}
-          >
-            <Ionicons name={draft.accountStatus === 'BLOCKED' ? 'lock-closed' : 'lock-open-outline'} size={16} color={draft.accountStatus === 'BLOCKED' ? Colors.error : text} />
-            <Text style={{ color: draft.accountStatus === 'BLOCKED' ? Colors.error : text, fontSize: 13, fontWeight: '700' }}>
-              {draft.accountStatus === 'BLOCKED' ? t('users.unblockAccount') : t('users.blockAccount')}
-            </Text>
-          </TouchableOpacity>
-          {draft.accountStatus === 'BLOCKED' && <Text style={[styles.helperText, { color: Colors.error }]}>{t('users.blockedNote')}</Text>}
-          <Text style={[styles.sectionLabel, { color: theme.primary }]}>{t('users.role')}</Text>
-          <View style={styles.roleGrid}>{roleValues.map(role => <TouchableOpacity key={role} onPress={() => setDraft(current => ({ ...current, role }))} style={[styles.roleOption, { borderColor: draft.role === role ? theme.primary : border, backgroundColor: draft.role === role ? theme.primary + '18' : 'transparent' }]}><Text style={{ color: draft.role === role ? theme.primary : text, fontSize: 12, fontWeight: '600' }}>{roleLabel(role)}</Text></TouchableOpacity>)}</View>
-          <View style={styles.modalActions}><TouchableOpacity onPress={() => setSelected(null)} style={styles.cancelAction}><Text style={{ color: muted }}>{t('common.cancel')}</Text></TouchableOpacity><TouchableOpacity onPress={saveUser} disabled={saving} style={[styles.saveAction, { backgroundColor: theme.primary }]}><Ionicons name="save-outline" size={17} color={Colors.white} /><Text style={styles.saveActionText}>{saving ? t('common.loading') : t('common.save')}</Text></TouchableOpacity></View>
-        </View></ScrollView></View>
-      </Modal>
+        }
+      />
       {DialogUI}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, paddingHorizontal: 18 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingTop: 22, paddingBottom: 18 },
-  headerCopy: { flex: 1 },
-  eyebrow: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 6, marginBottom: 10 },
-  eyebrowText: { fontSize: 11, fontWeight: '800', textTransform: 'uppercase' },
-  title: { fontSize: FontSize['3xl'], fontWeight: FontWeight.black },
-  subtitle: { marginTop: 5, fontSize: FontSize.sm },
-  backButton: { width: 40, height: 40, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  statsRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
-  statCard: { flex: 1, minHeight: 108, borderRadius: 16, padding: 12, justifyContent: 'space-between' },
-  statIcon: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  statValue: { fontSize: 23, fontWeight: '900', marginTop: 5 },
-  statLabel: { fontSize: 11, fontWeight: '600' },
-  toolbar: { borderRadius: 16, borderWidth: 1, padding: 10, marginBottom: 18 },
-  search: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 8 },
-  searchInput: { flex: 1, paddingVertical: 10, fontSize: 15 },
-  filterRow: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(101,179,97,0.16)', marginTop: 5, paddingTop: 9 },
-  filterContent: { gap: 7 },
-  filterChip: { borderWidth: 1, borderRadius: 18, paddingHorizontal: 12, paddingVertical: 7 },
-  filterText: { fontSize: 11, fontWeight: '700' },
-  resultsHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
-  resultsTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.black },
-  resultsCount: { fontSize: FontSize.sm },
-  list: { gap: 10, paddingBottom: 30 },
-  userCard: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 16, padding: 13 },
-  avatar: { width: 46, height: 46, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  root:        { flex: 1, paddingHorizontal: 18 },
+  listContent: { gap: 10, paddingBottom: 36 },
+
+  header:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingTop: 22, paddingBottom: 18 },
+  eyebrow:     { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5, marginBottom: 8 },
+  eyebrowText: { fontSize: FontSize.xs, fontWeight: '800', textTransform: 'uppercase' },
+  title:       { fontSize: FontSize['3xl'], fontWeight: FontWeight.black },
+  subtitle:    { marginTop: 4, fontSize: FontSize.sm },
+  backBtn:     { width: 40, height: 40, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+
+  statsRow:  { flexDirection: 'row', gap: 10, marginBottom: 16 },
+  statCard:  { flex: 1, borderRadius: 16, padding: 12, justifyContent: 'space-between', minHeight: 96 },
+  statIcon:  { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  statValue: { fontSize: 22, fontWeight: '900', marginTop: 4 },
+  statLabel: { fontSize: FontSize.xs, fontWeight: '600' },
+
+  toolbar:   { borderRadius: 16, borderWidth: 1, padding: 10, marginBottom: 18 },
+  searchRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 6 },
+  searchInput: { flex: 1, paddingVertical: 9, fontSize: 15 },
+  divider:   { height: StyleSheet.hairlineWidth, marginVertical: 8 },
+  chips:     { gap: 7, paddingHorizontal: 2 },
+  chip:      { borderWidth: 1, borderRadius: 18, paddingHorizontal: 12, paddingVertical: 6 },
+  chipText:  { fontSize: FontSize.xs, fontWeight: '700' },
+  chipSep:   { width: StyleSheet.hairlineWidth, marginHorizontal: 2 },
+
+  listHeader:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+  listTitle:     { fontSize: FontSize.lg, fontWeight: FontWeight.black },
+  createBtn:     { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 11, paddingHorizontal: 13, paddingVertical: 9 },
+  createBtnText: { color: Colors.white, fontWeight: '800', fontSize: FontSize.sm },
+
+  card:     { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 16, padding: 13 },
+  avatar:   { width: 46, height: 46, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   avatarText: { color: Colors.white, fontWeight: '900', fontSize: 18 },
-  userBody: { flex: 1, marginLeft: 12, minWidth: 0 },
-  nameLine: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  cardBody: { flex: 1, marginLeft: 12, minWidth: 0 },
+  nameLine: { flexDirection: 'row', alignItems: 'center', gap: 7, flexWrap: 'wrap' },
   userName: { fontSize: 15, fontWeight: '800', flexShrink: 1 },
-  email: { fontSize: 12, marginTop: 3 },
-  detailLine: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 5 },
-  roleText: { fontSize: 11, fontWeight: '800' },
-  meta: { fontSize: 11, marginTop: 3 },
-  fichaLine: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 },
-  statusPill: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 12, paddingHorizontal: 7, paddingVertical: 4 },
-  statusDot: { width: 6, height: 6, borderRadius: 3 },
-  statusText: { fontSize: 9, fontWeight: '800' },
+  meta:     { fontSize: FontSize.sm, marginTop: 3 },
+  subMeta:  { fontSize: FontSize.xs, marginTop: 2 },
+  bottomLine: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 5 },
+  doc:      { fontSize: FontSize.xs },
+  pill:     { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 12, paddingHorizontal: 7, paddingVertical: 3 },
+  dot:      { width: 6, height: 6, borderRadius: 3 },
+  pillText: { fontSize: 9, fontWeight: '800' },
+
   actions: { alignItems: 'center', gap: 7, marginLeft: 8 },
-  iconButton: { width: 34, height: 34, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
-  loader: { position: 'absolute', top: 230, left: 0, right: 0 },
-  empty: { textAlign: 'center', marginTop: 40, marginBottom: 40 },
-  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.62)', justifyContent: 'center', padding: 18 },
-  modalScroll: { flexGrow: 1, justifyContent: 'center' },
-  modal: { borderRadius: 20, padding: 20, gap: 11 },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  modalTitle: { fontSize: 21, fontWeight: '900' },
-  modalSubtitle: { fontSize: 12, marginTop: 3 },
-  profileBanner: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 14, padding: 12, marginVertical: 2 },
-  modalAvatar: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  modalAvatarText: { color: Colors.white, fontSize: 17, fontWeight: '900' },
-  profileName: { fontSize: 15, fontWeight: '800' },
-  profileEmail: { fontSize: 12, marginTop: 3 },
-  sectionLabel: { fontSize: 11, fontWeight: '900', textTransform: 'uppercase', marginTop: 5 },
-  field: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14 },
-  infoGrid: { gap: 6, padding: 11, borderRadius: 11, backgroundColor: 'rgba(127,127,127,0.08)' },
-  infoItem: { fontSize: 12 },
-  sessionInfoRow: { flexDirection: 'row', alignItems: 'center', gap: 7, borderRadius: 10, paddingHorizontal: 11, paddingVertical: 9, alignSelf: 'flex-start' },
-  sessionInfoText: { fontSize: 12, fontWeight: '700' },
-  helperText: { fontSize: 11, marginTop: -4, marginBottom: 2 },
-  blockToggle: { flexDirection: 'row', alignItems: 'center', gap: 7, borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, alignSelf: 'flex-start' },
-  roleGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  roleOption: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 8 },
-  modalActions: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 16, marginTop: 8 },
-  cancelAction: { paddingHorizontal: 8, paddingVertical: 11 },
-  saveAction: { flexDirection: 'row', alignItems: 'center', gap: 7, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 11 },
-  saveActionText: { color: Colors.white, fontWeight: '800', fontSize: 13 },
+  iconBtn: { width: 34, height: 34, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+
+  empty:     { alignItems: 'center', paddingVertical: 60, gap: 12 },
+  emptyText: { fontSize: FontSize.md, textAlign: 'center' },
 });

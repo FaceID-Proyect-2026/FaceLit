@@ -1,35 +1,27 @@
 // ─────────────────────────────────────────────
 //  app/profile/index.tsx
+//  (AuthContext), no de un fetch al backend — por eso ya no hay
+//  loading/spinner acá. Cuando se conecte el backend real, se
+//  puede volver a usar getMyProfile() para traer campos que no
+//  vengan en la sesión (p. ej. documentType) sin tocar nada más
+//  de esta pantalla.
 // ─────────────────────────────────────────────
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
-import { getMyProfile } from '@/shared/services/authService';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
-interface FullProfile {
-  firstName: string;
-  lastName: string;
-  documentType: string;
-  documentNumber: string;
-  email: string;
-}
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const { alert, DialogUI } = useAppDialog();
-
-  const [profile, setProfile] = useState<FullProfile | null>(null);
-  const [loading, setLoading] = useState(true);
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -40,29 +32,13 @@ export default function ProfileScreen() {
   const bg = isDark ? Colors.dark.background : Colors.light.background;
   const headerBg = isDark ? '#0D1F14' : '#F0FFF0';
 
-  useEffect(() => {
-    getMyProfile()
-      .then(data => {
-        setProfile({
-          firstName: data.firstName,
-          lastName: data.lastName,
-          documentType: data.documentType,
-          documentNumber: data.documentNumber,
-          email: data.email,
-        });
-      })
-      .catch(() => setProfile(null))
-      .finally(() => setLoading(false));
-  }, []);
-
   if (!user) return null;
 
-  const displayName = profile?.firstName ?? '';
-  const displayLastName = profile?.lastName ?? '';
-  const documentType = profile?.documentType ?? '';
-  const document = profile?.documentNumber ?? '';
-  const email = profile?.email ?? (user as any).email ?? '';
-  const role = (user as any)?.role ?? '';
+  const displayName = user.firstName ?? '';
+  const displayLastName = user.lastName ?? '';
+  const document = user.document ?? '';
+  const email = user.email ?? '';
+  const role = user.role ?? '';
   const firstNameInitial = displayName.charAt(0).toUpperCase();
   const lastNameInitial = displayLastName.charAt(0).toUpperCase();
   const roleLabel = role ? role.charAt(0).toUpperCase() + role.slice(1).toLowerCase() : '';
@@ -87,14 +63,6 @@ export default function ProfileScreen() {
     { icon: 'mail-outline', label: t('profile.fields.email'), value: email },
     { icon: 'shield-checkmark-outline', label: t('profile.fields.role'), value: roleLabel },
   ];
-
-  if (loading) {
-    return (
-      <View style={[ps.safe, { backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }]}>
-        <ActivityIndicator size="large" color={theme.primary} />
-      </View>
-    );
-  }
 
   return (
     <View style={[ps.safe, { backgroundColor: bg }]}>

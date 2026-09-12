@@ -40,6 +40,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const adminMenu: MenuItem[] = [
     { icon: 'grid-outline',              label: t('sidebar.dashboard'),  route: Routes.ADMIN.DASHBOARD,    module: 'dashboard'  },
+    // RF-10.5 — solo COORDINATOR puede crear/gestionar usuarios (COORDINATOR_REGISTER no ve este ítem)
     ...(user?.role === 'ADMINISTRATOR' || user?.role === 'COORDINATOR'
       ? [{ icon: 'people-outline', label: t('sidebar.users'), route: Routes.ADMIN.USERS, module: 'users' }]
       : []),
@@ -70,7 +71,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   ];
 
   // ✅ FIX: roles del backend vienen en MAYÚSCULAS
-  const menu = user?.role === 'ADMINISTRATOR' || user?.role === 'COORDINATOR' ? adminMenu
+  // RF-10.5: COORDINATOR_REGISTER usa el mismo panel admin
+  const menu = user?.role === 'ADMINISTRATOR' || user?.role === 'COORDINATOR' || user?.role === 'COORDINATOR_REGISTER'
+    ? adminMenu
     : user?.role === 'INSTRUCTOR' ? instructorMenu
     : apprenticeMenu;
 

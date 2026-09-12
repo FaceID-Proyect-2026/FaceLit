@@ -74,6 +74,14 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'MANAGE_FICHAS',
     'MANAGE_PROGRAMS',
   ],
+  COORDINATOR_REGISTER: [
+    'VIEW_OWN_DATA',
+    'VIEW_ALL_ATTENDANCE',
+    'VIEW_ALL_FICHAS',
+    'VIEW_ALL_ACADEMIC_INFO',
+    'VIEW_OWN_ATTENDANCE',
+    'VIEW_REPORTS',
+  ],
   // ADMINISTRATOR tiene los mismos derechos que COORDINATOR
   // (RF-1.1 V3: Coordinador y Admin son el mismo rol, solo distinto nombre)
   ADMINISTRATOR: [

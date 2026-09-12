@@ -346,6 +346,7 @@ export default function NotificationsScreen() {
 
       {/* Lista */}
       <FlatList
+        style={ns.listWrap}
         data={notifications}
         keyExtractor={n => n.id}
         contentContainerStyle={ns.list}
@@ -367,26 +368,33 @@ export default function NotificationsScreen() {
 
 // ── Estilos ───────────────────────────────────
 const ns = StyleSheet.create({
-  root:   { flex: 1 },
+  // flex:1 + minHeight:0 es necesario en web para que el hijo con overflow
+  // (la lista) pueda scrollear DENTRO del espacio restante, en vez de que
+  // el contenido empuje/encoja a los hermanos de arriba (los filtros).
+  root:   { flex: 1, minHeight: 0 },
 
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 40, paddingBottom: 28, borderBottomWidth: 1 },
+  header: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 40, paddingBottom: 28, borderBottomWidth: 1 },
   headerTitle: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, marginLeft: 12 },
   title:  { fontSize: FontSize.xl, fontWeight: FontWeight.black },
   badge:  { borderRadius: 10, minWidth: 20, height: 20, paddingHorizontal: 5, alignItems: 'center', justifyContent: 'center' },
   badgeText: { color: '#fff', fontSize: 11, fontWeight: '800' },
   markAllBtn: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
 
-  // ── Fix: altura fija + contenido centrado verticalmente ──
-  filterScroll: { borderBottomWidth: 1, flexGrow: 0, height: 60, marginTop: 16 },
-  filterRow:    { flexDirection: 'row', gap: 10, paddingHorizontal: 16, alignItems: 'center' },
+  // ── Fix: altura fija que NUNCA se encoge (flexShrink:0), sin importar
+  // cuánto contenido tenga la lista de abajo ──
+  filterScroll: { flexShrink: 0, borderBottomWidth: 1, flexGrow: 0, height: 64, marginTop: 18, marginBottom: 2 },
+  filterRow:    { flexDirection: 'row', gap: 14, paddingHorizontal: 16, alignItems: 'center' },
   filterBtn:    { borderRadius: 22, borderWidth: 1.5, paddingHorizontal: 18, paddingVertical: 10, minWidth: 90, alignItems: 'center', justifyContent: 'center', outlineStyle: 'none' } as any,
 
-  // ── Fix: altura fija + separación visual respecto a la fila de estado ──
-  catScroll: { borderBottomWidth: 1, flexGrow: 0, height: 58, marginTop: 22 },
-  catRow:    { flexDirection: 'row', gap: 10, paddingHorizontal: 16, alignItems: 'center' },
-  catBtn:    { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 18, borderWidth: 1.2, paddingHorizontal: 14, paddingVertical: 8, minWidth: 76, justifyContent: 'center', outlineStyle: 'none' } as any,
+  // ── Fix: misma idea — altura fija, nunca se encoge ──
+  catScroll: { flexShrink: 0, borderBottomWidth: 1, flexGrow: 0, height: 66, marginTop: 14, marginBottom: 4 },
+  catRow:    { flexDirection: 'row', gap: 12, paddingHorizontal: 16, alignItems: 'center' },
+  catBtn:    { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 20, borderWidth: 1.2, paddingHorizontal: 16, paddingVertical: 10, minWidth: 82, justifyContent: 'center', outlineStyle: 'none' } as any,
 
-  list:   { padding: 16, paddingTop: 20, gap: 12, paddingBottom: 40 },
+  // ── La lista es la única sección "elástica": toma el resto del
+  // espacio disponible y scrollea internamente (nunca empuja al resto) ──
+  listWrap: { flex: 1, minHeight: 0 },
+  list:   { padding: 16, paddingTop: 24, gap: 12, paddingBottom: 40 },
 
   card:   { flexDirection: 'row', borderRadius: 14, borderWidth: 1, overflow: 'hidden' },
   stripe: { width: 4 },

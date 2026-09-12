@@ -23,15 +23,16 @@ import { logBlocked, logFailure, logSuccess } from '@/shared/services/auditLogge
 import { getToken, removeToken, saveToken } from '@/shared/services/tokenStorage';
 import { router } from 'expo-router';
 import React, {
-    createContext,
-    ReactNode,
-    useCallback,
-    useContext,
-    useEffect,
-    useState,
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
 } from 'react';
 
 // ── Tipos ─────────────────────────────────────
+// Los roles vienen del backend en MAYÚSCULAS (ver SecurityConfig.java)
 // Los roles vienen del backend en MAYÚSCULAS (ver SecurityConfig.java)
 export type UserRole = 'ADMINISTRATOR' | 'COORDINATOR' | 'INSTRUCTOR' | 'APPRENTICE';
 
@@ -426,6 +427,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch {
         // Si el store académico no está disponible, continuar sin él
       }
+
 
       if (!storeUser || !storePassword) {
         recordFailedAttempt(cleanDocument);

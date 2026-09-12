@@ -24,7 +24,7 @@ export default function SettingsScreen() {
   const { t } = useTranslation();
   const { alert, DialogUI } = useAppDialog();
   const {
-    loading, saving, saved, draft,
+    saving, saved, draft,
     loadAndApply,
     setDraftTheme, setDraftLanguage, setDraftNotifications, saveChanges,
   } = useUserSettings();
@@ -53,14 +53,6 @@ export default function SettingsScreen() {
       alert(t('common.error'), result.error);
     }
   };
-
-  if (loading) {
-    return (
-      <View style={[ss.safe, { backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }]}>
-        <ActivityIndicator size="large" color={theme.primary} />
-      </View>
-    );
-  }
 
   return (
     <View style={[ss.safe, { backgroundColor: bg }]}>
