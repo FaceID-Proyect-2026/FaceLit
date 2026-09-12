@@ -26,15 +26,20 @@ export interface DocumentChangeLogEntry {
 export interface TransferRequest {
   id: string;
   learnerId: string;
+  /** Nombre completo del aprendiz (desnormalizado para fácil lectura en UI) */
+  learnerName: string;
+  learnerDocument: string;
+  /** Número de la ficha actual (desnormalizado) — ej. "3145555" */
   learnerFicha: string;
   currentFichaId: string;
+  currentFichaNumber: string;
   requestedFichaId: string;
+  requestedFichaNumber: string;
   status: TransferStatus;
   requestedAt: string;
   decidedAt?: string;
   decidedBy?: string;
   reason?: string;
-  approvalConditions?: string;
 }
 
 export interface Program {

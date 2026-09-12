@@ -17,11 +17,11 @@ import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function AdminLayout() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { canRenderContent } = useAuthGuard(isAuthenticated);
+  const { canRenderContent } = useAuthGuard(isAuthenticated, '/auth/login', authLoading);
 
   if (!canRenderContent) {
     return (
@@ -116,6 +116,7 @@ export default function AdminLayout() {
         <Stack.Screen name="reports/calendar" />
         <Stack.Screen name="reports/my-performance" />
         <Stack.Screen name="reports/excuses-review" />
+        <Stack.Screen name="transfer-requests" />
         <Stack.Screen name="profile/index" />
         <Stack.Screen name="profile/settings" />
       </Stack>

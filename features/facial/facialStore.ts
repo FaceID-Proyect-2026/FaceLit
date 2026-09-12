@@ -1,3 +1,4 @@
+import { pushNotification } from '../notifications/notificationsStore';
 import { FacialEvent, FacialRecord, FacialUser, MOCK_FACIAL_RECORDS, VALID_FACIAL_ROLES } from './types';
 
 type Listener = () => void;
@@ -44,4 +45,21 @@ export function registerFacialEvent(event: Omit<FacialEvent, 'id' | 'occurredAt'
   events = [...events, facialEvent];
   emit();
   return facialEvent;
+}
+
+// ── RF-8.4 — Solicitud de re-registro facial ──────────────────────────────────
+// El aprendiz toca "Solicitar registro nuevamente" y esto genera una
+// notificación con botones Aceptar/Rechazar que el Coordinador resuelve
+// directamente desde su bandeja de notificaciones.
+export function requestFacialReRegistration(user: FacialUser): void {
+  pushNotification(
+    'facial_reregister_request',
+    'Solicitud de re-registro facial',
+    `${user.name} (ID: ${user.id}) solicita volver a registrar su rostro.`,
+    {
+      requestId:      `req-${Date.now()}`,
+      facialUserId:   user.id,
+      learnerName:    user.name,
+    },
+  );
 }

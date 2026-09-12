@@ -17,6 +17,7 @@
 //  llamada real — el resto de la app no cambia.
 // ─────────────────────────────────────────────
 import { initPrivacyStore } from '@/features/auth/privacyAcceptanceStore';
+import { pushNotification } from '@/features/notifications/notificationsStore';
 import { Routes } from '@/shared/constants/routes';
 import { logBlocked, logFailure, logSuccess } from '@/shared/services/auditLogger';
 import { getToken, removeToken, saveToken } from '@/shared/services/tokenStorage';
@@ -323,30 +324,132 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Simula latencia real para que el reemplazo sea transparente.
       await new Promise((resolve) => setTimeout(resolve, 400));
 
+      // 1. Buscar en cuentas fijas (admin, coordinador, instructor mock, aprendiz mock)
       const account = MOCK_ACCOUNTS.find(
         (item) => item.document === cleanDocument,
       );
 
-      if (!account) {
-        recordFailedAttempt(cleanDocument);
-        logFailure('LOGIN_FAILED', {
-          userDocument: cleanDocument,
-          detail: 'Documento no registrado',
-        });
-        return { success: false, error: 'Documento no registrado' };
+      if (account) {
+        if (account.password !== password) {
+          recordFailedAttempt(cleanDocument);
+          const record = getFailedRecord(cleanDocument);
+          const attemptsLeft = MAX_FAILED_ATTEMPTS - record.count;
+          logFailure('LOGIN_FAILED', {
+            userDocument: cleanDocument,
+            userRole: account.role,
+            detail: `Contraseña incorrecta. Intentos restantes: ${Math.max(0, attemptsLeft)}`,
+          });
+          if (attemptsLeft <= 0) {
+            // RF-8 — Notificación #15: cuenta bloqueada
+            pushNotification(
+              'security_account_locked',
+              'Cuenta bloqueada por intentos fallidos',
+              `La cuenta con documento ${cleanDocument} quedó bloqueada por ${Math.ceil(LOCKOUT_MS / 60000)} minutos tras superar el límite de intentos fallidos.`,
+              { accountDocument: cleanDocument, failedCount: MAX_FAILED_ATTEMPTS, lockMinutes: Math.ceil(LOCKOUT_MS / 60000) },
+            );
+            return {
+              success: false,
+              locked: true,
+              lockRemainingSeconds: Math.ceil(LOCKOUT_MS / 1000),
+              error: `Demasiados intentos fallidos. Cuenta bloqueada por ${Math.ceil(LOCKOUT_MS / 60000)} minutos.`,
+            };
+          }
+          // RF-8 — Notificación #14: múltiples intentos fallidos (a partir del 3er intento)
+          if (record.count >= 3) {
+            pushNotification(
+              'security_multiple_failures',
+              'Múltiples intentos fallidos de sesión',
+              `La cuenta con documento ${cleanDocument} acumuló ${record.count} intentos fallidos consecutivos de inicio de sesión.`,
+              { accountDocument: cleanDocument, failedCount: record.count },
+            );
+          }
+          return { success: false, error: 'Documento o contraseña incorrectos' };
+        }
+
+        resetFailedAttempts(cleanDocument);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { password: _pw, ...loggedUser } = account;
+        await saveToken(buildMockToken(loggedUser));
+        setUser(loggedUser);
+        logSuccess('LOGIN_SUCCESS', { userDocument: loggedUser.document, userRole: loggedUser.role });
+        redirectByRole(loggedUser.role);
+        return { success: true };
       }
 
-      if (account.password !== password) {
+      // 2. Buscar en aprendices e instructores creados por CSV / manualmente
+      //    Valida contra su contraseña inicial (generada por el sistema).
+      //    Import lazy para evitar dependencia circular con el store académico.
+      let storeUser: User | null = null;
+      let storePassword: string | null = null;
+
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const academicStore = require('@/features/academic/academicStore');
+
+        // Buscar en fichas → learners
+        outer: for (const ficha of academicStore.getFichasSnapshot()) {
+          for (const learner of ficha.learners) {
+            if (learner.document === cleanDocument && learner.initialPassword) {
+              storeUser = {
+                id: learner.id,
+                document: learner.document,
+                email: learner.email,
+                firstName: learner.name,
+                lastName: learner.lastname,
+                role: 'APPRENTICE' as UserRole,
+                permissions: [],
+              };
+              storePassword = learner.initialPassword;
+              break outer;
+            }
+          }
+        }
+
+        // Si no se encontró como aprendiz, buscar en instructores
+        if (!storeUser) {
+          for (const inst of academicStore.getInstructorsSnapshot()) {
+            if (inst.document === cleanDocument && inst.initialPassword) {
+              storeUser = {
+                id: inst.id,
+                document: inst.document,
+                email: inst.email,
+                firstName: inst.name,
+                lastName: inst.lastname,
+                role: 'INSTRUCTOR' as UserRole,
+                permissions: [],
+              };
+              storePassword = inst.initialPassword;
+              break;
+            }
+          }
+        }
+      } catch {
+        // Si el store académico no está disponible, continuar sin él
+      }
+
+      if (!storeUser || !storePassword) {
+        recordFailedAttempt(cleanDocument);
+        logFailure('LOGIN_FAILED', { userDocument: cleanDocument, detail: 'Documento no registrado' });
+        return { success: false, error: 'Documento o contraseña incorrectos' };
+      }
+
+      if (storePassword !== password) {
         recordFailedAttempt(cleanDocument);
         const record = getFailedRecord(cleanDocument);
         const attemptsLeft = MAX_FAILED_ATTEMPTS - record.count;
         logFailure('LOGIN_FAILED', {
           userDocument: cleanDocument,
-          userRole: account.role,
+          userRole: storeUser.role,
           detail: `Contraseña incorrecta. Intentos restantes: ${Math.max(0, attemptsLeft)}`,
         });
-
         if (attemptsLeft <= 0) {
+          // RF-8 — Notificación #15
+          pushNotification(
+            'security_account_locked',
+            'Cuenta bloqueada por intentos fallidos',
+            `La cuenta con documento ${cleanDocument} quedó bloqueada por ${Math.ceil(LOCKOUT_MS / 60000)} minutos tras superar el límite de intentos fallidos.`,
+            { accountDocument: cleanDocument, failedCount: MAX_FAILED_ATTEMPTS, lockMinutes: Math.ceil(LOCKOUT_MS / 60000) },
+          );
           return {
             success: false,
             locked: true,
@@ -354,24 +457,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             error: `Demasiados intentos fallidos. Cuenta bloqueada por ${Math.ceil(LOCKOUT_MS / 60000)} minutos.`,
           };
         }
-
+        // RF-8 — Notificación #14
+        if (record.count >= 3) {
+          pushNotification(
+            'security_multiple_failures',
+            'Múltiples intentos fallidos de sesión',
+            `La cuenta con documento ${cleanDocument} acumuló ${record.count} intentos fallidos consecutivos de inicio de sesión.`,
+            { accountDocument: cleanDocument, failedCount: record.count },
+          );
+        }
         return { success: false, error: 'Documento o contraseña incorrectos' };
       }
 
-      // ── Login exitoso ─────────────────────────
       resetFailedAttempts(cleanDocument);
-
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { password: _pw, ...loggedUser } = account;
-      await saveToken(buildMockToken(loggedUser));
-      setUser(loggedUser);
-
-      logSuccess('LOGIN_SUCCESS', {
-        userDocument: loggedUser.document,
-        userRole: loggedUser.role,
-      });
-
-      redirectByRole(loggedUser.role);
+      await saveToken(buildMockToken(storeUser));
+      setUser(storeUser);
+      logSuccess('LOGIN_SUCCESS', { userDocument: storeUser.document, userRole: storeUser.role });
+      redirectByRole(storeUser.role);
       return { success: true };
 
       /* ── Cuando el backend acepte documento, reemplazar desde el

@@ -136,6 +136,8 @@ export default function FichaDetailScreen() {
   const [editFichaOpen, setEditFichaOpen]       = useState(false);
   const [copyMsg, setCopyMsg]                   = useState(false);
   const [editingLearner, setEditingLearner]     = useState<string | null>(null);
+  // Búsqueda de aprendices — filtra por nombre, documento o correo
+  const [learnerSearch, setLearnerSearch]       = useState('');
 
   const ficha = getFicha(id ?? '');
   const text    = isDark ? Colors.dark.text       : Colors.light.text;
@@ -152,6 +154,18 @@ export default function FichaDetailScreen() {
 
   const program = programs.find(p => p.id === ficha.programId);
   const editingLearnerData = editingLearner ? ficha.learners.find(l => l.id === editingLearner) : null;
+
+  // Filtrar aprendices según búsqueda (nombre, documento, correo)
+  const filteredLearners = learnerSearch.trim()
+    ? ficha.learners.filter(l => {
+        const q = learnerSearch.trim().toLowerCase();
+        return (
+          `${l.name} ${l.lastname}`.toLowerCase().includes(q) ||
+          l.document.includes(q) ||
+          l.email.toLowerCase().includes(q)
+        );
+      })
+    : ficha.learners;
 
   // ── RF-3.3 §10 — Regenerar código de traslado ──
   const handleRegenerate = () => {
@@ -227,7 +241,7 @@ export default function FichaDetailScreen() {
   return (
     <View style={[fds.safe, { backgroundColor: bg }]}>
       <FlatList
-        data={ficha.learners}
+        data={filteredLearners}
         keyExtractor={l => l.id}
         contentContainerStyle={fds.scroll}
         ListHeaderComponent={
@@ -278,8 +292,27 @@ export default function FichaDetailScreen() {
               </TouchableOpacity>
             </View>
 
+            {/* ── Buscador de aprendices ── */}
+            <View style={[fds.searchBar, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F2F2F2', borderColor: border }]}>
+              <Ionicons name="search-outline" size={16} color={muted} />
+              <TextInput
+                style={[fds.searchInput, { color: text }] as any}
+                value={learnerSearch}
+                onChangeText={setLearnerSearch}
+                placeholder="Buscar por nombre, documento o correo…"
+                placeholderTextColor={muted}
+                autoCorrect={false}
+                clearButtonMode="while-editing"
+              />
+              {learnerSearch.length > 0 && (
+                <TouchableOpacity onPress={() => setLearnerSearch('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <Ionicons name="close-circle" size={16} color={muted} />
+                </TouchableOpacity>
+              )}
+            </View>
+
             <Text style={[fds.sectionTitle, { color: text }]}>
-              {t('academic.learners')} ({ficha.learners.length})
+              {t('academic.learners')} ({filteredLearners.length}{learnerSearch ? ` de ${ficha.learners.length}` : ''})
             </Text>
           </View>
         }
@@ -299,6 +332,19 @@ export default function FichaDetailScreen() {
                   {t(`environments.statuses.${item.status}`)}
                 </Text>
               </View>
+              {/* Contraseña inicial — solo visible mientras no ha sido cambiada */}
+              {item.initialPassword ? (
+                <View style={[fds.pwdBadge, { backgroundColor: Colors.warning + '18', borderColor: Colors.warning + '55' }]}>
+                  <Ionicons name="key-outline" size={12} color={Colors.warning} />
+                  <Text style={[fds.pwdLabel, { color: Colors.warning }]}>Contraseña inicial: </Text>
+                  <Text style={[fds.pwdValue, { color: Colors.warning }]} selectable>{item.initialPassword}</Text>
+                </View>
+              ) : (
+                <View style={[fds.pwdBadge, { backgroundColor: Colors.success + '14', borderColor: Colors.success + '44' }]}>
+                  <Ionicons name="checkmark-circle-outline" size={12} color={Colors.success} />
+                  <Text style={[fds.pwdLabel, { color: Colors.success }]}>Contraseña propia activa</Text>
+                </View>
+              )}
             </View>
 
             {/* Botón editar */}
@@ -375,10 +421,19 @@ const fds = StyleSheet.create({
 
   sectionTitle: { fontSize: FontSize.xl, fontWeight: FontWeight.black, marginBottom: 10 },
 
-  learnerCard: { borderRadius: 12, borderWidth: 1, padding: 14, flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  learnerCard: { borderRadius: 12, borderWidth: 1, padding: 14, flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8 },
   learnerName: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
   learnerMeta: { fontSize: FontSize.sm, marginTop: 2 },
   iconBtn: { width: 34, height: 34, borderRadius: 9, borderWidth: 1.2, alignItems: 'center', justifyContent: 'center' },
+
+  // ── Contraseña inicial ──
+  pwdBadge:  { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 8, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 5, marginTop: 7, flexWrap: 'wrap' },
+  pwdLabel:  { fontSize: FontSize.xs, fontWeight: FontWeight.bold },
+  pwdValue:  { fontSize: FontSize.xs, fontWeight: FontWeight.black, letterSpacing: 0.5 },
+
+  // ── Buscador de aprendices ──
+  searchBar:   { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 12, borderWidth: 1, paddingHorizontal: 12, height: 42, marginBottom: 10 },
+  searchInput: { flex: 1, fontSize: FontSize.sm, outlineStyle: 'none' } as any,
 
   empty: { alignItems: 'center', paddingVertical: 40 },
 

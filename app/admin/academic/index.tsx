@@ -11,10 +11,13 @@ import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { isRecent, wasEditedRecently } from '@/shared/utils/dates';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+    Animated,
+    Easing,
     FlatList,
     StyleSheet,
     Text,

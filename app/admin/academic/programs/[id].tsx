@@ -9,7 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { SectionList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SectionList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function ProgramDetailScreen() {
   const { theme, isDark } = useTheme();
@@ -18,6 +18,8 @@ export default function ProgramDetailScreen() {
   const { getProgram, allFichas, allInstructors, unlinkFichaFromProgram } = useAcademic();
   const { alert, DialogUI } = useAppDialog();
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [fichaSearch, setFichaSearch]     = useState('');
+
   const program = getProgram(id ?? '');
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -27,8 +29,20 @@ export default function ProgramDetailScreen() {
   if (!program) return <View style={[pds.safe, { backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }]}><Text style={{ color: muted }}>Programa no encontrado</Text></View>;
 
   const programFichas = allFichas.filter(f => program.fichas.includes(f.id));
-  // Instructores específicos asignados a este programa
   const programInstructors = allInstructors.filter(i => i.programId === program.id);
+
+  // Filtrar fichas por número de ficha o nombre del instructor responsable
+  const filteredFichas = fichaSearch.trim()
+    ? programFichas.filter(f => {
+        const q = fichaSearch.trim().toLowerCase();
+        if (f.number.includes(q)) return true;
+        // ¿algún instructor de esta ficha coincide con la búsqueda?
+        return allInstructors.some(inst =>
+          inst.fichaIds.includes(f.id) &&
+          (`${inst.name} ${inst.lastname}`).toLowerCase().includes(q),
+        );
+      })
+    : programFichas;
 
   return (
     <View style={[pds.safe, { backgroundColor: bg }]}>
@@ -36,14 +50,34 @@ export default function ProgramDetailScreen() {
         sections={[
           { key: 'header', data: [] as any[] },
           { key: 'instructors', title: `Instructores (${programInstructors.length})`, data: programInstructors },
-          { key: 'fichas', title: `${t('academic.fichas')} (${programFichas.length})`, data: programFichas },
+          { key: 'fichas', title: `${t('academic.fichas')} (${filteredFichas.length}${fichaSearch ? ` de ${programFichas.length}` : ''})`, data: filteredFichas },
         ]}
         keyExtractor={(item, i) => item?.id ?? String(i)}
         contentContainerStyle={pds.scroll}
         renderSectionHeader={({ section }) => {
           if (section.key === 'header') return null;
           return (
-            <Text style={[pds.sectionTitle, { color: text }]}>{section.title}</Text>
+            <View>
+              <Text style={[pds.sectionTitle, { color: text }]}>{section.title}</Text>
+              {section.key === 'fichas' && (
+                <View style={[pds.searchBar, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F2F2F2', borderColor: border }]}>
+                  <Ionicons name="search-outline" size={15} color={muted} />
+                  <TextInput
+                    style={[pds.searchInput, { color: text }] as any}
+                    value={fichaSearch}
+                    onChangeText={setFichaSearch}
+                    placeholder="Buscar por número de ficha o nombre de instructor…"
+                    placeholderTextColor={muted}
+                    autoCorrect={false}
+                  />
+                  {fichaSearch.length > 0 && (
+                    <TouchableOpacity onPress={() => setFichaSearch('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                      <Ionicons name="close-circle" size={15} color={muted} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
+            </View>
           );
         }}
         ListHeaderComponent={
@@ -90,7 +124,6 @@ export default function ProgramDetailScreen() {
         renderItem={({ item, section }) => {
           // ── Instructor card ──
           if (section.key === 'instructors') {
-            const inst = item as ReturnType<typeof allInstructors[0] extends infer T ? () => T : never>;
             return (
               <View style={[pds.card, { backgroundColor: cardBg, borderColor: border }]}>
                 <View style={[pds.iconCircle, { backgroundColor: theme.primary + '20' }]}>
@@ -102,6 +135,19 @@ export default function ProgramDetailScreen() {
                     {item.instructorType === 'especifico' ? 'Específico' : 'Transversal'} · Doc: {item.document}
                   </Text>
                   <Text style={[pds.cardMeta, { color: muted }]}>{item.email}</Text>
+                  {/* Contraseña inicial — el coordinador la ve para enviársela al instructor */}
+                  {item.initialPassword ? (
+                    <View style={[pds.pwdBadge, { backgroundColor: Colors.warning + '18', borderColor: Colors.warning + '55' }]}>
+                      <Ionicons name="key-outline" size={11} color={Colors.warning} />
+                      <Text style={[pds.pwdLabel, { color: Colors.warning }]}>Contraseña inicial: </Text>
+                      <Text style={[pds.pwdValue, { color: Colors.warning }]} selectable>{item.initialPassword}</Text>
+                    </View>
+                  ) : (
+                    <View style={[pds.pwdBadge, { backgroundColor: Colors.success + '14', borderColor: Colors.success + '44' }]}>
+                      <Ionicons name="checkmark-circle-outline" size={11} color={Colors.success} />
+                      <Text style={[pds.pwdLabel, { color: Colors.success }]}>Contraseña propia activa</Text>
+                    </View>
+                  )}
                 </View>
                 <View style={[pds.statusBadge, { backgroundColor: item.status === 'active' ? Colors.success + '18' : Colors.error + '18' }]}>
                   <View style={[pds.statusDot, { backgroundColor: item.status === 'active' ? Colors.success : Colors.error }]} />
@@ -156,9 +202,16 @@ const pds = StyleSheet.create({
   infoValue: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
   editBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 1.5, borderRadius: 10, paddingVertical: 10, marginTop: 16 },
   sectionTitle: { fontSize: FontSize.xl, fontWeight: FontWeight.black, marginBottom: 10, marginTop: 4 },
-  card: { borderRadius: 14, borderWidth: 1, padding: 16, flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  iconCircle: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  card: { borderRadius: 14, borderWidth: 1, padding: 16, flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8 },
+  iconCircle: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 12, flexShrink: 0 },
   cardTitle: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
   cardMeta: { fontSize: FontSize.sm, marginTop: 2 },
   empty: { alignItems: 'center', paddingVertical: 40 },
+  // ── Contraseña inicial ──
+  pwdBadge:  { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 7, borderWidth: 1, paddingHorizontal: 7, paddingVertical: 4, marginTop: 6, flexWrap: 'wrap' },
+  pwdLabel:  { fontSize: FontSize.xs, fontWeight: FontWeight.bold },
+  pwdValue:  { fontSize: FontSize.xs, fontWeight: FontWeight.black, letterSpacing: 0.5 },
+  // ── Buscador de fichas ──
+  searchBar:   { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 11, borderWidth: 1, paddingHorizontal: 11, height: 40, marginBottom: 10 },
+  searchInput: { flex: 1, fontSize: FontSize.sm, outlineStyle: 'none' } as any,
 });

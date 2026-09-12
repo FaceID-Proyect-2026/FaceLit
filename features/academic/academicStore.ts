@@ -3,6 +3,7 @@
 //  RF-3 V4 — Store de Gestión Académica
 //  Programas · Fichas · Aprendices · Instructores
 // ─────────────────────────────────────────────
+import { pushNotification } from '../notifications/notificationsStore';
 import { getSchedulesSnapshot } from '../schedules/schedulesStore';
 import {
     DocumentChangeLogEntry,
@@ -108,7 +109,15 @@ export function deleteProgramStore(id: string) {
   const prog = programs.find(p => p.id === id);
   if (!prog) return { success: false, error: 'academic.programNotFound' };
   if (prog.status !== 'inactive') return { success: false, error: 'academic.noDeleteActiveProgram' };
-  if (prog.fichas.length > 0) return { success: false, error: 'academic.programHasFichas' };
+  if (prog.fichas.length > 0) {
+    pushNotification(
+      'academic_delete_blocked',
+      'Intento de eliminación bloqueado',
+      `No fue posible eliminar el programa "${prog.name}" porque tiene fichas activas asociadas.`,
+      { entityType: 'program', entityId: id },
+    );
+    return { success: false, error: 'academic.programHasFichas' };
+  }
   programs = programs.filter(p => p.id !== id);
   emit();
   return { success: true };
@@ -201,8 +210,24 @@ export function deleteFichaStore(id: string) {
   const ficha = fichas.find(f => f.id === id);
   if (!ficha) return { success: false, error: 'academic.fichaNotFound' };
   if (ficha.status !== 'inactive') return { success: false, error: 'academic.noDeleteActiveFicha' };
-  if (ficha.learners.length > 0) return { success: false, error: 'academic.fichaHasLearners' };
-  if (getSchedulesSnapshot().some(s => s.fichaId === id)) return { success: false, error: 'academic.fichaHasSchedules' };
+  if (ficha.learners.length > 0) {
+    pushNotification(
+      'academic_delete_blocked',
+      'Intento de eliminación bloqueado',
+      `No fue posible eliminar la ficha ${ficha.number} porque tiene aprendices asociados.`,
+      { entityType: 'ficha', entityId: id },
+    );
+    return { success: false, error: 'academic.fichaHasLearners' };
+  }
+  if (getSchedulesSnapshot().some(s => s.fichaId === id)) {
+    pushNotification(
+      'academic_delete_blocked',
+      'Intento de eliminación bloqueado',
+      `No fue posible eliminar la ficha ${ficha.number} porque tiene horarios registrados.`,
+      { entityType: 'ficha', entityId: id },
+    );
+    return { success: false, error: 'academic.fichaHasSchedules' };
+  }
   fichas   = fichas.filter(f => f.id !== id);
   programs = programs.map(p => ({ ...p, fichas: p.fichas.filter(fid => fid !== id) }));
   emit();
@@ -544,10 +569,20 @@ export function joinFichaByTransferCodeStore(learnerId: string, transferCode: st
   }
 
   emit();
+  // RF-8 — Notificación #6: traslado completado por código
+  pushNotification(
+    'learner_transferred',
+    'Traslado completado por código',
+    `${learner.name} ${learner.lastname} (${learner.document}) ingresó el código de traslado y ya está activo en la ficha ${target.number}. La ficha anterior (${currentFicha.number}) quedó inactiva para él.`,
+    {
+      learnerName:     `${learner.name} ${learner.lastname}`,
+      learnerDocument: learner.document,
+      fromFichaNumber: currentFicha.number,
+      toFichaNumber:   target.number,
+    },
+  );
   return { success: true, fichaNumber: target.number, prevFichaNumber: currentFicha.number };
 }
-
-/** Compatibilidad con el flujo antiguo de orphan pool que usaba code interno */
 export function joinFichaByCodeStore(learnerId: string, code: string) {
   const learner = orphanLearners.find(l => l.id === learnerId);
   if (!learner) return { success: false, error: 'academic.learnerNotFound' };

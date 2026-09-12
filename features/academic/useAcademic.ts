@@ -5,40 +5,46 @@
 // ─────────────────────────────────────────────
 import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
 import {
-    addLearnerStore,
-    deactivateFichaStore,
-    deactivateInstructorStore,
-    deactivateProgramStore,
-    deleteFichaStore,
-    deleteInstructorStore,
-    deleteOrphanLearnerStore,
-    deleteProgramStore,
-    generateTransferCode,
-    getFichaById,
-    getFichasSnapshot,
-    getInstructorById,
-    getInstructorsSnapshot,
-    getOrphanLearnersSnapshot,
-    getProgramById,
-    getProgramsSnapshot,
-    joinFichaByCodeStore,
-    joinFichaByTransferCodeStore,
-    linkFichaToProgramStore,
-    markLearnerValidation,
-    moveLearnerToOrphanPoolStore,
-    reactivateFichaStore,
-    reactivateInstructorStore,
-    reactivateProgramStore,
-    regenerateTransferCodeStore,
-    registerFicha,
-    registerInstructorStore,
-    registerProgram,
-    removeLearnerStore,
-    subscribe,
-    unlinkFichaFromProgramStore,
-    updateFichaStore,
-    updateInstructorStore,
-    updateProgramStore
+  addLearnerStore,
+  assignInstructorToFichaStore,
+  deactivateFichaStore,
+  deactivateInstructorStore,
+  deactivateLearnerStore,
+  deactivateProgramStore,
+  deleteFichaStore,
+  deleteInstructorStore,
+  deleteOrphanLearnerStore,
+  deleteProgramStore,
+  generateTransferCode,
+  getFichaById,
+  getFichasSnapshot,
+  getInstructorById,
+  getInstructorsByFichaId,
+  getInstructorsSnapshot,
+  getOrphanLearnersSnapshot,
+  getProgramById,
+  getProgramsSnapshot,
+  joinFichaByCodeStore,
+  joinFichaByTransferCodeStore,
+  linkFichaToProgramStore,
+  markLearnerValidation,
+  moveLearnerToOrphanPoolStore,
+  reactivateFichaStore,
+  reactivateInstructorStore,
+  reactivateLearnerStore,
+  reactivateProgramStore,
+  regenerateTransferCodeStore,
+  registerFicha,
+  registerInstructorStore,
+  registerProgram,
+  removeLearnerStore,
+  subscribe,
+  unassignInstructorFromFichaStore,
+  unlinkFichaFromProgramStore,
+  updateFichaStore,
+  updateInstructorStore,
+  updateLearnerInfoStore,
+  updateProgramStore
 } from './academicStore';
 import { Ficha, InstructorType, Program, ValidationStatus } from './types';
 
@@ -127,11 +133,6 @@ export function useAcademic() {
   const markValidation      = useCallback((learnerId: string, status: ValidationStatus) => markLearnerValidation(learnerId, status), []);
   const moveLearnerToOrphanPool = useCallback((fichaId: string, learnerId: string) => moveLearnerToOrphanPoolStore(fichaId, learnerId), []);
   const deleteOrphanLearner = useCallback((learnerId: string) => deleteOrphanLearnerStore(learnerId), []);
-
-  /**
-   * RF-3.3 — Traslado por código de traslado alfanumérico (8 chars).
-   * Funciona para aprendices en orphan pool Y para aprendices con ficha activa.
-   */
   const joinFichaByTransferCode = useCallback(
     (learnerId: string, transferCode: string) => joinFichaByTransferCodeStore(learnerId, transferCode),
     [],
@@ -145,14 +146,17 @@ export function useAcademic() {
 
   // ── Acciones — Instructores ───────────────
   const addInstructor = useCallback(
-    (data: { name: string; lastname: string; document: string; email: string; instructorType: InstructorType; programId?: string }) =>
+    (data: { name: string; lastname: string; document: string; email: string; instructorType: InstructorType; programId?: string; fichaIds?: string[] }) =>
       registerInstructorStore(data),
     [],
   );
-  const updateInstructor     = useCallback((id: string, data: Parameters<typeof updateInstructorStore>[1]) => updateInstructorStore(id, data), []);
-  const deactivateInstructor = useCallback((id: string) => deactivateInstructorStore(id), []);
-  const reactivateInstructor = useCallback((id: string) => reactivateInstructorStore(id), []);
-  const deleteInstructor     = useCallback((id: string) => deleteInstructorStore(id), []);
+  const updateInstructor            = useCallback((id: string, data: Parameters<typeof updateInstructorStore>[1]) => updateInstructorStore(id, data), []);
+  const deactivateInstructor        = useCallback((id: string) => deactivateInstructorStore(id), []);
+  const reactivateInstructor        = useCallback((id: string) => reactivateInstructorStore(id), []);
+  const deleteInstructor            = useCallback((id: string) => deleteInstructorStore(id), []);
+  const assignInstructorToFicha     = useCallback((instructorId: string, fichaId: string) => assignInstructorToFichaStore(instructorId, fichaId), []);
+  const unassignInstructorFromFicha = useCallback((instructorId: string, fichaId: string) => unassignInstructorFromFichaStore(instructorId, fichaId), []);
+  const getInstructorsForFicha      = useCallback((fichaId: string) => getInstructorsByFichaId(fichaId), []);
 
   return {
     // Estado
@@ -185,6 +189,7 @@ export function useAcademic() {
 
     // Instructores
     addInstructor, updateInstructor, deactivateInstructor, reactivateInstructor, deleteInstructor,
+    assignInstructorToFicha, unassignInstructorFromFicha, getInstructorsForFicha,
 
     // Utilidades
     generateTransferCode,

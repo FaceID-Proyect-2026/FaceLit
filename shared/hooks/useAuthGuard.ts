@@ -1,41 +1,42 @@
 // ─────────────────────────────────────────────
 //  shared/hooks/useAuthGuard.ts
-//  Protege un layout de rol (admin/instructor/coordinador/aprendiz):
-//  si no hay sesión, redirige a login SOLO cuando el router raíz ya
-//  terminó de montar (useRootNavigationState) y SOLO dentro de un
-//  efecto — nunca durante el render.
+//  Protege un layout de rol (admin/instructor/apprentice):
+//  si no hay sesión, redirige a login SOLO cuando:
+//    1. El router raíz ya terminó de montar (useRootNavigationState)
+//    2. La sesión ya terminó de restaurarse (authLoading = false)
+//    3. Todo ocurre dentro de un efecto, nunca durante el render
 //
-//  Por qué existe: llamar a router.replace() directamente en el
-//  cuerpo del render (como hacían antes estos layouts) o en un
-//  efecto que se dispara antes de que expo-router esté listo,
-//  produce el error "Attempted to navigate before mounting the Root
-//  Layout component" al recargar una ruta profunda, y puede volver a
-//  dispararse en cualquier re-render (cambiar tema/idioma, login,
-//  etc.), ya que cada re-render reevalúa esa condición.
-//
-//  RF-1.15 — Separación de responsabilidades:
-//  Este hook verifica SOLO autenticación (¿quién eres?).
-//  Para verificar autorización por rol (¿qué puedes hacer?),
-//  usar useRoleGuard en su lugar.
+//  Acepta un tercer parámetro `authLoading` para no redirigir
+//  mientras AuthContext está restaurando la sesión desde el token
+//  guardado (ese proceso es asíncrono y tarda ~100-400 ms).
 // ─────────────────────────────────────────────
 import { router, useRootNavigationState } from 'expo-router';
 import { useEffect, useRef } from 'react';
 
-export function useAuthGuard(isAuthenticated: boolean, redirectTo: string = '/auth/login') {
+export function useAuthGuard(
+  isAuthenticated: boolean,
+  redirectTo: string = '/auth/login',
+  authLoading: boolean = false,
+) {
   const rootNavigationState = useRootNavigationState();
   const isReady = !!rootNavigationState?.key;
   const hasRedirected = useRef(false);
 
   useEffect(() => {
-    if (!isReady) return; // el router raíz todavía no montó — no navegar aún
+    // Esperar a que el router esté listo Y la sesión haya terminado de cargarse
+    if (!isReady || authLoading) return;
+
     if (!isAuthenticated && !hasRedirected.current) {
       hasRedirected.current = true;
       router.replace(redirectTo as any);
     }
     if (isAuthenticated) hasRedirected.current = false;
-  }, [isReady, isAuthenticated, redirectTo]);
+  }, [isReady, authLoading, isAuthenticated, redirectTo]);
 
-  // El layout puede renderizar su contenido normal solo cuando el
-  // router está listo Y hay sesión activa.
-  return { canRenderContent: isReady && isAuthenticated, isReady };
+  // Solo renderizar contenido cuando el router está listo,
+  // la sesión terminó de cargarse Y el usuario está autenticado.
+  return {
+    canRenderContent: isReady && !authLoading && isAuthenticated,
+    isReady,
+  };
 }

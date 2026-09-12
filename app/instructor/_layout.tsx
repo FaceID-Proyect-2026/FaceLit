@@ -2,13 +2,13 @@
 //  app/instructor/_layout.tsx
 //  Layout instructor con sidebar
 // ─────────────────────────────────────────────
+import Sidebar from '@/shared/components/layout/Sidebar';
+import { LanguageSelector, ThemeToggle } from '@/shared/components/ui';
+import { Colors } from '@/shared/constants/colors';
+import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAuthGuard } from '@/shared/hooks/useAuthGuard';
-import { Colors } from '@/shared/constants/colors';
-import { FontSize, FontWeight } from '@/shared/constants/typography';
-import Sidebar from '@/shared/components/layout/Sidebar';
-import { LanguageSelector, ThemeToggle } from '@/shared/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, router } from 'expo-router';
 import { useState } from 'react';
@@ -16,10 +16,10 @@ import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function InstructorLayout() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const { theme, isDark } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { canRenderContent } = useAuthGuard(isAuthenticated);
+  const { canRenderContent } = useAuthGuard(isAuthenticated, '/auth/login', authLoading);
 
   if (!canRenderContent) {
     return (

@@ -71,7 +71,8 @@ export const MOCK_INSTRUCTORS = [
 export const MOCK_SCHEDULES: Schedule[] = [
   { id: 's1', fichaId: '1', fichaNumber: '3145555', programName: 'ADSO', day: 'monday', startTime: '07:00', endTime: '12:00', environmentId: '1', environmentName: 'Salón 101', instructorId: 'i1', instructorName: 'María González', status: 'active', createdAt: '2026-01-08T05:00:00.000Z', updatedAt: '2026-01-08T05:00:00.000Z' },
   { id: 's2', fichaId: '1', fichaNumber: '3145555', programName: 'ADSO', day: 'tuesday', startTime: '07:00', endTime: '12:00', environmentId: '3', environmentName: 'Lab. Sistemas', instructorId: 'i1', instructorName: 'María González', status: 'active', createdAt: '2026-01-08T05:00:00.000Z', updatedAt: '2026-01-08T05:00:00.000Z' },
-  { id: 's3', fichaId: '2', fichaNumber: '3145556', programName: 'ADSO', day: 'monday', startTime: '13:00', endTime: '18:00', environmentId: '2', environmentName: 'Salón 102', instructorId: 'i2', instructorName: 'Pedro Ramírez', status: 'active', createdAt: '2026-01-08T05:00:00.000Z', updatedAt: '2026-01-08T05:00:00.000Z' },
+  { id: 's3', fichaId: '2', fichaNumber: '3145556', programName: 'ADSO', day: 'monday',    startTime: '13:00', endTime: '18:00', environmentId: '2', environmentName: 'Salón 102',   instructorId: 'i2', instructorName: 'Pedro Ramírez',    status: 'active', createdAt: '2026-01-08T05:00:00.000Z', updatedAt: '2026-01-08T05:00:00.000Z' },
+  { id: 's5', fichaId: '1', fichaNumber: '3145555', programName: 'ADSO', day: 'wednesday', startTime: '07:00', endTime: '12:00', environmentId: '3', environmentName: 'Lab. Sistemas', instructorId: 'i1', instructorName: 'María González', status: 'active', createdAt: '2026-01-08T05:00:00.000Z', updatedAt: '2026-01-08T05:00:00.000Z' },
 ];
 export const MOCK_EXCEPTIONS: ScheduleException[] = [
   {

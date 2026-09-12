@@ -44,6 +44,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       ? [{ icon: 'people-outline', label: t('sidebar.users'), route: Routes.ADMIN.USERS, module: 'users' }]
       : []),
     { icon: 'school-outline',            label: t('sidebar.academic'),   route: Routes.ACADEMIC.PROGRAMS,  module: 'academic'   },
+    { icon: 'swap-horizontal-outline',   label: t('sidebar.transferRequests'), route: Routes.ACADEMIC.COORDINATOR_REQUESTS, module: 'academic' },
     { icon: 'checkmark-circle-outline',  label: t('sidebar.attendance'), route: Routes.ATTENDANCE.LIST,    module: 'attendance' },
     { icon: 'notifications-outline',     label: t('sidebar.notifications'), route: Routes.NOTIFICATIONS.CENTER, module: 'notifications' },
     { icon: 'person-outline',            label: t('sidebar.profile'),    route: Routes.PROFILE.VIEW,       module: 'profile'    },
