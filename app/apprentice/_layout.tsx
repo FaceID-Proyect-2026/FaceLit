@@ -9,6 +9,7 @@ import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAuthGuard } from '@/shared/hooks/useAuthGuard';
+import { useNotifications } from '@/features/notifications/useNotifications';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, router } from 'expo-router';
 import { useState } from 'react';
@@ -16,10 +17,11 @@ import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ApprenticeLayout() {
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const { theme, isDark } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { canRenderContent } = useAuthGuard(isAuthenticated, '/auth/login', authLoading);
+  const { unreadCount } = useNotifications({ recipientUserId: user?.id });
 
   if (!canRenderContent) {
     return (
@@ -48,12 +50,15 @@ export default function ApprenticeLayout() {
           <ThemeToggle />
           <TouchableOpacity onPress={() => router.push('/notifications' as any)} style={al.iconBtn}>
             <Ionicons name="notifications-outline" size={20} color={text} />
+            {unreadCount > 0 && <View style={[al.notificationBadge, { backgroundColor: theme.primary }]} />}
           </TouchableOpacity>
         </View>
       </View>
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}>
         <Stack.Screen name="index" />
+        <Stack.Screen name="attendance" />
+        <Stack.Screen name="facial" />
         <Stack.Screen name="transfer-request" />
         <Stack.Screen name="join-ficha" />
       </Stack>
@@ -70,4 +75,5 @@ const al = StyleSheet.create({
   headerTitle: { fontSize: FontSize.xl, fontWeight: FontWeight.black },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   iconBtn: { padding: 6 },
+  notificationBadge: { position: 'absolute', top: 4, right: 4, width: 7, height: 7, borderRadius: 4 },
 });

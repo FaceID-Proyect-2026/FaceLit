@@ -1,17 +1,21 @@
 // ─────────────────────────────────────────────
 //  shared/components/ui/LanguageSelector.tsx
 //  Selector de idioma — web DOM / móvil Modal
+//
+//  Web: el dropdown se renderiza mediante un portal
+//  en document.body para evitar que quede tapado
+//  por elementos con z-index más alto del header.
 // ─────────────────────────────────────────────
-import { useState } from 'react';
-import {
-  Modal, Platform, Pressable, StyleSheet,
-  Text, TouchableOpacity, View, ViewStyle,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useLanguage, Language, LANGUAGE_LABELS, LANGUAGE_NAMES } from '@/shared/contexts/I18nContext';
-import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
+import { Language, LANGUAGE_LABELS, LANGUAGE_NAMES, useLanguage } from '@/shared/contexts/I18nContext';
+import { useTheme } from '@/shared/contexts/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
+import { useEffect, useRef, useState } from 'react';
+import {
+    Modal, Platform, Pressable, StyleSheet,
+    Text, TouchableOpacity, View, ViewStyle,
+} from 'react-native';
 
 const LANGUAGES: Language[] = ['es', 'en', 'de', 'fr'];
 
@@ -22,157 +26,128 @@ function LanguageSelectorWeb({ style }: LanguageSelectorProps) {
   const { language, changeLanguage } = useLanguage();
   const { isDark } = useTheme();
   const [open, setOpen] = useState(false);
+  const [btnRect, setBtnRect] = useState<{ top: number; right: number } | null>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
 
-  const bg = isDark ? Colors.dark.card : Colors.white;
-  const border = isDark ? 'rgba(101,179,97,0.4)' : '#DDDDDD';
+  const bg      = isDark ? Colors.dark.card : Colors.white;
+  const border  = isDark ? 'rgba(101,179,97,0.4)' : '#DDDDDD';
   const textCol = isDark ? Colors.dark.text : Colors.light.text;
-  const activeBg = isDark
-    ? 'rgba(101,179,97,0.22)'
-    : 'rgba(101,179,97,0.13)';
-  const hoverBg = Colors.primaryFaint;
+  const activeBg = isDark ? 'rgba(101,179,97,0.22)' : 'rgba(101,179,97,0.13)';
+  const hoverBg  = Colors.primaryFaint;
+
+  // Al abrir, calcular posición absoluta del botón en la ventana
+  function handleOpen() {
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setBtnRect({
+        top:   rect.bottom + window.scrollY + 6,
+        right: window.innerWidth - rect.right,
+      });
+    }
+    setOpen(v => !v);
+  }
+
+  // Cerrar al hacer clic fuera
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (btnRef.current && !btnRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
 
   return (
     // @ts-ignore
-    <div
-      style={{
-        position: 'relative',
-        display: 'inline-block',
-        zIndex: 999999,
-      }}
-    >
+    <div style={{ position: 'relative', display: 'inline-block' }}>
       {/* @ts-ignore */}
       <button
-        onClick={() => setOpen(v => !v)}
+        ref={btnRef}
+        onClick={handleOpen}
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
+          display: 'flex', alignItems: 'center', gap: 6,
           background: isDark ? 'rgba(255,255,255,0.05)' : '#F6F6F6',
           border: `1.5px solid ${Colors.primary}`,
-          borderRadius: 20,
-          height: 40,
-          padding: '0 14px',
-          cursor: 'pointer',
-          fontWeight: 700,
-          fontSize: 13,
-          color: Colors.primary,
-          outline: 'none',
-          position: 'relative',
-          zIndex: 999999,
+          borderRadius: 20, height: 40, padding: '0 14px',
+          cursor: 'pointer', fontWeight: 700, fontSize: 13,
+          color: Colors.primary, outline: 'none',
         }}
       >
-        <svg
-          width="15"
-          height="15"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke={Colors.primary}
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+          stroke={Colors.primary} strokeWidth="2.2"
+          strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="10" />
           <line x1="2" y1="12" x2="22" y2="12" />
           <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
         </svg>
-
         <span>{LANGUAGE_LABELS[language]}</span>
         <span style={{ fontSize: 9 }}>▾</span>
       </button>
 
-      {open && (
-        // @ts-ignore
-        <div
-          style={{
-            position: 'absolute',
-            top: '110%',
-            right: 0,
-            background: bg,
-            border: `1px solid ${border}`,
-            borderRadius: 12,
-            minWidth: 170,
-            zIndex: 999999,
-            pointerEvents: 'auto',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
-            overflow: 'hidden',
-          }}
-        >
-          {LANGUAGES.map((lang) => {
-            const isActive = language === lang;
-
-            return (
-              // @ts-ignore
-              <div
-                key={lang}
-                onClick={() => {
-                  changeLanguage(lang);
-                  setOpen(false);
-                }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  padding: '11px 16px',
-                  cursor: 'pointer',
-                  background: isActive ? activeBg : 'transparent',
-                  userSelect: 'none',
-                }}
-                onMouseEnter={(e: any) => {
-                  e.currentTarget.style.background = hoverBg;
-                }}
-                onMouseLeave={(e: any) => {
-                  e.currentTarget.style.background = isActive
-                    ? activeBg
-                    : 'transparent';
-                }}
-              >
-                <span
+      {/* Portal al body — evita quedar tapado por cualquier elemento del layout */}
+      {open && btnRect && typeof document !== 'undefined' && (() => {
+        const ReactDOM = require('react-dom');
+        return ReactDOM.createPortal(
+          // @ts-ignore
+          <div
+            style={{
+              position: 'fixed',
+              top:   btnRect.top,
+              right: btnRect.right,
+              background: bg,
+              border: `1px solid ${border}`,
+              borderRadius: 12,
+              minWidth: 170,
+              zIndex: 2147483647, // máximo posible
+              pointerEvents: 'auto',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.22)',
+              overflow: 'hidden',
+            }}
+            onMouseDown={(e: any) => e.stopPropagation()}
+          >
+            {LANGUAGES.map((lang) => {
+              const isActive = language === lang;
+              return (
+                // @ts-ignore
+                <div
+                  key={lang}
+                  onClick={() => { changeLanguage(lang); setOpen(false); }}
                   style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: 14,
-                    flexShrink: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: isActive
-                      ? Colors.primary
-                      : isDark
-                      ? 'rgba(101,179,97,0.18)'
-                      : 'rgba(101,179,97,0.14)',
-                    fontSize: 10,
-                    fontWeight: 800,
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '11px 16px', cursor: 'pointer',
+                    background: isActive ? activeBg : 'transparent',
+                    userSelect: 'none',
+                  }}
+                  onMouseEnter={(e: any) => { e.currentTarget.style.background = hoverBg; }}
+                  onMouseLeave={(e: any) => { e.currentTarget.style.background = isActive ? activeBg : 'transparent'; }}
+                >
+                  <span style={{
+                    width: 28, height: 28, borderRadius: 14, flexShrink: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: isActive ? Colors.primary : isDark ? 'rgba(101,179,97,0.18)' : 'rgba(101,179,97,0.14)',
+                    fontSize: 10, fontWeight: 800,
                     color: isActive ? Colors.white : Colors.primary,
-                  }}
-                >
-                  {lang.toUpperCase()}
-                </span>
-
-                <span
-                  style={{
-                    fontSize: 14,
-                    fontWeight: isActive ? 700 : 500,
-                    color: isActive ? Colors.primary : textCol,
-                  }}
-                >
-                  {LANGUAGE_NAMES[lang]}
-                </span>
-
-                {isActive && (
-                  <span
-                    style={{
-                      marginLeft: 'auto',
-                      color: Colors.primary,
-                    }}
-                  >
-                    ✓
+                  }}>
+                    {lang.toUpperCase()}
                   </span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+                  <span style={{
+                    fontSize: 14, fontWeight: isActive ? 700 : 500,
+                    color: isActive ? Colors.primary : textCol,
+                  }}>
+                    {LANGUAGE_NAMES[lang]}
+                  </span>
+                  {isActive && (
+                    <span style={{ marginLeft: 'auto', color: Colors.primary }}>✓</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>,
+          document.body,
+        );
+      })()}
     </div>
   );
 }

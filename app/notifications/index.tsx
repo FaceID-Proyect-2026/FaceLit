@@ -49,6 +49,9 @@ const CAT_CONFIG: Record<
 const ALL_CATEGORIES: (NotificationCategory | 'all')[] = [
   'all', 'csv', 'transfer', 'attendance', 'academic', 'security', 'facial',
 ];
+const APPRENTICE_CATEGORIES: (NotificationCategory | 'all')[] = [
+  'all', 'attendance', 'transfer', 'facial',
+];
 
 export default function NotificationsScreen() {
   const { isDark, theme } = useTheme();
@@ -59,9 +62,11 @@ export default function NotificationsScreen() {
   const [categoryFilter, setCategoryFilter] = useState<NotificationCategory | 'all'>('all');
   const [expandedId,     setExpandedId]     = useState<string | null>(null);
 
+  const isApprentice = user?.role === 'APPRENTICE';
   const { notifications, unreadCount, markRead, markAllRead } = useNotifications({
     statusFilter,
     categoryFilter,
+    recipientUserId: isApprentice ? user?.id : undefined,
   });
 
   const text    = isDark ? Colors.dark.text    : Colors.light.text;
@@ -153,7 +158,7 @@ export default function NotificationsScreen() {
         ))}
 
         {/* Enlace a corregir para CSV_INCONSISTENCY */}
-        {hasConflictLink && (
+        {!isApprentice && hasConflictLink && (
           <TouchableOpacity
             style={[ns.actionLink, { backgroundColor: Colors.info + '18', borderColor: Colors.info + '50' }]}
             onPress={() => router.push('/admin/academic' as any)}
@@ -165,7 +170,7 @@ export default function NotificationsScreen() {
         )}
 
         {/* RF-8.4 — Botones Aceptar/Rechazar para re-registro facial sin decisión aún */}
-        {notif.type === 'facial_reregister_request' && !m.facialDecision && (
+        {!isApprentice && notif.type === 'facial_reregister_request' && !m.facialDecision && (
           <View style={ns.facialActions}>
             <AppButton
               title={t('notifications.detail.reject')}
@@ -192,7 +197,7 @@ export default function NotificationsScreen() {
     const isUnread = !item.read;
     const expanded = expandedId === item.id;
     const isEmail  = item.channel === 'app+email';
-    const isFacialRequest = item.type === 'facial_reregister_request' && !item.meta?.facialDecision;
+    const isFacialRequest = !isApprentice && item.type === 'facial_reregister_request' && !item.meta?.facialDecision;
 
     return (
       <TouchableOpacity
@@ -318,7 +323,7 @@ export default function NotificationsScreen() {
         style={[ns.catScroll, { borderBottomColor: border, backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#F5F5F5' }]}
         contentContainerStyle={ns.catRow}
       >
-        {ALL_CATEGORIES.map(cat => {
+        {(isApprentice ? APPRENTICE_CATEGORIES : ALL_CATEGORIES).map(cat => {
           const active = categoryFilter === cat;
           const cfg = cat !== 'all' ? CAT_CONFIG[cat] : null;
           return (

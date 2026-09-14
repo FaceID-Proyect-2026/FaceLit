@@ -97,4 +97,11 @@ export const Routes = {
     VIEW:         '/profile',
     SETTINGS:     '/profile/settings',
   },
+
+  // Aprendiz — rutas propias
+  APPRENTICE: {
+    DASHBOARD:    '/apprentice',
+    ATTENDANCE:   '/apprentice/attendance',
+    FACIAL:       '/apprentice/facial',
+  },
 } as const;

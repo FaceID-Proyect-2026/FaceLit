@@ -1,19 +1,18 @@
-import { useTheme } from '@/shared/contexts/ThemeContext';
+import { getFichasSnapshot, subscribe as subscribeAcademic } from '@/features/academic/academicStore';
+import { useAttendance } from '@/features/attendance/useAttendance';
+import AppButton from '@/shared/components/ui/AppButton';
+import AppDialog from '@/shared/components/ui/AppDialog';
+import DateField from '@/shared/components/ui/DateField';
+import SelectField from '@/shared/components/ui/SelectField';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAuth } from '@/shared/contexts/AuthContext';
-import { useAttendance } from '@/features/attendance/useAttendance';
-import { getFichasSnapshot, subscribe as subscribeAcademic } from '@/features/academic/academicStore';
-import { useSyncExternalStore } from 'react';
+import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState, useMemo, useEffect } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View, TextInput } from 'react-native';
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { useTranslation } from 'react-i18next';
-import AppButton from '@/shared/components/ui/AppButton';
-import AppDialog from '@/shared/components/ui/AppDialog';
-import SelectField from '@/shared/components/ui/SelectField';
-import DateField from '@/shared/components/ui/DateField';
+import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 interface Excuse {
   id: string;

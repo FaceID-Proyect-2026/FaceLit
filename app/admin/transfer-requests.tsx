@@ -31,6 +31,7 @@ type StatusFilter = 'all' | 'pending' | 'approved' | 'rejected';
 
 // ── Badge de estado ───────────────────────────
 function StatusBadge({ status }: { status: TransferRequest['status'] }) {
+  const { t } = useTranslation();
   const color =
     status === 'approved' ? Colors.success :
     status === 'rejected' ? Colors.error :
@@ -39,10 +40,7 @@ function StatusBadge({ status }: { status: TransferRequest['status'] }) {
     status === 'approved' ? 'checkmark-circle-outline' :
     status === 'rejected' ? 'close-circle-outline' :
     'time-outline';
-  const label =
-    status === 'approved' ? 'Aprobada' :
-    status === 'rejected' ? 'Rechazada' :
-    'Pendiente';
+  const label = status === 'approved' ? t('academic.transferApprove') : status === 'rejected' ? t('academic.transferReject') : t('academic.validationStatus.pending');
 
   return (
     <View style={[bds.wrap, { backgroundColor: color + '18', borderColor: color + '40' }]}>
@@ -66,6 +64,7 @@ function RejectModal({
   isDark: boolean;
   theme: any;
 }) {
+  const { t } = useTranslation();
   const [reason, setReason] = useState('');
   const text    = isDark ? Colors.dark.text      : Colors.light.text;
   const muted   = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -77,28 +76,28 @@ function RejectModal({
   return (
     <View style={rm.overlay}>
       <View style={[rm.card, { backgroundColor: cardBg, borderColor: border }]}>
-        <Text style={[rm.title, { color: text }]}>Rechazar solicitud</Text>
+        <Text style={[rm.title, { color: text }]}>{t('academic.transferReject')}</Text>
         <Text style={[rm.sub, { color: muted }]}>
-          Indica el motivo del rechazo (el aprendiz podrá verlo).
+          {t('academic.transferRejectReason')}
         </Text>
         <TextInput
           value={reason}
           onChangeText={setReason}
-          placeholder="Motivo del rechazo…"
+          placeholder={t('academic.transferRejectReason')}
           placeholderTextColor={muted}
           multiline
           style={[rm.input, { color: text, borderColor: border, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#FAFAFA' } as any]}
         />
         <View style={rm.actions}>
           <TouchableOpacity onPress={onCancel} style={[rm.btn, { borderColor: border }]} activeOpacity={0.8}>
-            <Text style={{ color: muted, fontWeight: FontWeight.bold }}>Cancelar</Text>
+            <Text style={{ color: muted, fontWeight: FontWeight.bold }}>{t('common.cancel')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => { onConfirm(reason.trim()); setReason(''); }}
             style={[rm.btn, rm.destructBtn]}
             activeOpacity={0.8}
           >
-            <Text style={{ color: Colors.white, fontWeight: FontWeight.bold }}>Rechazar</Text>
+            <Text style={{ color: Colors.white, fontWeight: FontWeight.bold }}>{t('academic.transferReject')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -125,6 +124,7 @@ function RequestCard({
   onReject: () => void;
   text: string; muted: string; cardBg: string; border: string; theme: any;
 }) {
+  const { t } = useTranslation();
   return (
     <View style={[rc.card, { backgroundColor: cardBg, borderColor: border }]}>
       {/* Header: nombre + badge */}
@@ -134,7 +134,7 @@ function RequestCard({
         </View>
         <View style={{ flex: 1 }}>
           <Text style={[rc.name, { color: text }]}>{item.learnerName}</Text>
-          <Text style={[rc.doc,  { color: muted }]}>Doc: {item.learnerDocument}</Text>
+          <Text style={[rc.doc,  { color: muted }]}>{t('users.document')}: {item.learnerDocument}</Text>
         </View>
         <StatusBadge status={item.status} />
       </View>
@@ -142,12 +142,12 @@ function RequestCard({
       {/* Datos del traslado */}
       <View style={[rc.transferRow, { backgroundColor: theme.primary + '08', borderColor: theme.primary + '20' }]}>
         <View style={rc.fichaBox}>
-          <Text style={[rc.fichaLabel, { color: muted }]}>Ficha actual</Text>
+          <Text style={[rc.fichaLabel, { color: muted }]}>{t('academic.ficha')}</Text>
           <Text style={[rc.fichaNum, { color: text }]}>{item.currentFichaNumber}</Text>
         </View>
         <Ionicons name="arrow-forward" size={20} color={theme.primary} />
         <View style={rc.fichaBox}>
-          <Text style={[rc.fichaLabel, { color: muted }]}>Ficha destino</Text>
+          <Text style={[rc.fichaLabel, { color: muted }]}>{t('academic.ficha')}</Text>
           <Text style={[rc.fichaNum, { color: text }]}>{item.requestedFichaNumber}</Text>
         </View>
       </View>
@@ -288,10 +288,10 @@ export default function TransferRequestsScreen() {
   };
 
   const filterOptions: { value: StatusFilter; label: string; count?: number }[] = [
-    { value: 'pending',  label: 'Pendientes', count: pendingCount },
-    { value: 'approved', label: 'Aprobadas' },
-    { value: 'rejected', label: 'Rechazadas' },
-    { value: 'all',      label: 'Todas' },
+    { value: 'pending',  label: t('academic.validationStatus.pending'), count: pendingCount },
+    { value: 'approved', label: t('academic.transferApprove') },
+    { value: 'rejected', label: t('academic.transferReject') },
+    { value: 'all',      label: t('users.all') },
   ];
 
   return (
@@ -301,13 +301,13 @@ export default function TransferRequestsScreen() {
       <View style={trs.pageHeader}>
         <TouchableOpacity onPress={() => router.back()} style={trs.backRow} activeOpacity={0.7}>
           <Ionicons name="arrow-back" size={20} color={text} />
-          <Text style={[trs.backText, { color: text }]}>Volver</Text>
+          <Text style={[trs.backText, { color: text }]}>{t('common.back')}</Text>
         </TouchableOpacity>
         <View style={trs.titleRow}>
           <View>
-            <Text style={[trs.title, { color: text }]}>Solicitudes de traslado</Text>
+            <Text style={[trs.title, { color: text }]}>{t('academic.transferRequestsTitle')}</Text>
             <Text style={[trs.subtitle, { color: muted }]}>
-              Revisa y decide las solicitudes de traslado enviadas por los aprendices.
+              {t('academic.transferRequestsDescription', 'Revisa y decide las solicitudes de traslado enviadas por los aprendices.')}
             </Text>
           </View>
           {pendingCount > 0 && (
@@ -324,7 +324,7 @@ export default function TransferRequestsScreen() {
         <TextInput
           value={search}
           onChangeText={setSearch}
-          placeholder="Buscar por nombre, documento o ficha…"
+          placeholder={t('users.searchPlaceholder')}
           placeholderTextColor={muted}
           style={[trs.searchInput, { color: text } as any]}
         />

@@ -2,10 +2,11 @@
 //  shared/components/ui/ThemeToggle.tsx
 //  Botón para alternar tema claro/oscuro
 // ─────────────────────────────────────────────
-import { TouchableOpacity, Text, StyleSheet, ViewStyle } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '@/shared/contexts/ThemeContext';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
+import { useTheme } from '@/shared/contexts/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
+import { StyleSheet, Text, TouchableOpacity, ViewStyle } from 'react-native';
 
 interface ThemeToggleProps {
   style?: ViewStyle;
@@ -13,6 +14,7 @@ interface ThemeToggleProps {
 
 export default function ThemeToggle({ style }: ThemeToggleProps) {
   const { isDark, toggleTheme, theme } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <TouchableOpacity
@@ -32,7 +34,7 @@ export default function ThemeToggle({ style }: ThemeToggleProps) {
         size={15}
         color={theme.primary}
       />
-      <Text style={[s.label, { color: theme.primary }]}>Tema</Text>
+      <Text style={[s.label, { color: theme.primary }]}>{t('theme.toggle')}</Text>
     </TouchableOpacity>
   );
 }

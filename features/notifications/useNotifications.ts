@@ -5,25 +5,28 @@
 import { useMemo, useSyncExternalStore } from 'react';
 import {
   getNotificationsSnapshot,
-  getUnreadCount,
   markAllNotificationsRead,
   markNotificationRead,
   pushNotification,
   resolveFacialRequest,
   subscribeNotifications,
 } from './notificationsStore';
-import type { Notification, NotificationCategory, NotificationMeta, NotificationType } from './types';
+import type { NotificationCategory, NotificationMeta, NotificationType } from './types';
 
 export type StatusFilter = 'all' | 'unread' | 'read';
 
 export function useNotifications(opts?: {
   statusFilter?: StatusFilter;
   categoryFilter?: NotificationCategory | 'all';
+  /** Limita la bandeja a las notificaciones personales del destinatario. */
+  recipientUserId?: string;
 }) {
   const all = useSyncExternalStore(subscribeNotifications, getNotificationsSnapshot);
 
   const filtered = useMemo(() => {
-    let list = all;
+    let list = opts?.recipientUserId
+      ? all.filter(n => n.recipientUserId === opts.recipientUserId)
+      : all;
 
     // Filtro por estado
     const sf = opts?.statusFilter ?? 'all';
@@ -40,9 +43,13 @@ export function useNotifications(opts?: {
       const tb = `${b.date}T${b.time}`;
       return tb.localeCompare(ta);
     });
-  }, [all, opts?.statusFilter, opts?.categoryFilter]);
+  }, [all, opts?.statusFilter, opts?.categoryFilter, opts?.recipientUserId]);
 
-  const unreadCount = useMemo(() => all.filter(n => !n.read).length, [all]);
+  const unreadCount = useMemo(
+    () => (opts?.recipientUserId ? all.filter(n => n.recipientUserId === opts.recipientUserId) : all)
+      .filter(n => !n.read).length,
+    [all, opts?.recipientUserId],
+  );
 
   return {
     notifications: filtered,

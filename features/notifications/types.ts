@@ -106,6 +106,8 @@ export interface NotificationMeta {
 
 export interface Notification {
   id: string;
+  /** Usuario destinatario. Si falta, la notificación es institucional (solo administración). */
+  recipientUserId?: string;
   type: NotificationType;
   category: NotificationCategory;
   channel: NotificationChannel;
@@ -146,7 +148,8 @@ export const MOCK_NOTIFICATIONS_RF8: Notification[] = [
   },
   // 3 — Cambio de ficha aplicado
   {
-    id: 'n-3', type: 'csv_transfer_applied', category: 'csv', channel: 'app',
+    id: 'n-3', type: 'csv_transfer_applied', category: 'transfer', channel: 'app',
+    recipientUserId: 'u-appr-1',
     title: 'Cambio de ficha aplicado',
     message: 'El aprendiz Juan Pérez (1000000004) fue movido de la ficha 3145555 a la ficha 3145556.',
     date: '2026-09-10', time: '09:15', read: false,
@@ -211,6 +214,7 @@ export const MOCK_NOTIFICATIONS_RF8: Notification[] = [
   // 11 — Ambiente no correspondiente (App + Correo)
   {
     id: 'n-11', type: 'attendance_wrong_env', category: 'attendance', channel: 'app+email',
+    recipientUserId: 'u-appr-1',
     title: 'Registro en sesión no correspondiente',
     message: 'Juan Pérez (1000000004) se identificó en el Lab. Sistemas, que no corresponde a su ficha 3145555 ese día.',
     date: '2026-07-06', time: '07:02', read: false,
