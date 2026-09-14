@@ -62,6 +62,8 @@ function analyzeFrame(ctx: CanvasRenderingContext2D, W: number, H: number) {
   let sumLum = 0; let count = 0;
   const lumVals: number[] = [];
   let warmCount = 0; let warmSumX = 0; let warmSumY = 0;
+  let warmMinX = 1; let warmMaxX = 0;
+  let warmMinY = 1; let warmMaxY = 0;
 
   for (let y = 0; y < rh; y += step) {
     for (let x = 0; x < rw; x += step) {
@@ -70,12 +72,17 @@ function analyzeFrame(ctx: CanvasRenderingContext2D, W: number, H: number) {
       const lum = r * 0.299 + g * 0.587 + b * 0.114;
       sumLum += lum; lumVals.push(lum); count++;
 
-      // Píxel de tono cálido: rojo > verde, rojo > azul, no demasiado oscuro
+      // Píxel de tono cálido: rojo > verde, rojo > azul
       const isWarm = r > 80 && r > g * 1.05 && r > b * 1.10 && lum > 60 && lum < 240;
       if (isWarm) {
+        const nx = (x0 + x) / W;
+        const ny = (y0 + y) / H;
         warmCount++;
-        warmSumX += (x0 + x) / W;
-        warmSumY += (y0 + y) / H;
+        warmSumX += nx; warmSumY += ny;
+        if (nx < warmMinX) warmMinX = nx;
+        if (nx > warmMaxX) warmMaxX = nx;
+        if (ny < warmMinY) warmMinY = ny;
+        if (ny > warmMaxY) warmMaxY = ny;
       }
     }
   }
@@ -89,23 +96,49 @@ function analyzeFrame(ctx: CanvasRenderingContext2D, W: number, H: number) {
   const warmCenterX = warmCount > 0 ? warmSumX / warmCount : 0.5;
   const warmCenterY = warmCount > 0 ? warmSumY / warmCount : 0.5;
 
-  return { brightness, contrast, warmRatio, warmCenterX, warmCenterY };
+  // Densidad: cuán compacto es el blob.
+  // Si los píxeles de piel están dispersos por todo el frame (fondo cálido),
+  // el bounding box es grande relativo al número de píxeles → baja densidad.
+  // Si son un rostro concentrado → bounding box pequeño → alta densidad.
+  let warmDensity = 0;
+  if (warmCount > 10) {
+    const bbArea = (warmMaxX - warmMinX) * (warmMaxY - warmMinY);
+    // Densidad = ratio / área del bounding box normalizada
+    // Alto = píxeles de piel concentrados en zona pequeña
+    warmDensity = bbArea > 0 ? warmRatio / bbArea : 1;
+    // Normalizar: un rostro de ~15% del frame en un bb de ~0.1 = densidad ~1.5
+    // Limitar a 0-1 para comparación
+    warmDensity = Math.min(warmDensity / 2, 1);
+  }
+
+  return { brightness, contrast, warmRatio, warmCenterX, warmCenterY, warmDensity };
 }
 
 function computeWarning(
   brightness: number, contrast: number,
   warmRatio: number, warmCenterX: number, warmCenterY: number,
+  warmDensity: number,   // qué tan concentrado está el blob (0-1: disperso, alto: concentrado)
 ): LiveWarning {
   if (brightness < MIN_BRIGHTNESS)  return 'lowLight';
   if (brightness > MAX_BRIGHTNESS)  return 'highLight';
   if (contrast   < MIN_CONTRAST)    return 'lowContrast';
+
+  // Sin tono cálido suficiente → no hay rostro
+  // Umbral subido a 0.06 (6%) para evitar falsos positivos con fondos cálidos
+  if (warmRatio  < 0.06)            return 'noSkin';
+
+  // Tono cálido muy disperso (baja densidad) → fondo/objeto, no un rostro concentrado
+  // Un rostro real tiene los píxeles de piel agrupados, no distribuidos por todo el frame
+  if (warmDensity < 0.35 && warmRatio < 0.25) return 'noSkin';
+
   if (warmRatio  > 0.68)            return 'skinTooClose';
-  if (warmRatio  < 0.04)            return 'noSkin';
+
   // Centro del blob fuera del área central
   if (
     warmCenterX < 0.22 || warmCenterX > 0.78 ||
     warmCenterY < 0.15 || warmCenterY > 0.82
   ) return 'skinOffCenter';
+
   return 'none';
 }
 
@@ -210,6 +243,7 @@ export default function WebCamera({
       const frameWarning = computeWarning(
         result.brightness, result.contrast,
         result.warmRatio, result.warmCenterX, result.warmCenterY,
+        result.warmDensity,
       );
 
       // Prioridad: advertencias de contenido > movimiento > estabilidad > OK
