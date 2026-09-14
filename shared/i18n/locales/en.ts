@@ -458,6 +458,21 @@ const en = {
     noScreenPhoto: 'Do not photograph a screen or printed photo',
     frontalCapture: 'The system will capture a frontal image of your face',
     noFaceDetected: 'No face detected. Please stand in front of the camera.',
+    // ── Real detection messages (human.js) ──────────────────────
+    humanLoading:      'Starting face detector…',
+    multipleFaces:     'Multiple faces detected. Only one person should be in front of the camera.',
+    faceTooCLose:      'Move a little further from the camera.',
+    faceTooFar:        'Move closer to the camera.',
+    faceOffCenter:     'Center your face inside the oval.',
+    lookStraight:      'Turn your head to face the camera.',
+    tiltHead:          'Keep your head straight, do not tilt.',
+    eyesClosed:        'Open your eyes to continue.',
+    antiSpoofFail:     'Do not photograph a screen or printed photo.',
+    livenessFail:      'Could not verify a real person. Please try again.',
+    maskDetected:      'Remove your mask to continue with registration.',
+    occlusionDetected: 'Make sure your face is completely visible.',
+    validating:        'Analysing position…',
+    readyToCapture:    'Good position, you can capture.',
   },
 
   //Email Validation
@@ -711,6 +726,8 @@ const en = {
     validationSuccess:   'Face validated. You can capture.',
     validationInProgress:'Positioning face…',
     livenessFailed:      'Could not verify a real person. Please try again.',
+    moving:              'Keep still to capture.',
+    stabilizing:         'Hold the position…',
   },
 
 } as const;

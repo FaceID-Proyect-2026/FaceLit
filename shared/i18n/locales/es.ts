@@ -468,6 +468,23 @@ const es = {
     noScreenPhoto: 'No fotografíes una pantalla o foto impresa',
     frontalCapture: 'El sistema capturará una imagen frontal del rostro',
     noFaceDetected: 'No se detecta ningún rostro. Ubíquese frente a la cámara.',
+    // ── Mensajes de detección real (human.js) ──────────────────────
+    humanLoading:      'Iniciando detector facial…',
+    multipleFaces:     'Se detectan varios rostros. Solo una persona debe estar frente a la cámara.',
+    faceTooCLose:      'Aléjate un poco de la cámara.',
+    faceTooFar:        'Acércate más a la cámara.',
+    faceOffCenter:     'Centra tu rostro dentro del óvalo.',
+    lookStraight:      'Gira tu cabeza hacia el frente.',
+    tiltHead:          'Mantén la cabeza recta, sin inclinar.',
+    eyesClosed:        'Abre los ojos para continuar.',
+    antiSpoofFail:     'No fotografíes una pantalla o foto impresa.',
+    livenessFail:      'No se pudo verificar que sea una persona real. Intenta de nuevo.',
+    maskDetected:      'Retira el tapabocas para continuar con el registro.',
+    occlusionDetected: 'Asegúrate de que tu rostro esté completamente visible.',
+    validating:        'Analizando posición…',
+    readyToCapture:    'Posición correcta, puedes capturar.',
+    moving:            'Mantente quieto para capturar.',
+    stabilizing:       'Mantén la posición…',
   },
 
   //Email Validation
