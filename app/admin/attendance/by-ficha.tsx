@@ -14,6 +14,7 @@ import {
     getAttendanceUISnapshot,
     setByFichaDateFrom,
     setByFichaDateTo,
+    setByFichaDirectFicha,
     setByFichaFicha,
     setByFichaProgram,
     subscribeAttendanceUI,
@@ -50,7 +51,7 @@ const CELL_LATE     = Colors.warning + '30';
 const BORDER_ABSENT = Colors.error   + '80';
 const BORDER_LATE   = Colors.warning + '80';
 
-export default function AttendanceByFichaScreen() {
+export default function AttendanceByFichaScreen({ directFichaOnly = false }: { directFichaOnly?: boolean }) {
   const { isDark, theme } = useTheme();
   const { t, i18n }       = useTranslation();
   const { programs, allFichas } = useAcademic();
@@ -74,6 +75,10 @@ export default function AttendanceByFichaScreen() {
   const programOptions = useMemo(
     () => programs.map(p => ({ value: p.id, label: getProgramDisplayName(p, t) })),
     [programs, t],
+  );
+  const fichaOptions = useMemo(
+    () => allFichas.map(ficha => ({ value: ficha.id, label: `Ficha ${ficha.number}`, sublabel: ficha.code })),
+    [allFichas],
   );
 
   const fichaCards: FichaDaySummary[] = useMemo(
@@ -153,7 +158,7 @@ export default function AttendanceByFichaScreen() {
     >
 
       {/* ── Selector de programa — solo visible sin ficha activa ── */}
-      {!selectedFichaId && (
+      {!selectedFichaId && !directFichaOnly && (
         <View style={[s.card, { backgroundColor: cardBg, borderColor: border, zIndex: 10 }]}>
           <SearchableSelect
             label={t('attendance.selectProgram')}
@@ -166,8 +171,24 @@ export default function AttendanceByFichaScreen() {
         </View>
       )}
 
+      {!selectedFichaId && directFichaOnly && (
+        <View style={[s.card, { backgroundColor: cardBg, borderColor: border, zIndex: 10 }]}>
+          <SearchableSelect
+            label={t('attendance.selectFicha')}
+            value={selectedFichaId}
+            options={fichaOptions}
+            onSelect={fichaId => {
+              const ficha = allFichas.find(item => item.id === fichaId);
+              if (ficha) setByFichaDirectFicha(ficha.id, ficha.programId);
+            }}
+            placeholder={t('attendance.selectFichaPlaceholder')}
+            emptyText={t('attendance.noFichasInProgram')}
+          />
+        </View>
+      )}
+
       {/* Estado inicial — sin programa */}
-      {!selectedProgramId && !selectedFichaId && (
+      {!selectedProgramId && !selectedFichaId && !directFichaOnly && (
         <View style={s.prompt}>
           <View style={[s.promptIcon, { backgroundColor: theme.primary + '15' }]}>
             <Ionicons name="albums-outline" size={32} color={theme.primary} />
@@ -185,7 +206,7 @@ export default function AttendanceByFichaScreen() {
       )}
 
       {/* ── Tarjetas de fichas ── */}
-      {fichaCards.length > 0 && !selectedFichaId && (
+      {fichaCards.length > 0 && !selectedFichaId && !directFichaOnly && (
         <>
           <Text style={[s.sectionLabel, { color: text }]}>{t('attendance.rf6.fichasToday')}</Text>
           <View style={s.cardsGrid}>

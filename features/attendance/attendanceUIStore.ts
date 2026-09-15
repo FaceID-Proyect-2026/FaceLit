@@ -95,6 +95,14 @@ export function setByFichaFicha(selectedFichaId: string): void {
   emit();
 }
 
+export function setByFichaDirectFicha(selectedFichaId: string, selectedProgramId: string): void {
+  state = {
+    ...state,
+    byFicha: { ...state.byFicha, selectedProgramId, selectedFichaId, dateFrom: '', dateTo: '' },
+  };
+  emit();
+}
+
 export function setByFichaDateFrom(dateFrom: string): void {
   // Si la nueva fecha desde es posterior a dateTo, resetear dateTo
   const dateTo = state.byFicha.dateTo && dateFrom > state.byFicha.dateTo ? '' : state.byFicha.dateTo;
