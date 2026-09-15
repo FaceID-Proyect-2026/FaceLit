@@ -1,1 +1,2 @@
-export { default } from '../../admin/attendance/by-ficha';
+export { default } from "../../admin/attendance/by-ficha";
+
