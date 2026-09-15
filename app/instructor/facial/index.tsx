@@ -14,15 +14,17 @@ import { AppButton, SelectField } from "@/shared/components/ui";
 import { Colors } from "@/shared/constants/colors";
 import { Routes } from "@/shared/constants/routes";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
+import { useAuth } from "@/shared/contexts/AuthContext";
 import { useTheme } from "@/shared/contexts/ThemeContext";
 import { useAppDialog } from "@/shared/hooks/useAppDialog";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 export default function FacialManagementScreen() {
+  const { logout } = useAuth();
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const { environments } = useEnvironments();
@@ -35,6 +37,29 @@ export default function FacialManagementScreen() {
   );
   const [instructorId, setInstructorId] = useState(config?.instructorId ?? "");
   const [fichaId, setFichaId] = useState(config?.fichaId ?? "");
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    window.history.pushState(
+      { facialBackGuard: true },
+      "",
+      window.location.href,
+    );
+
+    const handleBrowserBack = async () => {
+      window.history.pushState(
+        { facialBackGuard: true },
+        "",
+        window.location.href,
+      );
+      await logout();
+      router.replace(Routes.AUTH.LOGIN as any);
+    };
+
+    window.addEventListener("popstate", handleBrowserBack);
+    return () => window.removeEventListener("popstate", handleBrowserBack);
+  }, [logout]);
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
