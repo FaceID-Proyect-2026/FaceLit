@@ -62,9 +62,17 @@ export const Routes = {
 
   // Módulo 5: Reconocimiento Facial
   FACIAL: {
-    MANAGEMENT:   '/admin/facial',
-    REGISTER:     '/facial/register',
-    VERIFY:       '/facial/verify',
+    MANAGEMENT:       '/instructor/facial',
+    SETTINGS:         '/instructor/facial/settings',
+    ADMIN_MANAGEMENT: '/admin/facial',
+    REGISTER:         '/facial/register',
+    VERIFY:           '/facial/verify',
+  },
+
+  INSTRUCTOR: {
+    DASHBOARD:    '/instructor',
+    FACIAL:       '/instructor/facial',
+    FACIAL_SETTINGS: '/instructor/facial/settings',
   },
 
   // Módulo 6: Asistencias y Validaciones

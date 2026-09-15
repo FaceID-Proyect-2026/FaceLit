@@ -63,9 +63,8 @@ function RootLayoutInner() {
         <Stack.Screen name="admin" options={{ animation: 'fade' }} />
         <Stack.Screen name="instructor" options={{ animation: 'fade' }} />
         <Stack.Screen name="apprentice" options={{ animation: 'fade' }} />
-        <Stack.Screen name="notifications" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="profile" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="facial" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="notifications/index" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="profile/index" options={{ animation: 'slide_from_right' }} />
       </Stack>
     </View>
   );

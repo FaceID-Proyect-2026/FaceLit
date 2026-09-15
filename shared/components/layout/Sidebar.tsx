@@ -55,6 +55,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     { icon: 'grid-outline', label: t('sidebar.dashboard'), route: '/instructor', module: 'dashboard' },
     { icon: 'time-outline', label: t('sidebar.mySchedules'), route: Routes.SCHEDULES.INSTRUCTOR, module: 'schedules' },
     { icon: 'checkmark-circle-outline', label: t('sidebar.attendance'), route: Routes.ATTENDANCE.INSTRUCTOR, module: 'attendance' },
+    { icon: 'scan-outline', label: t('sidebar.facial'), route: Routes.INSTRUCTOR.FACIAL, module: 'facial' },
     { icon: 'bar-chart-outline', label: t('sidebar.reports'), route: Routes.REPORTS.INSTRUCTOR, module: 'reports' },
     { icon: 'notifications-outline', label: t('sidebar.notifications'), route: Routes.NOTIFICATIONS.CENTER, module: 'notifications' },
     { icon: 'person-outline', label: t('sidebar.profile'), route: Routes.PROFILE.VIEW, module: 'profile' },

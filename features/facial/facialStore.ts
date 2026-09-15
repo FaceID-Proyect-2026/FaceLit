@@ -1,11 +1,22 @@
 import { pushNotification } from '../notifications/notificationsStore';
-import { FacialEvent, FacialRecord, FacialUser, MOCK_FACIAL_RECORDS, VALID_FACIAL_ROLES } from './types';
+import {
+  DEFAULT_FACIAL_SETTINGS,
+  FacialConfig,
+  FacialEvent,
+  FacialRecord,
+  FacialSettings,
+  FacialUser,
+  MOCK_FACIAL_RECORDS,
+  VALID_FACIAL_ROLES,
+} from './types';
 
 type Listener = () => void;
 type RegistrationResult = { success: true; record: FacialRecord } | { success: false; error: string };
 
 let records: FacialRecord[] = MOCK_FACIAL_RECORDS;
 let events: FacialEvent[] = [];
+let config: FacialConfig | undefined;
+let settings: FacialSettings = DEFAULT_FACIAL_SETTINGS;
 const listeners = new Set<Listener>();
 
 const emit = () => listeners.forEach(listener => listener());
@@ -17,6 +28,22 @@ export function subscribeFacial(listener: Listener) {
 
 export function getFacialRecordsSnapshot() { return records; }
 export function getFacialEventsSnapshot() { return events; }
+export function getFacialConfigSnapshot() { return config; }
+export function getFacialSettingsSnapshot() { return settings; }
+
+type FacialSaveResult = { success: true } | { success: false; error: string };
+
+export function saveFacialConfig(nextConfig: FacialConfig): FacialSaveResult {
+  config = nextConfig;
+  emit();
+  return { success: true as const };
+}
+
+export function saveFacialSettings(nextSettings: FacialSettings): FacialSaveResult {
+  settings = nextSettings;
+  emit();
+  return { success: true as const };
+}
 
 export function registerFacialCapture(user: FacialUser | undefined, captureUri: string | null, trainingSucceeded = true): RegistrationResult {
   if (!user) return { success: false, error: 'facial.validation.userNotFound' };
