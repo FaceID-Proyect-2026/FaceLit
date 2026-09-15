@@ -2,16 +2,16 @@
 //  app/_layout.tsx
 //  Root layout con AuthProvider + temas + i18n
 // ─────────────────────────────────────────────
-import { useUserSettings } from '@/features/profile/useUserSettings';
-import { AuthProvider, useAuth } from '@/shared/contexts/AuthContext';
-import { I18nProvider } from '@/shared/contexts/I18nContext';
-import { ThemeProvider, useTheme } from '@/shared/contexts/ThemeContext';
-import i18n from '@/shared/i18n/index';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
-import { I18nextProvider } from 'react-i18next';
-import { StyleSheet, View } from 'react-native';
+import { useUserSettings } from "@/features/profile/useUserSettings";
+import { AuthProvider, useAuth } from "@/shared/contexts/AuthContext";
+import { I18nProvider } from "@/shared/contexts/I18nContext";
+import { ThemeProvider, useTheme } from "@/shared/contexts/ThemeContext";
+import i18n from "@/shared/i18n/index";
+import { Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useEffect, useState } from "react";
+import { I18nextProvider } from "react-i18next";
+import { StyleSheet, View } from "react-native";
 
 // ── Carga y aplica las preferencias guardadas del usuario
 //    (tema, idioma, notificaciones) apenas hay sesión activa ──
@@ -42,29 +42,44 @@ function RootLayoutInner() {
       <Stack
         screenOptions={{
           headerShown: false,
-          contentStyle: { backgroundColor: 'transparent' },
-          animation: 'slide_from_right',
+          contentStyle: { backgroundColor: "transparent" },
+          animation: "slide_from_right",
         }}
       >
-        <Stack.Screen name="index" options={{ animation: 'fade' }} />
+        <Stack.Screen name="index" options={{ animation: "fade" }} />
         {/* Auth — RF-1: solo login y recuperación de contraseña */}
         <Stack.Screen
           name="auth/login"
           options={{
             // Deslizamiento hacia arriba al entrar, más profundidad visual
-            animation: 'slide_from_bottom',
+            animation: "slide_from_bottom",
             animationDuration: 380,
           }}
         />
-        <Stack.Screen name="auth/password-recovery" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="auth/verify-identity"   options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="auth/new-password"      options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen
+          name="auth/password-recovery"
+          options={{ animation: "slide_from_right" }}
+        />
+        <Stack.Screen
+          name="auth/verify-identity"
+          options={{ animation: "slide_from_right" }}
+        />
+        <Stack.Screen
+          name="auth/new-password"
+          options={{ animation: "slide_from_right" }}
+        />
         {/* Dashboards por rol */}
-        <Stack.Screen name="admin" options={{ animation: 'fade' }} />
-        <Stack.Screen name="instructor" options={{ animation: 'fade' }} />
-        <Stack.Screen name="apprentice" options={{ animation: 'fade' }} />
-        <Stack.Screen name="notifications/index" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="profile/index" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="admin" options={{ animation: "fade" }} />
+        <Stack.Screen name="instructor" options={{ animation: "fade" }} />
+        <Stack.Screen name="apprentice" options={{ animation: "fade" }} />
+        <Stack.Screen
+          name="notifications/index"
+          options={{ animation: "slide_from_right" }}
+        />
+        <Stack.Screen
+          name="profile/index"
+          options={{ animation: "slide_from_right" }}
+        />
       </Stack>
     </View>
   );

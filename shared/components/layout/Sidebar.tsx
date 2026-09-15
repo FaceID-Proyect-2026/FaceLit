@@ -2,15 +2,21 @@
 //  shared/components/layout/Sidebar.tsx
 //  Sidebar de navegación para admin/instructor
 // ─────────────────────────────────────────────
-import { Colors } from '@/shared/constants/colors';
-import { Routes } from '@/shared/constants/routes';
-import { FontSize, FontWeight } from '@/shared/constants/typography';
-import { useAuth } from '@/shared/contexts/AuthContext';
-import { useTheme } from '@/shared/contexts/ThemeContext';
-import { Ionicons } from '@expo/vector-icons';
-import { router, usePathname } from 'expo-router';
-import { useTranslation } from 'react-i18next';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Colors } from "@/shared/constants/colors";
+import { Routes } from "@/shared/constants/routes";
+import { FontSize, FontWeight } from "@/shared/constants/typography";
+import { useAuth } from "@/shared/contexts/AuthContext";
+import { useTheme } from "@/shared/contexts/ThemeContext";
+import { Ionicons } from "@expo/vector-icons";
+import { router, usePathname } from "expo-router";
+import { useTranslation } from "react-i18next";
+import {
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -34,75 +40,186 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
-  const activeBg = isDark ? 'rgba(101,179,97,0.15)' : 'rgba(101,179,97,0.10)';
+  const activeBg = isDark ? "rgba(101,179,97,0.15)" : "rgba(101,179,97,0.10)";
   const bg = isDark ? Colors.dark.surface : Colors.light.surface;
   const border = isDark ? Colors.dark.border : Colors.light.border;
 
   const adminMenu: MenuItem[] = [
-    { icon: 'grid-outline',              label: t('sidebar.dashboard'),  route: Routes.ADMIN.DASHBOARD,    module: 'dashboard'  },
+    {
+      icon: "grid-outline",
+      label: t("sidebar.dashboard"),
+      route: Routes.ADMIN.DASHBOARD,
+      module: "dashboard",
+    },
     // RF-10.5 — solo COORDINATOR puede crear/gestionar usuarios (COORDINATOR_REGISTER no ve este ítem)
-    ...(user?.role === 'ADMINISTRATOR' || user?.role === 'COORDINATOR'
-      ? [{ icon: 'people-outline', label: t('sidebar.users'), route: Routes.ADMIN.USERS, module: 'users' }]
+    ...(user?.role === "ADMINISTRATOR" || user?.role === "COORDINATOR"
+      ? [
+          {
+            icon: "people-outline",
+            label: t("sidebar.users"),
+            route: Routes.ADMIN.USERS,
+            module: "users",
+          },
+        ]
       : []),
-    { icon: 'school-outline',            label: t('sidebar.academic'),   route: Routes.ACADEMIC.PROGRAMS,  module: 'academic'   },
-    { icon: 'swap-horizontal-outline',   label: t('sidebar.transferRequests'), route: Routes.ACADEMIC.COORDINATOR_REQUESTS, module: 'academic' },
-    { icon: 'checkmark-circle-outline',  label: t('sidebar.attendance'), route: Routes.ATTENDANCE.LIST,    module: 'attendance' },
-    { icon: 'notifications-outline',     label: t('sidebar.notifications'), route: Routes.NOTIFICATIONS.CENTER, module: 'notifications' },
-    { icon: 'person-outline',            label: t('sidebar.profile'),    route: Routes.PROFILE.VIEW,       module: 'profile'    },
+    {
+      icon: "school-outline",
+      label: t("sidebar.academic"),
+      route: Routes.ACADEMIC.PROGRAMS,
+      module: "academic",
+    },
+    {
+      icon: "swap-horizontal-outline",
+      label: t("sidebar.transferRequests"),
+      route: Routes.ACADEMIC.COORDINATOR_REQUESTS,
+      module: "academic",
+    },
+    {
+      icon: "checkmark-circle-outline",
+      label: t("sidebar.attendance"),
+      route: Routes.ATTENDANCE.LIST,
+      module: "attendance",
+    },
+    {
+      icon: "notifications-outline",
+      label: t("sidebar.notifications"),
+      route: Routes.NOTIFICATIONS.CENTER,
+      module: "notifications",
+    },
+    {
+      icon: "person-outline",
+      label: t("sidebar.profile"),
+      route: Routes.PROFILE.VIEW,
+      module: "profile",
+    },
   ];
 
   const instructorMenu: MenuItem[] = [
-    { icon: 'grid-outline', label: t('sidebar.dashboard'), route: '/instructor', module: 'dashboard' },
-    { icon: 'time-outline', label: t('sidebar.mySchedules'), route: Routes.SCHEDULES.INSTRUCTOR, module: 'schedules' },
-    { icon: 'checkmark-circle-outline', label: t('sidebar.attendance'), route: Routes.ATTENDANCE.INSTRUCTOR, module: 'attendance' },
-    { icon: 'scan-outline', label: t('sidebar.facial'), route: Routes.INSTRUCTOR.FACIAL, module: 'facial' },
-    { icon: 'bar-chart-outline', label: t('sidebar.reports'), route: Routes.REPORTS.INSTRUCTOR, module: 'reports' },
-    { icon: 'notifications-outline', label: t('sidebar.notifications'), route: Routes.NOTIFICATIONS.CENTER, module: 'notifications' },
-    { icon: 'person-outline', label: t('sidebar.profile'), route: Routes.PROFILE.VIEW, module: 'profile' },
+    {
+      icon: "grid-outline",
+      label: t("sidebar.dashboard"),
+      route: "/instructor",
+      module: "dashboard",
+    },
+    {
+      icon: "time-outline",
+      label: t("sidebar.mySchedules"),
+      route: Routes.SCHEDULES.INSTRUCTOR,
+      module: "schedules",
+    },
+    {
+      icon: "checkmark-circle-outline",
+      label: t("sidebar.attendance"),
+      route: Routes.ATTENDANCE.INSTRUCTOR,
+      module: "attendance",
+    },
+    {
+      icon: "scan-outline",
+      label: t("sidebar.facial"),
+      route: Routes.INSTRUCTOR.FACIAL,
+      module: "facial",
+    },
+    {
+      icon: "bar-chart-outline",
+      label: t("sidebar.reports"),
+      route: Routes.REPORTS.INSTRUCTOR,
+      module: "reports",
+    },
+    {
+      icon: "notifications-outline",
+      label: t("sidebar.notifications"),
+      route: Routes.NOTIFICATIONS.CENTER,
+      module: "notifications",
+    },
+    {
+      icon: "person-outline",
+      label: t("sidebar.profile"),
+      route: Routes.PROFILE.VIEW,
+      module: "profile",
+    },
   ];
 
   const apprenticeMenu: MenuItem[] = [
-    { icon: 'grid-outline',             label: t('sidebar.dashboard'),       route: '/apprentice',                   module: 'dashboard'   },
-    { icon: 'checkmark-circle-outline', label: t('sidebar.myAttendance'),    route: Routes.ATTENDANCE.APPRENTICE,    module: 'attendance'  },
-    { icon: 'scan-outline',             label: t('sidebar.facialRecognition'),route: Routes.APPRENTICE.FACIAL,        module: 'facial'      },
-    { icon: 'notifications-outline',    label: t('sidebar.notifications'),   route: Routes.NOTIFICATIONS.CENTER,     module: 'notifications'},
-    { icon: 'person-outline',           label: t('sidebar.profile'),         route: Routes.PROFILE.VIEW,             module: 'profile'     },
+    {
+      icon: "grid-outline",
+      label: t("sidebar.dashboard"),
+      route: "/apprentice",
+      module: "dashboard",
+    },
+    {
+      icon: "checkmark-circle-outline",
+      label: t("sidebar.myAttendance"),
+      route: Routes.ATTENDANCE.APPRENTICE,
+      module: "attendance",
+    },
+    {
+      icon: "scan-outline",
+      label: t("sidebar.facialRecognition"),
+      route: Routes.APPRENTICE.FACIAL,
+      module: "facial",
+    },
+    {
+      icon: "notifications-outline",
+      label: t("sidebar.notifications"),
+      route: Routes.NOTIFICATIONS.CENTER,
+      module: "notifications",
+    },
+    {
+      icon: "person-outline",
+      label: t("sidebar.profile"),
+      route: Routes.PROFILE.VIEW,
+      module: "profile",
+    },
   ];
 
   // ✅ FIX: roles del backend vienen en MAYÚSCULAS
   // RF-10.5: COORDINATOR_REGISTER usa el mismo panel admin
-  const menu = user?.role === 'ADMINISTRATOR' || user?.role === 'COORDINATOR' || user?.role === 'COORDINATOR_REGISTER'
-    ? adminMenu
-    : user?.role === 'INSTRUCTOR' ? instructorMenu
-    : apprenticeMenu;
+  const menu =
+    user?.role === "ADMINISTRATOR" ||
+    user?.role === "COORDINATOR" ||
+    user?.role === "COORDINATOR_REGISTER"
+      ? adminMenu
+      : user?.role === "INSTRUCTOR"
+        ? instructorMenu
+        : apprenticeMenu;
 
   const isActive = (route: string) => {
-    if (route === '/admin' || route === '/instructor' || route === '/apprentice') {
+    if (
+      route === "/admin" ||
+      route === "/instructor" ||
+      route === "/apprentice"
+    ) {
       return pathname === route;
     }
-    return pathname.startsWith(route.split('[')[0]);
+    return pathname.startsWith(route.split("[")[0]);
   };
 
   // ✅ FIX: iniciales con respaldo si no hay firstName/lastName
   const getInitials = () => {
     if (user?.firstName) {
-      return `${user.firstName.charAt(0)}${user.lastName?.charAt(0) ?? ''}`.toUpperCase();
+      return `${user.firstName.charAt(0)}${user.lastName?.charAt(0) ?? ""}`.toUpperCase();
     }
-    return user?.email?.charAt(0).toUpperCase() ?? '?';
+    return user?.email?.charAt(0).toUpperCase() ?? "?";
   };
 
   // ✅ FIX: nombre a mostrar con respaldo al email
   const getDisplayName = () => {
     if (user?.firstName) {
-      return `${user.firstName} ${user.lastName ?? ''}`.trim();
+      return `${user.firstName} ${user.lastName ?? ""}`.trim();
     }
-    return user?.email ?? '';
+    return user?.email ?? "";
   };
 
   return (
-    <View style={[ss.overlay, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
-      <TouchableOpacity style={StyleSheet.absoluteFill} onPress={onClose} activeOpacity={1} />
-      <View style={[ss.sidebar, { backgroundColor: bg, borderRightColor: border }]}>
+    <View style={[ss.overlay, { backgroundColor: "rgba(0,0,0,0.5)" }]}>
+      <TouchableOpacity
+        style={StyleSheet.absoluteFill}
+        onPress={onClose}
+        activeOpacity={1}
+      />
+      <View
+        style={[ss.sidebar, { backgroundColor: bg, borderRightColor: border }]}
+      >
         {/* Header */}
         <View style={[ss.header, { borderBottomColor: border }]}>
           <Text style={[ss.logo, { color: theme.primary }]}>FaceLit</Text>
@@ -122,7 +239,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 {getDisplayName()}
               </Text>
               <Text style={[ss.userRole, { color: muted }]}>
-                {user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase()}
+                {user.role.charAt(0).toUpperCase() +
+                  user.role.slice(1).toLowerCase()}
               </Text>
             </View>
           </View>
@@ -139,7 +257,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               }}
               style={[
                 ss.menuItem,
-                { backgroundColor: isActive(item.route) ? activeBg : 'transparent' },
+                {
+                  backgroundColor: isActive(item.route)
+                    ? activeBg
+                    : "transparent",
+                },
               ]}
               activeOpacity={0.7}
             >
@@ -153,7 +275,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   ss.menuLabel,
                   {
                     color: isActive(item.route) ? theme.primary : text,
-                    fontWeight: isActive(item.route) ? FontWeight.bold : FontWeight.medium,
+                    fontWeight: isActive(item.route)
+                      ? FontWeight.bold
+                      : FontWeight.medium,
                   },
                 ]}
               >
@@ -170,7 +294,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           activeOpacity={0.7}
         >
           <Ionicons name="log-out-outline" size={20} color={Colors.error} />
-          <Text style={[ss.logoutText, { color: Colors.error }]}>{t('sidebar.logout')}</Text>
+          <Text style={[ss.logoutText, { color: Colors.error }]}>
+            {t("sidebar.logout")}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -179,39 +305,43 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
 const ss = StyleSheet.create({
   overlay: {
-    position: 'absolute',
-    top: 0, left: 0, right: 0, bottom: 0,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     zIndex: 100,
-    flexDirection: 'row',
+    flexDirection: "row",
   },
   sidebar: {
     width: 280,
-    height: '100%',
+    height: "100%",
     borderRightWidth: 1,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingVertical: 18,
     borderBottomWidth: 1,
   },
-  logo: { fontSize: FontSize['2xl'], fontWeight: FontWeight.black },
+  logo: { fontSize: FontSize["2xl"], fontWeight: FontWeight.black },
   closeBtn: { padding: 4 },
   userSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
   },
   avatar: {
-    width: 40, height: 40,
+    width: 40,
+    height: 40,
     borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   avatarText: {
     color: Colors.white,
@@ -223,8 +353,8 @@ const ss = StyleSheet.create({
   userRole: { fontSize: FontSize.sm, marginTop: 2 },
   menuScroll: { flex: 1, paddingVertical: 8 },
   menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
     paddingHorizontal: 20,
     paddingVertical: 12,
@@ -234,8 +364,8 @@ const ss = StyleSheet.create({
   },
   menuLabel: { fontSize: FontSize.base },
   logoutBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
     paddingHorizontal: 20,
     paddingVertical: 16,

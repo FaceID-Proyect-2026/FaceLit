@@ -2,19 +2,25 @@
 //  app/admin/_layout.tsx
 //  Layout principal admin con sidebar y header
 // ─────────────────────────────────────────────
-import Sidebar from '@/shared/components/layout/Sidebar';
-import { LanguageSelector, ThemeToggle } from '@/shared/components/ui';
-import { Colors } from '@/shared/constants/colors';
-import { FontSize, FontWeight } from '@/shared/constants/typography';
-import { useAuth } from '@/shared/contexts/AuthContext';
-import { useTheme } from '@/shared/contexts/ThemeContext';
-import { useAuthGuard } from '@/shared/hooks/useAuthGuard';
-import { Ionicons } from '@expo/vector-icons';
-import { Stack, router, usePathname } from 'expo-router';
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import Sidebar from "@/shared/components/layout/Sidebar";
+import { LanguageSelector, ThemeToggle } from "@/shared/components/ui";
+import { Colors } from "@/shared/constants/colors";
+import { FontSize, FontWeight } from "@/shared/constants/typography";
+import { useAuth } from "@/shared/contexts/AuthContext";
+import { useTheme } from "@/shared/contexts/ThemeContext";
+import { useAuthGuard } from "@/shared/hooks/useAuthGuard";
+import { Ionicons } from "@expo/vector-icons";
+import { Stack, router, usePathname } from "expo-router";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import {
+    ActivityIndicator,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function AdminLayout() {
   const { isAuthenticated } = useAuth();
@@ -28,11 +34,22 @@ export default function AdminLayout() {
   // regreso al menú principal: ni la flecha propia ni el menú lateral,
   // tanto en admin como en instructor. Se limita a la ruta del módulo para
   // evitar interferir con el resto de pantallas.
-  const isFacialLockedScreen = pathname.startsWith('/admin/facial') || pathname.startsWith('/instructor/facial');
+  const isFacialLockedScreen =
+    pathname.startsWith("/admin/facial") ||
+    pathname.startsWith("/instructor/facial");
 
   if (!canRenderContent) {
     return (
-      <SafeAreaView style={[sal.safe, { backgroundColor: isDark ? Colors.dark.background : Colors.light.background }]}>
+      <SafeAreaView
+        style={[
+          sal.safe,
+          {
+            backgroundColor: isDark
+              ? Colors.dark.background
+              : Colors.light.background,
+          },
+        ]}
+      >
         <View style={sal.loadingContainer}>
           <ActivityIndicator size="large" color={theme.primary} />
         </View>
@@ -46,22 +63,36 @@ export default function AdminLayout() {
   const border = isDark ? Colors.dark.border : Colors.light.border;
 
   return (
-    <SafeAreaView style={[sal.safe, { backgroundColor: bg }]} edges={['top']}>
+    <SafeAreaView style={[sal.safe, { backgroundColor: bg }]} edges={["top"]}>
       {/* Header */}
-      <View style={[sal.header, { backgroundColor: headerBg, borderBottomColor: border }]}>
+      <View
+        style={[
+          sal.header,
+          { backgroundColor: headerBg, borderBottomColor: border },
+        ]}
+      >
         <View style={sal.headerLeft}>
           {!isFacialLockedScreen && (
-            <TouchableOpacity onPress={() => setSidebarOpen(!sidebarOpen)} style={sal.menuBtn}>
-              <Ionicons name={sidebarOpen ? 'close' : 'menu'} size={22} color={text} />
+            <TouchableOpacity
+              onPress={() => setSidebarOpen(!sidebarOpen)}
+              style={sal.menuBtn}
+            >
+              <Ionicons
+                name={sidebarOpen ? "close" : "menu"}
+                size={22}
+                color={text}
+              />
             </TouchableOpacity>
           )}
-          <Text style={[sal.headerTitle, { color: theme.primary }]}>FaceLit</Text>
+          <Text style={[sal.headerTitle, { color: theme.primary }]}>
+            FaceLit
+          </Text>
         </View>
         <View style={sal.headerRight}>
           <LanguageSelector />
           <ThemeToggle />
           <TouchableOpacity
-            onPress={() => router.push('/notifications' as any)}
+            onPress={() => router.push("/notifications" as any)}
             style={sal.iconBtn}
           >
             <Ionicons name="notifications-outline" size={20} color={text} />
@@ -80,7 +111,7 @@ export default function AdminLayout() {
       <Stack
         screenOptions={{
           headerShown: false,
-          contentStyle: { backgroundColor: 'transparent' },
+          contentStyle: { backgroundColor: "transparent" },
         }}
       >
         <Stack.Screen name="index" />
@@ -90,9 +121,9 @@ export default function AdminLayout() {
         <Stack.Screen
           name="environments/register"
           options={{
-            presentation: 'modal',
-            animation: 'slide_from_bottom',
-            contentStyle: { backgroundColor: 'transparent' },
+            presentation: "modal",
+            animation: "slide_from_bottom",
+            contentStyle: { backgroundColor: "transparent" },
           }}
         />
         <Stack.Screen name="environments/[id]" />
@@ -101,18 +132,18 @@ export default function AdminLayout() {
         <Stack.Screen
           name="academic/programs/register"
           options={{
-            presentation: 'modal',
-            animation: 'slide_from_bottom',
-            contentStyle: { backgroundColor: 'transparent' },
+            presentation: "modal",
+            animation: "slide_from_bottom",
+            contentStyle: { backgroundColor: "transparent" },
           }}
         />
         <Stack.Screen name="academic/programs/[id]" />
         <Stack.Screen
           name="academic/fichas/register"
           options={{
-            presentation: 'modal',
-            animation: 'slide_from_bottom',
-            contentStyle: { backgroundColor: 'transparent' },
+            presentation: "modal",
+            animation: "slide_from_bottom",
+            contentStyle: { backgroundColor: "transparent" },
           }}
         />
         <Stack.Screen name="academic/fichas/[id]" />
@@ -138,20 +169,20 @@ export default function AdminLayout() {
 
 const sal = StyleSheet.create({
   safe: { flex: 1 },
-  loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  loadingContainer: { flex: 1, alignItems: "center", justifyContent: "center" },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    position: 'relative',
+    position: "relative",
     zIndex: 20,
   },
-  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  headerLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
   menuBtn: { padding: 4 },
   headerTitle: { fontSize: FontSize.xl, fontWeight: FontWeight.black },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  headerRight: { flexDirection: "row", alignItems: "center", gap: 8 },
   iconBtn: { padding: 6 },
 });
