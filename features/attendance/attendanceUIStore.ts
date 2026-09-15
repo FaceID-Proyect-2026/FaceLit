@@ -15,22 +15,22 @@ type Listener = () => void;
 
 export interface ByFichaUIState {
   selectedProgramId: string;
-  selectedFichaId:   string;
-  dateFrom:          string;
-  dateTo:            string;
+  selectedFichaId: string;
+  dateFrom: string;
+  dateTo: string;
 }
 
 export interface ByUserUIState {
-  query:           string;
+  query: string;
   /** null = ninguno seleccionado */
   selectedLearner: {
-    learnerId:   string;
-    name:        string;
-    document:    string;
+    learnerId: string;
+    name: string;
+    document: string;
     fichaNumber: string;
   } | null;
   dateFrom: string;
-  dateTo:   string;
+  dateTo: string;
 }
 
 export interface HistoryUIState {
@@ -38,39 +38,41 @@ export interface HistoryUIState {
 }
 
 interface AttendanceUIState {
-  byFicha:  ByFichaUIState;
-  byUser:   ByUserUIState;
-  history:  HistoryUIState;
+  byFicha: ByFichaUIState;
+  byUser: ByUserUIState;
+  history: HistoryUIState;
 }
 
 // ── Estado inicial ────────────────────────────
 
 const DEFAULT_BY_FICHA: ByFichaUIState = {
-  selectedProgramId: '',
-  selectedFichaId:   '',
-  dateFrom:          '',
-  dateTo:            '',
+  selectedProgramId: "",
+  selectedFichaId: "",
+  dateFrom: "",
+  dateTo: "",
 };
 
 const DEFAULT_BY_USER: ByUserUIState = {
-  query:           '',
+  query: "",
   selectedLearner: null,
-  dateFrom:        '',
-  dateTo:          '',
+  dateFrom: "",
+  dateTo: "",
 };
 
 const DEFAULT_HISTORY: HistoryUIState = {
-  nameOrDoc: '',
+  nameOrDoc: "",
 };
 
 let state: AttendanceUIState = {
   byFicha: { ...DEFAULT_BY_FICHA },
-  byUser:  { ...DEFAULT_BY_USER },
+  byUser: { ...DEFAULT_BY_USER },
   history: { ...DEFAULT_HISTORY },
 };
 
 const listeners = new Set<Listener>();
-function emit() { listeners.forEach(l => l()); }
+function emit() {
+  listeners.forEach((l) => l());
+}
 
 export function subscribeAttendanceUI(listener: Listener) {
   listeners.add(listener);
@@ -85,27 +87,50 @@ export function getAttendanceUISnapshot(): AttendanceUIState {
 
 export function setByFichaProgram(selectedProgramId: string): void {
   // Al cambiar de programa se limpia la ficha y fechas
-  state = { ...state, byFicha: { selectedProgramId, selectedFichaId: '', dateFrom: '', dateTo: '' } };
+  state = {
+    ...state,
+    byFicha: {
+      selectedProgramId,
+      selectedFichaId: "",
+      dateFrom: "",
+      dateTo: "",
+    },
+  };
   emit();
 }
 
 export function setByFichaFicha(selectedFichaId: string): void {
   // Al cambiar de ficha se limpian las fechas
-  state = { ...state, byFicha: { ...state.byFicha, selectedFichaId, dateFrom: '', dateTo: '' } };
+  state = {
+    ...state,
+    byFicha: { ...state.byFicha, selectedFichaId, dateFrom: "", dateTo: "" },
+  };
   emit();
 }
 
-export function setByFichaDirectFicha(selectedFichaId: string, selectedProgramId: string): void {
+export function setByFichaDirectFicha(
+  selectedFichaId: string,
+  selectedProgramId: string,
+): void {
   state = {
     ...state,
-    byFicha: { ...state.byFicha, selectedProgramId, selectedFichaId, dateFrom: '', dateTo: '' },
+    byFicha: {
+      ...state.byFicha,
+      selectedProgramId,
+      selectedFichaId,
+      dateFrom: "",
+      dateTo: "",
+    },
   };
   emit();
 }
 
 export function setByFichaDateFrom(dateFrom: string): void {
   // Si la nueva fecha desde es posterior a dateTo, resetear dateTo
-  const dateTo = state.byFicha.dateTo && dateFrom > state.byFicha.dateTo ? '' : state.byFicha.dateTo;
+  const dateTo =
+    state.byFicha.dateTo && dateFrom > state.byFicha.dateTo
+      ? ""
+      : state.byFicha.dateTo;
   state = { ...state, byFicha: { ...state.byFicha, dateFrom, dateTo } };
   emit();
 }
@@ -116,7 +141,15 @@ export function setByFichaDateTo(dateTo: string): void {
 }
 
 export function clearByFichaFicha(): void {
-  state = { ...state, byFicha: { ...state.byFicha, selectedFichaId: '', dateFrom: '', dateTo: '' } };
+  state = {
+    ...state,
+    byFicha: {
+      ...state.byFicha,
+      selectedFichaId: "",
+      dateFrom: "",
+      dateTo: "",
+    },
+  };
   emit();
 }
 
@@ -124,19 +157,33 @@ export function clearByFichaFicha(): void {
 
 export function setByUserQuery(query: string): void {
   // Al cambiar la búsqueda se limpia el aprendiz y fechas
-  state = { ...state, byUser: { query, selectedLearner: null, dateFrom: '', dateTo: '' } };
+  state = {
+    ...state,
+    byUser: { query, selectedLearner: null, dateFrom: "", dateTo: "" },
+  };
   emit();
 }
 
 export function setByUserLearner(
-  learner: ByUserUIState['selectedLearner'],
+  learner: ByUserUIState["selectedLearner"],
 ): void {
-  state = { ...state, byUser: { ...state.byUser, selectedLearner: learner, dateFrom: '', dateTo: '' } };
+  state = {
+    ...state,
+    byUser: {
+      ...state.byUser,
+      selectedLearner: learner,
+      dateFrom: "",
+      dateTo: "",
+    },
+  };
   emit();
 }
 
 export function setByUserDateFrom(dateFrom: string): void {
-  const dateTo = state.byUser.dateTo && dateFrom > state.byUser.dateTo ? '' : state.byUser.dateTo;
+  const dateTo =
+    state.byUser.dateTo && dateFrom > state.byUser.dateTo
+      ? ""
+      : state.byUser.dateTo;
   state = { ...state, byUser: { ...state.byUser, dateFrom, dateTo } };
   emit();
 }

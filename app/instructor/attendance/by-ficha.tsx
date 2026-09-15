@@ -1,6 +1,5 @@
-import AttendanceByFichaScreen from '../../admin/attendance/by-ficha';
+import AttendanceByFichaScreen from "../../admin/attendance/by-ficha";
 
 export default function InstructorAttendanceByFichaScreen() {
-	return <AttendanceByFichaScreen directFichaOnly />;
+  return <AttendanceByFichaScreen directFichaOnly />;
 }
-
