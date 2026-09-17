@@ -167,6 +167,8 @@
       emptyPassword: "Debes ingresar tu contraseña.",
       passwordLength: "La contraseña debe tener entre 8 y 15 caracteres.",
       passwordNoSpaces: "La contraseña no puede contener espacios.",
+      passwordWeak:
+        "La contraseña debe incluir una mayúscula, una minúscula, un número y un carácter especial.",
       invalidCredentials: "Documento o contraseña incorrectos.",
       policyRequired: "Debes aceptar el aviso de privacidad para continuar.",
       accountLocked:
@@ -280,7 +282,7 @@
       passwordRequired: "Debes ingresar una nueva contraseña.",
       passwordLength: "La contraseña debe tener entre 8 y 15 caracteres.",
       passwordWeak:
-        "La contraseña debe incluir al menos una letra, un número y un símbolo.",
+        "La contraseña debe incluir una mayúscula, una minúscula, un número y un carácter especial.",
       noSpaces: "La contraseña no puede contener espacios.",
       passwordInvalid:
         "La contraseña no cumple con los requisitos de seguridad.",

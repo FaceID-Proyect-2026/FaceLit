@@ -72,6 +72,15 @@ export function useLoginForm() {
     // strip todo lo que no sea dígito (guiones, puntos, espacios del copy-paste)
     const cleaned = raw.replace(/\D/g, '');
     setField('document', cleaned);
+
+    // El campo conserva solo dígitos, pero informa al usuario si intentó
+    // escribir o pegar caracteres no permitidos.
+    if (/\D/.test(raw)) {
+      setErrors(prev => ({
+        ...prev,
+        document: t('login.errors.invalidDocument'),
+      }));
+    }
   };
 
   const validate = (): LoginErrors => {
