@@ -64,6 +64,9 @@ export default function PasswordRecoveryScreen() {
 
                 {/* ── Botón volver ── */}
                 <TouchableOpacity onPress={handleCancel} style={s.backRow} activeOpacity={0.7}>
+                  <View style={[s.backIconWrap, { backgroundColor: theme.primary + '18', borderColor: theme.primary + '44' }]}>
+                    <Ionicons name="arrow-back" size={20} color={theme.primary} />
+                  </View>
                   <Text style={[s.backText, { color: theme.primary }]}>{t('verifyIdentity.backBtn')}</Text>
                 </TouchableOpacity>
 
@@ -196,14 +199,15 @@ const s = StyleSheet.create({
   scroll: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20, paddingVertical: 30 },
 
   card: {
-    width: '100%', maxWidth: 460,
-    borderRadius: 26, paddingHorizontal: 24, paddingVertical: 30,
+    width: '100%', maxWidth: 680,
+    borderRadius: 26, paddingHorizontal: 36, paddingVertical: 32,
     shadowColor: '#000', shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.12, shadowRadius: 14, elevation: 6,
   },
 
-  backRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 20 },
-  backText: { fontSize: 13, fontWeight: '700' },
+  backRow:      { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 22 },
+  backIconWrap: { width: 38, height: 38, borderRadius: 12, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  backText:     { fontSize: 16, fontWeight: '800' },
 
   iconWrap: { alignItems: 'center', marginBottom: 18 },
   iconCircle: { width: 72, height: 72, borderRadius: 36, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },

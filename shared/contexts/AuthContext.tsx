@@ -11,16 +11,16 @@
 //  RNF-1.11: sesión segura — no modificable por el usuario
 //  RNF-1.13: disponibilidad — error claro si el servidor no responde
 //
-//  El login actual usa DATOS QUEMADOS (mock) mientras el backend
-//  actualiza el endpoint /api/auth/login para aceptar documento.
-//  Cuando esté listo, reemplazar solo el cuerpo de login() con la
-//  llamada real — el resto de la app no cambia.
+//  Login conectado al backend real: POST /api/auth/login
+//  (ver shared/services/authService.js). El bloqueo local de intentos
+//  fallidos es una primera línea de defensa en UI; el backend manda
+//  la última palabra vía respuestas 401.
 // ─────────────────────────────────────────────
 import { initPrivacyStore } from '@/features/auth/privacyAcceptanceStore';
-import { pushNotification } from '@/features/notifications/notificationsStore';
 import { Routes } from '@/shared/constants/routes';
 import { logBlocked, logFailure, logSuccess } from '@/shared/services/auditLogger';
-import { getToken, removeToken, saveToken } from '@/shared/services/tokenStorage';
+import { login as loginRequest } from '@/shared/services/authService';
+import { getToken, removeToken } from '@/shared/services/tokenStorage';
 import { router } from 'expo-router';
 import React, {
   createContext,
@@ -31,10 +31,22 @@ import React, {
   useState,
 } from 'react';
 
-// ── Tipos ─────────────────────────────────────
-// Los roles vienen del backend en MAYÚSCULAS (ver SecurityConfig.java)
-// Los roles vienen del backend en MAYÚSCULAS (ver SecurityConfig.java)
+// ── Roles ──────────────────────────────────────
+// El backend (RoleName.java) usa nombres en ESPAÑOL: APRENDIZ, INSTRUCTOR,
+// COORDINADOR (no existe ADMINISTRATOR — COORDINADOR cubre ese caso).
+// El resto de la app ya usa nombres en inglés internamente, así que
+// traducimos una sola vez, justo al recibir el rol del backend.
 export type UserRole = 'ADMINISTRATOR' | 'COORDINATOR' | 'INSTRUCTOR' | 'APPRENTICE';
+
+const BACKEND_TO_APP_ROLE: Record<string, UserRole> = {
+  COORDINADOR: 'COORDINATOR',
+  INSTRUCTOR: 'INSTRUCTOR',
+  APRENDIZ: 'APPRENTICE',
+};
+
+function mapBackendRole(rawRole: string): UserRole {
+  return BACKEND_TO_APP_ROLE[rawRole] ?? (rawRole as UserRole);
+}
 
 export interface User {
   id: string;
@@ -114,6 +126,9 @@ export interface LoginResult {
   locked?: boolean;
   /** Segundos restantes de bloqueo */
   lockRemainingSeconds?: number;
+  /** true si el error es de red/servidor (no de credenciales) — la UI
+   *  debe mostrarlo como banner general, no como error del campo password */
+  networkError?: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -124,79 +139,6 @@ const AuthContext = createContext<AuthContextType>({
   login: async () => ({ success: false }),
   logout: async () => {},
 });
-
-// ── Dato quemado (mock) ───────────────────────
-// RF-3 (Gestión Académica) es quien en el futuro alimenta la lista
-// real. Por ahora son cuentas fijas para probar RF-1 sin backend.
-interface MockAccount extends User {
-  password: string;
-}
-
-const MOCK_ACCOUNTS: MockAccount[] = [
-  {
-    id: 'u-admin-1',
-    document: '1000000001',
-    password: 'Admin123!',
-    email: 'admin@facelit.test',
-    firstName: 'Laura',
-    lastName: 'Restrepo',
-    role: 'ADMINISTRATOR',
-    permissions: ['*'],
-  },
-  {
-    id: 'u-coord-1',
-    document: '1000000002',
-    password: 'Coord123!',
-    email: 'coordinador@facelit.test',
-    firstName: 'Camilo',
-    lastName: 'Vargas',
-    role: 'COORDINATOR',
-    permissions: ['*'],
-  },
-  {
-    id: 'u-inst-1',
-    document: '1000000003',
-    password: 'Inst123!',
-    email: 'maria.gonzalez@facelit.test',
-    firstName: 'María',
-    lastName: 'González',
-    role: 'INSTRUCTOR',
-    permissions: [],
-  },
-  {
-    id: 'u-appr-1',
-    document: '1000000004',
-    password: 'Aprendiz123!',
-    email: 'juan.perez@facelit.test',
-    firstName: 'Juan',
-    lastName: 'Pérez',
-    role: 'APPRENTICE',
-    permissions: [],
-  },
-];
-
-// ── Correos mock registrados para el flujo de recovery ───
-// Cuando el backend esté listo, esta lista no se necesita más.
-// Permite probar password-recovery → verify-identity → new-password
-// con datos quemados sin llamar al servidor.
-// Contraseña para testing: Admin123! (doc 1000000001)
-const MOCK_RECOVERY_EMAILS: Record<string, string> = {
-  'admin@facelit.test':          '1000000001',
-  'coordinador@facelit.test':    '1000000002',
-  'maria.gonzalez@facelit.test': '1000000003',
-  'juan.perez@facelit.test':     '1000000004',
-};
-
-// El "token" mock — se distingue de un JWT real por no tener 3 partes
-// separadas por ".". Cuando el backend esté listo, guardará un JWT
-// legítimo y la rama de decodificación real se activará sola.
-function buildMockToken(user: User): string {
-  return JSON.stringify({
-    mock: true,
-    ...user,
-    exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7, // 7 días
-  });
-}
 
 // ── Decodificadores de token ──────────────────
 function decodeJwtPayload(token: string): any {
@@ -241,7 +183,7 @@ function buildUserFromPayload(payload: any): User {
     id: payload.userId ?? payload.id,
     document: payload.document ?? '',
     email: payload.email,
-    role: payload.role,
+    role: mapBackendRole(payload.role),
     permissions: payload.permissions ?? [],
     firstName: payload.firstName,
     lastName: payload.lastName,
@@ -305,6 +247,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (document: string, password: string): Promise<LoginResult> => {
     const normalizedDocument = document.trim();
 
+    // Bloqueo local: primera línea de defensa antes de golpear el backend.
+    // El backend también bloquea (3 intentos / 15 min) — su respuesta 401
+    // manda la última palabra sobre si la cuenta sigue bloqueada.
     if (isLocked(normalizedDocument)) {
       const remainingMs = getLockRemainingMs(normalizedDocument);
       logBlocked('LOGIN_FAILED', {
@@ -318,40 +263,67 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
     }
 
-    const account = MOCK_ACCOUNTS.find(
-      candidate => candidate.document === normalizedDocument && candidate.password === password,
-    );
+    try {
+      // loginRequest ya guarda el JWT en tokenStorage (authService.login)
+      const data = await loginRequest(normalizedDocument, password);
 
-    if (!account) {
+      const payload = decodeJwtPayload(data.token);
+      const loggedUser: User = {
+        id: data.userId ?? payload.userId ?? payload.id,
+        document: normalizedDocument,
+        email: payload.email ?? '',
+        firstName: payload.firstName,
+        lastName: payload.lastName,
+        role: mapBackendRole(data.role ?? payload.role),
+        permissions: data.permissions ?? payload.permissions ?? [],
+      };
+
+      resetFailedAttempts(normalizedDocument);
+      setUser(loggedUser);
+      logSuccess('LOGIN_SUCCESS', {
+        userDocument: loggedUser.document,
+        userRole: loggedUser.role,
+      });
+      redirectByRole(loggedUser.role);
+
+      return { success: true };
+    } catch (err: any) {
+      const status: number = err.response?.status ?? 0;
+      const backendMessage: string = err.response?.data?.message ?? '';
+      const isLockedByBackend =
+        status === 401 &&
+        (backendMessage.toLowerCase().includes('bloque') ||
+          backendMessage.toLowerCase().includes('lock'));
+
       recordFailedAttempt(normalizedDocument);
-      const locked = isLocked(normalizedDocument);
+      const locked = isLockedByBackend || isLocked(normalizedDocument);
       const remainingMs = getLockRemainingMs(normalizedDocument);
       const audit = locked ? logBlocked : logFailure;
       audit('LOGIN_FAILED', {
         userDocument: normalizedDocument,
         detail: locked
           ? 'Cuenta bloqueada por demasiados intentos fallidos'
-          : 'Credenciales inválidas',
+          : backendMessage || 'Credenciales inválidas',
       });
+
+      if (status >= 500 || !status) {
+        return {
+          success: false,
+          networkError: true,
+          error:
+            status === 0 || !status
+              ? 'No se pudo conectar con el servidor. Verifica que el backend esté corriendo y que la URL en tu .env (EXPO_PUBLIC_API_URL) sea correcta.'
+              : 'El servidor respondió con un error. Intenta de nuevo más tarde.',
+        };
+      }
+
       return {
         success: false,
         locked,
         lockRemainingSeconds: locked ? Math.ceil(remainingMs / 1000) : undefined,
-        error: 'Documento o contraseña incorrectos',
+        error: backendMessage || 'Documento o contraseña incorrectos',
       };
     }
-
-    resetFailedAttempts(normalizedDocument);
-    const { password: _password, ...loggedUser } = account;
-    await saveToken(buildMockToken(loggedUser));
-    setUser(loggedUser);
-    logSuccess('LOGIN_SUCCESS', {
-      userDocument: loggedUser.document,
-      userRole: loggedUser.role,
-    });
-    redirectByRole(loggedUser.role);
-
-    return { success: true };
   }, []);
 
   const logout = useCallback(async () => {
@@ -389,3 +361,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth(): AuthContextType {
   return useContext(AuthContext);
 }
+

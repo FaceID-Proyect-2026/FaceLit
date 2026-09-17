@@ -13,6 +13,8 @@
 // ─────────────────────────────────────────────
 import { logFailure, logSuccess } from '@/shared/services/auditLogger';
 import { resetPassword } from '@/shared/services/passwordRecoveryService';
+import { Routes } from '@/shared/constants/routes';
+import { router } from 'expo-router';
 import { useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -124,7 +126,7 @@ export function useNewPasswordForm() {
     setLoading(true);
 
     try {
-      await resetPassword(token, password, confirmPassword, email);
+      await resetPassword(token, password, confirmPassword);
       logSuccess('PASSWORD_RESET_SUCCESS');
       setShowSuccess(true);
     } catch (error: any) {
@@ -133,13 +135,18 @@ export function useNewPasswordForm() {
 
       logFailure('PASSWORD_RESET_FAILED', { detail: backendMsg });
 
-      // ── Token expirado o ya usado (backend) ──
+      // ── Token expirado o ya usado (backend) — volver a verify-identity ──
       if (
         status === 410 ||
         backendMsg.toLowerCase().includes('expir') ||
         backendMsg.toLowerCase().includes('vencid')
       ) {
-        setErrors({ code: t('newPassword.errors.tokenExpired') });
+        const errorMsg = t('newPassword.errors.tokenExpired');
+        logFailure('PASSWORD_RESET_FAILED', { detail: backendMsg });
+        router.replace({
+          pathname: Routes.AUTH.VERIFY_IDENTITY as any,
+          params: { email: email ?? '', tokenError: errorMsg },
+        });
         return;
       }
 
@@ -148,7 +155,23 @@ export function useNewPasswordForm() {
         backendMsg.toLowerCase().includes('utilizado') ||
         backendMsg.toLowerCase().includes('used')
       ) {
-        setErrors({ code: t('newPassword.errors.tokenUsed') });
+        const errorMsg = t('newPassword.errors.tokenUsed');
+        logFailure('PASSWORD_RESET_FAILED', { detail: backendMsg });
+        router.replace({
+          pathname: Routes.AUTH.VERIFY_IDENTITY as any,
+          params: { email: email ?? '', tokenError: errorMsg },
+        });
+        return;
+      }
+
+      // ── Código incorrecto / inválido (400 genérico del backend) ──
+      if (status === 400 || backendMsg.toLowerCase().includes('invalid') || backendMsg.toLowerCase().includes('incorrecto') || backendMsg.toLowerCase().includes('incorrect')) {
+        const errorMsg = backendMsg || t('newPassword.errors.genericError');
+        logFailure('PASSWORD_RESET_FAILED', { detail: backendMsg });
+        router.replace({
+          pathname: Routes.AUTH.VERIFY_IDENTITY as any,
+          params: { email: email ?? '', tokenError: errorMsg },
+        });
         return;
       }
 

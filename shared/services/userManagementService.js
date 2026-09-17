@@ -21,3 +21,10 @@ export const deleteManagedUser = async (id) => {
   const { data } = await api.delete(`/api/admin/users/${id}`);
   return data;
 };
+
+// PUT /api/admin/users/{userId}/role — solo ADMINISTRATOR
+// role: string con el nombre del rol destino (ej. 'INSTRUCTOR')
+export const assignRole = async (userId, role) => {
+  const { data } = await api.put(`/api/admin/users/${userId}/role`, { role });
+  return data;
+};

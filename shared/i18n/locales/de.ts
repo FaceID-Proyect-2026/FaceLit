@@ -172,7 +172,7 @@ const de = {
     btn: "Verstanden",
   },
   verifyIdentity: {
-    backBtn: "← Neuen Code anfordern",
+    backBtn: "Neuen Code anfordern",
     title: "Identität prüfen",
     subtitle: "6-stelliger Code gesendet an",
     timerLabel: "⏰ Verbleibend ",

@@ -240,7 +240,7 @@
     hint: "Ingresa los 6 dígitos del código recibido por correo",
     verifyBtn: "Verificar código",
     verifyingBtn: "Verificando…",
-    backBtn: "← Volver",
+    backBtn: "Volver",
     exhaustedTitle: "Demasiados intentos",
     exhaustedMsg: "Solicita un nuevo código para continuar.",
     errors: {

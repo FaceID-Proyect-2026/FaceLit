@@ -152,8 +152,28 @@ export function useVerificationCode({
     } catch (err: any) {
       attemptsRef.current += 1;
 
-      const backendMessage: string = err.response?.data?.message ?? '';
+      const backendMessage: string = err.response?.data?.message ?? err.message ?? '';
       const status: number = err.response?.status ?? 0;
+
+      // ── Mensaje directo desde onVerify (new Error("...")) ──
+      // Si no hay respuesta HTTP pero hay mensaje, mostrarlo directamente
+      // y no aplicar detección por status (ya fue procesado en onVerify)
+      if (!err.response && err.message) {
+        // Verificar si es agotamiento de intentos
+        if (attemptsRef.current >= MAX_VERIFY_ATTEMPTS) {
+          setExhausted(true);
+          setError(t(`${namespace}.errors.exhausted`));
+          logFailure('PASSWORD_RESET_FAILED', {
+            detail: `Intentos agotados: ${attemptsRef.current}/${MAX_VERIFY_ATTEMPTS}`,
+          });
+          return;
+        }
+        setError(err.message);
+        logFailure('PASSWORD_RESET_FAILED', {
+          detail: `Intento ${attemptsRef.current}/${MAX_VERIFY_ATTEMPTS}: ${err.message}`,
+        });
+        return;
+      }
 
       // ── Código expirado (backend) ──
       if (
@@ -187,8 +207,10 @@ export function useVerificationCode({
         return;
       }
 
-      // ── Código incorrecto (genérico) ──
-      setError(t(`${namespace}.errors.invalid`));
+      // ── Código incorrecto (genérico desde axios) ──
+      const remaining = MAX_VERIFY_ATTEMPTS - attemptsRef.current;
+      const baseMsg = t(`${namespace}.errors.invalid`);
+      setError(remaining > 0 ? `${baseMsg} (${remaining} intento${remaining !== 1 ? 's' : ''} restante${remaining !== 1 ? 's' : ''})` : baseMsg);
       logFailure('PASSWORD_RESET_FAILED', {
         detail: `Intento ${attemptsRef.current}/${MAX_VERIFY_ATTEMPTS}`,
       });

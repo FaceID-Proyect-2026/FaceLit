@@ -1,15 +1,24 @@
 import { api } from './api';
 import { removeToken, saveToken } from './tokenStorage';
 
-export const login = async (email, password) => {
+// El backend (LoginRequestDTO) espera numberDocument + password.
+// Respuesta (LoginResponseDTO): { token, role, permissions, userId }
+export const login = async (numberDocument, password) => {
   const { data } = await api.post('/api/auth/login', {
-    email,
+    numberDocument,
     password,
-    aceptoPoliticas: true,
   });
-  // data = { token, role, permissions, userId, message }
   await saveToken(data.token);
   return data;
+};
+
+// POST /api/auth/change-password — requiere sesión activa (JWT)
+export const changePassword = async (newPassword, confirmPassword) => {
+  const { data } = await api.post('/api/auth/change-password', {
+    newPassword,
+    confirmPassword,
+  });
+  return data; // { message }
 };
 
 export const registerUser = async (payload) => {

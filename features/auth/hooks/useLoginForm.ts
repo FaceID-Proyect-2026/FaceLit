@@ -10,8 +10,8 @@
 //  · Política de privacidad: una sola vez por documento (RF-1.1 V3)
 // ─────────────────────────────────────────────
 import {
-    hasAcceptedPrivacy,
-    recordPrivacyAcceptance,
+  hasAcceptedPrivacy,
+  recordPrivacyAcceptance,
 } from '@/features/auth/privacyAcceptanceStore';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useEffect, useRef, useState } from 'react';
@@ -32,10 +32,12 @@ interface LoginErrors {
   policy:   string;
   /** Mensaje de bloqueo temporal de cuenta (RNF-1.3) */
   blocked:  string;
+  /** Error de red/servidor — no es un problema de credenciales */
+  general:  string;
 }
 
 const initialForm: LoginForm   = { document: '', password: '', accepted: false };
-const initialErrors: LoginErrors = { document: '', password: '', policy: '', blocked: '' };
+const initialErrors: LoginErrors = { document: '', password: '', policy: '', blocked: '', general: '' };
 
 export function useLoginForm() {
   const { t } = useTranslation();
@@ -62,7 +64,7 @@ export function useLoginForm() {
   const setField = <K extends keyof LoginForm>(key: K, value: LoginForm[K]) => {
     setForm(prev => ({ ...prev, [key]: value }));
     // Limpiar el error del campo que se está editando
-    setErrors(prev => ({ ...prev, [key]: '', blocked: '' }));
+    setErrors(prev => ({ ...prev, [key]: '', blocked: '', general: '' }));
   };
 
   // ── Limpiar los caracteres no numéricos al pegar (RF-1 V4 §1 — paste)
@@ -133,6 +135,12 @@ export function useLoginForm() {
           ...prev,
           blocked: t('login.errors.accountLocked', { minutes: mins }),
         }));
+        return;
+      }
+
+      // ── Error de red/servidor — banner general, no error de campo ──
+      if (result.networkError) {
+        setErrors(prev => ({ ...prev, general: result.error || 'No se pudo conectar con el servidor.' }));
         return;
       }
 

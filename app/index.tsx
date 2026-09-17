@@ -9,15 +9,81 @@ import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  Animated,
-  Easing,
-  Image, Platform, ScrollView, StyleSheet, Text,
-  TouchableOpacity, useWindowDimensions, View
+    Animated,
+    Easing,
+    Image, Platform, ScrollView, StyleSheet, Text,
+    TouchableOpacity, useWindowDimensions, View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+// ─────────────────────────────────────────────
+//  Hook: animación de entrada al hacer scroll
+//  Devuelve { viewRef, animStyle } para envolver
+//  cualquier elemento que quieras animar.
+//  - offsetY: currentScrollY del ScrollView
+//  - delay:   ms de retraso para efecto stagger
+// ─────────────────────────────────────────────
+function useScrollReveal(scrollY: Animated.Value, delay = 0) {
+  const viewRef   = useRef<View>(null);
+  const fadeAnim  = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(40)).current;
+  const [revealed, setRevealed] = useState(false);
+  const [layoutY, setLayoutY]   = useState<number | null>(null);
+
+  // Captura la posición Y del elemento en el documento
+  const onLayout = useCallback(() => {
+    if (!viewRef.current) return;
+    viewRef.current.measure((_x, _y, _w, _h, _px, pageY) => {
+      setLayoutY(pageY);
+    });
+  }, []);
+
+  // Escucha el scroll y dispara la animación cuando el elemento es visible
+  useEffect(() => {
+    if (revealed || layoutY === null) return;
+
+    const id = scrollY.addListener(({ value: sy }) => {
+      const screenH = 600; // estimado conservador — funciona en web y móvil
+      if (layoutY - sy < screenH * 0.92) {
+        setRevealed(true);
+        Animated.parallel([
+          Animated.timing(fadeAnim,  { toValue: 1, duration: 520, delay, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+          Animated.timing(slideAnim, { toValue: 0, duration: 520, delay, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+        ]).start();
+      }
+    });
+    return () => scrollY.removeListener(id);
+  }, [revealed, layoutY, scrollY, delay]);
+
+  const animStyle = {
+    opacity:   fadeAnim,
+    transform: [{ translateY: slideAnim }],
+  };
+
+  return { viewRef, onLayout, animStyle };
+}
+
+// ─────────────────────────────────────────────
+//  Wrapper animado — úsalo para envolver cards
+// ─────────────────────────────────────────────
+function RevealCard({
+  scrollY, delay = 0, style, children,
+}: {
+  scrollY: Animated.Value;
+  delay?: number;
+  style?: any;
+  children: React.ReactNode;
+}) {
+  const { viewRef, onLayout, animStyle } = useScrollReveal(scrollY, delay);
+  return (
+    <Animated.View ref={viewRef as any} onLayout={onLayout} style={[animStyle, style]}>
+      {children}
+    </Animated.View>
+  );
+}
 
 // ─── Tipos ────────────────────────────────────
 interface FeatureItem  { icon: string; number: string; title: string; text: string; }
@@ -252,6 +318,9 @@ export default function LandingScreen() {
   // ── Estado botón flotante ─────────────────────
   const [showScrollTop, setShowScrollTop] = useState(false);
 
+  // ── Animated value para el scrollY (para reveal de cards) ──
+  const scrollYAnim = useRef(new Animated.Value(0)).current;
+
   // ── Animación de transición al login ──────────
   // Efecto: la pantalla hace un zoom-out + fade-out profesional
   // mientras el login aparece deslizándose desde la derecha
@@ -356,7 +425,13 @@ export default function LandingScreen() {
           ref={scrollRef}
           contentContainerStyle={s.scroll}
           showsVerticalScrollIndicator={false}
-          onScroll={e => setShowScrollTop(e.nativeEvent.contentOffset.y > 300)}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollYAnim } } }],
+            {
+              useNativeDriver: false,
+              listener: (e: any) => setShowScrollTop(e.nativeEvent.contentOffset.y > 300),
+            }
+          )}
           scrollEventThrottle={16}
         >
 
@@ -471,8 +546,10 @@ export default function LandingScreen() {
             <Text style={[s.sectionTitle, { color: heading }]}>{t('problems.sectionTitle')}</Text>
             <Text style={[s.sectionText,  { color: body    }]}>{t('problems.sectionText')}</Text>
             <View style={[s.features, isWide && s.featuresWide]}>
-              {PROBLEMS.map(item => (
-                <FeatureCard key={item.number} {...item} bg={softCardBg} border={border} heading={heading} body={body} accent={theme.primary} />
+              {PROBLEMS.map((item, i) => (
+                <RevealCard key={item.number} scrollY={scrollYAnim} delay={i * 110} style={{ flex: 1, minWidth: 220 }}>
+                  <FeatureCard {...item} bg={softCardBg} border={border} heading={heading} body={body} accent={theme.primary} />
+                </RevealCard>
               ))}
             </View>
           </View>
@@ -481,73 +558,83 @@ export default function LandingScreen() {
           <View ref={offersRef} style={s.section}>
             <Text style={[s.sectionTitle, { color: heading }]}>{t('offers.sectionTitle')}</Text>
             <View style={[s.features, isWide && s.featuresWide]}>
-              {OFFERS.map(item => (
-                <FeatureCard key={item.number} {...item} bg={softCardBg} border={border} heading={heading} body={body} accent={theme.primary} />
+              {OFFERS.map((item, i) => (
+                <RevealCard key={item.number} scrollY={scrollYAnim} delay={i * 90} style={{ flex: 1, minWidth: 220 }}>
+                  <FeatureCard {...item} bg={softCardBg} border={border} heading={heading} body={body} accent={theme.primary} />
+                </RevealCard>
               ))}
             </View>
           </View>
 
           {/* ── Objetivo + Tecnologías ── */}
           <View ref={objectiveRef} style={[s.split, isWide && s.splitWide]}>
-            <View style={s.splitCopy}>
-              <Text style={[s.sectionTitle, { color: heading }]}>{t('objective.title')}</Text>
-              <Text style={[s.sectionText,  { color: body    }]}>{t('objective.description')}</Text>
-              <View style={s.checkList}>
-                {OBJECTIVE_KEYS.map(key => (
-                  <View key={key} style={s.checkRow}>
-                    <Ionicons name="checkmark-circle" size={16} color={theme.primary} />
-                    <Text style={[s.checkItem, { color: heading }]}>{t(key)}</Text>
-                  </View>
-                ))}
+            <RevealCard scrollY={scrollYAnim} delay={0} style={{ flex: 1 }}>
+              <View style={s.splitCopy}>
+                <Text style={[s.sectionTitle, { color: heading }]}>{t('objective.title')}</Text>
+                <Text style={[s.sectionText,  { color: body    }]}>{t('objective.description')}</Text>
+                <View style={s.checkList}>
+                  {OBJECTIVE_KEYS.map(key => (
+                    <View key={key} style={s.checkRow}>
+                      <Ionicons name="checkmark-circle" size={16} color={theme.primary} />
+                      <Text style={[s.checkItem, { color: heading }]}>{t(key)}</Text>
+                    </View>
+                  ))}
+                </View>
               </View>
-            </View>
+            </RevealCard>
 
-            <View style={[s.techPanel, { backgroundColor: cardBg, borderColor: border }]}>
-              <Text style={[s.techTitle,    { color: heading }]}>{t('tech.title')}</Text>
-              <Text style={[s.techSubtitle, { color: muted   }]}>{t('tech.subtitle')}</Text>
-              <View style={s.techGrid}>
-                {TECHNOLOGIES.map(({ icon, label }) => (
-                  <View key={label} style={[s.techBadge, {
-                    backgroundColor: isDark ? 'rgba(101,179,97,0.10)' : 'rgba(101,179,97,0.08)',
-                    borderColor: border,
-                  }]}>
-                    <Ionicons name={icon as any} size={16} color={theme.primary} />
-                    <Text style={[s.techBadgeText, { color: heading }]}>{t(label)}</Text>
-                  </View>
-                ))}
+            <RevealCard scrollY={scrollYAnim} delay={160} style={{ flex: 1 }}>
+              <View style={[s.techPanel, { backgroundColor: cardBg, borderColor: border }]}>
+                <Text style={[s.techTitle,    { color: heading }]}>{t('tech.title')}</Text>
+                <Text style={[s.techSubtitle, { color: muted   }]}>{t('tech.subtitle')}</Text>
+                <View style={s.techGrid}>
+                  {TECHNOLOGIES.map(({ icon, label }) => (
+                    <View key={label} style={[s.techBadge, {
+                      backgroundColor: isDark ? 'rgba(101,179,97,0.10)' : 'rgba(101,179,97,0.08)',
+                      borderColor: border,
+                    }]}>
+                      <Ionicons name={icon as any} size={16} color={theme.primary} />
+                      <Text style={[s.techBadgeText, { color: heading }]}>{t(label)}</Text>
+                    </View>
+                  ))}
+                </View>
               </View>
-            </View>
+            </RevealCard>
           </View>
 
           {/* ── Innovación ── */}
-          <View style={[s.innovationBanner, { backgroundColor: softCardBg, borderColor: border }]}>
-            <Text style={[s.innovationTitle, { color: heading }]}>{t('innovation.title')}</Text>
-            <Text style={[s.innovationText,  { color: body    }]}>{t('innovation.text')}</Text>
-            <View style={s.innovationPills}>
-              {CLOSING_PILLS.map(({ icon, label }) => (
-                <View key={label} style={[s.innovationPill, { backgroundColor: theme.primaryFaint, borderColor: border }]}>
-                  <Ionicons name={icon as any} size={16} color={theme.primary} />
-                  <Text style={[s.innovationPillText, { color: theme.primary }]}>{label}</Text>
-                </View>
-              ))}
+          <RevealCard scrollY={scrollYAnim} delay={0} style={{ width: '100%', maxWidth: 1120 }}>
+            <View style={[s.innovationBanner, { backgroundColor: softCardBg, borderColor: border }]}>
+              <Text style={[s.innovationTitle, { color: heading }]}>{t('innovation.title')}</Text>
+              <Text style={[s.innovationText,  { color: body    }]}>{t('innovation.text')}</Text>
+              <View style={s.innovationPills}>
+                {CLOSING_PILLS.map(({ icon, label }) => (
+                  <View key={label} style={[s.innovationPill, { backgroundColor: theme.primaryFaint, borderColor: border }]}>
+                    <Ionicons name={icon as any} size={16} color={theme.primary} />
+                    <Text style={[s.innovationPillText, { color: theme.primary }]}>{label}</Text>
+                  </View>
+                ))}
+              </View>
             </View>
-          </View>
+          </RevealCard>
 
           {/* ── Contacto ── */}
-          <View ref={contactRef} style={[s.contact, { backgroundColor: softCardBg, borderColor: border }]}>
-            <View style={s.contactCopy}>
-              <Text style={[s.contactTitle, { color: heading }]}>{t('landing.contactTitle')}</Text>
-              <Text style={[s.contactText,  { color: body    }]}>{t('landing.contactText')}</Text>
+          <RevealCard scrollY={scrollYAnim} delay={0} style={{ width: '100%', maxWidth: 1120 }}>
+            <View ref={contactRef} style={[s.contact, { backgroundColor: softCardBg, borderColor: border }]}>
+              <View style={s.contactCopy}>
+                <Text style={[s.contactTitle, { color: heading }]}>{t('landing.contactTitle')}</Text>
+                <Text style={[s.contactText,  { color: body    }]}>{t('landing.contactText')}</Text>
+              </View>
+              <View style={s.contactList}>
+                {CONTACT_ITEMS.map(({ icon, text }) => (
+                  <View key={text} style={s.contactRow}>
+                    <Ionicons name={icon as any} size={15} color={theme.primary} />
+                    <Text style={[s.contactItem, { color: heading }]}>{text}</Text>
+                  </View>
+                ))}
+              </View>
             </View>
-            <View style={s.contactList}>
-              {CONTACT_ITEMS.map(({ icon, text }) => (
-                <View key={text} style={s.contactRow}>
-                  <Ionicons name={icon as any} size={15} color={theme.primary} />
-                  <Text style={[s.contactItem, { color: heading }]}>{text}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
+          </RevealCard>
 
           {/* ── Footer ── */}
           <View style={s.footer}>
