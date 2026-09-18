@@ -33,10 +33,10 @@ export default function SettingsScreen() {
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
-  const cardBg = isDark ? '#0D1F14' : Colors.white;
-  const border = isDark ? 'rgba(101,179,97,0.18)' : 'rgba(101,179,97,0.20)';
-  const rowBorder = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)';
-  const iconBg = isDark ? 'rgba(101,179,97,0.14)' : 'rgba(101,179,97,0.10)';
+  const cardBg = theme.surface;
+  const border = theme.border;
+  const rowBorder = theme.border;
+  const iconBg = theme.primaryFaint;
   const bg = isDark ? Colors.dark.background : Colors.light.background;
 
   const currentLangLabel = LANGUAGES.find(l => l.code === draft.language)?.label ?? 'Español';
@@ -64,7 +64,7 @@ export default function SettingsScreen() {
         </TouchableOpacity>
 
         {/* ── Encabezado ── */}
-        <View style={[ss.headerCard, { backgroundColor: isDark ? '#0D1F14' : '#F0FFF0', borderColor: border }]}>
+        <View style={[ss.headerCard, { backgroundColor: theme.surface, borderColor: border }]}>
           <View style={ss.headerDeco} />
           <View style={[ss.headerIconWrap, { backgroundColor: theme.primary + '18' }]}>
             <Ionicons name="options-outline" size={28} color={theme.primary} />

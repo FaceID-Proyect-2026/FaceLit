@@ -207,7 +207,7 @@ export default function LoginScreen() {
                 <Text style={[s.subtitle, { color: muted }]}>{t('login.subtitle')}</Text>
 
                 {/* Separador decorativo */}
-                <View style={[s.divider, { backgroundColor: theme.primary + '30' }]} />
+                <View style={[s.divider, { backgroundColor: theme.border }]} />
 
                 {/* ── Documento ── */}
                 <View style={s.fieldGroup}>
@@ -217,14 +217,14 @@ export default function LoginScreen() {
                     borderColor: errors.document
                       ? Colors.error
                       : focused === 'document'
-                        ? theme.primary
+                        ? theme.borderStrong
                         : inputBorder,
-                    shadowColor: focused === 'document' ? theme.primary : 'transparent',
+                    shadowColor: focused === 'document' ? theme.borderStrong : 'transparent',
                     shadowOpacity: 0.3,
                     shadowRadius: 4,
                     elevation: focused === 'document' ? 2 : 0,
                   }]}>
-                    <Ionicons name="card-outline" size={18} color={focused === 'document' ? theme.primary : muted} />
+                    <Ionicons name="card-outline" size={18} color={focused === 'document' ? theme.text : muted} />
                     <TextInput
                       style={[s.input, { color: text }] as any}
                       value={form.document}
@@ -249,14 +249,14 @@ export default function LoginScreen() {
                     borderColor: errors.password
                       ? Colors.error
                       : focused === 'password'
-                        ? theme.primary
+                        ? theme.borderStrong
                         : inputBorder,
-                    shadowColor: focused === 'password' ? theme.primary : 'transparent',
+                    shadowColor: focused === 'password' ? theme.borderStrong : 'transparent',
                     shadowOpacity: 0.3,
                     shadowRadius: 4,
                     elevation: focused === 'password' ? 2 : 0,
                   }]}>
-                    <Ionicons name="lock-closed-outline" size={18} color={focused === 'password' ? theme.primary : muted} />
+                    <Ionicons name="lock-closed-outline" size={18} color={focused === 'password' ? theme.text : muted} />
                     <TextInput
                       style={[s.input, { color: text }] as any}
                       value={form.password}
@@ -307,7 +307,7 @@ export default function LoginScreen() {
                       </View>
                       <Text style={s.policyTextWrap}>
                         <Text style={[s.policyText, { color: text }]}>{t('login.policyPrefix')}{' '}</Text>
-                        <Text style={[s.policyLink, { color: theme.primary }]} onPress={() => setShowPrivacy(true)}>
+                        <Text style={[s.policyLink, { color: theme.link }]} onPress={() => setShowPrivacy(true)}>
                           {t('login.policyLink')}
                         </Text>
                         <Text style={[s.policyText, { color: text }]}>{t('login.policySuffix')}</Text>

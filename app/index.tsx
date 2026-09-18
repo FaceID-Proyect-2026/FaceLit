@@ -212,7 +212,7 @@ function BiometricFace({ color, isDark }: { color: string; isDark: boolean }) {
   const glowOpacity  = glowAnim.interpolate({ inputRange: [0, 1], outputRange: [0.03, 0.12] });
 
   const SIZE  = 180;
-  const bg    = isDark ? '#030C06' : '#F0FBF0';
+  const bg    = isDark ? '#030C06' : '#F8FAFC';
   const pill  = color + '1A';
   const pillB = color + '44';
 
@@ -366,12 +366,12 @@ export default function LandingScreen() {
   };
 
   // ── Colores locales ────────────────────────────
-  const cardBg     = isDark ? '#111827'                 : Colors.white;
-  const softCardBg = isDark ? '#1A1F2E'                 : '#F4FAF2';
-  const heading    = isDark ? Colors.dark.text          : '#0D1F0A';
-  const body       = isDark ? Colors.dark.textSecondary : '#3D5C3A';
-  const muted      = isDark ? Colors.dark.textMuted     : Colors.light.textMuted;
-  const border     = isDark ? 'rgba(101,179,97,0.18)'   : 'rgba(101,179,97,0.25)';
+  const cardBg     = theme.surface;
+  const softCardBg = theme.surfaceSecondary;
+  const heading    = theme.text;
+  const body       = theme.textSecondary;
+  const muted      = theme.textMuted;
+  const border     = theme.border;
 
   // ── Arrays con t() ────────────────────────────
   const PROBLEMS: FeatureItem[] = [
@@ -410,7 +410,7 @@ export default function LandingScreen() {
       <LinearGradient
         colors={isDark
           ? ['#050505', '#071810', '#0D2B1A']
-          : ['#FFFFFF', '#F2FFF0', '#E8F8E4']}
+          : ['#FAFAFA', '#FFFFFF', '#F1F5F9']}
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}
         pointerEvents="none"
@@ -444,13 +444,13 @@ export default function LandingScreen() {
             {isWide && (
               <View style={s.nav}>
                 <TouchableOpacity onPress={() => scrollToSection(offersRef)} activeOpacity={0.75} style={s.navBtn}>
-                  <Text style={[s.navText, { color: theme.primary }]}>{t('nav.app')}</Text>
+                  <Text style={[s.navText, { color: theme.text }]}>{t('nav.app')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => scrollToSection(objectiveRef)} activeOpacity={0.75} style={s.navBtn}>
-                  <Text style={[s.navText, { color: theme.primary }]}>{t('nav.security')}</Text>
+                  <Text style={[s.navText, { color: theme.text }]}>{t('nav.security')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => scrollToSection(contactRef)} activeOpacity={0.75} style={s.navBtn}>
-                  <Text style={[s.navText, { color: theme.primary }]}>{t('nav.contact')}</Text>
+                  <Text style={[s.navText, { color: theme.text }]}>{t('nav.contact')}</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -464,9 +464,9 @@ export default function LandingScreen() {
           {/* ── Hero ── */}
           <View style={[s.hero, isWide && s.heroWide]}>
             <View style={s.heroCopy}>
-              <View style={[s.pill, { backgroundColor: theme.primaryFaint, borderColor: border }]}>
-                <View style={[s.pillDot, { backgroundColor: theme.primary }]} />
-                <Text style={[s.pillText, { color: theme.primary }]}>{t('hero.pill')}</Text>
+              <View style={[s.pill, { backgroundColor: theme.secondaryFaint, borderColor: theme.secondaryDark }]}>
+                <View style={[s.pillDot, { backgroundColor: theme.secondary }]} />
+                <Text style={[s.pillText, { color: theme.secondary }]}>{t('hero.pill')}</Text>
               </View>
 
               <Text style={[s.heroTitle, { color: heading }, isWide && s.heroTitleWide]}>
@@ -495,22 +495,22 @@ export default function LandingScreen() {
               </View>
 
               <View style={s.metrics}>
-                <MetricCard icon="time-outline"             value="24/7" label={t('hero.metric1')} color={theme.primary} muted={muted} />
-                <MetricCard icon="scan-outline"             value="IA"   label={t('hero.metric2')} color={theme.primary} muted={muted} />
-                <MetricCard icon="checkmark-circle-outline" value="100%" label={t('hero.metric3')} color={theme.primary} muted={muted} />
-                <MetricCard icon="shield-checkmark-outline" value="0"    label={t('hero.metric4')} color={theme.primary} muted={muted} />
+                <MetricCard icon="time-outline"             value="24/7" label={t('hero.metric1')} color={theme.textSecondary} muted={muted} />
+                <MetricCard icon="scan-outline"             value="IA"   label={t('hero.metric2')} color={theme.textSecondary} muted={muted} />
+                <MetricCard icon="checkmark-circle-outline" value="100%" label={t('hero.metric3')} color={theme.textSecondary} muted={muted} />
+                <MetricCard icon="shield-checkmark-outline" value="0"    label={t('hero.metric4')} color={theme.textSecondary} muted={muted} />
               </View>
             </View>
 
             {/* ── Mockup con rostro animado ── */}
             <View style={[s.heroVisual, {
-              backgroundColor: isDark ? 'rgba(101,179,97,0.03)' : 'rgba(101,179,97,0.05)',
+              backgroundColor: isDark ? 'rgba(25,118,210,0.03)' : '#F1F5F9',
               borderColor: border,
             }]}>
               {/* Teléfono mock */}
               <View style={[s.mockPhone, {
-                borderColor: theme.primary,
-                backgroundColor: isDark ? '#060D08' : '#FAFFF9',
+                borderColor: theme.borderStrong,
+                backgroundColor: isDark ? '#1A1A1A' : '#FFFFFF',
               }]}>
                 {/* Header del teléfono */}
                 <View style={s.phoneBrand}>
@@ -518,7 +518,7 @@ export default function LandingScreen() {
                 </View>
 
                 {/* Área de escaneo con rostro animado */}
-                <View style={[s.faceArea, { borderColor: theme.primary + '44', backgroundColor: isDark ? '#030908' : '#F3FCF3' }]}>
+                <View style={[s.faceArea, { borderColor: theme.borderStrong, backgroundColor: isDark ? '#121212' : '#F8F9FA' }]}>
                   <BiometricFace color={theme.primary} isDark={isDark} />
                 </View>
 
@@ -530,13 +530,13 @@ export default function LandingScreen() {
               </View>
 
               {/* Decoración exterior — puntos flotantes */}
-              <View style={[s.floatBadge, s.floatBadgeTR, { backgroundColor: isDark ? '#0D1F0D' : '#E8F8E4', borderColor: border }]}>
-                <Ionicons name="finger-print-outline" size={14} color={theme.primary} />
-                <Text style={[s.floatBadgeText, { color: theme.primary }]}>{t('hero.biometry')}</Text>
+              <View style={[s.floatBadge, s.floatBadgeTR, { backgroundColor: 'rgba(245,158,11,0.12)', borderColor: '#F59E0B' }]}>
+                <Ionicons name="finger-print-outline" size={14} color="#F59E0B" />
+                <Text style={[s.floatBadgeText, { color: '#F59E0B' }]}>{t('hero.biometry')}</Text>
               </View>
-              <View style={[s.floatBadge, s.floatBadgeBL, { backgroundColor: isDark ? '#0D1F0D' : '#E8F8E4', borderColor: border }]}>
-                <Ionicons name="lock-closed-outline" size={14} color={theme.primary} />
-                <Text style={[s.floatBadgeText, { color: theme.primary }]}>{t('hero.secure')}</Text>
+              <View style={[s.floatBadge, s.floatBadgeBL, { backgroundColor: 'rgba(245,158,11,0.12)', borderColor: '#F59E0B' }]}>
+                <Ionicons name="lock-closed-outline" size={14} color="#F59E0B" />
+                <Text style={[s.floatBadgeText, { color: '#F59E0B' }]}>{t('hero.secure')}</Text>
               </View>
             </View>
           </View>

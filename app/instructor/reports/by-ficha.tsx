@@ -1,17 +1,17 @@
-import { useMemo, useState, useSyncExternalStore } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { useTranslation } from 'react-i18next';
-import { useTheme } from '@/shared/contexts/ThemeContext';
+import { getFichasSnapshot, subscribe as subscribeAcademic } from '@/features/academic/academicStore';
+import { useAttendance } from '@/features/attendance/useAttendance';
+import AppButton from '@/shared/components/ui/AppButton';
+import DateField from '@/shared/components/ui/DateField';
+import SelectField from '@/shared/components/ui/SelectField';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
-import { useAttendance } from '@/features/attendance/useAttendance';
-import { getFichasSnapshot, subscribe as subscribeAcademic } from '@/features/academic/academicStore';
-import AppButton from '@/shared/components/ui/AppButton';
-import SelectField from '@/shared/components/ui/SelectField';
-import DateField from '@/shared/components/ui/DateField';
+import { useTheme } from '@/shared/contexts/ThemeContext';
 import { exportReport, generateReportData, type ExportOptions } from '@/shared/utils/export';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { useMemo, useState, useSyncExternalStore } from 'react';
+import { useTranslation } from 'react-i18next';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 type LearnerStats = { id: string; name: string; document: string; totalClasses: number; attendances: number; absences: number; lateCount: number; percentage: number };
 type FichaStats = { fichaNumber: string; learners: LearnerStats[]; totalClasses: number; attendances: number; absences: number; lateCount: number; percentage: number };
@@ -21,7 +21,7 @@ export default function ReportByFichaScreen() {
   const fichas = useSyncExternalStore(subscribeAcademic, getFichasSnapshot);
   const [selectedFicha, setSelectedFicha] = useState(''); const [dateFrom, setDateFrom] = useState(''); const [dateTo, setDateTo] = useState(''); const [dateError, setDateError] = useState('');
   const text = isDark ? Colors.dark.text : Colors.light.text; const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
-  const card = isDark ? Colors.dark.card : Colors.light.card; const border = isDark ? Colors.dark.border : Colors.light.border; const bg = isDark ? Colors.dark.background : Colors.light.background;
+  const card = theme.surface; const border = theme.border; const bg = isDark ? Colors.dark.background : Colors.light.background;
   const selected = fichas.find(ficha => ficha.number === selectedFicha);
   const fichaOptions = useMemo(() => fichas.map(ficha => ({ value: ficha.number, label: ficha.number })), [fichas]);
   const dateIsValid = !dateFrom || !dateTo || dateFrom <= dateTo;

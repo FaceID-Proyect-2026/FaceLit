@@ -11,16 +11,16 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -64,16 +64,16 @@ export default function PasswordRecoveryScreen() {
 
                 {/* ── Botón volver ── */}
                 <TouchableOpacity onPress={handleCancel} style={s.backRow} activeOpacity={0.7}>
-                  <View style={[s.backIconWrap, { backgroundColor: theme.primary + '18', borderColor: theme.primary + '44' }]}>
-                    <Ionicons name="arrow-back" size={20} color={theme.primary} />
+                  <View style={[s.backIconWrap, { backgroundColor: theme.link + '18', borderColor: theme.link + '44' }]}>
+                    <Ionicons name="arrow-back" size={20} color={theme.link} />
                   </View>
-                  <Text style={[s.backText, { color: theme.primary }]}>{t('verifyIdentity.backBtn')}</Text>
+                  <Text style={[s.backText, { color: theme.link }]}>{t('verifyIdentity.backBtn')}</Text>
                 </TouchableOpacity>
 
                 {/* ── Ícono ── */}
                 <View style={s.iconWrap}>
-                  <View style={[s.iconCircle, { borderColor: theme.primary + '55', backgroundColor: theme.primary + '14' }]}>
-                    <Ionicons name="mail-outline" size={38} color={theme.primary} />
+                  <View style={[s.iconCircle, { borderColor: theme.textSecondary + '55', backgroundColor: theme.textSecondary + '14' }]}>
+                    <Ionicons name="mail-outline" size={38} color={theme.textSecondary} />
                   </View>
                 </View>
 
@@ -86,7 +86,7 @@ export default function PasswordRecoveryScreen() {
                   <Text style={[s.label, { color: text }]}>{t('passwordRecovery.emailLabel')}</Text>
                   <View style={[s.inputRow, {
                     backgroundColor: inputBg,
-                    borderColor: error ? errorClr : focused ? theme.primary : inputBdr,
+                    borderColor: error ? errorClr : focused ? theme.borderStrong : inputBdr,
                   }]}>
                     <Ionicons name="mail-outline" size={18} color={error ? errorClr : muted} />
                     <TextInput
@@ -131,12 +131,12 @@ export default function PasswordRecoveryScreen() {
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={[s.secondaryBtn, { borderColor: theme.primary }]}
+                    style={[s.secondaryBtn, { borderColor: theme.border }]}
                     onPress={handleCancel}
                     disabled={loading}
                     activeOpacity={0.8}
                   >
-                    <Text style={[s.secondaryText, { color: theme.primary }]}>{t('passwordRecovery.cancelBtn')}</Text>
+                    <Text style={[s.secondaryText, { color: theme.textSecondary }]}>{t('passwordRecovery.cancelBtn')}</Text>
                   </TouchableOpacity>
                 </View>
 
@@ -149,11 +149,11 @@ export default function PasswordRecoveryScreen() {
       {/* ── Modal: código enviado ── */}
       <Modal visible={showModal} transparent animationType="fade" onRequestClose={closeModal}>
         <View style={m.overlay}>
-          <View style={[m.card, { backgroundColor: cardBg, borderColor: theme.primary + '33' }]}>
+          <View style={[m.card, { backgroundColor: cardBg, borderColor: theme.border }]}>
 
             {/* Ícono central */}
-            <View style={[m.iconCircle, { backgroundColor: theme.primary + '18', borderColor: theme.primary + '44' }]}>
-              <Ionicons name="mail-open-outline" size={40} color={theme.primary} />
+            <View style={[m.iconCircle, { backgroundColor: theme.secondary + '18', borderColor: theme.secondary + '44' }]}>
+              <Ionicons name="mail-open-outline" size={40} color={theme.secondary} />
             </View>
 
             {/* Título y descripción */}

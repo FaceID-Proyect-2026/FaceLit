@@ -3,19 +3,19 @@
 //  RF-3.1 + RF-3.1.1 V4 — Carga académica por CSV
 // ─────────────────────────────────────────────
 import {
-  addLearnerStore,
-  getFichasSnapshot,
-  getInstructorsSnapshot,
-  getProgramsSnapshot,
-  registerFicha,
-  registerInstructorStore,
-  registerProgram,
+    addLearnerStore,
+    getFichasSnapshot,
+    getInstructorsSnapshot,
+    getProgramsSnapshot,
+    registerFicha,
+    registerInstructorStore,
+    registerProgram,
 } from '@/features/academic/academicStore';
 import {
-  CSV_TEMPLATE,
-  parseAcademicCsvV4,
-  processAcademicCsvV4,
-  type StoreSnapshots,
+    CSV_TEMPLATE,
+    parseAcademicCsvV4,
+    processAcademicCsvV4,
+    type StoreSnapshots,
 } from '@/features/academic/csvImport';
 import { CsvImportSummaryV4, CsvRowResult } from '@/features/academic/types';
 import { Colors } from '@/shared/constants/colors';
@@ -28,13 +28,13 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  ActivityIndicator,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -81,9 +81,9 @@ export default function CsvUploadScreen() {
 
   const text   = isDark ? Colors.dark.text       : Colors.light.text;
   const muted  = isDark ? Colors.dark.textMuted   : Colors.light.textMuted;
-  const cardBg = isDark ? '#0D1F14'               : Colors.white;
-  const border = isDark ? 'rgba(101,179,97,0.18)' : 'rgba(101,179,97,0.20)';
-  const soft   = isDark ? 'rgba(101,179,97,0.06)' : 'rgba(101,179,97,0.04)';
+  const cardBg = theme.surface;
+  const border = theme.border;
+  const soft   = theme.primaryFaint;
 
   // ── Plantilla ─────────────────────────────
   const downloadTemplate = () => {

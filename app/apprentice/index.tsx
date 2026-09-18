@@ -3,19 +3,19 @@
 //  Pantallas disponibles: Mi Asistencia,
 //  Reconocimiento Facial, Notificaciones, Perfil
 // ─────────────────────────────────────────────
-import { useAuth } from '@/shared/contexts/AuthContext';
-import { useTheme } from '@/shared/contexts/ThemeContext';
+import { getFichasSnapshot } from '@/features/academic/academicStore';
+import { ATTENDANCE_EVENTS } from '@/features/attendance/types';
+import { MOCK_NOTIFICATIONS_RF8 } from '@/features/notifications/types';
 import { Colors } from '@/shared/constants/colors';
 import { Routes } from '@/shared/constants/routes';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
+import { useAuth } from '@/shared/contexts/AuthContext';
+import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { ATTENDANCE_EVENTS } from '@/features/attendance/types';
-import { MOCK_NOTIFICATIONS_RF8 } from '@/features/notifications/types';
-import { getFichasSnapshot } from '@/features/academic/academicStore';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function ApprenticeDashboard() {
   const { user } = useAuth();
@@ -24,8 +24,8 @@ export default function ApprenticeDashboard() {
 
   const text    = isDark ? Colors.dark.text       : Colors.light.text;
   const muted   = isDark ? Colors.dark.textMuted  : Colors.light.textMuted;
-  const cardBg  = isDark ? '#0D1F14'              : Colors.white;
-  const border  = isDark ? 'rgba(101,179,97,0.18)': 'rgba(101,179,97,0.20)';
+  const cardBg  = theme.surface;
+  const border  = theme.border;
   const bg      = isDark ? Colors.dark.background : Colors.light.background;
 
   // ── Estadísticas propias del aprendiz ──────
@@ -59,7 +59,7 @@ export default function ApprenticeDashboard() {
       icon:  'checkmark-circle-outline',
       label: t('sidebar.myAttendance'),
       route: Routes.ATTENDANCE.APPRENTICE,
-      color: '#27AE60',
+      color: theme.success,
     },
     {
       icon:  'scan-outline',
@@ -71,14 +71,14 @@ export default function ApprenticeDashboard() {
       icon:  'notifications-outline',
       label: t('sidebar.notifications'),
       route: Routes.NOTIFICATIONS.CENTER,
-      color: '#E89B2C',
+      color: theme.warning,
       badge: unreadNotifications > 0 ? unreadNotifications : undefined,
     },
     {
       icon:  'person-outline',
       label: t('sidebar.profile'),
       route: Routes.PROFILE.VIEW,
-      color: '#4A90D9',
+      color: theme.info,
     },
   ];
 

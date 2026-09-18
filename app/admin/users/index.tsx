@@ -13,13 +13,13 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  FlatList,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    FlatList,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 
 type RoleFilter   = 'ALL' | 'INSTRUCTOR' | 'APPRENTICE';
@@ -40,12 +40,12 @@ export default function UsersPanel() {
   const text      = isDark ? Colors.dark.text       : Colors.light.text;
   const muted     = isDark ? Colors.dark.textMuted  : Colors.light.textMuted;
   const bg        = isDark ? Colors.dark.background : Colors.light.background;
-  const card      = isDark ? '#0D1F14'              : Colors.white;
-  const border    = isDark ? 'rgba(101,179,97,0.18)': 'rgba(101,179,97,0.20)';
-  const softGreen = isDark ? 'rgba(101,179,97,0.14)': '#EAF7E8';
-  const softBlue  = isDark ? 'rgba(74,144,217,0.16)': '#EAF3FC';
-  const softAmber = isDark ? 'rgba(232,155,44,0.16)': '#FFF5DF';
-  const softRed   = isDark ? 'rgba(217,32,39,0.14)' : '#FDECEA';
+  const card      = theme.surface;
+  const border    = theme.border;
+  const softGreen = theme.successSoft;
+  const softBlue  = theme.infoSoft;
+  const softAmber = theme.warningSoft;
+  const softRed   = theme.dangerSoft;
 
   // Guard de rol
   if (user?.role !== 'COORDINATOR' && user?.role !== 'ADMINISTRATOR') {
@@ -95,7 +95,7 @@ export default function UsersPanel() {
   };
 
   // ── Helpers de presentación ────────────────
-  const roleColor = (role: string) => (role === 'INSTRUCTOR' ? '#4A90D9' : theme.primary);
+  const roleColor = (role: string) => (role === 'INSTRUCTOR' ? theme.info : theme.primary);
   const roleBg    = (role: string) => (role === 'INSTRUCTOR' ? softBlue  : softGreen);
   const roleLabel = (role: string) =>
     role === 'INSTRUCTOR' ? t('users.create.roleInstructor') : t('users.create.roleApprentice');
@@ -199,8 +199,8 @@ export default function UsersPanel() {
             <View style={styles.header}>
               <View style={{ flex: 1 }}>
                 <View style={[styles.eyebrow, { backgroundColor: softBlue }]}>
-                  <Ionicons name="people-circle-outline" size={14} color="#4A90D9" />
-                  <Text style={[styles.eyebrowText, { color: '#4A90D9' }]}>
+                  <Ionicons name="people-circle-outline" size={14} color={theme.info} />
+                  <Text style={[styles.eyebrowText, { color: theme.info }]}>
                     {t('sidebar.userManagement')}
                   </Text>
                 </View>
@@ -221,7 +221,7 @@ export default function UsersPanel() {
             <View style={styles.statsRow}>
               {[
                 { label: t('users.total'),    value: users.length,                                  bg: softGreen, icon: 'people-outline',              color: theme.primary },
-                { label: t('users.active'),   value: users.filter(u => u.status === 'active').length,   bg: softBlue,  icon: 'checkmark-circle-outline', color: '#4A90D9'     },
+                { label: t('users.active'),   value: users.filter(u => u.status === 'active').length,   bg: softBlue,  icon: 'checkmark-circle-outline', color: theme.info     },
                 { label: t('users.statuses.INACTIVE'), value: users.filter(u => u.status === 'inactive').length, bg: softAmber, icon: 'pause-circle-outline', color: Colors.warning },
               ].map(s => (
                 <View key={s.label} style={[styles.statCard, { backgroundColor: s.bg }]}>

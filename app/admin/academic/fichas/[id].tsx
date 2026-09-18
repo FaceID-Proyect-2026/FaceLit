@@ -61,7 +61,7 @@ function EditLearnerModal({
   const muted     = isDark ? Colors.dark.textMuted   : Colors.light.textMuted;
   const inputBg   = isDark ? 'rgba(255,255,255,0.05)' : '#FAFAFA';
   const inputBorder = isDark ? 'rgba(255,255,255,0.25)' : '#BBBBBB';
-  const modalBg   = isDark ? '#0A1A0F' : Colors.white;
+  const modalBg   = theme.surface;
   const overlayBg = 'rgba(0,0,0,0.55)';
 
   const handleSave = () => {
@@ -142,8 +142,8 @@ export default function FichaDetailScreen() {
   const ficha = getFicha(id ?? '');
   const text    = isDark ? Colors.dark.text       : Colors.light.text;
   const muted   = isDark ? Colors.dark.textMuted   : Colors.light.textMuted;
-  const cardBg  = isDark ? '#0D1F14'               : Colors.white;
-  const border  = isDark ? 'rgba(101,179,97,0.18)' : 'rgba(101,179,97,0.20)';
+  const cardBg  = theme.surface;
+  const border  = theme.border;
   const bg      = isDark ? Colors.dark.background  : Colors.light.background;
 
   if (!ficha) return (

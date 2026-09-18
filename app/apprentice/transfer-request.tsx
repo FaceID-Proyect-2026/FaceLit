@@ -71,8 +71,8 @@ export default function TransferRequestScreen() {
   const bg      = isDark ? Colors.dark.background : Colors.light.background;
   const text    = isDark ? Colors.dark.text        : Colors.light.text;
   const muted   = isDark ? Colors.dark.textMuted   : Colors.light.textMuted;
-  const cardBg  = isDark ? '#0D1F14'               : Colors.white;
-  const border  = isDark ? 'rgba(101,179,97,0.18)' : 'rgba(101,179,97,0.20)';
+  const cardBg  = theme.surface;
+  const border  = theme.border;
   const inputBg = isDark ? 'rgba(255,255,255,0.05)': '#FAFAFA';
 
   // Ficha activa actual del aprendiz

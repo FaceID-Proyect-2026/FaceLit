@@ -25,12 +25,12 @@ export default function ProfileScreen() {
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
-  const cardBg = isDark ? '#0D1F14' : Colors.white;
-  const border = isDark ? 'rgba(101,179,97,0.18)' : 'rgba(101,179,97,0.20)';
-  const rowBorder = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)';
-  const iconBg = isDark ? 'rgba(101,179,97,0.14)' : 'rgba(101,179,97,0.10)';
+  const cardBg = theme.surface;
+  const border = theme.border;
+  const rowBorder = theme.border;
+  const iconBg = theme.primaryFaint;
   const bg = isDark ? Colors.dark.background : Colors.light.background;
-  const headerBg = isDark ? '#0D1F14' : '#F0FFF0';
+  const headerBg = theme.surface;
 
   if (!user) return null;
 
@@ -77,7 +77,7 @@ export default function ProfileScreen() {
         <View style={[ps.headerCard, { backgroundColor: headerBg, borderColor: border }]}>
           <View style={ps.headerDecoTop} />
 
-          <LinearGradient colors={['#72C96D', '#65B361', '#4FA14B']} style={ps.avatar}>
+          <LinearGradient colors={[theme.primaryLight, theme.primary, theme.primaryDark]} style={ps.avatar}>
             <Text style={ps.avatarText}>{avatarText}</Text>
           </LinearGradient>
 

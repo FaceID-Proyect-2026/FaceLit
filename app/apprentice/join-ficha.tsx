@@ -47,9 +47,9 @@ export default function JoinFichaScreen() {
   const bg      = isDark ? Colors.dark.background : Colors.light.background;
   const text    = isDark ? Colors.dark.text : Colors.light.text;
   const muted   = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
-  const cardBg  = isDark ? '#07120D' : Colors.white;
-  const inputBg = isDark ? 'rgba(255,255,255,0.04)' : '#F9FFF9';
-  const inputBdr= isDark ? 'rgba(255,255,255,0.20)' : 'rgba(0,0,0,0.15)';
+  const cardBg  = theme.surface;
+  const inputBg = theme.inputBg;
+  const inputBdr= theme.inputBorder;
 
   // Verificar si el aprendiz ya tiene ficha activa (no es orphan)
   const currentFicha = allFichas.find(

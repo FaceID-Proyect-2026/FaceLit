@@ -1,12 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
-import {
-  Modal, Platform, Pressable, StyleSheet,
-  Text, TouchableOpacity, View, ViewStyle, ScrollView,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
+import { useTheme } from '@/shared/contexts/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
+import { useEffect, useRef, useState } from 'react';
+import {
+    Modal, Platform, Pressable,
+    ScrollView,
+    StyleSheet,
+    Text, TouchableOpacity, View, ViewStyle,
+} from 'react-native';
 
 // Solo se usa en la rama Web (SelectFieldWeb). Se importa de forma diferida
 // evitando romper el bundle nativo, ya que 'react-dom' no aplica en RN puro.
@@ -122,7 +124,7 @@ function SelectFieldWeb({
             top: menuPos.top,
             left: menuPos.left,
             width: menuPos.width,
-            background: theme.card,
+            background: theme.surface,
             border: `1px solid ${theme.border}`,
             borderRadius: 12,
             zIndex: 20000,
@@ -203,7 +205,7 @@ function SelectFieldMobile({
       >
         <Pressable style={s.backdrop} onPress={() => setOpen(false)}>
           <View style={[s.modal, {
-            backgroundColor: isDark ? Colors.dark.card : Colors.white,
+            backgroundColor: isDark ? Colors.dark.surface : Colors.white,
             borderColor: theme.border,
           }]}>
             <ScrollView style={{ maxHeight: 320 }}>

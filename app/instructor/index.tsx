@@ -44,8 +44,8 @@ export default function AdminDashboard() {
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
-  const cardBg = isDark ? "#0D1F14" : Colors.white;
-  const border = isDark ? "rgba(101,179,97,0.18)" : "rgba(101,179,97,0.20)";
+  const cardBg = theme.surface;
+  const border = theme.border;
   const bg = isDark ? Colors.dark.background : Colors.light.background;
 
   // Al admin (Coordinador) le interesa esencialmente: cuántos aprendices
@@ -126,25 +126,25 @@ export default function AdminDashboard() {
       icon: "person-add-outline",
       text: "Nuevo aprendiz registrado: Ana Martínez",
       time: "Hace 5 min",
-      color: "#27AE60",
+      color: theme.success,
     },
     {
       icon: "checkmark-circle-outline",
       text: "Asistencia registrada: Ficha 3145555",
       time: "Hace 12 min",
-      color: "#4A90D9",
+      color: theme.info,
     },
     {
       icon: "alert-circle-outline",
       text: "Ambiente 304 sin instructor asignado",
       time: "Hace 1 hora",
-      color: "#E89B2C",
+      color: theme.warning,
     },
     {
       icon: "time-outline",
       text: "Horario modificado: ADSO - Jornada mañana",
       time: "Hace 2 horas",
-      color: "#9B59B6",
+      color: theme.secondary,
     },
   ];
 

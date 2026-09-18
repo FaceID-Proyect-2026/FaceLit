@@ -7,20 +7,20 @@
 //  modal (ExceptionFormModal); esta pantalla se encarga de listar y
 //  mostrar el detalle de cada excepción ya registrada.
 // ─────────────────────────────────────────────
-import { useTheme } from '@/shared/contexts/ThemeContext';
+import { useAcademic } from '@/features/academic/useAcademic';
+import { useEnvironments } from '@/features/environments/useEnvironments';
+import ExceptionFormModal from '@/features/schedules/components/ExceptionFormModal';
+import { getExceptionStatus, ScheduleException } from '@/features/schedules/types';
+import { useSchedules } from '@/features/schedules/useSchedules';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
-import { ScheduleException, getExceptionStatus } from '@/features/schedules/types';
-import { useSchedules } from '@/features/schedules/useSchedules';
-import ExceptionFormModal from '@/features/schedules/components/ExceptionFormModal';
-import { useEnvironments } from '@/features/environments/useEnvironments';
-import { useAcademic } from '@/features/academic/useAcademic';
+import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { FlatList, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 
 function formatDateTime(ts: number): string {
   const d = new Date(ts);
@@ -43,8 +43,8 @@ export default function ScheduleExceptionsScreen() {
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
-  const cardBg = isDark ? '#0D1F14' : Colors.white;
-  const border = isDark ? 'rgba(101,179,97,0.18)' : 'rgba(101,179,97,0.20)';
+  const cardBg = theme.surface;
+  const border = theme.border;
   const bg = isDark ? Colors.dark.background : Colors.light.background;
 
   const schedule = scheduleId ? getById(scheduleId) : undefined;

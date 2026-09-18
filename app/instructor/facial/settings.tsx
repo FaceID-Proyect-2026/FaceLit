@@ -13,16 +13,16 @@
 //  formadas.
 // ─────────────────────────────────────────────
 import {
-  DEFAULT_FACIAL_SETTINGS,
-  FACIAL_REGISTRATION_MINUTES_OPTIONS,
-  FACIAL_TIME_SLOTS,
+    DEFAULT_FACIAL_SETTINGS,
+    FACIAL_REGISTRATION_MINUTES_OPTIONS,
+    FACIAL_TIME_SLOTS,
 } from '@/features/facial/types';
 import { useFacialRegistry } from '@/features/facial/useFacialRegistry';
 import { AppButton, SelectField } from '@/shared/components/ui';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
-import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { useTheme } from '@/shared/contexts/ThemeContext';
+import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -43,8 +43,8 @@ export default function FacialSettingsScreen() {
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
-  const cardBg = isDark ? '#0D1F14' : Colors.white;
-  const border = isDark ? 'rgba(101,179,97,0.18)' : 'rgba(101,179,97,0.20)';
+  const cardBg = theme.surface;
+  const border = theme.border;
   const bg = isDark ? Colors.dark.background : Colors.light.background;
 
   const registrationOptions = FACIAL_REGISTRATION_MINUTES_OPTIONS.map(minutes => ({

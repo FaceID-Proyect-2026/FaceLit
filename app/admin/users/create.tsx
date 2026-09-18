@@ -6,7 +6,7 @@
 //  · Validaciones locales antes de confirmar
 //  · Al confirmar muestra mensaje de éxito y vuelve al panel
 // ─────────────────────────────────────────────
-import { InstructorType, MockUserRole, MOCK_PROGRAMS } from '@/features/users/mocks';
+import { InstructorType, MOCK_PROGRAMS, MockUserRole } from '@/features/users/mocks';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useTheme } from '@/shared/contexts/ThemeContext';
@@ -16,14 +16,14 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 
 interface Form {
@@ -66,10 +66,10 @@ export default function CreateUserScreen() {
   const text      = isDark ? Colors.dark.text       : Colors.light.text;
   const muted     = isDark ? Colors.dark.textMuted  : Colors.light.textMuted;
   const bg        = isDark ? Colors.dark.background : Colors.light.background;
-  const card      = isDark ? '#0D1F14'              : Colors.white;
-  const border    = isDark ? 'rgba(101,179,97,0.18)': 'rgba(101,179,97,0.20)';
-  const softAmber = isDark ? 'rgba(232,155,44,0.16)': '#FFF5DF';
-  const softBlue  = isDark ? 'rgba(74,144,217,0.16)': '#EAF3FC';
+  const card      = theme.surface;
+  const border    = theme.border;
+  const softAmber = theme.warningSoft;
+  const softBlue  = theme.infoSoft;
 
   // ── Helpers ────────────────────────────────
   const set = (key: keyof Form) => (val: string) => {
@@ -351,9 +351,9 @@ export default function CreateUserScreen() {
           </View>
 
           {/* ── Nota solo lectura documento ── */}
-          <View style={[styles.note, { backgroundColor: softBlue, borderColor: '#4A90D940' }]}>
-            <Ionicons name="lock-closed-outline" size={14} color="#4A90D9" />
-            <Text style={[styles.noteText, { color: '#4A90D9' }]}>
+          <View style={[styles.note, { backgroundColor: softBlue, borderColor: theme.info + '40' }]}>
+            <Ionicons name="lock-closed-outline" size={14} color={theme.info} />
+            <Text style={[styles.noteText, { color: theme.info }]}>
               {t('users.detail.documentReadonly')}
             </Text>
           </View>

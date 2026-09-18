@@ -4,30 +4,53 @@
 // ─────────────────────────────────────────────
 import { Colors } from '@/shared/constants/colors';
 import React, {
-  createContext,
-  ReactNode,
-  useContext,
-  useEffect,
-  useState,
+    createContext,
+    ReactNode,
+    useContext,
+    useEffect,
+    useState,
 } from 'react';
 
 // ── Tipos ─────────────────────────────────────
 export interface AppTheme {
+  // Primary
   primary: string;
   primaryLight: string;
   primaryDark: string;
   primaryFaint: string;
+  primaryDarkText: string;
+  
+  // Secondary
+  secondary: string;
+  secondaryLight: string;
+  secondaryDark: string;
+  secondaryFaint: string;
+  secondaryDarkText: string;
+  
+  // Semantic
+  success: string;
+  successSoft: string;
+  info: string;
+  infoSoft: string;
+  warning: string;
+  warningSoft: string;
+  danger: string;
+  dangerSoft: string;
+  
+  // Neutros
   background: string;
   surface: string;
   card: string;
+  surfaceSecondary: string;
   border: string;
+  borderStrong: string;
   inputBg: string;
   inputBorder: string;
   inputText: string;
   inputPlaceholder: string;
   text: string;
-  textMuted: string;
   textSecondary: string;
+  textMuted: string;
   link: string;
   gradientColors: readonly string[];
   statusBar: 'light' | 'dark';
@@ -35,14 +58,37 @@ export interface AppTheme {
 
 // ── Temas ─────────────────────────────────────
 const darkTheme: AppTheme = {
+  // Primary (Verde SENA)
   primary: Colors.primary,
   primaryLight: Colors.primaryLight,
   primaryDark: Colors.primaryDark,
   primaryFaint: Colors.primaryFaint,
+  primaryDarkText: Colors.primary,
+  
+  // Secondary (Dorado/Ámbar Cálido)
+  secondary: Colors.secondary,
+  secondaryLight: Colors.secondaryLight,
+  secondaryDark: Colors.secondaryDark,
+  secondaryFaint: Colors.secondaryFaint,
+  secondaryDarkText: Colors.secondary,
+  
+  // Semantic
+  success: Colors.success,
+  successSoft: Colors.successSoft,
+  info: Colors.info,
+  infoSoft: Colors.infoSoft,
+  warning: Colors.warning,
+  warningSoft: Colors.warningSoft,
+  danger: Colors.danger,
+  dangerSoft: Colors.dangerSoft,
+  
+  // Neutros
   background: Colors.dark.background,
   surface: Colors.dark.surface,
   card: Colors.dark.card,
+  surfaceSecondary: Colors.dark.surfaceSecondary,
   border: Colors.dark.border,
+  borderStrong: Colors.dark.borderStrong,
   inputBg: Colors.dark.inputBg,
   inputBorder: Colors.dark.inputBorder,
   inputText: Colors.dark.text,
@@ -56,14 +102,37 @@ const darkTheme: AppTheme = {
 };
 
 const lightTheme: AppTheme = {
+  // Primary (Verde SENA)
   primary: Colors.primary,
   primaryLight: Colors.primaryLight,
   primaryDark: Colors.primaryDark,
   primaryFaint: Colors.primaryFaint,
+  primaryDarkText: Colors.primary,
+
+  // Secondary (Dorado/Ámbar Cálido)
+  secondary: Colors.secondary,
+  secondaryLight: Colors.secondaryLight,
+  secondaryDark: Colors.secondaryDark,
+  secondaryFaint: Colors.secondaryFaint,
+  secondaryDarkText: Colors.secondary,
+
+  // Semantic
+  success: Colors.success,
+  successSoft: Colors.successSoft,
+  info: Colors.info,
+  infoSoft: Colors.infoSoft,
+  warning: Colors.warning,
+  warningSoft: Colors.warningSoft,
+  danger: Colors.danger,
+  dangerSoft: Colors.dangerSoft,
+
+  // Neutros
   background: Colors.light.background,
   surface: Colors.light.surface,
   card: Colors.light.card,
+  surfaceSecondary: Colors.light.surfaceSecondary,
   border: Colors.light.border,
+  borderStrong: Colors.light.borderStrong,
   inputBg: Colors.light.inputBg,
   inputBorder: Colors.light.inputBorder,
   inputText: Colors.light.text,

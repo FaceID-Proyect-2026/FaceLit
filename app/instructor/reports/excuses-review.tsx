@@ -1,20 +1,19 @@
-import { useTheme } from '@/shared/contexts/ThemeContext';
+import { getFichasSnapshot, subscribe as subscribeAcademic } from '@/features/academic/academicStore';
+import { useAttendance } from '@/features/attendance/useAttendance';
+import { useSchedules } from '@/features/schedules/useSchedules';
+import AppButton from '@/shared/components/ui/AppButton';
+import AppDialog from '@/shared/components/ui/AppDialog';
+import DateField from '@/shared/components/ui/DateField';
+import SelectField from '@/shared/components/ui/SelectField';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAuth } from '@/shared/contexts/AuthContext';
-import { useAttendance } from '@/features/attendance/useAttendance';
-import { useSchedules } from '@/features/schedules/useSchedules';
-import { getFichasSnapshot, subscribe as subscribeAcademic } from '@/features/academic/academicStore';
-import { useSyncExternalStore } from 'react';
+import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState, useMemo, useEffect } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View, TextInput } from 'react-native';
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { useTranslation } from 'react-i18next';
-import AppButton from '@/shared/components/ui/AppButton';
-import AppDialog from '@/shared/components/ui/AppDialog';
-import SelectField from '@/shared/components/ui/SelectField';
-import DateField from '@/shared/components/ui/DateField';
+import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 interface Excuse {
   id: string;
@@ -44,8 +43,8 @@ export default function ExcusesReviewScreen() {
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
-  const cardBg = isDark ? Colors.dark.card : Colors.white;
-  const border = isDark ? Colors.dark.border : Colors.light.border;
+  const cardBg = theme.surface;
+  const border = theme.border;
   const bg = isDark ? Colors.dark.background : Colors.light.background;
 
   // La fuente real debe ser el servicio de excusas; no se muestran solicitudes ficticias.

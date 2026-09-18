@@ -1,21 +1,21 @@
 // ─────────────────────────────────────────────
 //  app/admin/schedules/index.tsx — Horarios (Admin)
 // ─────────────────────────────────────────────
-import { useTheme } from '@/shared/contexts/ThemeContext';
+import { useAcademic } from '@/features/academic/useAcademic';
+import { useEnvironments } from '@/features/environments/useEnvironments';
+import ScheduleFormModal from '@/features/schedules/components/ScheduleFormModal';
+import { useSchedules } from '@/features/schedules/useSchedules';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
-import { useSchedules } from '@/features/schedules/useSchedules';
-import ScheduleFormModal from '@/features/schedules/components/ScheduleFormModal';
-import { useEnvironments } from '@/features/environments/useEnvironments';
-import { useAcademic } from '@/features/academic/useAcademic';
-import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { useAuth } from '@/shared/contexts/AuthContext';
+import { useTheme } from '@/shared/contexts/ThemeContext';
+import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { getRoleBasePath } from '@/shared/utils/roleBasePath';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 
 // Pantalla compartida entre administrador e instructor (ver
 // app/instructor/schedules/index.tsx, que reexporta este mismo
@@ -37,9 +37,9 @@ export default function SchedulesListScreen() {
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
-  const cardBg = isDark ? '#0D1F14' : Colors.white;
-  const border = isDark ? 'rgba(101,179,97,0.18)' : 'rgba(101,179,97,0.20)';
-  const inputBg = isDark ? 'rgba(255,255,255,0.05)' : '#FAFAFA';
+  const cardBg = theme.surface;
+  const border = theme.border;
+  const inputBg = theme.inputBg;
   const bg = isDark ? Colors.dark.background : Colors.light.background;
 
   // Resuelve el nombre actual del ambiente/ficha contra los módulos reales

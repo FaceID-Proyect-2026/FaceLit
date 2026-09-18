@@ -1,12 +1,12 @@
-import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
+import { useAuth } from '@/shared/contexts/AuthContext';
+import { useTheme } from '@/shared/contexts/ThemeContext';
+import { getRoleBasePath } from '@/shared/utils/roleBasePath';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '@/shared/contexts/AuthContext';
-import { getRoleBasePath } from '@/shared/utils/roleBasePath';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 // Pantalla compartida entre administrador e instructor (ver
 // app/instructor/reports/index.tsx). Las rutas de cada opción se arman
@@ -18,23 +18,23 @@ export default function ReportsDashboardScreen() {
   const { t } = useTranslation();
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
-  const cardBg = isDark ? '#0D1F14' : Colors.white;
-  const border = isDark ? 'rgba(101,179,97,0.18)' : 'rgba(101,179,97,0.20)';
+  const cardBg = theme.surface;
+  const border = theme.border;
   const bg = isDark ? Colors.dark.background : Colors.light.background;
 
   const isAdminOrInstructor = user?.role === 'administrador' || user?.role === 'instructor';
   const basePath = getRoleBasePath(user?.role);
 
   const options = [
-    { icon: 'person-outline', label: t('reports.byUser'), route: `${basePath}/reports/by-user`, color: '#4A90D9' },
-    { icon: 'people-outline', label: t('reports.byFicha'), route: `${basePath}/reports/by-ficha`, color: '#27AE60' },
-    { icon: 'calendar-outline', label: t('reports.calendar'), route: `${basePath}/reports/calendar`, color: '#E89B2C' },
-    { icon: 'trending-up-outline', label: t('reports.myPerformance'), route: `${basePath}/reports/my-performance`, color: '#9B59B6' },
+    { icon: 'person-outline', label: t('reports.byUser'), route: `${basePath}/reports/by-user`, color: theme.info },
+    { icon: 'people-outline', label: t('reports.byFicha'), route: `${basePath}/reports/by-ficha`, color: theme.success },
+    { icon: 'calendar-outline', label: t('reports.calendar'), route: `${basePath}/reports/calendar`, color: theme.warning },
+    { icon: 'trending-up-outline', label: t('reports.myPerformance'), route: `${basePath}/reports/my-performance`, color: theme.secondary },
     ...(isAdminOrInstructor ? [{
       icon: 'clipboard-outline',
       label: t('reports.excuses.title'),
       route: `${basePath}/reports/excuses-review`,
-      color: '#E74C3C',
+      color: theme.danger,
     }] : []),
   ];
 

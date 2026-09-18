@@ -38,8 +38,8 @@ const CAT_CONFIG: Record<
   NotificationCategory,
   { icon: React.ComponentProps<typeof Ionicons>['name']; color: string; labelKey: string }
 > = {
-  csv:        { icon: 'document-text-outline', color: '#4A90D9', labelKey: 'notifications.categories.csv' },
-  transfer:   { icon: 'swap-horizontal-outline', color: '#8E44AD', labelKey: 'notifications.categories.transfer' },
+  csv:        { icon: 'document-text-outline', color: Colors.info, labelKey: 'notifications.categories.csv' },
+  transfer:   { icon: 'swap-horizontal-outline', color: Colors.secondary, labelKey: 'notifications.categories.transfer' },
   attendance: { icon: 'checkmark-circle-outline', color: Colors.success, labelKey: 'notifications.categories.attendance' },
   academic:   { icon: 'school-outline', color: Colors.warning, labelKey: 'notifications.categories.academic' },
   security:   { icon: 'shield-outline', color: Colors.error, labelKey: 'notifications.categories.security' },
@@ -71,10 +71,10 @@ export default function NotificationsScreen() {
 
   const text    = isDark ? Colors.dark.text    : Colors.light.text;
   const muted   = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
-  const cardBg  = isDark ? '#0D1F14'           : Colors.white;
-  const border  = isDark ? 'rgba(101,179,97,0.18)' : 'rgba(101,179,97,0.20)';
+  const cardBg  = theme.surface;
+  const border  = theme.border;
   const bg      = isDark ? Colors.dark.background : Colors.light.background;
-  const inputBg = isDark ? 'rgba(255,255,255,0.05)' : '#F5F5F5';
+  const inputBg = theme.inputBg;
 
   // ── Handlers ──────────────────────────────
   const handlePress = (notif: Notification) => {

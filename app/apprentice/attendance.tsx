@@ -53,7 +53,7 @@ const STATUS_COLOR: Record<AttendanceStatus, string> = {
   punctual:   Colors.success,
   late:       Colors.warning,
   absent:     Colors.error,
-  invalidEnv: Colors.accentPurple,
+  invalidEnv: Colors.info,
 };
 const STATUS_ICON: Record<AttendanceStatus, keyof typeof Ionicons.glyphMap> = {
   punctual:   'checkmark-circle',
@@ -118,8 +118,8 @@ export default function ApprenticeAttendanceScreen() {
 
   const text    = isDark ? Colors.dark.text       : Colors.light.text;
   const muted   = isDark ? Colors.dark.textMuted  : Colors.light.textMuted;
-  const cardBg  = isDark ? '#0D1F14'              : Colors.white;
-  const border  = isDark ? 'rgba(101,179,97,0.18)': 'rgba(101,179,97,0.20)';
+  const cardBg  = theme.surface;
+  const border  = theme.border;
   const rowDiv  = isDark ? 'rgba(255,255,255,0.05)': 'rgba(0,0,0,0.05)';
   const bg      = isDark ? Colors.dark.background : Colors.light.background;
 

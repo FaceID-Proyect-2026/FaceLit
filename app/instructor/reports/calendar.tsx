@@ -1,22 +1,19 @@
-import { useTheme } from '@/shared/contexts/ThemeContext';
+import { getFichasSnapshot, subscribe as subscribeAcademic } from '@/features/academic/academicStore';
+import type { AttendanceStatus } from '@/features/attendance/types';
+import { useAttendance } from '@/features/attendance/useAttendance';
+import { getSchedulesSnapshot, subscribe as subscribeSchedules } from '@/features/schedules/schedulesStore';
+import AppButton from '@/shared/components/ui/AppButton';
+import AppDialog from '@/shared/components/ui/AppDialog';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAuth } from '@/shared/contexts/AuthContext';
-import { useAttendance } from '@/features/attendance/useAttendance';
-import type { AttendanceStatus } from '@/features/attendance/types';
-import { getFichasSnapshot, subscribe as subscribeAcademic } from '@/features/academic/academicStore';
-import { getSchedulesSnapshot, subscribe as subscribeSchedules } from '@/features/schedules/schedulesStore';
-import { useSyncExternalStore } from 'react';
+import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { useState, useMemo, useCallback } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Modal, TextInput, useWindowDimensions } from 'react-native';
-import { useTranslation } from 'react-i18next';
 import * as DocumentPicker from 'expo-document-picker';
-import AppButton from '@/shared/components/ui/AppButton';
-import AppDialog from '@/shared/components/ui/AppDialog';
-import SelectField from '@/shared/components/ui/SelectField';
-import DateField from '@/shared/components/ui/DateField';
+import { router } from 'expo-router';
+import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 
 interface DayRecord {
   id: string;
@@ -59,8 +56,8 @@ export default function CalendarReportScreen() {
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
-  const cardBg = isDark ? Colors.dark.card : Colors.white;
-  const border = isDark ? Colors.dark.border : Colors.light.border;
+  const cardBg = theme.surface;
+  const border = theme.border;
   const bg = isDark ? Colors.dark.background : Colors.light.background;
 
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -335,7 +332,7 @@ export default function CalendarReportScreen() {
       <Modal visible={showDayModal} transparent animationType="fade" onRequestClose={closeDayModal}>
         <View style={crs.modalOverlay} onTouchStart={closeDayModal}>
           <View style={[crs.modalCard, { backgroundColor: cardBg, borderColor: border }]} onTouchStart={() => {}}>
-            <View style={crs.modalHeader}>
+            <View style={[crs.modalHeader, { borderBottomColor: theme.border }]}>
               <Text style={[crs.modalTitle, { color: text }]}>{formatDate(selectedDay)}</Text>
               <TouchableOpacity onPress={closeDayModal} style={crs.modalClose}>
                 <Ionicons name="close" size={24} color={muted} />
@@ -457,7 +454,7 @@ const crs = StyleSheet.create({
   statusDots: { flexDirection: 'row', gap: 2, marginTop: 2 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 24 },
   modalCard: { width: '100%', maxWidth: 400, maxHeight: '85%', borderRadius: 16, borderWidth: 1, overflow: 'hidden' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(101,179,97,0.20)' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: StyleSheet.hairlineWidth },
   modalTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.black },
   modalClose: { padding: 4 },
   modalEmpty: { padding: 40, alignItems: 'center' },

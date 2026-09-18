@@ -28,19 +28,19 @@ export default function ScheduleDetailScreen() {
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
-  const cardBg = isDark ? '#0D1F14' : Colors.white;
-  const border = isDark ? 'rgba(101,179,97,0.18)' : 'rgba(101,179,97,0.20)';
+  const cardBg = theme.surface;
+  const border = theme.border;
   const bg = isDark ? Colors.dark.background : Colors.light.background;
 
   // Paleta de acciones — colores con buen contraste en ambos temas
   // (verificados con Adobe Color Contrast Analyzer, ratio ≥ 5:1 en los dos modos)
   // y separados del verde de marca para que no se pierdan contra el fondo.
-  const colorExceptions           = isDark ? '#FFC15E' : '#8A5300'; // ámbar
-  const colorUnassignInstructor   = isDark ? '#7EB6FF' : '#1D5FD1'; // azul cielo
-  const colorUnassignEnvironment  = isDark ? '#5EEAD4' : '#0F766E'; // teal
-  const colorEdit                 = isDark ? '#D0A7F0' : '#7A3FB0'; // violeta
-  const colorDanger               = isDark ? '#FF7A7A' : '#B3261E'; // rojo (desactivar / eliminar)
-  const colorReactivate           = isDark ? '#8ED987' : '#2E7D32'; // verde reservado solo para reactivar
+  const colorExceptions           = theme.warning;
+  const colorUnassignInstructor   = theme.info;
+  const colorUnassignEnvironment  = theme.secondary;
+  const colorEdit                 = theme.secondaryDark;
+  const colorDanger               = theme.danger;
+  const colorReactivate           = theme.success;
 
   if (!schedule) {
     return (

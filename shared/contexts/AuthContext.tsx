@@ -23,12 +23,12 @@ import { login as loginRequest } from '@/shared/services/authService';
 import { getToken, removeToken } from '@/shared/services/tokenStorage';
 import { router } from 'expo-router';
 import React, {
-  createContext,
-  ReactNode,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
+    createContext,
+    ReactNode,
+    useCallback,
+    useContext,
+    useEffect,
+    useState,
 } from 'react';
 
 // ── Roles ──────────────────────────────────────
@@ -36,10 +36,11 @@ import React, {
 // COORDINADOR (no existe ADMINISTRATOR — COORDINADOR cubre ese caso).
 // El resto de la app ya usa nombres en inglés internamente, así que
 // traducimos una sola vez, justo al recibir el rol del backend.
-export type UserRole = 'ADMINISTRATOR' | 'COORDINATOR' | 'INSTRUCTOR' | 'APPRENTICE';
+export type UserRole = 'ADMINISTRATOR' | 'COORDINATOR' | 'COORDINATOR_REGISTER' | 'INSTRUCTOR' | 'APPRENTICE';
 
 const BACKEND_TO_APP_ROLE: Record<string, UserRole> = {
   COORDINADOR: 'COORDINATOR',
+  COORDINATOR_REGISTER: 'COORDINATOR_REGISTER',
   INSTRUCTOR: 'INSTRUCTOR',
   APRENDIZ: 'APPRENTICE',
 };

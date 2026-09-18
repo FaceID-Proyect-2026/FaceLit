@@ -12,8 +12,7 @@ import { formatTime, useVerificationCode } from '@/features/auth/hooks/useVerifi
 import { Colors } from '@/shared/constants/colors';
 import { Routes } from '@/shared/constants/routes';
 import { useTheme } from '@/shared/contexts/ThemeContext';
-import { requestRecovery } from '@/shared/services/passwordRecoveryService';
-import { verifyToken } from '@/shared/services/passwordRecoveryService';
+import { requestRecovery, verifyToken } from '@/shared/services/passwordRecoveryService';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -109,8 +108,8 @@ export default function VerifyIdentityScreen() {
   const inputBg  = isDark ? 'rgba(255,255,255,0.04)' : '#F9FFF9';
   const inputBdr = isDark ? 'rgba(255,255,255,0.20)' : 'rgba(0,0,0,0.15)';
 
-  const timerColor = timeLeft <= 60 ? Colors.error : timeLeft <= 120 ? '#E89B2C' : theme.primary;
-  const timerBg    = timeLeft <= 60 ? Colors.error + '1A' : timeLeft <= 120 ? '#E89B2C1A' : theme.primary + '1A';
+  const timerColor = timeLeft <= 60 ? Colors.error : timeLeft <= 120 ? '#E89B2C' : theme.secondary;
+  const timerBg    = timeLeft <= 60 ? Colors.error + '1A' : timeLeft <= 120 ? '#E89B2C1A' : theme.secondary + '1A';
 
   return (
     <LinearGradient
@@ -137,10 +136,10 @@ export default function VerifyIdentityScreen() {
                 style={s.backRow}
                 activeOpacity={0.7}
               >
-                <View style={[s.backIconWrap, { backgroundColor: theme.primary + '18', borderColor: theme.primary + '44' }]}>
-                  <Ionicons name="arrow-back" size={20} color={theme.primary} />
+                <View style={[s.backIconWrap, { backgroundColor: theme.link + '18', borderColor: theme.link + '44' }]}>
+                  <Ionicons name="arrow-back" size={20} color={theme.link} />
                 </View>
-                <Text style={[s.backText, { color: theme.primary }]}>{t('verifyIdentity.backBtn')}</Text>
+                <Text style={[s.backText, { color: theme.link }]}>{t('verifyIdentity.backBtn')}</Text>
               </TouchableOpacity>
 
               {/* ── Ícono reloj ── */}
@@ -153,7 +152,7 @@ export default function VerifyIdentityScreen() {
               {/* ── Título ── */}
               <Text style={[s.title,      { color: text  }]}>{t('verifyIdentity.title')}</Text>
               <Text style={[s.subtitle,   { color: muted }]}>{t('verifyIdentity.subtitle')}</Text>
-              <Text style={[s.emailLabel, { color: theme.primary }]} numberOfLines={1}>{email}</Text>
+              <Text style={[s.emailLabel, { color: theme.textSecondary }]} numberOfLines={1}>{email}</Text>
 
               {/* ── Timer ── */}
               <View style={[s.timerBadge, { backgroundColor: timerBg, borderColor: timerColor + '55' }]}>
@@ -248,8 +247,8 @@ export default function VerifyIdentityScreen() {
                   style={[
                     s.resendBtn,
                     {
-                      borderColor: resendCooldown > 0 || resending ? theme.primary + '44' : theme.primary,
-                      backgroundColor: resendCooldown > 0 || resending ? theme.primary + '0A' : theme.primary + '14',
+                      borderColor: resendCooldown > 0 || resending ? theme.secondary + '44' : theme.secondary,
+                      backgroundColor: resendCooldown > 0 || resending ? theme.secondary + '0A' : theme.secondary + '14',
                     },
                   ]}
                   onPress={handleResend}
@@ -257,10 +256,10 @@ export default function VerifyIdentityScreen() {
                   activeOpacity={0.8}
                 >
                   {resending
-                    ? <ActivityIndicator size="small" color={theme.primary} />
-                    : <Ionicons name="refresh-outline" size={15} color={theme.primary} />
+                    ? <ActivityIndicator size="small" color={theme.secondary} />
+                    : <Ionicons name="refresh-outline" size={15} color={theme.secondary} />
                   }
-                  <Text style={[s.resendText, { color: theme.primary, opacity: resendCooldown > 0 || resending ? 0.6 : 1 }]}>
+                  <Text style={[s.resendText, { color: theme.secondary, opacity: resendCooldown > 0 || resending ? 0.6 : 1 }]}>
                     {resending
                       ? t('verifyIdentity.resendingBtn')
                       : resendCooldown > 0

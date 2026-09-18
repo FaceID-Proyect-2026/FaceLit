@@ -1,12 +1,12 @@
-import { useAttendance } from '@/features/attendance/useAttendance';
 import { getProgramDisplayName } from '@/features/academic/types';
-import { useTheme } from '@/shared/contexts/ThemeContext';
+import { useAttendance } from '@/features/attendance/useAttendance';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
+import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function AttendanceDetailScreen() {
   const { theme, isDark } = useTheme();
@@ -15,8 +15,8 @@ export default function AttendanceDetailScreen() {
   const record = useAttendance().find(item => item.id === id);
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
-  const cardBg = isDark ? '#0D1F14' : Colors.white;
-  const border = isDark ? 'rgba(101,179,97,0.18)' : 'rgba(101,179,97,0.20)';
+  const cardBg = theme.surface;
+  const border = theme.border;
   const bg = isDark ? Colors.dark.background : Colors.light.background;
   if (!record) return <View style={[ads.safe, { backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }]}><Text style={{ color: muted }}>{t('attendance.notFound')}</Text></View>;
 

@@ -1,14 +1,13 @@
-import { useTheme } from '@/shared/contexts/ThemeContext';
+import { useAttendance } from '@/features/attendance/useAttendance';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAuth } from '@/shared/contexts/AuthContext';
-import { useAttendance } from '@/features/attendance/useAttendance';
+import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState, useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import AppButton from '@/shared/components/ui/AppButton';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface MonthlyStat {
   month: string;
@@ -27,8 +26,8 @@ export default function MyPerformanceScreen() {
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
-  const cardBg = isDark ? Colors.dark.card : Colors.white;
-  const border = isDark ? Colors.dark.border : Colors.light.border;
+  const cardBg = theme.surface;
+  const border = theme.border;
   const bg = isDark ? Colors.dark.background : Colors.light.background;
 
   const userAttendance = useMemo(() => {

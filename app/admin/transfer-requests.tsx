@@ -6,25 +6,25 @@
 //  y las aprueba (el aprendiz pasa a la ficha destino) o rechaza
 //  (el aprendiz permanece en su ficha actual).
 // ─────────────────────────────────────────────
+import { TransferRequest } from '@/features/academic/types';
 import { useTransferRequests } from '@/features/academic/useTransferRequests';
-import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
+import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  FlatList,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    FlatList,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { TransferRequest } from '@/features/academic/types';
 
 // ── Tipos de filtro ───────────────────────────
 type StatusFilter = 'all' | 'pending' | 'approved' | 'rejected';
@@ -226,9 +226,9 @@ export default function TransferRequestsScreen() {
   const bg      = isDark ? Colors.dark.background : Colors.light.background;
   const text    = isDark ? Colors.dark.text        : Colors.light.text;
   const muted   = isDark ? Colors.dark.textMuted   : Colors.light.textMuted;
-  const cardBg  = isDark ? '#0D1F14'               : Colors.white;
-  const border  = isDark ? 'rgba(101,179,97,0.18)' : 'rgba(101,179,97,0.20)';
-  const inputBg = isDark ? 'rgba(255,255,255,0.05)': '#FAFAFA';
+  const cardBg  = theme.surface;
+  const border  = theme.border;
+  const inputBg = theme.inputBg;
 
   // Solicitudes filtradas
   const filtered = useMemo(() => {

@@ -45,8 +45,8 @@ export default function ApprenticeFacialScreen() {
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
-  const cardBg = isDark ? "#0D1F14" : Colors.white;
-  const border = isDark ? "rgba(101,179,97,0.18)" : "rgba(101,179,97,0.20)";
+  const cardBg = theme.surface;
+  const border = theme.border;
   const bg = isDark ? Colors.dark.background : Colors.light.background;
 
   // Nombre completo del aprendiz
@@ -221,7 +221,7 @@ export default function ApprenticeFacialScreen() {
               )}
             </Text>
             <LinearGradient
-              colors={["#65B361", "#4A9146"]}
+              colors={[theme.primary, theme.primaryDark]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={s.nameBadge}

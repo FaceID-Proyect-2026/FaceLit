@@ -38,9 +38,9 @@ export default function AcademicProgramsScreen() {
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
-  const cardBg = isDark ? '#0D1F14' : Colors.white;
-  const border = isDark ? 'rgba(101,179,97,0.18)' : 'rgba(101,179,97,0.20)';
-  const inputBg = isDark ? 'rgba(255,255,255,0.05)' : '#FAFAFA';
+  const cardBg = theme.surface;
+  const border = theme.border;
+  const inputBg = theme.inputBg;
   const bg = isDark ? Colors.dark.background : Colors.light.background;
 
   const filterOptions: { value: ProgramStatusFilter; label: string }[] = [
@@ -238,7 +238,7 @@ export default function AcademicProgramsScreen() {
                     </View>}
                     {wasEditedRecently(item.createdAt, item.updatedAt) && <View style={[aps.infoBadge, { backgroundColor: '#8A6D3B18' }]}>
                       <Ionicons name="create-outline" size={12} color="#B8860B" />
-                      <Text style={[aps.infoBadgeText, { color: '#B8860B' }]}>{t('environments.editedRecentlyBadge')}</Text>
+                      <Text style={[aps.infoBadgeText, { color: theme.warning }]}>{t('environments.editedRecentlyBadge')}</Text>
                     </View>}
                   </View>
                 )}

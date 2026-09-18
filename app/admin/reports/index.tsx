@@ -1,12 +1,12 @@
-import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Colors } from '@/shared/constants/colors';
+import { Routes } from '@/shared/constants/routes';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
+import { useAuth } from '@/shared/contexts/AuthContext';
+import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Routes } from '@/shared/constants/routes';
-import { useAuth } from '@/shared/contexts/AuthContext';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function ReportsDashboardScreen() {
   const { user } = useAuth();
@@ -14,22 +14,22 @@ export default function ReportsDashboardScreen() {
   const { t } = useTranslation();
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
-  const cardBg = isDark ? '#0D1F14' : Colors.white;
-  const border = isDark ? 'rgba(101,179,97,0.18)' : 'rgba(101,179,97,0.20)';
+  const cardBg = theme.surface;
+  const border = theme.border;
   const bg = isDark ? Colors.dark.background : Colors.light.background;
 
   const isAdminOrInstructor = user?.role === 'administrador' || user?.role === 'instructor';
 
   const options = [
-    { icon: 'person-outline', label: t('reports.byUser'), route: Routes.REPORTS.BY_USER, color: '#4A90D9' },
-    { icon: 'people-outline', label: t('reports.byFicha'), route: Routes.REPORTS.BY_FICHA, color: '#27AE60' },
-    { icon: 'calendar-outline', label: t('reports.calendar'), route: Routes.REPORTS.CALENDAR, color: '#E89B2C' },
-    { icon: 'trending-up-outline', label: t('reports.myPerformance'), route: Routes.REPORTS.MY_PERFORMANCE, color: '#9B59B6' },
+    { icon: 'person-outline', label: t('reports.byUser'), route: Routes.REPORTS.BY_USER, color: theme.info },
+    { icon: 'people-outline', label: t('reports.byFicha'), route: Routes.REPORTS.BY_FICHA, color: theme.success },
+    { icon: 'calendar-outline', label: t('reports.calendar'), route: Routes.REPORTS.CALENDAR, color: theme.warning },
+    { icon: 'trending-up-outline', label: t('reports.myPerformance'), route: Routes.REPORTS.MY_PERFORMANCE, color: theme.secondary },
     ...(isAdminOrInstructor ? [{
       icon: 'clipboard-outline',
       label: t('reports.excuses.title'),
       route: Routes.REPORTS.EXCUSES_REVIEW,
-      color: '#E74C3C',
+      color: theme.danger,
     }] : []),
   ];
 

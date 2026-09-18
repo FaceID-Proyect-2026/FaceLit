@@ -10,8 +10,8 @@ import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef, useState } from 'react';
 import {
-  Platform, Pressable, ScrollView, StyleSheet,
-  Text, TextInput, View, ViewStyle,
+    Platform, Pressable, ScrollView, StyleSheet,
+    Text, TextInput, View, ViewStyle,
 } from 'react-native';
 
 interface SearchableOption {
@@ -109,7 +109,7 @@ export default function SearchableSelect({
       </View>
 
       {open && !disabled && (
-        <View style={[ss.dropdown, { backgroundColor: theme.card, borderColor: theme.border }]}>
+        <View style={[ss.dropdown, { backgroundColor: theme.surface, borderColor: theme.border }]}>
           <ScrollView keyboardShouldPersistTaps="handled" style={{ maxHeight: 220 }} nestedScrollEnabled>
             {filtered.length === 0 ? (
               <Text style={[ss.emptyText, { color: theme.textMuted }]}>{emptyText || 'Sin resultados'}</Text>

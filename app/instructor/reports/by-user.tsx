@@ -1,18 +1,18 @@
-import { useMemo, useState, useSyncExternalStore } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { useTranslation } from 'react-i18next';
-import { useTheme } from '@/shared/contexts/ThemeContext';
-import { Colors } from '@/shared/constants/colors';
-import { FontSize, FontWeight } from '@/shared/constants/typography';
-import { useAttendance } from '@/features/attendance/useAttendance';
 import { getFichasSnapshot, getProgramsSnapshot, subscribe as subscribeAcademic } from '@/features/academic/academicStore';
+import { useAttendance } from '@/features/attendance/useAttendance';
 import { getSnapshot as getEnvironmentsSnapshot, subscribe as subscribeEnvironments } from '@/features/environments/environmentsStore';
 import AppButton from '@/shared/components/ui/AppButton';
-import SelectField from '@/shared/components/ui/SelectField';
 import DateField from '@/shared/components/ui/DateField';
+import SelectField from '@/shared/components/ui/SelectField';
+import { Colors } from '@/shared/constants/colors';
+import { FontSize, FontWeight } from '@/shared/constants/typography';
+import { useTheme } from '@/shared/contexts/ThemeContext';
 import { exportReport, generateReportData, type ExportOptions } from '@/shared/utils/export';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { useMemo, useState, useSyncExternalStore } from 'react';
+import { useTranslation } from 'react-i18next';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 type Filters = { userId: string; ficha: string; environment: string; program: string; dateFrom: string; dateTo: string };
 const EMPTY: Filters = { userId: '', ficha: '', environment: '', program: '', dateFrom: '', dateTo: '' };
@@ -30,7 +30,7 @@ export default function ReportByUserScreen() {
   const environments = useSyncExternalStore(subscribeEnvironments, getEnvironmentsSnapshot);
   const [filters, setFilters] = useState<Filters>(EMPTY); const [applied, setApplied] = useState<Filters>(EMPTY); const [dateError, setDateError] = useState('');
   const text = isDark ? Colors.dark.text : Colors.light.text; const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
-  const card = isDark ? Colors.dark.card : Colors.light.card; const border = isDark ? Colors.dark.border : Colors.light.border; const bg = isDark ? Colors.dark.background : Colors.light.background;
+  const card = theme.surface; const border = theme.border; const bg = isDark ? Colors.dark.background : Colors.light.background;
   const users = useMemo(() => Array.from(new Map(attendance.map(r => [r.userId, r.userName])).entries()).map(([value, label]) => ({ value, label })), [attendance]);
   const fichaOptions = useMemo(() => fichas.filter(f => attendance.some(r => r.fichaNumber === f.number)).map(f => ({ value: f.number, label: f.number })), [attendance, fichas]);
   const environmentOptions = useMemo(() => environments.filter(e => attendance.some(r => r.environmentName === e.code)).map(e => ({ value: e.code, label: e.code })), [attendance, environments]);

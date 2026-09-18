@@ -11,13 +11,62 @@ import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { Language, LANGUAGE_LABELS, LANGUAGE_NAMES, useLanguage } from '@/shared/contexts/I18nContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import {
     Modal, Platform, Pressable, StyleSheet,
     Text, TouchableOpacity, View, ViewStyle,
 } from 'react-native';
 
 const LANGUAGES: Language[] = ['es', 'en', 'de', 'fr'];
+
+// Componentes SVG de banderas
+const FlagES = () => (
+  <svg width="20" height="14" viewBox="0 0 24 16">
+    <rect width="24" height="16" fill="#C60B1E"/>
+    <rect y="4" width="24" height="2" fill="#FFC400"/>
+    <rect y="10" width="24" height="2" fill="#FFC400"/>
+  </svg>
+);
+
+const FlagEN = () => (
+  <svg width="20" height="14" viewBox="0 0 24 16">
+    <rect width="24" height="16" fill="#012169"/>
+    <rect y="3" width="24" height="1" fill="white"/>
+    <rect y="6" width="24" height="1" fill="white"/>
+    <rect y="9" width="24" height="1" fill="white"/>
+    <rect y="12" width="24" height="1" fill="white"/>
+    <rect x="0" y="0" width="10" height="8" fill="white"/>
+    <rect x="0" y="0" width="10" height="8" fill="#C8102E" clipPath="url(#clipEN)"/>
+    <defs>
+      <clipPath id="clipEN">
+        <polygon points="0,0 10,0 0,8"/>
+      </clipPath>
+    </defs>
+  </svg>
+);
+
+const FlagDE = () => (
+  <svg width="20" height="14" viewBox="0 0 24 16">
+    <rect width="24" height="5.33" fill="#000000"/>
+    <rect y="5.33" width="24" height="5.33" fill="#DD0000"/>
+    <rect y="10.66" width="24" height="5.33" fill="#FFCE00"/>
+  </svg>
+);
+
+const FlagFR = () => (
+  <svg width="20" height="14" viewBox="0 0 24 16">
+    <rect width="8" height="16" fill="#002395"/>
+    <rect x="8" width="8" height="16" fill="white"/>
+    <rect x="16" width="8" height="16" fill="#ED2939"/>
+  </svg>
+);
+
+const LANGUAGE_FLAGS: Record<Language, () => ReactElement> = {
+  es: FlagES,
+  en: FlagEN,
+  de: FlagDE,
+  fr: FlagFR,
+};
 
 interface LanguageSelectorProps { style?: ViewStyle; }
 
@@ -29,11 +78,11 @@ function LanguageSelectorWeb({ style }: LanguageSelectorProps) {
   const [btnRect, setBtnRect] = useState<{ top: number; right: number } | null>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
 
-  const bg      = isDark ? Colors.dark.card : Colors.white;
-  const border  = isDark ? 'rgba(101,179,97,0.4)' : '#DDDDDD';
-  const textCol = isDark ? Colors.dark.text : Colors.light.text;
-  const activeBg = isDark ? 'rgba(101,179,97,0.22)' : 'rgba(101,179,97,0.13)';
-  const hoverBg  = Colors.primaryFaint;
+  const bg      = isDark ? '#262626' : '#FFFFFF';
+  const border  = isDark ? '#404040' : '#E2E8F0';
+  const textCol = isDark ? '#FFFFFF' : '#0F172A';
+  const activeBg = isDark ? '#404040' : '#E5E7EB';
+  const hoverBg  = isDark ? '#333333' : '#F1F5F9';
 
   // Al abrir, calcular posición absoluta del botón en la ventana
   function handleOpen() {
@@ -67,22 +116,16 @@ function LanguageSelectorWeb({ style }: LanguageSelectorProps) {
         ref={btnRef}
         onClick={handleOpen}
         style={{
-          display: 'flex', alignItems: 'center', gap: 6,
-          background: isDark ? 'rgba(255,255,255,0.05)' : '#F6F6F6',
-          border: `1.5px solid ${Colors.primary}`,
-          borderRadius: 20, height: 40, padding: '0 14px',
-          cursor: 'pointer', fontWeight: 700, fontSize: 13,
-          color: Colors.primary, outline: 'none',
+          display: 'flex', alignItems: 'center', gap: 8,
+          background: 'transparent',
+          border: `1.5px solid ${Colors.secondary}`,
+          borderRadius: 20, height: 40, padding: '0 16px',
+          cursor: 'pointer', fontWeight: 600, fontSize: 13,
+          color: Colors.secondary, outline: 'none',
+          boxShadow: isDark ? '0 2px 8px rgba(0,0,0,0.15)' : '0 2px 4px rgba(0,0,0,0.08)',
         }}
       >
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-          stroke={Colors.primary} strokeWidth="2.2"
-          strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="10" />
-          <line x1="2" y1="12" x2="22" y2="12" />
-          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-        </svg>
-        <span>{LANGUAGE_LABELS[language]}</span>
+        <span style={{ fontSize: 12, fontWeight: 700 }}>{LANGUAGE_LABELS[language]}</span>
         <span style={{ fontSize: 9 }}>▾</span>
       </button>
 
@@ -99,47 +142,44 @@ function LanguageSelectorWeb({ style }: LanguageSelectorProps) {
               background: bg,
               border: `1px solid ${border}`,
               borderRadius: 12,
-              minWidth: 170,
+              minWidth: 220,
               zIndex: 2147483647, // máximo posible
               pointerEvents: 'auto',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.22)',
+              boxShadow: isDark ? '0 8px 32px rgba(0,0,0,0.4)' : '0 8px 32px rgba(0,0,0,0.15)',
               overflow: 'hidden',
             }}
             onMouseDown={(e: any) => e.stopPropagation()}
           >
             {LANGUAGES.map((lang) => {
               const isActive = language === lang;
+              const FlagComponent = LANGUAGE_FLAGS[lang];
               return (
                 // @ts-ignore
                 <div
                   key={lang}
                   onClick={() => { changeLanguage(lang); setOpen(false); }}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    padding: '11px 16px', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '12px 16px', cursor: 'pointer',
                     background: isActive ? activeBg : 'transparent',
                     userSelect: 'none',
+                    borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}`,
                   }}
                   onMouseEnter={(e: any) => { e.currentTarget.style.background = hoverBg; }}
                   onMouseLeave={(e: any) => { e.currentTarget.style.background = isActive ? activeBg : 'transparent'; }}
                 >
-                  <span style={{
-                    width: 28, height: 28, borderRadius: 14, flexShrink: 0,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: isActive ? Colors.primary : isDark ? 'rgba(101,179,97,0.18)' : 'rgba(101,179,97,0.14)',
-                    fontSize: 10, fontWeight: 800,
-                    color: isActive ? Colors.white : Colors.primary,
-                  }}>
-                    {lang.toUpperCase()}
+                  <span style={{ display: 'flex', alignItems: 'center' }}>
+                    {/* @ts-ignore */}
+                    <FlagComponent />
                   </span>
                   <span style={{
                     fontSize: 14, fontWeight: isActive ? 700 : 500,
-                    color: isActive ? Colors.primary : textCol,
+                    color: isDark ? '#FFFFFF' : '#0F172A',
                   }}>
                     {LANGUAGE_NAMES[lang]}
                   </span>
                   {isActive && (
-                    <span style={{ marginLeft: 'auto', color: Colors.primary }}>✓</span>
+                    <span style={{ marginLeft: 'auto', color: Colors.secondary }}>✓</span>
                   )}
                 </div>
               );
@@ -164,15 +204,14 @@ function LanguageSelectorMobile({ style }: LanguageSelectorProps) {
         onPress={() => setOpen(v => !v)}
         activeOpacity={0.75}
         style={[s.trigger, {
-          backgroundColor: theme.inputBg,
-          borderColor:     theme.primary,
+          backgroundColor: 'transparent',
+          borderColor:     Colors.secondary,
         }]}
       >
-        <Ionicons name="globe-outline" size={15} color={theme.primary} />
-        <Text style={[s.triggerText, { color: theme.primary }]}>
+        <Text style={[s.triggerText, { color: Colors.secondary }]}>
           {LANGUAGE_LABELS[language]}
         </Text>
-        <Ionicons name="chevron-down" size={12} color={theme.primary} />
+        <Ionicons name="chevron-down" size={12} color={Colors.secondary} />
       </TouchableOpacity>
 
       <Modal
@@ -183,28 +222,24 @@ function LanguageSelectorMobile({ style }: LanguageSelectorProps) {
       >
         <Pressable style={s.backdrop} onPress={() => setOpen(false)}>
           <View style={[s.modal, {
-            backgroundColor: isDark ? Colors.dark.card : Colors.white,
-            borderColor:     isDark ? 'rgba(101,179,97,0.4)' : '#DDDDDD',
+            backgroundColor: isDark ? '#262626' : '#FFFFFF',
+            borderColor:     isDark ? '#404040' : '#E2E8F0',
           }]}>
             {LANGUAGES.map((lang) => {
               const isActive = language === lang;
+              const FlagComponent = LANGUAGE_FLAGS[lang];
               return (
                 <TouchableOpacity
                   key={lang}
                   onPress={() => { changeLanguage(lang); setOpen(false); }}
-                  style={[s.option, isActive && { backgroundColor: theme.primaryFaint }]}
+                  style={[s.option, isActive && { backgroundColor: isDark ? '#404040' : '#E5E7EB' }]}
                 >
-                  <View style={[s.circle, {
-                    backgroundColor: isActive ? theme.primary : theme.primaryFaint,
-                  }]}>
-                    <Text style={[s.circleText, {
-                      color: isActive ? Colors.white : theme.primary,
-                    }]}>
-                      {lang.toUpperCase()}
-                    </Text>
+                  <View style={{ display: 'flex', alignItems: 'center', marginRight: 12 }}>
+                    {/* @ts-ignore */}
+                    <FlagComponent />
                   </View>
                   <Text style={[s.optionText, {
-                    color:      isActive ? theme.primary : theme.text,
+                    color:      isActive ? (isDark ? '#FFFFFF' : '#0F172A') : theme.text,
                     fontWeight: isActive ? FontWeight.bold : FontWeight.medium,
                   }]}>
                     {LANGUAGE_NAMES[lang]}
@@ -213,7 +248,7 @@ function LanguageSelectorMobile({ style }: LanguageSelectorProps) {
                     <Ionicons
                       name="checkmark"
                       size={16}
-                      color={theme.primary}
+                      color={Colors.secondary}
                       style={{ marginLeft: 'auto' as any }}
                     />
                   )}

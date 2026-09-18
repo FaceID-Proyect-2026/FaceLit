@@ -6,7 +6,7 @@
 //  · Nombre, apellido, correo: editables con estado local
 //  · Guardar: muestra mensaje de éxito, no persiste más allá
 // ─────────────────────────────────────────────
-import { MockUser, MOCK_PROGRAMS, MOCK_USERS } from '@/features/users/mocks';
+import { MOCK_PROGRAMS, MOCK_USERS, MockUser } from '@/features/users/mocks';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useTheme } from '@/shared/contexts/ThemeContext';
@@ -16,14 +16,14 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 
 export default function UserDetailScreen() {
@@ -45,11 +45,11 @@ export default function UserDetailScreen() {
   const text      = isDark ? Colors.dark.text       : Colors.light.text;
   const muted     = isDark ? Colors.dark.textMuted  : Colors.light.textMuted;
   const bg        = isDark ? Colors.dark.background : Colors.light.background;
-  const card      = isDark ? '#0D1F14'              : Colors.white;
-  const border    = isDark ? 'rgba(101,179,97,0.18)': 'rgba(101,179,97,0.20)';
-  const softGreen = isDark ? 'rgba(101,179,97,0.14)': '#EAF7E8';
-  const softBlue  = isDark ? 'rgba(74,144,217,0.16)': '#EAF3FC';
-  const softAmber = isDark ? 'rgba(232,155,44,0.16)': '#FFF5DF';
+  const card      = theme.surface;
+  const border    = theme.border;
+  const softGreen = theme.successSoft;
+  const softBlue  = theme.infoSoft;
+  const softAmber = theme.warningSoft;
 
   if (!base) {
     return (
@@ -64,7 +64,7 @@ export default function UserDetailScreen() {
   }
 
   const isInstructor = base.role === 'INSTRUCTOR';
-  const roleColor    = isInstructor ? '#4A90D9' : theme.primary;
+  const roleColor    = isInstructor ? theme.info : theme.primary;
   const roleBg       = isInstructor ? softBlue  : softGreen;
   const roleLabel    = isInstructor
     ? t('users.create.roleInstructor')

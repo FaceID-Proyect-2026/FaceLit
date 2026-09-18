@@ -39,8 +39,8 @@ export default function AdminDashboard() {
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
-  const cardBg = isDark ? '#0D1F14' : Colors.white;
-  const border = isDark ? 'rgba(101,179,97,0.18)' : 'rgba(101,179,97,0.20)';
+  const cardBg = theme.surface;
+  const border = theme.border;
   const bg = isDark ? Colors.dark.background : Colors.light.background;
 
   // Al admin (Coordinador) le interesa esencialmente: cuántos aprendices
@@ -70,19 +70,19 @@ export default function AdminDashboard() {
   ];
 
   const quickActions: QuickAction[] = [
-    { icon: 'people-outline', label: t('sidebar.users'), route: Routes.ADMIN.USERS, color: '#4A90D9' },
-    { icon: 'school-outline', label: t('sidebar.academic'), route: Routes.ACADEMIC.PROGRAMS, color: '#27AE60' },
-    { icon: 'checkmark-circle-outline', label: t('sidebar.attendance'), route: Routes.ATTENDANCE.LIST, color: '#1ABC9C' },
-    { icon: 'notifications-outline', label: t('sidebar.notifications'), route: Routes.NOTIFICATIONS.CENTER, color: '#9B59B6' },
-    { icon: 'person-outline', label: t('sidebar.profile'), route: Routes.PROFILE.VIEW, color: '#E89B2C' },
+    { icon: 'people-outline', label: t('sidebar.users'), route: Routes.ADMIN.USERS, color: theme.info },
+    { icon: 'school-outline', label: t('sidebar.academic'), route: Routes.ACADEMIC.PROGRAMS, color: theme.success },
+    { icon: 'checkmark-circle-outline', label: t('sidebar.attendance'), route: Routes.ATTENDANCE.LIST, color: theme.primary },
+    { icon: 'notifications-outline', label: t('sidebar.notifications'), route: Routes.NOTIFICATIONS.CENTER, color: theme.secondary },
+    { icon: 'person-outline', label: t('sidebar.profile'), route: Routes.PROFILE.VIEW, color: theme.warning },
   ];
 
   // ── Datos mock ────────────────────────────
   const recentActivity = [
-    { icon: 'person-add-outline', text: 'Nuevo aprendiz registrado: Ana Martínez', time: 'Hace 5 min', color: '#27AE60' },
-    { icon: 'checkmark-circle-outline', text: 'Asistencia registrada: Ficha 3145555', time: 'Hace 12 min', color: '#4A90D9' },
-    { icon: 'alert-circle-outline', text: 'Ambiente 304 sin instructor asignado', time: 'Hace 1 hora', color: '#E89B2C' },
-    { icon: 'time-outline', text: 'Horario modificado: ADSO - Jornada mañana', time: 'Hace 2 horas', color: '#9B59B6' },
+    { icon: 'person-add-outline', text: 'Nuevo aprendiz registrado: Ana Martínez', time: 'Hace 5 min', color: theme.success },
+    { icon: 'checkmark-circle-outline', text: 'Asistencia registrada: Ficha 3145555', time: 'Hace 12 min', color: theme.info },
+    { icon: 'alert-circle-outline', text: 'Ambiente 304 sin instructor asignado', time: 'Hace 1 hora', color: theme.warning },
+    { icon: 'time-outline', text: 'Horario modificado: ADSO - Jornada mañana', time: 'Hace 2 horas', color: theme.secondary },
   ];
 
   return (
@@ -90,7 +90,7 @@ export default function AdminDashboard() {
       <ScrollView contentContainerStyle={ads.scroll} showsVerticalScrollIndicator={false}>
         {/* Welcome */}
         <LinearGradient
-          colors={['#65A860', '#2B6728']}
+          colors={[theme.primaryLight, theme.primaryDark]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={ads.welcomeBanner}
