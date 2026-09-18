@@ -13,18 +13,18 @@ import { router, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  ActivityIndicator,
-  Animated,
-  Dimensions,
-  Easing,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Animated,
+    Dimensions,
+    Easing,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -34,6 +34,7 @@ const isWide = width >= 768;
 
 // ── Overlay de transición animada ─────────────
 function TransitionOverlay({ visible, onDone }: { visible: boolean; onDone: () => void }) {
+  const { t } = useTranslation();
   const opacity  = useRef(new Animated.Value(0)).current;
   const scale    = useRef(new Animated.Value(0)).current;
   const ripple1  = useRef(new Animated.Value(0)).current;
@@ -81,7 +82,7 @@ function TransitionOverlay({ visible, onDone }: { visible: boolean; onDone: () =
         <View style={so.iconCircle}>
           <Ionicons name="key-outline" size={36} color="#FFFFFF" />
         </View>
-        <Text style={so.iconLabel}>Recuperando acceso...</Text>
+        <Text style={so.iconLabel}>{t('login.recoveringAccess')}</Text>
       </Animated.View>
     </Animated.View>
   );

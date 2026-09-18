@@ -72,6 +72,8 @@
     metric3: "Automated",
     metric4: "Impersonations",
     phoneInfo: "Real-time biometric identification for SENA",
+    biometry: "Biometrics",
+    secure: "Secure",
     faceStatus: {
       s0: "Initializing...",
       s1: "Analyzing...",
@@ -156,6 +158,7 @@
     policyError: "You must accept the privacy notice",
     loginBtn: "Sign in",
     loggingIn: "Signing in…",
+    recoveringAccess: "Recovering access...",
     forgotPassword: "Forgot your password?",
     noAccount: "Don't have an account?",
     registerLink: "Register here",

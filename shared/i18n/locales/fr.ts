@@ -58,6 +58,8 @@
     metric3: "Automatisé",
     metric4: "Fraude",
     phoneInfo: "Identification biométrique en temps réel",
+    biometry: "Biométrie",
+    secure: "Sécurisé",
     faceStatus: {
       s0: "Initialisation...",
       s1: "Analyse en cours...",
@@ -135,6 +137,7 @@
       "Vous devez accepter la politique de confidentialité pour continuer.",
     loginBtn: "Se connecter",
     loggingIn: "Connexion en cours…",
+    recoveringAccess: "Récupération de l'accès...",
     forgotPassword: "Mot de passe oublié ?",
     noAccount: "Pas de compte ?",
     registerLink: "S'inscrire",

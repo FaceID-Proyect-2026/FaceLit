@@ -58,6 +58,15 @@ const de = {
     metric3: "Automatisiert",
     metric4: "Betrug",
     phoneInfo: "Biometrische Identifikation in Echtzeit",
+    biometry: "Biometrie",
+    secure: "Sicher",
+    faceStatus: {
+      s0: "Initialisiere...",
+      s1: "Analysiere...",
+      s2: "Verifiziere Punkte",
+      s3: "Berechne...",
+      s4: "Bereit",
+    },
   },
   problems: {
     sectionTitle: "Warum FaceLit?",
@@ -126,6 +135,7 @@ const de = {
     policyError: "Datenschutzerklärung erforderlich",
     loginBtn: "Anmelden",
     loggingIn: "Anmeldung läuft…",
+    recoveringAccess: "Zugriff wird wiederhergestellt...",
     forgotPassword: "Passwort vergessen?",
     noAccount: "Kein Konto?",
     registerLink: "Registrieren",

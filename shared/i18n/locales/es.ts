@@ -72,6 +72,8 @@
     metric3: "Automatizado",
     metric4: "Suplantaciones",
     phoneInfo: "Identificación biométrica en tiempo real para el SENA",
+    biometry: "Biometría",
+    secure: "Seguro",
     faceStatus: {
       s0: "Inicializando...",
       s1: "Analizando...",
@@ -157,6 +159,7 @@
     policyError: "Debes aceptar el aviso de privacidad para continuar.",
     loginBtn: "Iniciar sesión",
     loggingIn: "Ingresando…",
+    recoveringAccess: "Recuperando acceso...",
     forgotPassword: "¿Olvidaste tu contraseña?",
     noAccount: "¿No tienes cuenta?",
     registerLink: "Regístrate aquí",

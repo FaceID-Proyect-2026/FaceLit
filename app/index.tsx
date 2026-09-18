@@ -532,11 +532,11 @@ export default function LandingScreen() {
               {/* Decoración exterior — puntos flotantes */}
               <View style={[s.floatBadge, s.floatBadgeTR, { backgroundColor: isDark ? '#0D1F0D' : '#E8F8E4', borderColor: border }]}>
                 <Ionicons name="finger-print-outline" size={14} color={theme.primary} />
-                <Text style={[s.floatBadgeText, { color: theme.primary }]}>Biometría</Text>
+                <Text style={[s.floatBadgeText, { color: theme.primary }]}>{t('hero.biometry')}</Text>
               </View>
               <View style={[s.floatBadge, s.floatBadgeBL, { backgroundColor: isDark ? '#0D1F0D' : '#E8F8E4', borderColor: border }]}>
                 <Ionicons name="lock-closed-outline" size={14} color={theme.primary} />
-                <Text style={[s.floatBadgeText, { color: theme.primary }]}>Seguro</Text>
+                <Text style={[s.floatBadgeText, { color: theme.primary }]}>{t('hero.secure')}</Text>
               </View>
             </View>
           </View>
