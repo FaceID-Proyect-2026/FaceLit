@@ -74,6 +74,7 @@ interface LanguageSelectorProps { style?: ViewStyle; }
 function LanguageSelectorWeb({ style }: LanguageSelectorProps) {
   const { language, changeLanguage } = useLanguage();
   const { isDark } = useTheme();
+  const controlColor = isDark ? Colors.white : Colors.primaryDark;
   const [open, setOpen] = useState(false);
   const [btnRect, setBtnRect] = useState<{ top: number; right: number } | null>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -118,10 +119,10 @@ function LanguageSelectorWeb({ style }: LanguageSelectorProps) {
         style={{
           display: 'flex', alignItems: 'center', gap: 8,
           background: 'transparent',
-          border: `1.5px solid ${Colors.secondary}`,
+          border: `1.5px solid ${controlColor}`,
           borderRadius: 20, height: 40, padding: '0 16px',
           cursor: 'pointer', fontWeight: 600, fontSize: 13,
-          color: Colors.secondary, outline: 'none',
+          color: controlColor, outline: 'none',
           boxShadow: isDark ? '0 2px 8px rgba(0,0,0,0.15)' : '0 2px 4px rgba(0,0,0,0.08)',
         }}
       >
@@ -196,6 +197,7 @@ function LanguageSelectorWeb({ style }: LanguageSelectorProps) {
 function LanguageSelectorMobile({ style }: LanguageSelectorProps) {
   const { language, changeLanguage } = useLanguage();
   const { theme, isDark } = useTheme();
+  const controlColor = isDark ? Colors.white : Colors.primaryDark;
   const [open, setOpen] = useState(false);
 
   return (
@@ -205,13 +207,13 @@ function LanguageSelectorMobile({ style }: LanguageSelectorProps) {
         activeOpacity={0.75}
         style={[s.trigger, {
           backgroundColor: 'transparent',
-          borderColor:     Colors.secondary,
+          borderColor:     controlColor,
         }]}
       >
-        <Text style={[s.triggerText, { color: Colors.secondary }]}>
+        <Text style={[s.triggerText, { color: controlColor }]}>
           {LANGUAGE_LABELS[language]}
         </Text>
-        <Ionicons name="chevron-down" size={12} color={Colors.secondary} />
+        <Ionicons name="chevron-down" size={12} color={controlColor} />
       </TouchableOpacity>
 
       <Modal

@@ -16,6 +16,7 @@ interface ThemeToggleProps {
 export default function ThemeToggle({ style }: ThemeToggleProps) {
   const { isDark, toggleTheme } = useTheme();
   const { t } = useTranslation();
+  const controlColor = isDark ? Colors.white : Colors.primaryDark;
 
   return (
     <TouchableOpacity
@@ -25,7 +26,7 @@ export default function ThemeToggle({ style }: ThemeToggleProps) {
         s.btn,
         {
           backgroundColor: 'transparent',
-          borderColor:     Colors.secondary,
+          borderColor:     controlColor,
         },
         style,
       ]}
@@ -33,9 +34,9 @@ export default function ThemeToggle({ style }: ThemeToggleProps) {
       <Ionicons
         name={isDark ? 'sunny-outline' : 'moon-outline'}
         size={15}
-        color={Colors.secondary}
+        color={controlColor}
       />
-      <Text style={[s.label, { color: Colors.secondary }]}>{t('theme.toggle')}</Text>
+      <Text style={[s.label, { color: controlColor }]}>{t('theme.toggle')}</Text>
     </TouchableOpacity>
   );
 }

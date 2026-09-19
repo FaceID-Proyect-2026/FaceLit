@@ -329,6 +329,18 @@ export default function LandingScreen() {
   const transAnim  = useRef(new Animated.Value(1)).current;
   const transAlpha = useRef(new Animated.Value(1)).current;
   const transY     = useRef(new Animated.Value(0)).current;
+  const pillPulse   = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pillPulse, { toValue: 1, duration: 1800, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(pillPulse, { toValue: 0, duration: 1800, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+      ])
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [pillPulse]);
 
   const goToLogin = () => {
     Animated.parallel([
@@ -372,6 +384,9 @@ export default function LandingScreen() {
   const body       = theme.textSecondary;
   const muted      = theme.textMuted;
   const border     = theme.border;
+  const controlColor = isDark ? Colors.white : theme.primaryDark;
+  const pillScale = pillPulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.025] });
+  const pillOpacity = pillPulse.interpolate({ inputRange: [0, 1], outputRange: [0.88, 1] });
 
   // ── Arrays con t() ────────────────────────────
   const PROBLEMS: FeatureItem[] = [
@@ -464,10 +479,10 @@ export default function LandingScreen() {
           {/* ── Hero ── */}
           <View style={[s.hero, isWide && s.heroWide]}>
             <View style={s.heroCopy}>
-              <View style={[s.pill, { backgroundColor: theme.secondaryFaint, borderColor: theme.secondaryDark }]}>
-                <View style={[s.pillDot, { backgroundColor: theme.secondary }]} />
-                <Text style={[s.pillText, { color: theme.secondary }]}>{t('hero.pill')}</Text>
-              </View>
+              <Animated.View style={[s.pill, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : theme.primaryFaint, borderColor: controlColor, opacity: pillOpacity, transform: [{ scale: pillScale }] }]}>
+                <View style={[s.pillDot, { backgroundColor: controlColor }]} />
+                <Text style={[s.pillText, { color: controlColor }]}>{t('hero.pill')}</Text>
+              </Animated.View>
 
               <Text style={[s.heroTitle, { color: heading }, isWide && s.heroTitleWide]}>
                 {t('hero.title1')}{'\n'}{t('hero.title2')}{' '}
@@ -530,13 +545,13 @@ export default function LandingScreen() {
               </View>
 
               {/* Decoración exterior — puntos flotantes */}
-              <View style={[s.floatBadge, s.floatBadgeTR, { backgroundColor: 'rgba(245,158,11,0.12)', borderColor: '#F59E0B' }]}>
-                <Ionicons name="finger-print-outline" size={14} color="#F59E0B" />
-                <Text style={[s.floatBadgeText, { color: '#F59E0B' }]}>{t('hero.biometry')}</Text>
+              <View style={[s.floatBadge, s.floatBadgeTR, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : theme.primaryFaint, borderColor: controlColor }]}>
+                <Ionicons name="finger-print-outline" size={14} color={controlColor} />
+                <Text style={[s.floatBadgeText, { color: controlColor }]}>{t('hero.biometry')}</Text>
               </View>
-              <View style={[s.floatBadge, s.floatBadgeBL, { backgroundColor: 'rgba(245,158,11,0.12)', borderColor: '#F59E0B' }]}>
-                <Ionicons name="lock-closed-outline" size={14} color="#F59E0B" />
-                <Text style={[s.floatBadgeText, { color: '#F59E0B' }]}>{t('hero.secure')}</Text>
+              <View style={[s.floatBadge, s.floatBadgeBL, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : theme.primaryFaint, borderColor: controlColor }]}>
+                <Ionicons name="lock-closed-outline" size={14} color={controlColor} />
+                <Text style={[s.floatBadgeText, { color: controlColor }]}>{t('hero.secure')}</Text>
               </View>
             </View>
           </View>

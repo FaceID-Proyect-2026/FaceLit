@@ -307,7 +307,7 @@ export default function LoginScreen() {
                       </View>
                       <Text style={s.policyTextWrap}>
                         <Text style={[s.policyText, { color: text }]}>{t('login.policyPrefix')}{' '}</Text>
-                        <Text style={[s.policyLink, { color: theme.link }]} onPress={() => setShowPrivacy(true)}>
+                        <Text style={[s.policyLink, { color: isDark ? theme.primaryLight : theme.primaryDark }]} onPress={() => setShowPrivacy(true)}>
                           {t('login.policyLink')}
                         </Text>
                         <Text style={[s.policyText, { color: text }]}>{t('login.policySuffix')}</Text>
@@ -372,8 +372,8 @@ export default function LoginScreen() {
                     activeOpacity={0.7}
                     style={s.forgotBtn}
                   >
-                    <Ionicons name="help-circle-outline" size={15} color={theme.link} />
-                    <Text style={[s.forgotText, { color: theme.link }]}>
+                    <Ionicons name="help-circle-outline" size={15} color={Colors.white} />
+                    <Text style={[s.forgotText, { color: Colors.white }]}>
                       {t('login.forgotPassword')}
                     </Text>
                   </TouchableOpacity>

@@ -104,6 +104,7 @@ export default function VerifyIdentityScreen() {
   // Colores
   const text     = isDark ? '#FFFFFF' : '#111111';
   const muted    = isDark ? '#CAD6C8' : '#3D5C3A';
+  const controlColor = isDark ? Colors.white : theme.primaryDark;
   const cardBg   = isDark ? '#07120D' : '#FFFFFF';
   const inputBg  = isDark ? 'rgba(255,255,255,0.04)' : '#F9FFF9';
   const inputBdr = isDark ? 'rgba(255,255,255,0.20)' : 'rgba(0,0,0,0.15)';
@@ -136,10 +137,10 @@ export default function VerifyIdentityScreen() {
                 style={s.backRow}
                 activeOpacity={0.7}
               >
-                <View style={[s.backIconWrap, { backgroundColor: theme.link + '18', borderColor: theme.link + '44' }]}>
-                  <Ionicons name="arrow-back" size={20} color={theme.link} />
+                <View style={[s.backIconWrap, { backgroundColor: controlColor + '18', borderColor: controlColor + '44' }]}>
+                  <Ionicons name="arrow-back" size={20} color={controlColor} />
                 </View>
-                <Text style={[s.backText, { color: theme.link }]}>{t('verifyIdentity.backBtn')}</Text>
+                <Text style={[s.backText, { color: controlColor }]}>{t('verifyIdentity.backBtn')}</Text>
               </TouchableOpacity>
 
               {/* ── Ícono reloj ── */}
