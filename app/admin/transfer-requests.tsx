@@ -257,17 +257,12 @@ export default function TransferRequestsScreen() {
         {
           text: 'Aprobar',
           style: 'default',
-          onPress: () => {
-            const result = approve(item.id, user?.firstName ?? user?.email ?? 'Coordinador');
-            if (result.success) {
+          onPress: async () => {
+            try {
+              await approve(item.id);
               alert('✓ Traslado aplicado', `${item.learnerName} ahora está activo en la ficha ${item.requestedFichaNumber}.`);
-            } else {
-              const msgs: Record<string, string> = {
-                'academic.fichaInactive':    'La ficha destino ya no está activa.',
-                'academic.learnerNotFound':  'No se encontró al aprendiz en su ficha actual.',
-                'academic.transferAlreadyDecided': 'Esta solicitud ya fue decidida.',
-              };
-              alert('Error', msgs[result.error!] ?? 'No se pudo aplicar el traslado. Intenta de nuevo.');
+            } catch (error: any) {
+              alert('Error', error?.response?.data?.message ?? 'No se pudo aplicar el traslado. Intenta de nuevo.');
             }
           },
         },
@@ -276,14 +271,14 @@ export default function TransferRequestsScreen() {
   };
 
   // ── Rechazar ──────────────────────────────
-  const handleRejectConfirm = (reason: string) => {
+  const handleRejectConfirm = async (reason: string) => {
     if (!rejectingId) return;
-    const result = reject(rejectingId, user?.firstName ?? user?.email ?? 'Coordinador', reason || 'Sin motivo especificado.');
     setRejectingId(null);
-    if (result.success) {
+    try {
+      await reject(rejectingId);
       alert('Solicitud rechazada', 'El aprendiz permanece en su ficha actual. Se notificará la decisión.');
-    } else {
-      alert('Error', 'No se pudo rechazar la solicitud. Intenta de nuevo.');
+    } catch (error: any) {
+      alert('Error', error?.response?.data?.message ?? 'No se pudo rechazar la solicitud. Intenta de nuevo.');
     }
   };
 

@@ -57,6 +57,12 @@ export interface User {
   lastName?: string;
   role: UserRole;
   permissions: string[];
+  name?: string;
+  lastname?: string;
+}
+
+export function getSystemUsers(): User[] {
+  return [];
 }
 
 export type SystemUser = User;

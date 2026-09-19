@@ -29,6 +29,19 @@ let instructors: Instructor[]   = MOCK_INSTRUCTORS;
 const listeners = new Set<Listener>();
 function emit() { listeners.forEach(l => l()); }
 
+const isValidDocument = (value: string) => /^\d{6,15}$/.test((value ?? '').trim());
+
+export function hydrateAcademicStore(next: {
+  programs: Program[];
+  fichas: Ficha[];
+  instructors: Instructor[];
+}) {
+  programs = next.programs;
+  fichas = next.fichas;
+  instructors = next.instructors;
+  emit();
+}
+
 export function subscribe(listener: Listener) {
   listeners.add(listener);
   return () => listeners.delete(listener);
@@ -87,6 +100,9 @@ export function updateProgramStore(id: string, name: string, status: 'active' | 
 export function deactivateProgramStore(id: string) {
   const prog = programs.find(p => p.id === id);
   if (!prog) return { success: false, error: 'academic.programNotFound' };
+  if (prog.instructorIds.length > 0 || prog.fichas.length > 0) {
+    return { success: false, error: 'academic.programHasRelations' };
+  }
   programs = programs.map(p =>
     p.id === id ? { ...p, status: 'inactive' as const, updatedAt: new Date().toISOString() } : p,
   );
@@ -109,14 +125,14 @@ export function deleteProgramStore(id: string) {
   const prog = programs.find(p => p.id === id);
   if (!prog) return { success: false, error: 'academic.programNotFound' };
   if (prog.status !== 'inactive') return { success: false, error: 'academic.noDeleteActiveProgram' };
-  if (prog.fichas.length > 0) {
+  if (prog.fichas.length > 0 || prog.instructorIds.length > 0) {
     pushNotification(
       'academic_delete_blocked',
       'Intento de eliminación bloqueado',
-      `No fue posible eliminar el programa "${prog.name}" porque tiene fichas activas asociadas.`,
+      `No fue posible eliminar el programa "${prog.name}" porque todavía tiene relaciones activas con fichas o instructores.`,
       { entityType: 'program', entityId: id },
     );
-    return { success: false, error: 'academic.programHasFichas' };
+    return { success: false, error: 'academic.programHasRelations' };
   }
   programs = programs.filter(p => p.id !== id);
   emit();
@@ -372,9 +388,9 @@ export function updateLearnerInfoStore(
   const learner = ficha?.learners.find(l => l.id === learnerId);
   if (!ficha || !learner) return { success: false, error: 'academic.learnerNotFound' };
 
-  const nextDoc = data.document?.trim();
+  const nextDoc = data.document?.replace(/\D/g, '').trim();
   if (nextDoc && nextDoc !== learner.document) {
-    if (!/^\d{10}$/.test(nextDoc)) return { success: false, error: 'academic.invalidDocument' };
+    if (!isValidDocument(nextDoc)) return { success: false, error: 'academic.invalidDocument' };
     if (fichas.some(f => f.learners.some(l => l.id !== learnerId && l.document === nextDoc))) {
       return { success: false, error: 'academic.duplicateDocument' };
     }
@@ -420,8 +436,8 @@ export function updateLearnerDocument(
   const ficha   = fichas.find(f => f.id === fichaId);
   const learner = ficha?.learners.find(l => l.id === learnerId);
   if (!ficha || !learner) return { success: false, error: 'academic.learnerNotFound' };
-  const next = document.trim();
-  if (!next) return { success: false, error: 'academic.documentRequired' };
+  const next = document.replace(/\D/g, '').trim();
+  if (!next || !isValidDocument(next)) return { success: false, error: 'academic.invalidDocument' };
   if (fichas.some(f => f.learners.some(l => l.id !== learnerId && l.document === next))) {
     return { success: false, error: 'academic.duplicateDocument' };
   }
@@ -623,7 +639,10 @@ export function registerInstructorStore(data: {
   programId?: string;
   fichaIds?: string[];
 }) {
-  const doc = data.document.trim();
+  const doc = data.document.replace(/\D/g, '').trim();
+  if (!isValidDocument(doc)) {
+    return { success: false, error: 'academic.invalidDocument' };
+  }
   if (instructors.some(i => i.document === doc)) {
     return { success: false, error: 'academic.duplicateDocument' };
   }

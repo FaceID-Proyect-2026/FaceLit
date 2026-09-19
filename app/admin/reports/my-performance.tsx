@@ -87,10 +87,10 @@ export default function MyPerformanceScreen() {
         <View style={[mps.userCard, { backgroundColor: cardBg, borderColor: border, marginHorizontal: 16, marginBottom: 16 }]}>
           <View style={mps.userHeader}>
             <View style={[mps.avatar, { backgroundColor: theme.primary }]}>
-              <Text style={mps.avatarText}>{user.name.charAt(0)}{user.lastname.charAt(0)}</Text>
+              <Text style={mps.avatarText}>{(user.firstName ?? user.name ?? 'U').charAt(0)}{(user.lastName ?? user.lastname ?? '').charAt(0)}</Text>
             </View>
             <View style={mps.userInfo}>
-              <Text style={[mps.userName, { color: text }]}>{user.name} {user.lastname}</Text>
+              <Text style={[mps.userName, { color: text }]}>{user.firstName ?? user.name ?? 'Usuario'} {user.lastName ?? user.lastname ?? ''}</Text>
               <Text style={[mps.userRole, { color: muted }]}>{t('reports.performance.title')}</Text>
             </View>
           </View>

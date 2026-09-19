@@ -63,10 +63,13 @@ export default function AcademicProgramsScreen() {
   const handleDeleteCompletely = (id: string, name: string) => {
     alert(t('academic.programDeleteCompletely'), `${name}\n\n${t('academic.programDeleteCompletelyConfirm')}`, [
       { text: t('common.no'), style: 'cancel' },
-      { text: t('common.yes'), style: 'destructive', onPress: () => {
-        const r = deleteProgram(id);
-        if (r.success) alert('✓', t('academic.programDeleteCompletelySuccess'));
-        else if (r.error) alert(t('common.error'), t(r.error));
+      { text: t('common.yes'), style: 'destructive', onPress: async () => {
+        try {
+          await deleteProgram(id);
+          alert('✓', t('academic.programDeleteCompletelySuccess'));
+        } catch (error: any) {
+          alert(t('common.error'), error?.response?.data?.message ?? 'No se pudo eliminar el programa.');
+        }
       }},
     ]);
   };
@@ -96,10 +99,13 @@ export default function AcademicProgramsScreen() {
   const handleDeleteFichaCompletely = (id: string, number: string) => {
     alert(t('academic.fichaDeleteCompletely'), `${number}\n\n${t('academic.fichaDeleteCompletelyConfirm')}`, [
       { text: t('common.no'), style: 'cancel' },
-      { text: t('common.yes'), style: 'destructive', onPress: () => {
-        const r = deleteFicha(id);
-        if (r.success) alert('✓', t('academic.fichaDeleteCompletelySuccess'));
-        else if (r.error) alert(t('common.error'), t(r.error));
+      { text: t('common.yes'), style: 'destructive', onPress: async () => {
+        try {
+          await deleteFicha(id);
+          alert('✓', t('academic.fichaDeleteCompletelySuccess'));
+        } catch (error: any) {
+          alert(t('common.error'), error?.response?.data?.message ?? 'No se pudo eliminar la ficha.');
+        }
       }},
     ]);
   };

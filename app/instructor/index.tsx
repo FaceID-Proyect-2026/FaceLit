@@ -163,7 +163,7 @@ export default function AdminDashboard() {
         >
           <View>
             <Text style={ads.welcomeTitle}>
-              {t("dashboard.welcome")}, {user?.name}!
+              {t("dashboard.welcome")}, {user?.firstName ?? user?.name ?? 'Usuario'}!
             </Text>
             <Text style={ads.welcomeSubtitle}>
               {t("dashboard.role")}:{" "}

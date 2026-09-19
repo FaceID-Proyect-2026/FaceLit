@@ -2,8 +2,6 @@
 //  app/admin/index.tsx — Dashboard Admin
 // ─────────────────────────────────────────────
 import { useAcademic } from '@/features/academic/useAcademic';
-import { useAttendance } from '@/features/attendance/useAttendance';
-import { useEnvironments } from '@/features/environments/useEnvironments';
 import { Colors } from '@/shared/constants/colors';
 import { Routes } from '@/shared/constants/routes';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
@@ -33,9 +31,7 @@ export default function AdminDashboard() {
   const { user } = useAuth();
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
-  const { allFichas, orphanLearners } = useAcademic();
-  const { environments } = useEnvironments();
-  const attendanceRecords = useAttendance();
+  const { allFichas, orphanLearners, programs } = useAcademic();
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -47,26 +43,22 @@ export default function AdminDashboard() {
   // hay registrados en el sistema y qué tan puntuales han sido — el
   // detalle de asistencia por usuario lo cubre el módulo de Asistencia,
   // aquí solo se resume.
-  const { totalLearners, activeFichasCount, activeEnvironmentsCount, attendanceRate } = useMemo(() => {
+  const { totalLearners, activeFichasCount, programsCount } = useMemo(() => {
     const learnerIds = new Set<string>();
     allFichas.forEach(f => f.learners.forEach(l => learnerIds.add(l.id)));
     orphanLearners.forEach(l => learnerIds.add(l.id));
 
-    const total = attendanceRecords.length;
-    const present = attendanceRecords.filter(r => r.status !== 'absent').length;
-
     return {
-      totalLearners: learnerIds.size,
+      totalLearners:    learnerIds.size,
       activeFichasCount: allFichas.filter(f => f.status === 'active').length,
-      activeEnvironmentsCount: environments.filter(e => e.status === 'active').length,
-      attendanceRate: total > 0 ? Math.round((present / total) * 100) : 0,
+      programsCount:    programs.length,
     };
-  }, [allFichas, orphanLearners, environments, attendanceRecords]);
+  }, [allFichas, orphanLearners, programs]);
 
   const stats: StatCard[] = [
-    { icon: 'people-outline', value: String(totalLearners), label: t('dashboard.totalUsers') },
-    { icon: 'school-outline', value: String(activeFichasCount), label: t('dashboard.activeFichas') },
-    { icon: 'checkmark-circle-outline', value: `${attendanceRate}%`, label: t('dashboard.attendanceRate') },
+    { icon: 'people-outline',  value: String(totalLearners),    label: t('dashboard.totalUsers')    },
+    { icon: 'school-outline',  value: String(activeFichasCount), label: t('dashboard.activeFichas') },
+    { icon: 'layers-outline',  value: String(programsCount),     label: t('dashboard.programs')     },
   ];
 
   const quickActions: QuickAction[] = [

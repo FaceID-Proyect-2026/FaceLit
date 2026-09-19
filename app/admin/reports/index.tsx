@@ -18,7 +18,7 @@ export default function ReportsDashboardScreen() {
   const border = theme.border;
   const bg = isDark ? Colors.dark.background : Colors.light.background;
 
-  const isAdminOrInstructor = user?.role === 'administrador' || user?.role === 'instructor';
+  const isAdminOrInstructor = user?.role === 'COORDINATOR' || user?.role === 'INSTRUCTOR';
 
   const options = [
     { icon: 'person-outline', label: t('reports.byUser'), route: Routes.REPORTS.BY_USER, color: theme.info },

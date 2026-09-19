@@ -12,10 +12,10 @@ import { router } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-    Animated,
-    Easing,
-    Image, Platform, ScrollView, StyleSheet, Text,
-    TouchableOpacity, useWindowDimensions, View
+  Animated,
+  Easing,
+  Image, Platform, ScrollView, StyleSheet, Text,
+  TouchableOpacity, useWindowDimensions, View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 

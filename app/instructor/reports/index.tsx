@@ -22,7 +22,7 @@ export default function ReportsDashboardScreen() {
   const border = theme.border;
   const bg = isDark ? Colors.dark.background : Colors.light.background;
 
-  const isAdminOrInstructor = user?.role === 'administrador' || user?.role === 'instructor';
+  const isAdminOrInstructor = user?.role === 'COORDINATOR' || user?.role === 'INSTRUCTOR';
   const basePath = getRoleBasePath(user?.role);
 
   const options = [

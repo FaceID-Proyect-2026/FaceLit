@@ -629,7 +629,7 @@
     totalUsers: "Total users",
     activeFichas: "Active fichas",
     environments: "Environments",
-    attendanceRate: "Attendance rate",
+    programs: "Registered programs",
     quickActions: "Quick actions",
     recentActivity: "Recent activity",
   },

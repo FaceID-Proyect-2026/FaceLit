@@ -45,6 +45,7 @@ export interface TransferRequest {
 export interface Program {
   id: string;
   name: string;
+  code?: string;
   status: 'active' | 'inactive';
   fichas: string[];      // IDs de fichas
   instructorIds: string[]; // IDs de instructores específicos de este programa

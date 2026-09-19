@@ -153,9 +153,9 @@ export default function ScheduleDetailScreen() {
               </TouchableOpacity>
             )}
             {!!schedule.environmentId && (
-              <TouchableOpacity onPress={handleUnassignEnvironment} style={[sds.actionBtn, { borderColor: Colors.accentPurple }]} activeOpacity={0.7}>
-                <Ionicons name="business-outline" size={16} color={Colors.accentPurple} />
-                <Text style={{ color: Colors.accentPurple, fontWeight: '700' }}>{t('schedules.unassignEnvironment')}</Text>
+              <TouchableOpacity onPress={handleUnassignEnvironment} style={[sds.actionBtn, { borderColor: Colors.info }]} activeOpacity={0.7}>
+                <Ionicons name="business-outline" size={16} color={Colors.info} />
+                <Text style={{ color: Colors.info, fontWeight: '700' }}>{t('schedules.unassignEnvironment')}</Text>
               </TouchableOpacity>
             )}
           </View>

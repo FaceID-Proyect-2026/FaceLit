@@ -91,7 +91,9 @@ export default function FichaDetailScreen() {
       const matchedUser = systemUsers.find(u => normalizeDocument(u.document) === row.document);
       let validationStatus: 'validated' | 'inconsistency' = 'validated';
       if (matchedUser) {
-        const nameMatches = normalizeText(matchedUser.name) === normalizeText(row.name) && normalizeText(matchedUser.lastname) === normalizeText(row.lastname);
+        const existingName = (matchedUser.firstName ?? matchedUser.name ?? '').trim();
+        const existingLastName = (matchedUser.lastName ?? matchedUser.lastname ?? '').trim();
+        const nameMatches = normalizeText(existingName) === normalizeText(row.name) && normalizeText(existingLastName) === normalizeText(row.lastname);
         if (!nameMatches) validationStatus = 'inconsistency';
       }
       if (validationStatus === 'inconsistency') { inconsistencies += 1; return; }
@@ -105,6 +107,7 @@ export default function FichaDetailScreen() {
         role: 'aprendiz',
         status: 'active' as const,
         validationStatus,
+        initialPassword: null,
       };
       const outcome = addLearner(ficha.id, learner);
       if (outcome.success) added += 1; else conflict += 1;

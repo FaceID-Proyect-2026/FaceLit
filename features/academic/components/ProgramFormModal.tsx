@@ -30,28 +30,35 @@ export default function ProgramFormModal({ visible, onClose, editId }: ProgramFo
   const inputBorder = isDark ? 'rgba(255,255,255,0.30)' : '#BBBBBB';
 
   const [name, setName] = useState('');
-  const [status, setStatus] = useState<'active' | 'inactive'>('active');
-  const [error, setError] = useState('');
+  const [code, setCode] = useState('');
+  const [errors, setErrors] = useState<{ name?: string; code?: string; form?: string }>({});
 
   // Cada vez que el modal se abre (o cambia a qué programa apunta),
   // recarga los valores desde el registro actual.
   useEffect(() => {
     if (!visible) return;
     setName(existing?.name ?? '');
-    setStatus(existing?.status ?? 'active');
-    setError('');
+    setCode(existing?.code ?? '');
+    setErrors({});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, editId]);
 
-  const handleSave = () => {
-    if (!name.trim()) { setError(t('academic.required', 'Requerido')); return; }
-    if (existing) {
-      updateProgram(existing.id, name, status);
-    } else if (!addProgram(name)) {
-      setError(t('academic.duplicateProgram'));
-      return;
+  const handleSave = async () => {
+    const nextErrors: typeof errors = {};
+    const normalizedName = name.trim();
+    const normalizedCode = code.trim().toUpperCase();
+    if (!normalizedName) nextErrors.name = 'El nombre del programa es obligatorio.';
+    else if (normalizedName.length > 100) nextErrors.name = 'El nombre no puede superar los 100 caracteres.';
+    if (!normalizedCode) nextErrors.code = 'El código de programa es obligatorio.';
+    else if (!/^[A-Z0-9]{2,15}$/.test(normalizedCode)) nextErrors.code = 'El código debe tener entre 2 y 15 caracteres alfanuméricos.';
+    if (Object.keys(nextErrors).length) { setErrors(nextErrors); return; }
+    try {
+      if (existing) await updateProgram(existing.id, normalizedName, normalizedCode);
+      else await addProgram(normalizedName, normalizedCode);
+      onClose();
+    } catch (error: any) {
+      setErrors({ form: error?.response?.data?.message ?? t('academic.duplicateProgram') });
     }
-    onClose();
   };
 
   return (
@@ -73,27 +80,26 @@ export default function ProgramFormModal({ visible, onClose, editId }: ProgramFo
     >
       <Text style={[pfm.label, { color: text }]}>{t('academic.fields.programName')}</Text>
       <TextInput
-        style={[pfm.input, { backgroundColor: inputBg, borderColor: error ? Colors.error : inputBorder, color: text }] as any}
+        style={[pfm.input, { backgroundColor: inputBg, borderColor: errors.name || errors.form ? Colors.error : inputBorder, color: text }] as any}
         value={name}
-        onChangeText={v => { setName(v); setError(''); }}
+        onChangeText={v => { setName(v); setErrors(previous => ({ ...previous, name: undefined, form: undefined })); }}
         placeholder="Nombre del programa"
         placeholderTextColor={isDark ? '#5A7258' : '#AAAAAA'}
       />
-      {error ? <Text style={pfm.error}>{error}</Text> : null}
+      {errors.name ? <Text style={pfm.error}>{errors.name}</Text> : null}
 
-      <Text style={[pfm.label, { color: text, marginTop: 16 }]}>{t('academic.fields.status')}</Text>
-      <View style={pfm.statusRow}>
-        {(['active', 'inactive'] as const).map(s => (
-          <TouchableOpacity
-            key={s}
-            onPress={() => setStatus(s)}
-            style={[pfm.statusBtn, { backgroundColor: status === s ? theme.primary + '25' : inputBg, borderColor: status === s ? theme.primary : inputBorder }]}
-            activeOpacity={0.7}
-          >
-            <Text style={{ color: status === s ? theme.primary : isDark ? '#5A7258' : '#AAAAAA', fontWeight: '700', fontSize: 14 }}>{t(`environments.statuses.${s}`)}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      <Text style={[pfm.label, { color: text, marginTop: 16 }]}>Código del programa</Text>
+      <TextInput
+        style={[pfm.input, { backgroundColor: inputBg, borderColor: errors.code || errors.form ? Colors.error : inputBorder, color: text }] as any}
+        value={code}
+        onChangeText={v => { setCode(v.toUpperCase().replace(/[^A-Z0-9]/g, '')); setErrors(previous => ({ ...previous, code: undefined, form: undefined })); }}
+        placeholder="ADSO"
+        placeholderTextColor={isDark ? '#5A7258' : '#AAAAAA'}
+        autoCapitalize="characters"
+      />
+
+      {errors.code ? <Text style={pfm.error}>{errors.code}</Text> : null}
+      {errors.form ? <Text style={pfm.error}>{errors.form}</Text> : null}
     </FormModal>
   );
 }
@@ -102,7 +108,5 @@ const pfm = StyleSheet.create({
   label: { fontSize: FontSize.base, fontWeight: FontWeight.bold, marginBottom: 6 },
   input: { height: 48, borderWidth: 1.2, borderRadius: 12, paddingHorizontal: 14, fontSize: FontSize.lg, outlineStyle: 'none' } as any,
   error: { color: Colors.error, fontSize: FontSize.xs, marginTop: 3 },
-  statusRow: { flexDirection: 'row', gap: 8 },
-  statusBtn: { flex: 1, borderRadius: 10, borderWidth: 1.2, paddingVertical: 10, alignItems: 'center' },
   footerBtn: { flex: 1, borderRadius: 12, borderWidth: 1.2, paddingVertical: 12, alignItems: 'center' },
 });

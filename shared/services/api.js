@@ -4,13 +4,20 @@ import { getToken, removeToken } from './tokenStorage';
 
 export const api = axios.create({
   baseURL: API_URL,
-  timeout: 15000, // evita que el botón quede "cargando" para siempre si el backend no responde
+  timeout: 120000, // importa más tiempo para operaciones de importación/validación de archivos pesados
   headers: { 'Content-Type': 'application/json' },
 });
 
 api.interceptors.request.use(async (config) => {
   const token = await getToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
+
+  // Si el body es FormData, dejar que axios genere el Content-Type
+  // con el boundary correcto — nunca forzar application/json en multipart.
+  if (config.data instanceof FormData) {
+    delete config.headers['Content-Type'];
+  }
+
   return config;
 });
 

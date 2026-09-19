@@ -30,7 +30,7 @@ import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function FacialSettingsScreen() {
-  const { isDark } = useTheme();
+  const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const { settings, saveSettings } = useFacialRegistry();
   const { alert, DialogUI } = useAppDialog();

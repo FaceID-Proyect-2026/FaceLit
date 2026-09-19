@@ -19,6 +19,7 @@ import {
     Animated,
     Easing,
     FlatList,
+    ScrollView,
     StyleSheet,
     Text,
     TextInput,
@@ -195,8 +196,8 @@ export default function AcademicProgramsScreen() {
   const handleDeactivate = (id: string, name: string) => {
     alert(t('academic.programDelete'), `${name}\n\n${t('academic.programDeactivateConfirm')}`, [
       { text: t('common.cancel'), style: 'cancel' },
-      { text: t('academic.programDelete'), style: 'destructive', onPress: () => {
-        deactivateProgram(id);
+      { text: t('academic.programDelete'), style: 'destructive', onPress: async () => {
+        try { await deactivateProgram(id); } catch (error: any) { alert(t('common.error'), error?.response?.data?.message ?? 'No se pudo actualizar el programa.'); }
       }},
     ]);
   };
@@ -205,10 +206,9 @@ export default function AcademicProgramsScreen() {
   const handleDeleteCompletely = (id: string, name: string) => {
     alert(t('academic.programDeleteCompletely'), `${name}\n\n${t('academic.programDeleteCompletelyConfirm')}`, [
       { text: t('common.no'), style: 'cancel' },
-      { text: t('common.yes'), style: 'destructive', onPress: () => {
-        const r = deleteProgram(id);
-        if (r.success) alert('✓', t('academic.programDeleteCompletelySuccess'));
-        else if (r.error) alert(t('common.error'), t(r.error));
+      { text: t('common.yes'), style: 'destructive', onPress: async () => {
+        try { await deleteProgram(id); alert('✓', t('academic.programDeleteCompletelySuccess')); }
+        catch (error: any) { alert(t('common.error'), error?.response?.data?.message ?? 'No se pudo eliminar el programa.'); }
       }},
     ]);
   };
@@ -216,21 +216,27 @@ export default function AcademicProgramsScreen() {
   const handleReactivate = (id: string, name: string) => {
     alert(t('academic.alreadyActive'), `${name}\n\n${t('environments.reactivateConfirm')}`, [
       { text: t('common.cancel'), style: 'cancel' },
-      { text: t('environments.reactivate'), onPress: () => reactivateProgram(id) },
+      { text: t('environments.reactivate'), onPress: async () => {
+        try { await reactivateProgram(id); } catch (error: any) { alert(t('common.error'), error?.response?.data?.message ?? 'No se pudo reactivar el programa.'); }
+      } },
     ]);
   };
 
   const handleReactivateFicha = (id: string, number: string) => {
     alert(t('academic.alreadyActive'), `${number}\n\n${t('environments.reactivateConfirm')}`, [
       { text: t('common.cancel'), style: 'cancel' },
-      { text: t('environments.reactivate'), onPress: () => reactivateFicha(id) },
+      { text: t('environments.reactivate'), onPress: async () => {
+        try { await reactivateFicha(id); } catch (error: any) { alert(t('common.error'), error?.response?.data?.message ?? 'No se pudo reactivar la ficha.'); }
+      } },
     ]);
   };
 
   const handleDeactivateFicha = (id: string, number: string) => {
     alert(t('academic.deactivateFicha'), `${number}\n\n${t('academic.confirmDeactivateFicha')}`, [
       { text: t('common.cancel'), style: 'cancel' },
-      { text: t('academic.deactivateFicha'), style: 'destructive', onPress: () => deactivateFicha(id) },
+      { text: t('academic.deactivateFicha'), style: 'destructive', onPress: async () => {
+        try { await deactivateFicha(id); } catch (error: any) { alert(t('common.error'), error?.response?.data?.message ?? 'No se pudo actualizar la ficha.'); }
+      } },
     ]);
   };
 
@@ -238,10 +244,9 @@ export default function AcademicProgramsScreen() {
   const handleDeleteFichaCompletely = (id: string, number: string) => {
     alert(t('academic.fichaDeleteCompletely'), `${number}\n\n${t('academic.fichaDeleteCompletelyConfirm')}`, [
       { text: t('common.no'), style: 'cancel' },
-      { text: t('common.yes'), style: 'destructive', onPress: () => {
-        const r = deleteFicha(id);
-        if (r.success) alert('✓', t('academic.fichaDeleteCompletelySuccess'));
-        else if (r.error) alert(t('common.error'), t(r.error));
+      { text: t('common.yes'), style: 'destructive', onPress: async () => {
+        try { await deleteFicha(id); alert('✓', t('academic.fichaDeleteCompletelySuccess')); }
+        catch (error: any) { alert(t('common.error'), error?.response?.data?.message ?? 'No se pudo eliminar la ficha.'); }
       }},
     ]);
   };
@@ -289,7 +294,13 @@ export default function AcademicProgramsScreen() {
     <View style={[aps.safe, { backgroundColor: bg }]}>
       {/* ── Onboarding: primer uso sin datos ── */}
       {!hasData && (
-        <OnboardingEmpty isDark={isDark} theme={theme} t={t} />
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <OnboardingEmpty isDark={isDark} theme={theme} t={t} />
+        </ScrollView>
       )}
 
       {/* ── Vista normal con datos ── */}
@@ -301,6 +312,14 @@ export default function AcademicProgramsScreen() {
           <Text style={[aps.subtitle, { color: muted }]}>{tabSubtitles[viewMode]}</Text>
         </View>
         <View style={[aps.headerButtons, isMobile && aps.headerButtonsMobile]}>
+          <TouchableOpacity onPress={() => router.push('/admin/academic/instructors' as any)} style={[aps.addBtn, isMobile && aps.addBtnMobile, { backgroundColor: theme.primary + '18', borderWidth: 1.5, borderColor: theme.primary }]} activeOpacity={0.85}>
+            <Ionicons name="people-outline" size={18} color={theme.primary} />
+            <Text style={[aps.addBtnText, { color: theme.primary }]}>Instructores</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/admin/academic/assignments' as any)} style={[aps.addBtn, isMobile && aps.addBtnMobile, { backgroundColor: theme.primary + '18', borderWidth: 1.5, borderColor: theme.primary }]} activeOpacity={0.85}>
+            <Ionicons name="swap-horizontal-outline" size={18} color={theme.primary} />
+            <Text style={[aps.addBtnText, { color: theme.primary }]}>Aprendices</Text>
+          </TouchableOpacity>
           <TouchableOpacity onPress={() => router.push('/admin/academic/csv-upload' as any)} style={[aps.addBtn, isMobile && aps.addBtnMobile, { backgroundColor: isDark ? '#1A2E1A' : '#E8F5E9', borderWidth: 1.5, borderColor: theme.primary }]} activeOpacity={0.85}>
             <Ionicons name="cloud-upload-outline" size={18} color={theme.primary} />
             <Text style={[aps.addBtnText, { color: theme.primary }]}>{t('academic.csvV4Title').split(' ').slice(0, 2).join(' ')} CSV</Text>

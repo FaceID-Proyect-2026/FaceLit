@@ -4,9 +4,9 @@
 //  de una pantalla completa. Misma lógica que antes vivía en
 //  app/admin/academic/fichas/register.tsx.
 // ─────────────────────────────────────────────
-import FormModal from '@/shared/components/ui/FormModal';
 import { getProgramDisplayName, JornadaType } from '@/features/academic/types';
 import { useAcademic } from '@/features/academic/useAcademic';
+import FormModal from '@/shared/components/ui/FormModal';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useTheme } from '@/shared/contexts/ThemeContext';
@@ -40,12 +40,24 @@ export default function FichaFormModal({ visible, onClose, editId, defaultProgra
   const inputBg = isDark ? 'rgba(255,255,255,0.05)' : '#FAFAFA';
   const inputBorder = isDark ? 'rgba(255,255,255,0.30)' : '#BBBBBB';
 
-  const activePrograms = useMemo(() => programs.filter(p => p.status === 'active'), [programs]);
-
   const [number, setNumber] = useState('');
   const [jornada, setJornada] = useState<JornadaType>('morning');
   const [selectedProgram, setSelectedProgram] = useState('');
+  const [programQuery, setProgramQuery] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const activePrograms = useMemo(() => programs.filter(p => p.status === 'active').map(p => ({
+    id: p.id,
+    name: p.name,
+    code: p.code ?? '',
+  })), [programs]);
+  const filteredPrograms = useMemo(() => {
+    const q = programQuery.trim().toLowerCase();
+    if (!q) return activePrograms;
+    return activePrograms.filter(p =>
+      p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q),
+    );
+  }, [activePrograms, programQuery]);
 
   useEffect(() => {
     if (!visible) return;
@@ -58,20 +70,29 @@ export default function FichaFormModal({ visible, onClose, editId, defaultProgra
 
   const validate = () => {
     const e: Record<string, string> = {};
-    if (!number.trim()) e.number = t('academic.required', 'Requerido');
+    if (!number.trim()) e.number = 'El código de ficha es obligatorio.';
+    else if (!/^\d{7}$/.test(number.trim())) e.number = 'El código de ficha debe tener exactamente 7 dígitos numéricos.';
     if (!selectedProgram) e.program = t('academic.selectProgram', 'Selecciona un programa');
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validate()) return;
     if (existing) {
-      const result = updateFicha(existing.id, { number, jornada, programId: selectedProgram });
-      if (!result.success) { setErrors({ number: result.error ? t(result.error) : t('academic.fichaSaveError') }); return; }
-    } else if (!addFicha(number, jornada, selectedProgram)) {
-      setErrors({ number: t('academic.duplicateFicha') });
-      return;
+      try {
+        await updateFicha(existing.id, { number, jornada, programId: selectedProgram });
+      } catch (error: any) {
+        setErrors({ number: error?.response?.data?.message ?? t('academic.fichaSaveError') });
+        return;
+      }
+    } else {
+      try {
+        await addFicha(number, jornada, selectedProgram);
+      } catch (error: any) {
+        setErrors({ number: error?.response?.data?.message ?? t('academic.duplicateFicha') });
+        return;
+      }
     }
     onClose();
   };
@@ -97,8 +118,8 @@ export default function FichaFormModal({ visible, onClose, editId, defaultProgra
       <TextInput
         style={[ffm.input, { backgroundColor: inputBg, borderColor: errors.number ? Colors.error : inputBorder, color: text }] as any}
         value={number}
-        onChangeText={v => { setNumber(v.replace(/\D/g, '')); setErrors(p => ({ ...p, number: '' })); }}
-        placeholder="3145555" placeholderTextColor={isDark ? '#5A7258' : '#AAAAAA'} keyboardType="numeric" maxLength={10}
+        onChangeText={v => { setNumber(v.replace(/\D/g, '').slice(0, 7)); setErrors(p => ({ ...p, number: '' })); }}
+        placeholder="3145555" placeholderTextColor={isDark ? '#5A7258' : '#AAAAAA'} keyboardType="numeric" maxLength={7}
       />
       {errors.number ? <Text style={ffm.error}>{errors.number}</Text> : null}
 
@@ -114,15 +135,22 @@ export default function FichaFormModal({ visible, onClose, editId, defaultProgra
       </View>
 
       <Text style={[ffm.label, { color: text, marginTop: 12 }]}>{t('academic.fields.programName')}</Text>
+      <TextInput
+        style={[ffm.input, { backgroundColor: inputBg, borderColor: inputBorder, color: text, marginBottom: 8 }] as any}
+        value={programQuery}
+        onChangeText={setProgramQuery}
+        placeholder="Buscar programa por nombre o código"
+        placeholderTextColor={isDark ? '#5A7258' : '#AAAAAA'}
+      />
       <View style={ffm.programList}>
-        {activePrograms.map(p => (
+        {filteredPrograms.map(p => (
           <TouchableOpacity key={p.id} onPress={() => { setSelectedProgram(p.id); setErrors(prev => ({ ...prev, program: '' })); }}
             style={[ffm.programCard, { backgroundColor: selectedProgram === p.id ? theme.primary + '15' : inputBg, borderColor: selectedProgram === p.id ? theme.primary : inputBorder }]} activeOpacity={0.7}>
             <Ionicons name={selectedProgram === p.id ? 'radio-button-on' : 'radio-button-off'} size={18} color={selectedProgram === p.id ? theme.primary : muted} />
             <Text style={[ffm.programName, { color: text }]}>{getProgramDisplayName(p, t)}</Text>
           </TouchableOpacity>
         ))}
-        {activePrograms.length === 0 && <Text style={{ color: muted, textAlign: 'center', padding: 12 }}>{t('academic.noActivePrograms')}</Text>}
+        {filteredPrograms.length === 0 && <Text style={{ color: muted, textAlign: 'center', padding: 12 }}>{t('academic.noActivePrograms')}</Text>}
       </View>
       {errors.program ? <Text style={ffm.error}>{errors.program}</Text> : null}
     </FormModal>

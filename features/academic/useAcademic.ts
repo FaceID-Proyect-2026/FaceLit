@@ -3,7 +3,7 @@
 //  RF-3 V4 — Hook de Gestión Académica
 //  Programas · Fichas · Aprendices · Instructores
 // ─────────────────────────────────────────────
-import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import {
   addLearnerStore,
   assignInstructorToFichaStore,
@@ -46,6 +46,16 @@ import {
   updateLearnerInfoStore,
   updateProgramStore
 } from './academicStore';
+import {
+  createFicha as createFichaApi,
+  createProgram as createProgramApi,
+  fetchAcademicSnapshot,
+  setFichaLifecycle,
+  setProgramLifecycle,
+  updateFicha as updateFichaApi,
+  updateProgram as updateProgramApi,
+} from './academicApi';
+import { hydrateAcademicStore } from './academicStore';
 import { Ficha, InstructorType, Program, ValidationStatus } from './types';
 
 export type ProgramStatusFilter    = 'all' | Program['status'];
@@ -60,6 +70,30 @@ export function useAcademic() {
   const [search, setSearch]                     = useState('');
   const [statusFilter, setStatusFilter]         = useState<ProgramStatusFilter>('all');
   const [instructorFilter, setInstructorFilter] = useState<InstructorStatusFilter>('all');
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    fetchAcademicSnapshot()
+      .then(snapshot => {
+        if (!active) return;
+        hydrateAcademicStore(snapshot);
+        setLoadError(null);
+      })
+      .catch(error => {
+        if (active) setLoadError(error?.response?.data?.message ?? 'No se pudo cargar Gestión Académica');
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
+  }, []);
+
+  const refreshAcademic = useCallback(async () => {
+    const snapshot = await fetchAcademicSnapshot();
+    hydrateAcademicStore(snapshot);
+  }, []);
 
   // ── Programas filtrados ───────────────────
   const filteredPrograms = useMemo(() => {
@@ -103,18 +137,58 @@ export function useAcademic() {
   const getInstructor = useCallback((id: string) => getInstructorById(id), []);
 
   // ── Acciones — Programas ──────────────────
-  const addProgram        = useCallback((name: string) => registerProgram(name), []);
-  const updateProgram     = useCallback((id: string, name: string, status: 'active' | 'inactive') => updateProgramStore(id, name, status), []);
-  const deactivateProgram = useCallback((id: string) => deactivateProgramStore(id), []);
-  const reactivateProgram = useCallback((id: string) => reactivateProgramStore(id), []);
-  const deleteProgram     = useCallback((id: string) => deleteProgramStore(id), []);
+  const addProgram = useCallback(async (name: string, code: string) => {
+    const program = await createProgramApi(name, code);
+    await refreshAcademic();
+    return program;
+  }, [refreshAcademic]);
+  const updateProgram = useCallback(async (id: string, name: string, code: string) => {
+    const program = await updateProgramApi(id, name, code);
+    await refreshAcademic();
+    return program;
+  }, [refreshAcademic]);
+  const deactivateProgram = useCallback(async (id: string) => {
+    await setProgramLifecycle(id, 'delete');
+    await refreshAcademic();
+    return { success: true };
+  }, [refreshAcademic]);
+  const reactivateProgram = useCallback(async (id: string) => {
+    await setProgramLifecycle(id, 'reactivate');
+    await refreshAcademic();
+    return { success: true };
+  }, [refreshAcademic]);
+  const deleteProgram = useCallback(async (id: string) => {
+    await setProgramLifecycle(id, 'delete');
+    await refreshAcademic();
+    return { success: true };
+  }, [refreshAcademic]);
 
   // ── Acciones — Fichas ─────────────────────
-  const addFicha            = useCallback((number: string, jornada: Ficha['jornada'], programId: string) => registerFicha(number, jornada, programId), []);
-  const updateFicha         = useCallback((id: string, data: Partial<Ficha>) => updateFichaStore(id, data), []);
-  const deleteFicha         = useCallback((id: string) => deleteFichaStore(id), []);
-  const deactivateFicha     = useCallback((id: string) => deactivateFichaStore(id), []);
-  const reactivateFicha     = useCallback((id: string) => reactivateFichaStore(id), []);
+  const addFicha = useCallback(async (number: string, _jornada: Ficha['jornada'], programId: string) => {
+    const ficha = await createFichaApi(programId, number);
+    await refreshAcademic();
+    return ficha;
+  }, [refreshAcademic]);
+  const updateFicha = useCallback(async (id: string, data: Partial<Ficha>) => {
+    const ficha = await updateFichaApi(id, data.programId ?? '', data.number ?? '');
+    await refreshAcademic();
+    return { success: true, ficha };
+  }, [refreshAcademic]);
+  const deleteFicha = useCallback(async (id: string) => {
+    await setFichaLifecycle(id, 'delete');
+    await refreshAcademic();
+    return { success: true };
+  }, [refreshAcademic]);
+  const deactivateFicha = useCallback(async (id: string) => {
+    await setFichaLifecycle(id, 'delete');
+    await refreshAcademic();
+    return { success: true };
+  }, [refreshAcademic]);
+  const reactivateFicha = useCallback(async (id: string) => {
+    await setFichaLifecycle(id, 'reactivate');
+    await refreshAcademic();
+    return { success: true };
+  }, [refreshAcademic]);
   const unlinkFichaFromProgram = useCallback((fichaId: string, programId: string) => unlinkFichaFromProgramStore(fichaId, programId), []);
   const linkFichaToProgram  = useCallback((fichaId: string, programId: string) => linkFichaToProgramStore(fichaId, programId), []);
   /** RF-3.3 §10 — Regenera el transferCode de una ficha (invalida el anterior). */
@@ -170,6 +244,7 @@ export function useAcademic() {
     search, setSearch,
     statusFilter, setStatusFilter,
     instructorFilter, setInstructorFilter,
+    loading, loadError,
 
     // Getters
     getProgram, getFicha, getInstructor,

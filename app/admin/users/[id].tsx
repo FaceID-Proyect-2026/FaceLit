@@ -230,7 +230,7 @@ export default function UserDetailScreen() {
           <View style={[styles.note, { backgroundColor: softAmber, borderColor: Colors.warning + '40' }]}>
             <Ionicons name="information-circle-outline" size={14} color={Colors.warning} />
             <Text style={[styles.noteText, { color: Colors.warning }]}>
-              {t('users.sessionNote')}
+              La contraseña inicial solo se muestra al crear la cuenta; después de cambiarla no se vuelve a revelar por seguridad.
             </Text>
           </View>
 

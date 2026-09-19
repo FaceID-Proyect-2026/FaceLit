@@ -86,6 +86,8 @@ export default function AdminLayout() {
         <Stack.Screen name="environments/[id]" />
         <Stack.Screen name="environments/assign" />
         <Stack.Screen name="academic/index" />
+        <Stack.Screen name="academic/instructors" />
+        <Stack.Screen name="academic/assignments" />
         <Stack.Screen name="academic/csv-upload" />
         <Stack.Screen
           name="academic/programs/register"

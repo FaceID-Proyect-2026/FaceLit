@@ -59,8 +59,8 @@ export default function ExcusesReviewScreen() {
 
   const userFichas = useMemo(() => {
     if (!user) return [];
-    if (user.role === 'administrador') return fichas;
-    if (user.role === 'instructor') {
+    if (user.role === 'COORDINATOR' || user.role === 'ADMINISTRATOR') return fichas;
+    if (user.role === 'INSTRUCTOR') {
       return fichas.filter(f => f.learners.some(l => l.id === user.id));
     }
     return fichas.filter(f => f.learners.some(l => l.id === user.id));
@@ -121,7 +121,7 @@ export default function ExcusesReviewScreen() {
           ...e,
           status: reviewAction === 'approve' ? 'approved' : 'rejected',
           reviewedAt: new Date().toISOString(),
-          reviewerName: user?.name,
+          reviewerName: user?.firstName ? `${user.firstName} ${user.lastName ?? ''}`.trim() : user?.document,
           reviewComment: reviewComment || undefined,
         };
       }

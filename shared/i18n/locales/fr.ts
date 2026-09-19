@@ -544,7 +544,7 @@
     totalUsers: "Utilisateurs",
     activeFichas: "Fichas actives",
     environments: "Environnements",
-    attendanceRate: "Taux de présence",
+    programs: "Programmes enregistrés",
     quickActions: "Actions rapides",
     recentActivity: "Activité récente",
   },

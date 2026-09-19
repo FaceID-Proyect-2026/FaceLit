@@ -69,12 +69,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       module: "academic",
     },
     {
-      icon: "swap-horizontal-outline",
-      label: t("sidebar.transferRequests"),
-      route: Routes.ACADEMIC.COORDINATOR_REQUESTS,
-      module: "academic",
-    },
-    {
       icon: "checkmark-circle-outline",
       label: t("sidebar.attendance"),
       route: Routes.ATTENDANCE.LIST,

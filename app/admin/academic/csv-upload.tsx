@@ -2,28 +2,13 @@
 //  app/admin/academic/csv-upload.tsx
 //  RF-3.1 + RF-3.1.1 V4 — Carga académica por CSV
 // ─────────────────────────────────────────────
-import {
-    addLearnerStore,
-    getFichasSnapshot,
-    getInstructorsSnapshot,
-    getProgramsSnapshot,
-    registerFicha,
-    registerInstructorStore,
-    registerProgram,
-} from '@/features/academic/academicStore';
-import {
-    CSV_TEMPLATE,
-    parseAcademicCsvV4,
-    processAcademicCsvV4,
-    type StoreSnapshots,
-} from '@/features/academic/csvImport';
+import { downloadAcademicTemplate, uploadAcademicCsv } from '@/features/academic/academicApi';
 import { CsvImportSummaryV4, CsvRowResult } from '@/features/academic/types';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -86,61 +71,68 @@ export default function CsvUploadScreen() {
   const soft   = theme.primaryFaint;
 
   // ── Plantilla ─────────────────────────────
-  const downloadTemplate = () => {
+  const downloadTemplate = async () => {
     if (Platform.OS === 'web') {
-      const blob = new Blob([CSV_TEMPLATE], { type: 'text/csv;charset=utf-8;' });
+      const blob = await downloadAcademicTemplate();
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement('a');
       a.href = url; a.download = 'plantilla_academica_facelit.csv'; a.click();
       URL.revokeObjectURL(url);
     }
     // eslint-disable-next-line no-console
-    console.info('[Plantilla CSV]\n' + CSV_TEMPLATE);
+    console.info('[Plantilla CSV] disponible en /api/academic/csv/template');
   };
 
   // ── Procesamiento ─────────────────────────
-  const processFile = (csvText: string, name: string) => {
+  const processFile = async (file: { uri: string; name: string } | Blob) => {
+    const name = file instanceof Blob ? 'carga-academica.csv' : file.name;
     setFileName(name); setFileError(null); setSummary(null); setLoading(true);
     try {
-      if (new Blob([csvText]).size > MAX_FILE_BYTES) { setFileError(t('academic.csvV4FileTooLarge')); return; }
-      const parsed = parseAcademicCsvV4(csvText);
-      if (parsed.fileError) { setFileError(t(parsed.fileError as any, { defaultValue: parsed.fileError })); return; }
+      const backendResult = await uploadAcademicCsv(file);
+      const rows: CsvRowResult[] = [
+        ...backendResult.creados.map((r: any) => ({ rowIndex: r.fila, category: 'created' as const, tipo: r.tipo, identifier: '', message: r.detalle })),
+        ...backendResult.actualizados.map((r: any) => ({ rowIndex: r.fila, category: 'updated' as const, tipo: r.tipo, identifier: '', message: r.detalle })),
+        ...backendResult.inconsistenciasBloqueadas.map((r: any) => ({ rowIndex: r.fila, category: 'blocked' as const, tipo: r.tipo, identifier: r.valorArchivo ?? '', message: r.mensaje })),
+        ...backendResult.erroresDeReferencia.map((r: any) => ({ rowIndex: r.fila, category: 'error' as const, tipo: r.tipo, identifier: '', message: r.mensaje })),
+      ].sort((a, b) => a.rowIndex - b.rowIndex);
+      setSummary({
+        created: backendResult.creados.length,
+        updated: backendResult.actualizados.length,
+        blocked: backendResult.inconsistenciasBloqueadas.length,
+        errors: backendResult.erroresDeReferencia.length,
+        rows,
+      });
+    } catch (error: any) {
+      // Log completo para depuración — ver exactamente qué devuelve el backend
+      console.error('[CSV Upload] Error al procesar el archivo:', {
+        status:   error?.response?.status,
+        data:     error?.response?.data,
+        message:  error?.message,
+        config:   { url: error?.config?.url, method: error?.config?.method },
+      });
 
-      const snapFichas      = getFichasSnapshot();
-      const snapInstructors = getInstructorsSnapshot();
-      const snapLearners    = snapFichas.flatMap(f => f.learners.map(l => ({ id: l.id, document: l.document, email: l.email, fichaId: f.id, status: l.status })));
-      const snapshots: StoreSnapshots = {
-        programs:    getProgramsSnapshot().map(p => ({ id: p.id, name: p.name, code: p.name, status: p.status, fichas: p.fichas })),
-        fichas:      snapFichas.map(f => ({ id: f.id, number: f.number, programId: f.programId, status: f.status, transferCode: f.transferCode, learners: f.learners.map(l => ({ id: l.id, document: l.document, status: l.status })) })),
-        learners:    snapLearners,
-        instructors: snapInstructors.map(i => ({ id: i.id, document: i.document, email: i.email, instructorType: i.instructorType, programId: i.programId, status: i.status })),
-      };
-      const result = processAcademicCsvV4(parsed.rows, snapshots);
+      const status   = error?.response?.status ?? 0;
+      const msg      = error?.response?.data?.message
+                    ?? error?.response?.data?.error
+                    ?? error?.message
+                    ?? '';
 
-      for (const row of parsed.rows) {
-        if (row.errors.length > 0) continue;
-        const rr = result.rows.find(r => r.rowIndex === row.rowIndex);
-        if (!rr || rr.category === 'blocked' || rr.category === 'error') continue;
-        if (row.tipo === 'programa' && row.programaCodigo) {
-          if (!getProgramsSnapshot().find(p => p.name.toUpperCase() === row.programaCodigo!.toUpperCase())) registerProgram(row.nombre ?? row.programaCodigo);
-        }
-        if (row.tipo === 'ficha' && row.fichaCodigo && row.programaCodigo) {
-          if (!getFichasSnapshot().find(f => f.number === row.fichaCodigo)) {
-            const prog = getProgramsSnapshot().find(p => p.name.toUpperCase() === row.programaCodigo!.toUpperCase());
-            if (prog) registerFicha(row.fichaCodigo, 'morning', prog.id);
-          }
-        }
-        if (row.tipo === 'aprendiz' && row.documento && row.nombre && row.apellido && row.correo) {
-          const tf = row.fichaCodigo ? getFichasSnapshot().find(f => f.number === row.fichaCodigo) : null;
-          if (tf) addLearnerStore(tf.id, { id: `csv-${Date.now()}-${row.rowIndex}`, name: row.nombre, lastname: row.apellido, document: row.documento, email: row.correo, role: 'aprendiz', status: 'active', validationStatus: 'validated', initialPassword: null });
-        }
-        if (row.tipo === 'instructor' && row.documento && row.nombre && row.apellido && row.correo && row.instructorTipo) {
-          const prog = row.programaCodigo ? getProgramsSnapshot().find(p => p.name.toUpperCase() === row.programaCodigo!.toUpperCase()) : undefined;
-          registerInstructorStore({ name: row.nombre, lastname: row.apellido, document: row.documento, email: row.correo, instructorType: row.instructorTipo, programId: prog?.id });
-        }
+      if (status === 500 || status === 0) {
+        setFileError(
+          `Error del servidor (${status || 'sin conexión'}): ${msg || 'El backend no pudo procesar el archivo. Revisa los logs del servidor.'}`,
+        );
+      } else if (status === 413) {
+        setFileError('El archivo es demasiado grande para el servidor. Divide el CSV en partes más pequeñas.');
+      } else if (status === 415) {
+        setFileError('Formato no soportado por el servidor. Asegúrate de que el archivo sea un CSV válido.');
+      } else if (status === 400) {
+        setFileError(msg || 'El archivo tiene errores de formato. Verifica que las columnas sean correctas.');
+      } else {
+        setFileError(msg || 'No se pudo procesar el archivo CSV.');
       }
-      setSummary(result);
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const openWebPicker = () => {
@@ -150,9 +142,7 @@ export default function CsvUploadScreen() {
       const file = input.files?.[0]; if (!file) return;
       if (!file.name.toLowerCase().endsWith('.csv')) { setFileError(t('academic.csvV4WrongExtension')); return; }
       if (file.size > MAX_FILE_BYTES) { setFileError(t('academic.csvV4FileTooLarge')); return; }
-      const r = new FileReader();
-      r.onload = () => processFile(String(r.result ?? ''), file.name);
-      r.readAsText(file, 'UTF-8');
+      void processFile(file);
     };
     input.click();
   };
@@ -162,7 +152,7 @@ export default function CsvUploadScreen() {
     const asset = res.assets[0];
     if (!asset.name.toLowerCase().endsWith('.csv')) { setFileError(t('academic.csvV4WrongExtension')); return; }
     setLoading(true);
-    try { const content = await FileSystem.readAsStringAsync(asset.uri); processFile(content, asset.name); }
+    try { await processFile({ uri: asset.uri, name: asset.name }); }
     finally { setLoading(false); }
   };
   const handlePickFile = Platform.OS === 'web' ? openWebPicker : openNativePicker;

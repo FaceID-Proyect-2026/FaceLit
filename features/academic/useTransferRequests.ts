@@ -2,7 +2,9 @@
 //  features/academic/useTransferRequests.ts
 //  RF-3.3 V4 — Hook de solicitudes de traslado
 // ─────────────────────────────────────────────
-import { useCallback, useMemo, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { acceptPendingTransfer, cancelPendingTransfer, fetchPendingTransfers } from './academicApi';
+import type { TransferRequest } from './types';
 import {
     approveTransferRequest,
     createTransferRequest,
@@ -12,7 +14,26 @@ import {
 } from './transferRequestStore';
 
 export function useTransferRequests() {
-  const requests = useSyncExternalStore(subscribe, getTransferRequestsSnapshot);
+  const [requests, setRequests] = useState<TransferRequest[]>([]);
+
+  const reload = useCallback(async () => {
+    const pending = await fetchPendingTransfers();
+    setRequests(pending.map(item => ({
+      id: item.idPendingTransfer,
+      learnerId: item.idUser,
+      learnerName: item.aprendiz,
+      learnerDocument: '',
+      learnerFicha: item.fichaActual,
+      currentFichaId: '',
+      currentFichaNumber: item.fichaActual,
+      requestedFichaId: '',
+      requestedFichaNumber: item.fichaPropuesta,
+      status: 'pending',
+      requestedAt: new Date().toISOString(),
+    })));
+  }, []);
+
+  useEffect(() => { void reload().catch(() => setRequests([])); }, [reload]);
 
   const pendingRequests = useMemo(
     () => requests.filter(r => r.status === 'pending'),
@@ -27,9 +48,17 @@ export function useTransferRequests() {
     pendingCount,
     /** Aprendiz crea solicitud ingresando el transferCode de la ficha destino */
     create:  useCallback(createTransferRequest, []),
-    /** Coordinador aprueba — mueve al aprendiz a la ficha destino */
-    approve: useCallback(approveTransferRequest, []),
-    /** Coordinador rechaza — el aprendiz permanece en su ficha actual */
-    reject:  useCallback(rejectTransferRequest, []),
+    /** Coordinador aprueba el traslado pendiente del CSV en el backend. */
+    approve: useCallback(async (id: string) => {
+      await acceptPendingTransfer(id);
+      await reload();
+      return { success: true };
+    }, [reload]),
+    /** Coordinador cancela el traslado pendiente del CSV en el backend. */
+    reject: useCallback(async (id: string) => {
+      await cancelPendingTransfer(id);
+      await reload();
+      return { success: true };
+    }, [reload]),
   };
 }

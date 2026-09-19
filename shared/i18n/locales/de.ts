@@ -501,7 +501,7 @@ const de = {
     totalUsers: "Gesamtnutzer",
     activeFichas: "Aktive Fichas",
     environments: "Umgebungen",
-    attendanceRate: "Anwesenheitsrate",
+    programs: "Registrierte Programme",
     quickActions: "Schnellaktionen",
     recentActivity: "Letzte Aktivität",
   },
