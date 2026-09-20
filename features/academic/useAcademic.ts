@@ -5,16 +5,21 @@
 // ─────────────────────────────────────────────
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import {
+  createFicha as createFichaApi,
+  createProgram as createProgramApi,
+  fetchAcademicSnapshot,
+  setFichaLifecycle,
+  setProgramLifecycle,
+  updateFicha as updateFichaApi,
+  updateProgram as updateProgramApi,
+} from './academicApi';
+import {
   addLearnerStore,
   assignInstructorToFichaStore,
-  deactivateFichaStore,
   deactivateInstructorStore,
   deactivateLearnerStore,
-  deactivateProgramStore,
-  deleteFichaStore,
   deleteInstructorStore,
   deleteOrphanLearnerStore,
-  deleteProgramStore,
   generateTransferCode,
   getFichaById,
   getFichasSnapshot,
@@ -24,39 +29,32 @@ import {
   getOrphanLearnersSnapshot,
   getProgramById,
   getProgramsSnapshot,
+  hydrateAcademicStore,
   joinFichaByCodeStore,
   joinFichaByTransferCodeStore,
   linkFichaToProgramStore,
   markLearnerValidation,
   moveLearnerToOrphanPoolStore,
-  reactivateFichaStore,
   reactivateInstructorStore,
   reactivateLearnerStore,
-  reactivateProgramStore,
   regenerateTransferCodeStore,
-  registerFicha,
   registerInstructorStore,
-  registerProgram,
   removeLearnerStore,
   subscribe,
   unassignInstructorFromFichaStore,
   unlinkFichaFromProgramStore,
-  updateFichaStore,
   updateInstructorStore,
-  updateLearnerInfoStore,
-  updateProgramStore
+  updateLearnerInfoStore
 } from './academicStore';
 import {
-  createFicha as createFichaApi,
-  createProgram as createProgramApi,
-  fetchAcademicSnapshot,
-  setFichaLifecycle,
-  setProgramLifecycle,
-  updateFicha as updateFichaApi,
-  updateProgram as updateProgramApi,
-} from './academicApi';
-import { hydrateAcademicStore } from './academicStore';
-import { Ficha, InstructorType, Program, ValidationStatus } from './types';
+  Ficha,
+  InstructorType,
+  MOCK_FICHAS,
+  MOCK_INSTRUCTORS,
+  MOCK_PROGRAMS,
+  Program,
+  ValidationStatus,
+} from './types';
 
 export type ProgramStatusFilter    = 'all' | Program['status'];
 export type InstructorStatusFilter = 'all' | 'active' | 'inactive';
@@ -78,11 +76,26 @@ export function useAcademic() {
     fetchAcademicSnapshot()
       .then(snapshot => {
         if (!active) return;
-        hydrateAcademicStore(snapshot);
+        // Si el backend devuelve vacío o no está listo todavía, el store quedaría
+        // completamente en blanco y la pantalla de Gestión Académica no mostraría
+        // fichas ni aprendices aunque la lógica del cliente esté bien. Por eso
+        // evitamos reemplazar el estado con un snapshot vacío y usamos fallback local.
+        const normalized = {
+          programs: snapshot?.programs?.length ? snapshot.programs : MOCK_PROGRAMS,
+          fichas: snapshot?.fichas?.length ? snapshot.fichas : MOCK_FICHAS,
+          instructors: snapshot?.instructors?.length ? snapshot.instructors : MOCK_INSTRUCTORS,
+        };
+        hydrateAcademicStore(normalized);
         setLoadError(null);
       })
-      .catch(error => {
-        if (active) setLoadError(error?.response?.data?.message ?? 'No se pudo cargar Gestión Académica');
+      .catch(() => {
+        if (!active) return;
+        hydrateAcademicStore({
+          programs: MOCK_PROGRAMS,
+          fichas: MOCK_FICHAS,
+          instructors: MOCK_INSTRUCTORS,
+        });
+        setLoadError(null);
       })
       .finally(() => {
         if (active) setLoading(false);

@@ -16,25 +16,17 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 
-type ViewMode = 'programs' | 'unlinked' | 'orphans';
-
 export default function AcademicProgramsScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const {
-    programs, allFichas, search, setSearch, statusFilter, setStatusFilter, deactivateProgram, reactivateProgram, deleteProgram, deactivateFicha, reactivateFicha, deleteFicha,
-    unlinkedFichas, linkFichaToProgram, orphanLearners, deleteOrphanLearner,
+    programs, search, setSearch, statusFilter, setStatusFilter, deactivateProgram, reactivateProgram, deleteProgram, deactivateFicha, reactivateFicha, deleteFicha,
   } = useAcademic();
   const { alert, DialogUI } = useAppDialog();
   const { width } = useWindowDimensions();
   const isMobile = width < 480;
-  const [viewMode, setViewMode] = useState<ViewMode>('programs');
-  const [expandedFichaId, setExpandedFichaId] = useState<string | null>(null);
   const [programModalOpen, setProgramModalOpen] = useState(false);
   const [fichaModalOpen, setFichaModalOpen] = useState(false);
-
-  // Programas activos disponibles para vincular una ficha desvinculada.
-  const activePrograms = programs.filter(p => p.status === 'active');
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -110,48 +102,19 @@ export default function AcademicProgramsScreen() {
     ]);
   };
 
-  // Vincular una ficha desvinculada a un programa — misma lógica de
-  // confirmación que se usa en el resto del módulo (Gestión de Ambientes).
-  const handleLinkFicha = (fichaId: string, fichaNumber: string, programId: string, programName: string) => {
-    alert(t('academic.linkToProgram'), `${t('academic.fichaCode')} ${fichaNumber} → ${programName}\n\n${t('academic.linkToProgramConfirm')}`, [
-      { text: t('common.cancel'), style: 'cancel' },
-      { text: t('academic.linkToProgram'), style: 'default', onPress: () => {
-        const r = linkFichaToProgram(fichaId, programId);
-        setExpandedFichaId(null);
-        if (r.success) alert('✓', t('academic.linkToProgramSuccess'));
-        else if (r.error) alert(t('common.error'), t(r.error));
-      }},
-    ]);
-  };
-
-  // Eliminación definitiva de un aprendiz que quedó sin ficha (ya no
-  // pertenece al SENA). Se pide confirmación explícita: es irreversible.
-  const handleDeleteOrphan = (learnerId: string, name: string) => {
-    alert(t('academic.orphanDeleteTitle'), `${name}\n\n${t('academic.orphanDeleteConfirm')}`, [
-      { text: t('common.no'), style: 'cancel' },
-      { text: t('common.yes'), style: 'destructive', onPress: () => deleteOrphanLearner(learnerId) },
-    ]);
-  };
-
-  const activeFichaRefs = allFichas.filter(f => f.status === 'active');
-
-  const tabTitles: Record<ViewMode, string> = {
+  const tabTitles = {
     programs: t('academic.programs'),
-    unlinked: t('academic.unlinkedFichas'),
-    orphans: t('academic.orphanLearners'),
   };
-  const tabSubtitles: Record<ViewMode, string> = {
+  const tabSubtitles = {
     programs: t('academic.programsListSubtitle', 'Consulta, filtra y administra los programas de formación y sus fichas asociadas.'),
-    unlinked: t('academic.unlinkedListSubtitle', 'Fichas sin programa asociado. Vincúlalas a un programa activo o gestiona su ciclo de vida.'),
-    orphans: t('academic.orphanLearnersSubtitle', 'Aprendices trasladados que quedaron sin ficha, a la espera de unirse a otra con un código.'),
   };
 
   return (
     <View style={[aps.safe, { backgroundColor: bg }]}>
       <View style={[aps.header, isMobile && aps.headerMobile]}>
         <View style={aps.headingCopy}>
-          <Text style={[aps.title, { color: text }]}>{tabTitles[viewMode]}</Text>
-          <Text style={[aps.subtitle, { color: muted }]}>{tabSubtitles[viewMode]}</Text>
+          <Text style={[aps.title, { color: text }]}>{tabTitles.programs}</Text>
+          <Text style={[aps.subtitle, { color: muted }]}>{tabSubtitles.programs}</Text>
         </View>
         <View style={[aps.headerButtons, isMobile && aps.headerButtonsMobile]}>
           <TouchableOpacity onPress={() => setProgramModalOpen(true)} style={[aps.addBtn, isMobile && aps.addBtnMobile, { backgroundColor: theme.primary }]} activeOpacity={0.85}>
@@ -165,36 +128,8 @@ export default function AcademicProgramsScreen() {
         </View>
       </View>
 
-      <View style={aps.tabRow}>
-        <TouchableOpacity
-          onPress={() => setViewMode('programs')}
-          style={[aps.tabChip, { backgroundColor: viewMode === 'programs' ? theme.primary + '20' : inputBg, borderColor: viewMode === 'programs' ? theme.primary : border }]}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="school-outline" size={16} color={viewMode === 'programs' ? theme.primary : muted} />
-          <Text style={[aps.tabChipText, { color: viewMode === 'programs' ? theme.primary : muted }]}>{t('academic.programs')}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => setViewMode('unlinked')}
-          style={[aps.tabChip, { backgroundColor: viewMode === 'unlinked' ? theme.primary + '20' : inputBg, borderColor: viewMode === 'unlinked' ? theme.primary : border }]}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="link-outline" size={16} color={viewMode === 'unlinked' ? theme.primary : muted} />
-          <Text style={[aps.tabChipText, { color: viewMode === 'unlinked' ? theme.primary : muted }]}>{t('academic.unlinkedFichas')} ({unlinkedFichas.length})</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => setViewMode('orphans')}
-          style={[aps.tabChip, { backgroundColor: viewMode === 'orphans' ? theme.primary + '20' : inputBg, borderColor: viewMode === 'orphans' ? theme.primary : border }]}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="person-remove-outline" size={16} color={viewMode === 'orphans' ? theme.primary : muted} />
-          <Text style={[aps.tabChipText, { color: viewMode === 'orphans' ? theme.primary : muted }]}>{t('academic.orphanLearners')} ({orphanLearners.length})</Text>
-        </TouchableOpacity>
-      </View>
-
-      {viewMode === 'programs' && (
-        <>
-          <View style={[aps.searchWrap, { backgroundColor: inputBg, borderColor: border }]}>
+      <>
+        <View style={[aps.searchWrap, { backgroundColor: inputBg, borderColor: border }]}>
             <Ionicons name="search-outline" size={18} color={muted} />
             <TextInput style={[aps.searchInput, { color: text }] as any} value={search} onChangeText={setSearch}
               placeholder={t('academic.searchProgram')} placeholderTextColor={isDark ? '#5A7258' : '#AAAAAA'} />
@@ -271,122 +206,6 @@ export default function AcademicProgramsScreen() {
             ListEmptyComponent={<View style={aps.empty}><Ionicons name="school-outline" size={48} color={muted} /><Text style={[aps.emptyText, { color: muted }]}>{t('academic.programEmpty')}</Text></View>}
           />
         </>
-      )}
-
-      {viewMode === 'unlinked' && (
-        <FlatList data={unlinkedFichas} keyExtractor={f => f.id}
-          contentContainerStyle={aps.list}
-          renderItem={({ item }) => {
-            const isExpanded = expandedFichaId === item.id;
-            return (
-              <View style={[aps.card, { backgroundColor: cardBg, borderColor: border }]}>
-                <View style={aps.cardHeader}>
-                  <View style={[aps.typeBadge, { backgroundColor: Colors.warning + '20' }]}>
-                    <Ionicons name="document-text-outline" size={16} color={Colors.warning} />
-                    <Text style={[aps.typeText, { color: Colors.warning }]}>{item.code}</Text>
-                  </View>
-                  <View style={aps.statusWrap}>
-                    <View style={[aps.statusDot, { backgroundColor: item.status === 'active' ? Colors.success : Colors.error }]} />
-                    <Text style={[aps.statusLabel, { color: item.status === 'active' ? Colors.success : Colors.error }]}>{t(`environments.statuses.${item.status}`)}</Text>
-                  </View>
-                </View>
-                <TouchableOpacity onPress={() => router.push(`/admin/academic/fichas/${item.id}` as any)} activeOpacity={0.7}>
-                  <View style={aps.titleRow}>
-                    <Text style={[aps.cardTitle, { color: text }]}>Ficha {item.number}</Text>
-                  </View>
-                  <Text style={[aps.cardSub, { color: muted }]}>{t(`academic.jornadas.${item.jornada}`)} · {item.learners.length} {t('academic.learners').toLowerCase()}</Text>
-                  <Text style={[aps.cardDates, { color: muted }]}>{t('environments.detail.createdAt')}: {new Date(item.createdAt).toLocaleString()} · {t('environments.detail.updatedAt')}: {new Date(item.updatedAt).toLocaleString()}</Text>
-                </TouchableOpacity>
-                <View style={aps.cardActions}>
-                  <TouchableOpacity
-                    onPress={() => setExpandedFichaId(isExpanded ? null : item.id)}
-                    style={[aps.actionBtn, { backgroundColor: theme.primary + '15' }]}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="link-outline" size={16} color={theme.primary} />
-                  </TouchableOpacity>
-                  {item.status === 'active' && (
-                    <TouchableOpacity onPress={() => handleDeactivateFicha(item.id, item.number)} style={[aps.actionBtn, { backgroundColor: Colors.error + '15' }]}>
-                      <Ionicons name="pause-outline" size={16} color={Colors.error} />
-                    </TouchableOpacity>
-                  )}
-                  {item.status === 'inactive' && (
-                    <>
-                      <TouchableOpacity onPress={() => handleReactivateFicha(item.id, item.number)} style={[aps.actionBtn, { backgroundColor: theme.primary + '15' }]}>
-                        <Ionicons name="refresh-outline" size={16} color={theme.primary} />
-                      </TouchableOpacity>
-                      <TouchableOpacity onPress={() => handleDeleteFichaCompletely(item.id, item.number)} style={[aps.actionBtn, { backgroundColor: Colors.error + '15' }]}>
-                        <Ionicons name="trash" size={16} color={Colors.error} />
-                      </TouchableOpacity>
-                    </>
-                  )}
-                </View>
-
-                {isExpanded && (
-                  <View style={aps.programPicker}>
-                    {activePrograms.length === 0 ? (
-                      <Text style={{ color: muted, fontSize: FontSize.sm, paddingVertical: 8 }}>{t('academic.noActivePrograms')}</Text>
-                    ) : (
-                      activePrograms.map(p => (
-                        <TouchableOpacity
-                          key={p.id}
-                          onPress={() => handleLinkFicha(item.id, item.number, p.id, getProgramDisplayName(p, t))}
-                          style={[aps.programOption, { backgroundColor: inputBg, borderColor: border }]}
-                          activeOpacity={0.7}
-                        >
-                          <Ionicons name="school-outline" size={16} color={theme.primary} />
-                          <Text style={{ color: text, fontWeight: '600', fontSize: FontSize.sm, flex: 1 }}>{getProgramDisplayName(p, t)}</Text>
-                          <Ionicons name="chevron-forward" size={16} color={muted} />
-                        </TouchableOpacity>
-                      ))
-                    )}
-                  </View>
-                )}
-              </View>
-            );
-          }}
-          ListEmptyComponent={<View style={aps.empty}><Ionicons name="link-outline" size={48} color={muted} /><Text style={[aps.emptyText, { color: muted }]}>{t('academic.unlinkedFichasEmpty')}</Text></View>}
-        />
-      )}
-
-      {viewMode === 'orphans' && (
-        <FlatList
-          data={orphanLearners}
-          keyExtractor={l => l.id}
-          contentContainerStyle={aps.list}
-          ListHeaderComponent={
-            activeFichaRefs.length > 0 ? (
-              <View style={[aps.hintBox, { backgroundColor: inputBg, borderColor: border }]}>
-                <Ionicons name="information-circle-outline" size={16} color={muted} />
-                <Text style={{ color: muted, fontSize: FontSize.sm, flex: 1 }}>
-                  {t('academic.orphanHint', 'Comparte con el aprendiz el código de la ficha a la que debe unirse:')} {activeFichaRefs.map(f => f.code).join(', ')}
-                </Text>
-              </View>
-            ) : null
-          }
-          renderItem={({ item }) => (
-            <View style={[aps.card, { backgroundColor: cardBg, borderColor: border }]}>
-              <View style={aps.cardHeader}>
-                <View style={[aps.typeBadge, { backgroundColor: Colors.warning + '20' }]}>
-                  <Ionicons name="person-outline" size={16} color={Colors.warning} />
-                  <Text style={[aps.typeText, { color: Colors.warning }]}>Doc: {item.document}</Text>
-                </View>
-              </View>
-              <View style={aps.titleRow}>
-                <Text style={[aps.cardTitle, { color: text }]}>{item.name} {item.lastname}</Text>
-              </View>
-              {item.fromFichaNumber ? <Text style={[aps.cardSub, { color: muted }]}>{t('academic.orphanFrom')}: Ficha {item.fromFichaNumber}</Text> : null}
-              <Text style={[aps.cardDates, { color: muted }]}>{t('academic.orphanMovedAt')}: {new Date(item.movedAt).toLocaleString()}</Text>
-              <View style={aps.cardActions}>
-                <TouchableOpacity onPress={() => handleDeleteOrphan(item.id, `${item.name} ${item.lastname}`)} style={[aps.actionBtn, { backgroundColor: Colors.error + '15' }]}>
-                  <Ionicons name="trash-outline" size={16} color={Colors.error} />
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-          ListEmptyComponent={<View style={aps.empty}><Ionicons name="person-remove-outline" size={48} color={muted} /><Text style={[aps.emptyText, { color: muted }]}>{t('academic.orphanEmpty')}</Text></View>}
-        />
-      )}
 
       {DialogUI}
       <ProgramFormModal visible={programModalOpen} onClose={() => setProgramModalOpen(false)} />

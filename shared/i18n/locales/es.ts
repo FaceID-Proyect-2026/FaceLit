@@ -166,7 +166,7 @@
     errors: {
       emptyDocument: "Debes ingresar tu número de documento.",
       invalidDocument: "El número de documento solo debe contener números.",
-      documentLength: "El número de documento debe tener 10 dígitos.",
+      documentLength: "El número de documento debe tener entre 6 y 15 dígitos.",
       emptyPassword: "Debes ingresar tu contraseña.",
       passwordLength: "La contraseña debe tener entre 8 y 15 caracteres.",
       passwordNoSpaces: "La contraseña no puede contener espacios.",
@@ -376,7 +376,7 @@
 
     nameLabel: "Nombre completo del acudiente",
     namePlaceholder: "Nombre y apellido",
-    docLabel: "Documento del acudiente (10 dígitos)",
+    docLabel: "Documento del acudiente (6 a 15 dígitos)",
     docPlaceholder: "0000000000",
     emailLabel: "Correo electrónico del acudiente",
     emailPlaceholder: "correo@ejemplo.com",
@@ -400,7 +400,7 @@
       nameIncomplete: "Ingresa nombre y apellido completos",
       nameLettersOnly: "Solo se permiten letras",
       docRequired: "El documento es obligatorio",
-      docLength: "El documento debe tener exactamente 10 dígitos",
+      docLength: "El documento debe tener entre 6 y 15 dígitos",
       emailRequired: "El correo es obligatorio",
       emailInvalid: "Formato de correo inválido",
       emailSameMinor: "El correo del acudiente debe ser diferente al del menor",
@@ -434,7 +434,7 @@
     identityPAS: "PAS — Pasaporte",
     infoTI: "TI es para menores de edad (menos de 18 años)",
     infoCC: "CC es para mayores de edad (18 años o más)",
-    document: "Número de documento (10 dígitos)",
+    document: "Número de documento (6 a 15 dígitos)",
     documentPlaceholder: "0000000000",
     email: "Correo electrónico",
     emailPlaceholder: "correo@ejemplo.com",
@@ -469,7 +469,7 @@
       lastnameRequired: "El apellido es obligatorio",
       identityRequired: "Selecciona un tipo de identidad",
       documentRequired: "Documento obligatorio",
-      documentLength: "Debe tener exactamente 10 dígitos",
+      documentLength: "Debe tener entre 6 y 15 dígitos",
       emailRequired: "Correo obligatorio",
       emailInvalid: "Formato de correo inválido",
       emailNotValidated: "Debes validar el correo antes de continuar",
@@ -724,7 +724,7 @@
     passwordCopied: "¡Copiada!",
     autoRole: "Rol asignado automáticamente",
     autoRoleValue: "Coordinador de Registro",
-    documentPlaceholder: "Número de documento (10 dígitos)",
+    documentPlaceholder: "Número de documento (6 a 15 dígitos)",
     emailPlaceholder: "correo@ejemplo.com",
     deactivateUser: "Desactivar usuario",
     deactivateConfirm:
@@ -1100,7 +1100,7 @@
     instructorFields: {
       name: "Nombre",
       lastname: "Apellido",
-      document: "Documento (10 dígitos)",
+      document: "Documento (6 a 15 dígitos)",
       email: "Correo electrónico",
       type: "Tipo",
       program: "Programa",
@@ -1145,7 +1145,7 @@
       },
       documento: {
         col: "documento",
-        what: "Número de documento de la persona (10 dígitos).",
+        what: "Número de documento de la persona (6 a 15 dígitos).",
         when: "Solo en filas aprendiz e instructor.",
       },
       nombre: {

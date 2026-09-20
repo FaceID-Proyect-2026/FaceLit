@@ -400,7 +400,7 @@
       lastnameRequired: "Nom requis",
       identityRequired: "Type requis",
       documentRequired: "Document requis",
-      documentLength: "10 chiffres",
+      documentLength: "6 à 15 chiffres",
       emailRequired: "Email requis",
       emailInvalid: "Invalide",
       emailNotValidated: "Vérifiez email",

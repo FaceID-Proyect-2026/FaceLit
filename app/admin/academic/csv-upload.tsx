@@ -28,7 +28,7 @@ const MAX_FILE_BYTES = 5 * 1024 * 1024;
 // ── Guía de columnas ─────────────────────────
 const COLUMN_GUIDE = [
   { col: 'tipo',            badge: 'Siempre',            what: 'programa · ficha · aprendiz · instructor',   required: true  },
-  { col: 'documento',       badge: 'aprendiz/instructor', what: 'Número de documento (10 dígitos)',            required: false },
+  { col: 'documento',       badge: 'aprendiz/instructor', what: 'Número de documento (6 a 15 dígitos)',       required: false },
   { col: 'nombre',          badge: 'aprendiz/instructor', what: 'Nombre de la persona',                        required: false },
   { col: 'apellido',        badge: 'aprendiz/instructor', what: 'Apellido de la persona',                      required: false },
   { col: 'correo',          badge: 'aprendiz/instructor', what: 'Correo electrónico personal',                 required: false },
@@ -112,14 +112,17 @@ export default function CsvUploadScreen() {
       });
 
       const status   = error?.response?.status ?? 0;
-      const msg      = error?.response?.data?.message
-                    ?? error?.response?.data?.error
-                    ?? error?.message
-                    ?? '';
+      const rawData  = error?.response?.data;
+      const textData = typeof rawData === 'string' ? rawData : rawData?.message ?? rawData?.error ?? '';
+      const msg      = textData || error?.message || '';
 
       if (status === 500 || status === 0) {
+        const serverMessage = String(msg).toLowerCase();
+        const isHtml = serverMessage.includes('<html') || serverMessage.includes('internal server error');
         setFileError(
-          `Error del servidor (${status || 'sin conexión'}): ${msg || 'El backend no pudo procesar el archivo. Revisa los logs del servidor.'}`,
+          isHtml
+            ? 'El servidor falló al procesar este CSV. Revisa el formato del archivo y prueba con la plantilla oficial.'
+            : `Error del servidor (${status || 'sin conexión'}): ${msg || 'El backend no pudo procesar el archivo. Revisa los logs del servidor.'}`,
         );
       } else if (status === 413) {
         setFileError('El archivo es demasiado grande para el servidor. Divide el CSV en partes más pequeñas.');

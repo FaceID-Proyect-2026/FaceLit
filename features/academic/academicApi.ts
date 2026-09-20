@@ -187,17 +187,29 @@ export async function setFichaLifecycle(id: string, action: 'reactivate' | 'dele
 
 export async function uploadAcademicCsv(file: { uri: string; name: string } | Blob) {
   const form = new FormData();
-  if (file instanceof Blob) {
-    form.append('file', file, 'carga-academica.csv');
-  } else {
-    form.append('file', { uri: file.uri, name: file.name, type: 'text/csv' } as any);
+  const fileName = file instanceof Blob ? 'carga-academica.csv' : file.name;
+  const filePayload = file instanceof Blob
+    ? file
+    : ({ uri: file.uri, name: file.name, type: 'text/csv' } as any);
+
+  // El backend no siempre usa el mismo nombre de campo en multipart.
+  // Enviamos varias claves compatibles para evitar 500 por campo perdido.
+  const fieldNames = ['file', 'archivo', 'csvFile', 'csv'];
+  for (const fieldName of fieldNames) {
+    if (file instanceof Blob) {
+      form.append(fieldName, filePayload as Blob, fileName);
+    } else {
+      form.append(fieldName, filePayload as any);
+    }
   }
+
   // ⚠️ NO pasar Content-Type manualmente — axios lo genera con el boundary
   //    correcto cuando detecta FormData. Sobreescribirlo rompe el multipart.
   // La carga de CSV puede demorar más de 15s porque el backend valida filas,
   // referencias y actualizaciones masivas.
   const { data } = await api.post('/api/academic/csv/upload', form, {
     timeout: 180000,
+    headers: { Accept: 'application/json' },
   });
   return data;
 }

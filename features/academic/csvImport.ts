@@ -34,9 +34,9 @@ export function normalizeProgramCode(value: string): string {
   return value.trim().toUpperCase();
 }
 
-/** Valida documento: exactamente 10 dígitos numéricos (RF-1 V4 §1 / RF-3 V4 §3) */
+/** Valida documento: entre 6 y 15 dígitos numéricos (RF-1 V4 §1 / RF-3 V4 §3) */
 function isValidDocument(doc: string): boolean {
-  return /^\d{10}$/.test(doc);
+  return /^\d{6,15}$/.test(doc);
 }
 
 /** Valida correo: formato estándar (RF-3 V4 §5) */
@@ -251,7 +251,7 @@ export function parseAcademicCsvV4(csvText: string): ParseCsvV4Result {
       if (!rawDoc) {
         errors.push(`El documento es obligatorio en la fila ${rowNum}.`);
       } else if (!isValidDocument(doc)) {
-        errors.push(`El documento de la fila ${rowNum} debe tener exactamente 10 dígitos numéricos.`);
+        errors.push(`El documento de la fila ${rowNum} debe tener entre 6 y 15 dígitos numéricos.`);
       } else {
         row.documento = doc;
       }
@@ -311,7 +311,7 @@ export function parseAcademicCsvV4(csvText: string): ParseCsvV4Result {
       if (!rawDoc) {
         errors.push(`El documento es obligatorio en la fila ${rowNum}.`);
       } else if (!isValidDocument(doc)) {
-        errors.push(`El documento de la fila ${rowNum} debe tener exactamente 10 dígitos numéricos.`);
+        errors.push(`El documento de la fila ${rowNum} debe tener entre 6 y 15 dígitos numéricos.`);
       } else {
         row.documento = doc;
       }

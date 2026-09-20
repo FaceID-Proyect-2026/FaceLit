@@ -89,7 +89,7 @@ export default function CreateUserScreen() {
 
     if (!form.document.trim()) {
       nextErrors.document = t('users.errors.requiredField');
-    } else if (!/^\d{10}$/.test(form.document.trim())) {
+    } else if (!/^\d{6,15}$/.test(form.document.trim())) {
       nextErrors.document = t('register.errors.documentLength');
     }
 

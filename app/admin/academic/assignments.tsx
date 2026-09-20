@@ -88,8 +88,8 @@ export default function AcademicAssignmentsScreen() {
   };
 
   const validate = (): string | null => {
-    if (!/^\d{10}$/.test(document.trim()))                        return 'El documento debe tener exactamente 10 dígitos.';
-    if (!name.trim())                                              return 'El nombre es obligatorio.';
+    if (!/^\d{6,15}$/.test(document.trim()))                    return 'El documento debe tener entre 6 y 15 dígitos.';
+    if (!name.trim())                                            return 'El nombre es obligatorio.';
     if (!lastname.trim())                                          return 'El apellido es obligatorio.';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))         return 'El correo electrónico no es válido.';
     if (!selectedFicha)                                            return 'Debes seleccionar una ficha.';
@@ -221,7 +221,7 @@ export default function AcademicAssignmentsScreen() {
                 style={[s.input, { color: text }] as any}
                 value={document}
                 onChangeText={v => { setDocument(v.replace(/\D/g, '').slice(0, 10)); setError(''); }}
-                placeholder="10 dígitos"
+                placeholder="6 a 15 dígitos"
                 placeholderTextColor={muted}
                 keyboardType="numeric"
                 maxLength={10}

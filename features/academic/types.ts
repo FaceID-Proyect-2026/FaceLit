@@ -74,7 +74,7 @@ export interface Learner {
   id: string;
   name: string;
   lastname: string;
-  document: string;      // 10 dígitos exactos (RF-1 V4 §1)
+  document: string;      // 6 a 15 dígitos (RF-1 V4 §1)
   email: string;         // obligatorio (RF-3.1 §5)
   role: string;
   status: 'active' | 'inactive';
@@ -93,7 +93,7 @@ export interface Instructor {
   id: string;
   name: string;
   lastname: string;
-  document: string;      // 10 dígitos
+  document: string;      // 6 a 15 dígitos
   email: string;
   instructorType: InstructorType;
   /** Solo se usa si instructorType === 'especifico' */

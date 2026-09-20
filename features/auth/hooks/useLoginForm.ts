@@ -2,7 +2,7 @@
 //  features/auth/hooks/useLoginForm.ts
 //
 //  RF-1.1 V3 / RF-1 V4 — Validaciones exhaustivas
-//  · Documento: exactamente 10 dígitos numéricos
+//  · Documento: entre 6 y 15 dígitos numéricos
 //  · Contraseña: 8–15 caracteres (sin validar complejidad en login)
 //  · Mensaje genérico cuando documento no existe (anti-enumeración)
 //  · Bloqueo temporal tras 5 intentos fallidos (RNF-1.3)
@@ -17,8 +17,8 @@ import { useAuth } from '@/shared/contexts/AuthContext';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-// Exactamente 10 dígitos — RF-1 V4 §1
-const DOCUMENT_REGEX = /^\d{10}$/;
+// 6 a 15 dígitos — RF-1 V4 §1 y requisitos del negocio académico
+const DOCUMENT_REGEX = /^\d{6,15}$/;
 
 interface LoginForm {
   document: string;
@@ -94,7 +94,7 @@ export function useLoginForm() {
       // Carácter no numérico (no debería llegar aquí porque el campo filtra,
       // pero se valida igual como defensa en profundidad)
       e.document = t('login.errors.invalidDocument');
-    } else if (doc.length !== 10) {
+    } else if (!DOCUMENT_REGEX.test(doc)) {
       e.document = t('login.errors.documentLength');
     }
 

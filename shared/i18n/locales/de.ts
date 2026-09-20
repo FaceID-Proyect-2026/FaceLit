@@ -358,7 +358,7 @@ const de = {
       lastnameRequired: "Nachname erforderlich",
       identityRequired: "Typ wählen",
       documentRequired: "Dokument erforderlich",
-      documentLength: "10 Ziffern",
+      documentLength: "6-15 Ziffern",
       emailRequired: "E-Mail erforderlich",
       emailInvalid: "Ungültig",
       emailNotValidated: "E-Mail prüfen",

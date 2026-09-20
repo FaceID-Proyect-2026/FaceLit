@@ -67,7 +67,7 @@ function EditLearnerModal({
   const handleSave = () => {
     if (!name.trim() || !lastname.trim()) { setError('Nombre y apellido son obligatorios.'); return; }
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError('Correo inválido.'); return; }
-    if (!document.trim() || !/^\d{10}$/.test(document.trim())) { setError('El documento debe tener 10 dígitos.'); return; }
+    if (!document.trim() || !/^\d{6,15}$/.test(document.trim())) { setError('El documento debe tener entre 6 y 15 dígitos.'); return; }
     const result = onSave({ name: name.trim(), lastname: lastname.trim(), email: email.trim(), document: document.trim() });
     if (!result.success) { setError(result.error ? t(result.error as any, { defaultValue: result.error }) : 'Error al guardar.'); return; }
     onClose();
@@ -89,7 +89,7 @@ function EditLearnerModal({
               { label: 'Nombre', value: name, onChange: setName, keyboard: 'default' as const },
               { label: 'Apellido', value: lastname, onChange: setLastname, keyboard: 'default' as const },
               { label: 'Correo', value: email, onChange: setEmail, keyboard: 'email-address' as const },
-              { label: 'Documento (10 dígitos)', value: document, onChange: setDoc, keyboard: 'numeric' as const },
+              { label: 'Documento (6 a 15 dígitos)', value: document, onChange: setDoc, keyboard: 'numeric' as const },
             ].map(f => (
               <View key={f.label} style={{ marginBottom: 14 }}>
                 <Text style={[elm.label, { color: text }]}>{f.label}</Text>
@@ -98,7 +98,7 @@ function EditLearnerModal({
                   value={f.value}
                   onChangeText={v => { f.onChange(v); setError(''); }}
                   keyboardType={f.keyboard}
-                  maxLength={f.keyboard === 'numeric' ? 10 : 80}
+                  maxLength={f.keyboard === 'numeric' ? 15 : 80}
                   placeholderTextColor={muted}
                   autoCapitalize={f.keyboard === 'default' ? 'words' : 'none'}
                 />
