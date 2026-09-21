@@ -415,7 +415,7 @@ export function processAcademicCsvV4(
   snapshots: StoreSnapshots,
 ): CsvImportSummaryV4 {
   const summary: CsvImportSummaryV4 = {
-    created: 0, updated: 0, blocked: 0, errors: 0, rows: [],
+    created: 0, updated: 0, blocked: 0, errors: 0, rows: [], generatedPasswords: [],
   };
 
   // Colectar programas y fichas que se crearán en este mismo archivo

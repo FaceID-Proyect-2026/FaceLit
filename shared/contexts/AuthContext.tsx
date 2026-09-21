@@ -23,12 +23,12 @@ import { login as loginRequest } from '@/shared/services/authService';
 import { getToken, removeToken } from '@/shared/services/tokenStorage';
 import { router } from 'expo-router';
 import React, {
-    createContext,
-    ReactNode,
-    useCallback,
-    useContext,
-    useEffect,
-    useState,
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
 } from 'react';
 
 // ── Roles ──────────────────────────────────────
@@ -47,6 +47,16 @@ const BACKEND_TO_APP_ROLE: Record<string, UserRole> = {
 
 function mapBackendRole(rawRole: string): UserRole {
   return BACKEND_TO_APP_ROLE[rawRole] ?? (rawRole as UserRole);
+}
+
+function readStringField(payload: any, keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = payload?.[key];
+    if (value !== undefined && value !== null && String(value).trim() !== '') {
+      return String(value);
+    }
+  }
+  return undefined;
 }
 
 export interface User {
@@ -186,14 +196,21 @@ function buildUserFromPayload(payload: any): User {
     const { mock, exp, password, ...user } = payload;
     return user as User;
   }
+
+  const firstName = readStringField(payload, ['firstName', 'first_name', 'name', 'nombre', 'givenName', 'given_name']);
+  const lastName = readStringField(payload, ['lastName', 'last_name', 'lastname', 'apellido', 'familyName', 'family_name']);
+  const document = readStringField(payload, ['documentNumber', 'document_number', 'document', 'numberDocument', 'numeroDocumento']);
+  const email = readStringField(payload, ['email', 'correo', 'mail']) ?? '';
+  const role = readStringField(payload, ['role', 'rol']) ?? 'COORDINADOR';
+
   return {
-    id: payload.userId ?? payload.id,
-    document: payload.document ?? '',
-    email: payload.email,
-    role: mapBackendRole(payload.role),
+    id: payload.userId ?? payload.idUser ?? payload.id ?? payload.user_id ?? payload.sub,
+    document: document ?? '',
+    email,
+    role: mapBackendRole(role),
     permissions: payload.permissions ?? [],
-    firstName: payload.firstName,
-    lastName: payload.lastName,
+    firstName,
+    lastName,
   };
 }
 

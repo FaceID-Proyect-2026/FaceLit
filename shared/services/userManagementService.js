@@ -12,6 +12,11 @@ export const getManagedUser = async (id) => {
   return data;
 };
 
+export const createManagedUser = async (payload) => {
+  const { data } = await api.post('/api/admin/users', payload);
+  return data;
+};
+
 export const updateManagedUser = async (id, payload) => {
   const { data } = await api.put(`/api/admin/users/${id}`, payload);
   return data;

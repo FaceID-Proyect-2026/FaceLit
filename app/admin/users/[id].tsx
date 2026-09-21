@@ -1,19 +1,15 @@
 // ─────────────────────────────────────────────
 //  app/admin/users/[id].tsx
-//  RF-10 — Detalle / edición de usuario (datos quemados)
-//
-//  · Documento: siempre solo lectura
-//  · Nombre, apellido, correo: editables con estado local
-//  · Guardar: muestra mensaje de éxito, no persiste más allá
+//  MF-06 — Detalle y edición de usuario con reglas vigentes
 // ─────────────────────────────────────────────
-import { MOCK_PROGRAMS, MOCK_USERS, MockUser } from '@/features/users/mocks';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
+import { getManagedUser, updateManagedUser } from '@/shared/services/userManagementService';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     KeyboardAvoidingView,
@@ -28,28 +24,40 @@ import {
 
 export default function UserDetailScreen() {
   const { theme, isDark } = useTheme();
-  const { t }             = useTranslation();
+  const { t } = useTranslation();
   const { alert, DialogUI } = useAppDialog();
-  const { id }            = useLocalSearchParams<{ id: string }>();
+  const { id } = useLocalSearchParams<{ id: string }>();
 
-  // Busca en MOCK_USERS por id
-  const base: MockUser | undefined = MOCK_USERS.find(u => u.id === id);
+  const [base, setBase] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Estado editable local (solo nombre, apellido, correo)
-  const [name,     setName]     = useState(base?.name     ?? '');
-  const [lastname, setLastname] = useState(base?.lastname ?? '');
-  const [email,    setEmail]    = useState(base?.email    ?? '');
-  const [emailErr, setEmailErr] = useState('');
+  const [name, setName] = useState('');
+  const [lastname, setLastname] = useState('');
 
-  // ── Colores ────────────────────────────────
-  const text      = isDark ? Colors.dark.text       : Colors.light.text;
-  const muted     = isDark ? Colors.dark.textMuted  : Colors.light.textMuted;
-  const bg        = isDark ? Colors.dark.background : Colors.light.background;
-  const card      = theme.surface;
-  const border    = theme.border;
+  useEffect(() => {
+    if (!id) return;
+    getManagedUser(id)
+      .then((data) => {
+        setBase(data);
+        setName(data.firstName ?? '');
+        setLastname(data.lastName ?? '');
+      })
+      .catch(() => setBase(undefined))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  const text = isDark ? Colors.dark.text : Colors.light.text;
+  const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
+  const bg = isDark ? Colors.dark.background : Colors.light.background;
+  const card = theme.surface;
+  const border = theme.border;
   const softGreen = theme.successSoft;
-  const softBlue  = theme.infoSoft;
+  const softBlue = theme.infoSoft;
   const softAmber = theme.warningSoft;
+
+  if (loading) {
+    return <View style={[styles.root, { backgroundColor: bg }]} />;
+  }
 
   if (!base) {
     return (
@@ -64,22 +72,28 @@ export default function UserDetailScreen() {
   }
 
   const isInstructor = base.role === 'INSTRUCTOR';
-  const roleColor    = isInstructor ? theme.info : theme.primary;
-  const roleBg       = isInstructor ? softBlue  : softGreen;
-  const roleLabel    = isInstructor
-    ? t('users.create.roleInstructor')
-    : t('users.create.roleApprentice');
-  const programLabel = MOCK_PROGRAMS.find(p => p.code === base.programCode)?.label;
+  const isApprentice = base.role === 'APPRENTICE';
+  const roleColor = isInstructor ? theme.info : isApprentice ? Colors.warning : theme.primary;
+  const roleBg = isInstructor ? softBlue : isApprentice ? softAmber : softGreen;
+  const roleLabel =
+    base.role === 'COORDINATOR'
+      ? 'Coordinador'
+      : base.role === 'INSTRUCTOR'
+        ? t('users.create.roleInstructor')
+        : t('users.create.roleApprentice');
 
-  const handleSave = () => {
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setEmailErr(t('register.errors.emailInvalid'));
-      return;
+  const handleSave = async () => {
+    try {
+      await updateManagedUser(base.userId, {
+        firstName: name.trim(),
+        lastName: lastname.trim(),
+        accountStatus: base.accountStatus,
+        role: base.role,
+      });
+      alert(t('common.save'), 'Los cambios se guardaron correctamente.', [{ text: t('common.ok') }]);
+    } catch (error: any) {
+      alert(t('common.error'), error?.message || 'No se pudieron guardar los cambios.', [{ text: t('common.ok') }]);
     }
-    setEmailErr('');
-    alert(t('common.save'), t('users.create.success'), [
-      { text: t('common.ok') },
-    ]);
   };
 
   return (
@@ -92,7 +106,6 @@ export default function UserDetailScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Cabecera */}
         <View style={styles.header}>
           <TouchableOpacity
             onPress={() => router.back()}
@@ -104,14 +117,13 @@ export default function UserDetailScreen() {
             <Text style={[styles.title, { color: text }]} numberOfLines={1}>
               {name} {lastname}
             </Text>
-            <Text style={[styles.subtitle, { color: muted }]}>{t('users.details')}</Text>
+            <Text style={[styles.subtitle, { color: muted }]}>Detalle del usuario</Text>
           </View>
         </View>
 
-        {/* Banner de perfil */}
         <View style={[styles.banner, { backgroundColor: roleBg }]}>
           <View style={[styles.bannerAvatar, { backgroundColor: roleColor }]}>
-            <Text style={styles.bannerAvatarText}>{base.name.charAt(0).toUpperCase()}</Text>
+            <Text style={styles.bannerAvatarText}>{name.charAt(0).toUpperCase()}</Text>
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[styles.bannerName, { color: text }]}>{name} {lastname}</Text>
@@ -119,69 +131,39 @@ export default function UserDetailScreen() {
               <Text style={[styles.rolePillText, { color: roleColor }]}>{roleLabel}</Text>
             </View>
           </View>
-          {/* estado */}
-          <View style={[
-            styles.statusPill,
-            { backgroundColor: base.status === 'active' ? softGreen : (isDark ? 'rgba(255,255,255,0.06)' : '#F2F2F2') },
-          ]}>
-            <View style={[styles.statusDot, { backgroundColor: base.status === 'active' ? Colors.success : muted }]} />
-            <Text style={[styles.statusText, { color: base.status === 'active' ? Colors.success : muted }]}>
-              {base.status === 'active' ? t('users.statuses.ACTIVE') : t('users.statuses.INACTIVE')}
+          <View
+            style={[
+              styles.statusPill,
+              { backgroundColor: String(base.accountStatus).toUpperCase() === 'ACTIVE' ? softGreen : isDark ? 'rgba(255,255,255,0.06)' : '#F2F2F2' },
+            ]}
+          >
+            <View style={[styles.statusDot, { backgroundColor: String(base.accountStatus).toUpperCase() === 'ACTIVE' ? Colors.success : muted }]} />
+            <Text style={[styles.statusText, { color: String(base.accountStatus).toUpperCase() === 'ACTIVE' ? Colors.success : muted }]}>
+              {String(base.accountStatus).toUpperCase() === 'ACTIVE' ? t('users.statuses.ACTIVE') : t('users.statuses.INACTIVE')}
             </Text>
           </View>
         </View>
 
-        {/* ── Información de solo lectura ── */}
         <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
           <Text style={[styles.section, { color: theme.primary }]}>{t('users.readonlyData')}</Text>
 
-          {/* Documento — siempre deshabilitado */}
           <View style={styles.fieldGroup}>
             <Text style={[styles.fieldLabel, { color: theme.primary }]}>{t('users.document')}</Text>
             <View style={[styles.fieldDisabled, { borderColor: border, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#F5F5F5' }]}>
               <Ionicons name="lock-closed-outline" size={14} color={muted} style={{ marginRight: 6 }} />
-              <Text style={[styles.fieldDisabledText, { color: muted }]}>{base.document}</Text>
+              <Text style={[styles.fieldDisabledText, { color: muted }]}>{base.documentNumber ?? 'Sin documento'}</Text>
             </View>
-            <Text style={[styles.fieldHint, { color: muted }]}>{t('users.detail.documentReadonly')}</Text>
+            <Text style={[styles.fieldHint, { color: muted }]}>Este dato no cambia nunca.</Text>
           </View>
 
-          {/* Rol */}
           <View style={styles.infoRow}>
             <Ionicons name="shield-outline" size={13} color={muted} />
             <Text style={[styles.infoText, { color: muted }]}>
-              {t('users.role')}:{' '}
-              <Text style={{ color: roleColor, fontWeight: '700' }}>{roleLabel}</Text>
+              Rol: <Text style={{ color: roleColor, fontWeight: '700' }}>{roleLabel}</Text>
             </Text>
           </View>
-
-          {/* Tipo instructor */}
-          {isInstructor && base.instructorType && (
-            <View style={styles.infoRow}>
-              <Ionicons name="bookmark-outline" size={13} color={muted} />
-              <Text style={[styles.infoText, { color: muted }]}>
-                {t('users.create.instructorTypeLabel')}:{' '}
-                <Text style={{ color: text }}>
-                  {base.instructorType === 'especifico'
-                    ? t('users.create.instructorTypeSpecific')
-                    : t('users.create.instructorTypeTransversal')}
-                </Text>
-              </Text>
-            </View>
-          )}
-
-          {/* Programa */}
-          {isInstructor && base.programCode && (
-            <View style={styles.infoRow}>
-              <Ionicons name="school-outline" size={13} color={muted} />
-              <Text style={[styles.infoText, { color: muted }]}>
-                {t('users.create.programLabel')}:{' '}
-                <Text style={{ color: text }}>{base.programCode}{programLabel ? ` · ${programLabel}` : ''}</Text>
-              </Text>
-            </View>
-          )}
         </View>
 
-        {/* ── Datos editables ── */}
         <View style={[styles.card, { backgroundColor: card, borderColor: border, marginTop: 12 }]}>
           <Text style={[styles.section, { color: theme.primary }]}>{t('users.editData')}</Text>
 
@@ -214,35 +196,30 @@ export default function UserDetailScreen() {
 
           <View style={styles.fieldGroup}>
             <Text style={[styles.fieldLabel, { color: theme.primary }]}>{t('register.email')}</Text>
-            <TextInput
-              value={email}
-              onChangeText={v => { setEmail(v); setEmailErr(''); }}
-              placeholder="correo@ejemplo.com"
-              placeholderTextColor={muted}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              style={[styles.field, { color: text, borderColor: emailErr ? Colors.error : border }]}
-            />
-            {emailErr ? <Text style={styles.fieldError}>{emailErr}</Text> : null}
+            <View style={[styles.fieldDisabled, { borderColor: border, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#F5F5F5' }]}>
+              <Ionicons name="mail-outline" size={14} color={muted} style={{ marginRight: 6 }} />
+              <Text style={[styles.fieldDisabledText, { color: muted }]}>{base.email ?? 'Sin correo'}</Text>
+            </View>
           </View>
 
-          {/* Nota estado (solo visual) */}
+          <Text style={[styles.section, { color: theme.primary }]}>Datos académicos</Text>
+          <Text style={[styles.infoText, { color: muted }]}>Ficha: {base.chipCode ?? 'Sin ficha activa'}</Text>
+          <Text style={[styles.infoText, { color: muted }]}>Programa: {base.programName ?? 'Sin programa'}</Text>
+          <Text style={[styles.infoText, { color: muted }]}>Sesión: {base.sessionStatus ?? 'INACTIVE'}</Text>
+          <Text style={[styles.infoText, { color: muted }]}>Vencimiento: {base.sessionExpiresAt ?? 'Sin sesión registrada'}</Text>
+
           <View style={[styles.note, { backgroundColor: softAmber, borderColor: Colors.warning + '40' }]}>
             <Ionicons name="information-circle-outline" size={14} color={Colors.warning} />
             <Text style={[styles.noteText, { color: Colors.warning }]}>
-              La contraseña inicial solo se muestra al crear la cuenta; después de cambiarla no se vuelve a revelar por seguridad.
+              El tipo de instructor y el traslado de ficha se manejan con las validaciones de módulo académico para respetar la regla de negocio.
             </Text>
           </View>
 
-          {/* Acciones */}
           <View style={styles.formActions}>
             <TouchableOpacity onPress={() => router.back()} style={styles.cancelBtn}>
               <Text style={{ color: muted, fontWeight: '600' }}>{t('common.cancel')}</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleSave}
-              style={[styles.saveBtn, { backgroundColor: theme.primary }]}
-            >
+            <TouchableOpacity onPress={handleSave} style={[styles.saveBtn, { backgroundColor: theme.primary }]}>
               <Ionicons name="save-outline" size={16} color={Colors.white} />
               <Text style={styles.saveBtnText}>{t('common.save')}</Text>
             </TouchableOpacity>
@@ -256,51 +233,50 @@ export default function UserDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  root:   { flex: 1 },
+  root: { flex: 1 },
   scroll: { padding: 18, paddingBottom: 40 },
-
-  notFound:      { fontSize: FontSize.md, marginTop: 12 },
+  notFound: { fontSize: FontSize.md, marginTop: 12 },
   backBtnCenter: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 9, marginTop: 16 },
-
-  header:   { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 6, paddingBottom: 16 },
-  backBtn:  { width: 40, height: 40, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  title:    { fontSize: FontSize['2xl'], fontWeight: FontWeight.black },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 6, paddingBottom: 16 },
+  backBtn: { width: 40, height: 40, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  title: { fontSize: FontSize['2xl'], fontWeight: FontWeight.black },
   subtitle: { fontSize: FontSize.sm, marginTop: 3 },
-
-  banner:       { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 16, padding: 14, marginBottom: 12 },
+  banner: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 16, padding: 14, marginBottom: 12 },
   bannerAvatar: { width: 46, height: 46, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   bannerAvatarText: { color: Colors.white, fontWeight: '900', fontSize: 18 },
-  bannerName:   { fontSize: 15, fontWeight: '800' },
-  rolePill:     { flexDirection: 'row', borderRadius: 8, paddingHorizontal: 7, paddingVertical: 3, marginTop: 4, alignSelf: 'flex-start' },
+  bannerName: { fontSize: 15, fontWeight: '800' },
+  rolePill: { flexDirection: 'row', borderRadius: 8, paddingHorizontal: 7, paddingVertical: 3, marginTop: 4, alignSelf: 'flex-start' },
   rolePillText: { fontSize: FontSize.xs, fontWeight: '800' },
-  statusPill:   { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 12, paddingHorizontal: 8, paddingVertical: 4 },
-  statusDot:    { width: 6, height: 6, borderRadius: 3 },
-  statusText:   { fontSize: 9, fontWeight: '800' },
-
-  card:    { borderRadius: 16, borderWidth: 1, padding: 16, gap: 12 },
+  statusPill: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 12, paddingHorizontal: 8, paddingVertical: 4 },
+  statusDot: { width: 6, height: 6, borderRadius: 3 },
+  statusText: { fontSize: 9, fontWeight: '800' },
+  card: { borderRadius: 16, borderWidth: 1, padding: 16, gap: 12 },
   section: { fontSize: FontSize.xs, fontWeight: '900', textTransform: 'uppercase' },
-
-  fieldGroup:       { gap: 5 },
-  fieldLabel:       { fontSize: FontSize.xs, fontWeight: '800', textTransform: 'uppercase' },
-  fieldDisabled:    { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 },
-  fieldDisabledText:{ fontSize: 14, flex: 1 },
-  fieldHint:        { fontSize: FontSize.xs, marginTop: 3 },
-  field: {
-    borderWidth: 1, borderRadius: 10,
-    paddingHorizontal: 12, paddingVertical: 10,
-    fontSize: 14,
-  },
+  fieldGroup: { gap: 5 },
+  fieldLabel: { fontSize: FontSize.xs, fontWeight: '800', textTransform: 'uppercase' },
+  fieldDisabled: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 },
+  fieldDisabledText: { fontSize: 14, flex: 1 },
+  fieldHint: { fontSize: FontSize.xs, marginTop: 3 },
+  field: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14 },
   fieldError: { color: Colors.error, fontSize: FontSize.xs, marginTop: 2 },
   row: { flexDirection: 'row', gap: 10 },
-
-  infoRow:  { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  infoRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   infoText: { fontSize: FontSize.sm },
-
-  note:     { flexDirection: 'row', alignItems: 'flex-start', gap: 8, borderWidth: 1, borderRadius: 10, padding: 10 },
+  roleRow: { flexDirection: 'row', gap: 10 },
+  roleOption: { flexDirection: 'row', alignItems: 'center', gap: 7, borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 11 },
+  roleOptionText: { fontSize: FontSize.sm, fontWeight: '700' },
+  programGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  programChip: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 11, paddingVertical: 9, width: '47%' },
+  programCode: { fontSize: FontSize.sm, fontWeight: '900' },
+  programLabel: { fontSize: FontSize.xs, marginTop: 2 },
+  transferButton: { borderRadius: 10, alignItems: 'center', paddingVertical: 10, marginTop: 8 },
+  historyBox: { borderWidth: 1, borderRadius: 12, padding: 10, marginTop: 10, borderColor: Colors.light.border },
+  historyTitle: { fontSize: FontSize.sm, fontWeight: '800', marginBottom: 6 },
+  historyItem: { fontSize: FontSize.xs, marginBottom: 4 },
+  note: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, borderWidth: 1, borderRadius: 10, padding: 10 },
   noteText: { flex: 1, fontSize: FontSize.xs, lineHeight: 16 },
-
-  formActions:  { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 16, marginTop: 4 },
-  cancelBtn:    { paddingHorizontal: 8, paddingVertical: 11 },
-  saveBtn:      { flexDirection: 'row', alignItems: 'center', gap: 7, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 11 },
-  saveBtnText:  { color: Colors.white, fontWeight: '800', fontSize: FontSize.sm },
+  formActions: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 16, marginTop: 4 },
+  cancelBtn: { paddingHorizontal: 8, paddingVertical: 11 },
+  saveBtn: { flexDirection: 'row', alignItems: 'center', gap: 7, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 11 },
+  saveBtnText: { color: Colors.white, fontWeight: '800', fontSize: FontSize.sm },
 });

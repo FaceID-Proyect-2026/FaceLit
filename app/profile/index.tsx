@@ -1,27 +1,39 @@
 // ─────────────────────────────────────────────
 //  app/profile/index.tsx
-//  (AuthContext), no de un fetch al backend — por eso ya no hay
-//  loading/spinner acá. Cuando se conecte el backend real, se
-//  puede volver a usar getMyProfile() para traer campos que no
-//  vengan en la sesión (p. ej. documentType) sin tocar nada más
-//  de esta pantalla.
+//  Carga el perfil desde el backend cuando está disponible y usa
+//  los valores de la sesión como respaldo para no romper la UI.
 // ─────────────────────────────────────────────
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
+import { getMyProfile } from '@/shared/services/authService';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+type ProfileResponse = {
+  firstName?: string | null;
+  lastName?: string | null;
+  documentNumber?: string | null;
+  email?: string | null;
+  role?: string | null;
+};
+
+function pickValue(...values: Array<string | undefined | null>): string {
+  return values.find((value) => typeof value === 'string' && value.trim().length > 0) ?? '';
+}
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const { alert, DialogUI } = useAppDialog();
+  const [profile, setProfile] = useState<ProfileResponse>({});
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -32,18 +44,36 @@ export default function ProfileScreen() {
   const bg = isDark ? Colors.dark.background : Colors.light.background;
   const headerBg = theme.surface;
 
+  useEffect(() => {
+    let active = true;
+
+    const fetchProfile = async () => {
+      try {
+        const response = await getMyProfile();
+        if (active) {
+          setProfile(response ?? {});
+        }
+      } catch {
+        // Si el endpoint falla, la pantalla sigue usando los datos de la sesión.
+      }
+    };
+
+    fetchProfile();
+    return () => { active = false; };
+  }, [user?.id]);
+
   if (!user) return null;
 
-  const displayName = user.firstName ?? '';
-  const displayLastName = user.lastName ?? '';
-  const document = user.document ?? '';
-  const email = user.email ?? '';
-  const role = user.role ?? '';
-  const firstNameInitial = displayName.charAt(0).toUpperCase();
-  const lastNameInitial = displayLastName.charAt(0).toUpperCase();
+  const displayName = pickValue(profile.firstName, user.firstName, user.name);
+  const displayLastName = pickValue(profile.lastName, user.lastName, user.lastname);
+  const document = pickValue(profile.documentNumber, user.document);
+  const email = pickValue(profile.email, user.email);
+  const role = pickValue(profile.role, String(user.role ?? ''));
+  const firstNameInitial = displayName ? displayName.charAt(0).toUpperCase() : (email ? email.charAt(0).toUpperCase() : '?');
+  const lastNameInitial = displayLastName ? displayLastName.charAt(0).toUpperCase() : '';
   const roleLabel = role ? role.charAt(0).toUpperCase() + role.slice(1).toLowerCase() : '';
   const avatarText = `${firstNameInitial}${lastNameInitial}`.trim() || (email.charAt(0).toUpperCase() || '?');
-  const userName = `${displayName} ${displayLastName}`.trim() || email;
+  const userName = `${displayName} ${displayLastName}`.trim() || email || 'Usuario';
 
   const handleLogout = () => {
     alert(

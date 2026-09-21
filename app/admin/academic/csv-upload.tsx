@@ -101,6 +101,10 @@ export default function CsvUploadScreen() {
         blocked: backendResult.inconsistenciasBloqueadas.length,
         errors: backendResult.erroresDeReferencia.length,
         rows,
+        generatedPasswords: (backendResult.contrasenasGeneradas ?? []).map((item: any) => ({
+          document: item.documento,
+          password: item.contrasenaTemporal,
+        })),
       });
     } catch (error: any) {
       // Log completo para depuración — ver exactamente qué devuelve el backend
@@ -274,6 +278,19 @@ export default function CsvUploadScreen() {
             {/* Nombre de archivo */}
             {fileName && <Text style={[s.fileChip, { color: muted }]}>📄 {fileName}</Text>}
 
+            {summary.generatedPasswords.length > 0 && (
+              <View style={[s.guideCard, { backgroundColor: cardBg, borderColor: border }]}>
+                <Text style={[s.resultHeader, { color: text }]}>Contraseñas iniciales generadas</Text>
+                <Text style={[s.resultMsg, { color: muted }]}>Entrégalas al usuario correspondiente. Solo se muestran en esta respuesta.</Text>
+                {summary.generatedPasswords.map((item) => (
+                  <View key={item.document} style={[s.passwordRow, { borderBottomColor: border }]}>
+                    <Text style={[s.passwordDocument, { color: text }]}>{item.document}</Text>
+                    <Text selectable style={[s.passwordValue, { color: theme.primary }]}>{item.password}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
             {/* Lista de filas */}
             <View style={[s.guideCard, { backgroundColor: cardBg, borderColor: border }]}>
               <Text style={[s.resultHeader, { color: text }]}>Detalle por fila</Text>
@@ -362,6 +379,9 @@ const s = StyleSheet.create({
   resultRow:    { flexDirection: 'row', alignItems: 'flex-start', gap: 8, borderLeftWidth: 3, paddingLeft: 10, paddingVertical: 10, borderBottomWidth: 1 },
   resultId:     { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
   resultMsg:    { fontSize: FontSize.xs, lineHeight: 17, marginTop: 2 },
+  passwordRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, paddingVertical: 10, borderBottomWidth: 1 },
+  passwordDocument: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
+  passwordValue: { fontSize: FontSize.sm, fontWeight: FontWeight.black },
   fixBtn:       { borderWidth: 1.5, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5, flexShrink: 0 },
   fixBtnText:   { fontSize: FontSize.xs, fontWeight: FontWeight.bold },
 

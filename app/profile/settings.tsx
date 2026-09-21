@@ -15,7 +15,7 @@ import { ActivityIndicator, ScrollView, StyleSheet, Switch, Text, TouchableOpaci
 const LANGUAGES = [
   { code: 'es', label: 'Español' },
   { code: 'en', label: 'English' },
-  { code: 'de', label: 'Deutsch' },
+  { code: 'pr', label: 'Português' },
   { code: 'fr', label: 'Français' },
 ];
 

@@ -1,8 +1,7 @@
 // ─────────────────────────────────────────────
 //  features/profile/useUserSettings.ts
-//  Trae las preferencias guardadas, permite editarlas
-//  como borrador local, y las guarda todas juntas
-//  con un solo botón "Guardar cambios".
+//  Persiste la configuración del usuario en el backend,
+//  no solo en el dispositivo.
 // ─────────────────────────────────────────────
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import {
@@ -14,10 +13,25 @@ import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const LANG_BACKEND_TO_APP: Record<string, string> = {
-  ES: 'es', EN: 'en', DE: 'de', FR: 'fr', FRA: 'fr', FRANCES: 'fr',
+  ES: 'es',
+  EN: 'en',
+  PR: 'pr',
+  FR: 'fr',
+  FRA: 'fr',
+  FRANCES: 'fr',
 };
-const LANG_APP_TO_BACKEND: Record<string, string[]> = {
-  es: ['ES'], en: ['EN'], de: ['DE'], fr: ['FR', 'FRA', 'FRANCES'],
+
+const LANG_APP_TO_BACKEND: Record<string, string> = {
+  es: 'ES',
+  en: 'EN',
+  pr: 'PR',
+  fr: 'FR',
+};
+
+const DEFAULT_USER_CONFIG = {
+  language: 'ES',
+  darkMode: false,
+  notificationsActive: true,
 };
 
 interface Draft {
@@ -33,92 +47,86 @@ export function useUserSettings() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [hasConfig, setHasConfig] = useState(false);
-  const [saved, setSaved] = useState(true); // true = no hay cambios sin guardar
+  const [saved, setSaved] = useState(true);
 
-  // Borrador local — lo que el usuario está eligiendo en pantalla,
-  // AÚN NO aplicado ni guardado hasta que presione "Guardar cambios"
   const [draft, setDraftState] = useState<Draft>({
     darkMode: isDark,
     language: i18n.language,
     notificationsActive: true,
   });
 
-  // Se llama una vez tras iniciar sesión, para traer la configuración
-  // guardada y aplicarla de inmediato en toda la app.
+  const applyConfig = useCallback((config: any) => {
+    const backendLanguage = String(config?.language ?? DEFAULT_USER_CONFIG.language).trim().toUpperCase();
+    const lang = LANG_BACKEND_TO_APP[backendLanguage] ?? 'es';
+    const darkMode = Boolean(config?.darkMode ?? DEFAULT_USER_CONFIG.darkMode);
+    const notificationsActive = config?.notificationsActive ?? DEFAULT_USER_CONFIG.notificationsActive;
+
+    setDarkMode(darkMode);
+    i18n.changeLanguage(lang);
+    setDraftState({
+      darkMode,
+      language: lang,
+      notificationsActive,
+    });
+    setSaved(true);
+  }, [i18n, setDarkMode]);
+
   const loadAndApply = useCallback(async () => {
     setLoading(true);
     try {
       const config = await getUserConfiguration();
       setHasConfig(true);
-
-      const backendLanguage = String(config.language ?? '').trim().toUpperCase();
-      const lang = LANG_BACKEND_TO_APP[backendLanguage] ?? 'es';
-      setDarkMode(config.darkMode);
-      i18n.changeLanguage(lang);
-
-      setDraftState({
-        darkMode: config.darkMode,
-        language: lang,
-        notificationsActive: config.notificationsActive,
-      });
-      setSaved(true);
+      applyConfig(config);
     } catch {
-      // El usuario aún no tiene configuración guardada (primera vez)
       setHasConfig(false);
+      applyConfig(DEFAULT_USER_CONFIG);
+      try {
+        await createUserConfiguration(DEFAULT_USER_CONFIG);
+        setHasConfig(true);
+      } catch {
+        // La primera visita puede fallar por backend sin configuración; el usuario
+        // conserva la configuración por defecto local hasta el siguiente intento.
+      }
     } finally {
       setLoading(false);
     }
-  }, [i18n, setDarkMode]);
+  }, [applyConfig]);
 
-  // Actualiza el borrador local Y aplica el cambio visual al instante
-  // (para que el usuario vea la vista previa), pero SIN guardar todavía.
   const setDraftTheme = useCallback((dark: boolean) => {
-    setDarkMode(dark); // vista previa inmediata
-    setDraftState(prev => ({ ...prev, darkMode: dark }));
+    setDarkMode(dark);
+    setDraftState((prev) => ({ ...prev, darkMode: dark }));
     setSaved(false);
   }, [setDarkMode]);
 
   const setDraftLanguage = useCallback((lang: string) => {
-    i18n.changeLanguage(lang); // vista previa inmediata
-    setDraftState(prev => ({ ...prev, language: lang }));
+    i18n.changeLanguage(lang);
+    setDraftState((prev) => ({ ...prev, language: lang }));
     setSaved(false);
   }, [i18n]);
 
   const setDraftNotifications = useCallback((active: boolean) => {
-    setDraftState(prev => ({ ...prev, notificationsActive: active }));
+    setDraftState((prev) => ({ ...prev, notificationsActive: active }));
     setSaved(false);
   }, []);
 
-  // Guarda TODO el borrador en una sola llamada al backend
   const saveChanges = useCallback(async () => {
     setSaving(true);
     try {
-      const languageCodes = LANG_APP_TO_BACKEND[draft.language] ?? ['ES'];
-      const basePayload = {
-        configurationName: 'Configuración principal',
-        description: '',
-        notificationsActive: draft.notificationsActive,
+      const payload = {
+        language: LANG_APP_TO_BACKEND[draft.language] ?? DEFAULT_USER_CONFIG.language,
         darkMode: draft.darkMode,
+        notificationsActive: draft.notificationsActive,
       };
 
-      let lastError: any;
-      for (const language of languageCodes) {
-        try {
-          const payload = { ...basePayload, language };
-          if (hasConfig) {
-            await updateUserConfiguration(payload);
-          } else {
-            await createUserConfiguration(payload);
-            setHasConfig(true);
-          }
-          setSaved(true);
-          return { success: true };
-        } catch (err) {
-          lastError = err;
-        }
+      if (hasConfig) {
+        await updateUserConfiguration(payload);
+      } else {
+        await createUserConfiguration(payload);
+        setHasConfig(true);
       }
 
-      throw lastError;
+      setSaved(true);
+      return { success: true };
     } catch (err: any) {
       const responseData = err.response?.data;
       const serverError = typeof responseData === 'string'
@@ -137,8 +145,8 @@ export function useUserSettings() {
   return {
     loading,
     saving,
-    saved,       // true = todo guardado, false = hay cambios pendientes
-    draft,       // valores actuales del borrador (para pintar la UI)
+    saved,
+    draft,
     loadAndApply,
     setDraftTheme,
     setDraftLanguage,
