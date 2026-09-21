@@ -139,7 +139,7 @@ export default function FacialManagementScreen() {
       facialSetupDraft.environmentId = environment.id;
       facialSetupDraft.instructorId = instructor.id;
       facialSetupDraft.fichaId = ficha.id;
-      router.replace(`${Routes.APPRENTICE.FACIAL}?autoStart=1` as any);
+      router.replace(Routes.INSTRUCTOR.FACIAL_REGISTER as any);
     } else {
       alert(t("common.error"), t(result.error));
     }

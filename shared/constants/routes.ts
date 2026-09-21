@@ -73,6 +73,7 @@ export const Routes = {
     DASHBOARD: "/instructor",
     FACIAL: "/instructor/facial",
     FACIAL_SETTINGS: "/instructor/facial/settings",
+    FACIAL_REGISTER: "/instructor/facial/register",
   },
 
   // Módulo 6: Asistencias y Validaciones

@@ -71,14 +71,22 @@ export function useFacialRegistration() {
   }, []);
 
   // ── Abrir cámara — para en confirmationRequired antes de posicionar ──
-  const handleOpenCamera = useCallback(async () => {
+  const handleOpenCamera = useCallback(async (skipConfirmation = false) => {
+    const openNextStep = () => {
+      if (skipConfirmation) {
+        setScreenState('ready');
+      } else {
+        setScreenState('confirmationRequired');
+      }
+    };
+
     if (isWeb) {
-      setScreenState('confirmationRequired');
+      openNextStep();
       return;
     }
 
     if (permission?.granted) {
-      setScreenState('confirmationRequired');
+      openNextStep();
       return;
     }
 
@@ -90,7 +98,7 @@ export function useFacialRegistration() {
     setScreenState('requesting');
     const result = await requestPermission();
     if (result.granted) {
-      setScreenState('confirmationRequired');
+      openNextStep();
     } else {
       setScreenState('idle');
       alert(t('facialReg.permissionDenied'));
