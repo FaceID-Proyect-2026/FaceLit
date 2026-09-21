@@ -11,7 +11,7 @@ import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { Language, LANGUAGE_LABELS, LANGUAGE_NAMES, useLanguage } from '@/shared/contexts/I18nContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
     Modal, Platform, Pressable, StyleSheet,
     Text, TouchableOpacity, View, ViewStyle,
@@ -19,53 +19,11 @@ import {
 
 const LANGUAGES: Language[] = ['es', 'en', 'de', 'fr'];
 
-// Componentes SVG de banderas
-const FlagES = () => (
-  <svg width="20" height="14" viewBox="0 0 24 16">
-    <rect width="24" height="16" fill="#C60B1E"/>
-    <rect y="4" width="24" height="2" fill="#FFC400"/>
-    <rect y="10" width="24" height="2" fill="#FFC400"/>
-  </svg>
-);
-
-const FlagEN = () => (
-  <svg width="20" height="14" viewBox="0 0 24 16">
-    <rect width="24" height="16" fill="#012169"/>
-    <rect y="3" width="24" height="1" fill="white"/>
-    <rect y="6" width="24" height="1" fill="white"/>
-    <rect y="9" width="24" height="1" fill="white"/>
-    <rect y="12" width="24" height="1" fill="white"/>
-    <rect x="0" y="0" width="10" height="8" fill="white"/>
-    <rect x="0" y="0" width="10" height="8" fill="#C8102E" clipPath="url(#clipEN)"/>
-    <defs>
-      <clipPath id="clipEN">
-        <polygon points="0,0 10,0 0,8"/>
-      </clipPath>
-    </defs>
-  </svg>
-);
-
-const FlagDE = () => (
-  <svg width="20" height="14" viewBox="0 0 24 16">
-    <rect width="24" height="5.33" fill="#000000"/>
-    <rect y="5.33" width="24" height="5.33" fill="#DD0000"/>
-    <rect y="10.66" width="24" height="5.33" fill="#FFCE00"/>
-  </svg>
-);
-
-const FlagFR = () => (
-  <svg width="20" height="14" viewBox="0 0 24 16">
-    <rect width="8" height="16" fill="#002395"/>
-    <rect x="8" width="8" height="16" fill="white"/>
-    <rect x="16" width="8" height="16" fill="#ED2939"/>
-  </svg>
-);
-
-const LANGUAGE_FLAGS: Record<Language, () => ReactElement> = {
-  es: FlagES,
-  en: FlagEN,
-  de: FlagDE,
-  fr: FlagFR,
+const FLAG_ICONS: Record<Language, string> = {
+  es: '🇪🇸',
+  en: '🇬🇧',
+  de: '🇩🇪',
+  fr: '🇫🇷',
 };
 
 interface LanguageSelectorProps { style?: ViewStyle; }
@@ -153,7 +111,6 @@ function LanguageSelectorWeb({ style }: LanguageSelectorProps) {
           >
             {LANGUAGES.map((lang) => {
               const isActive = language === lang;
-              const FlagComponent = LANGUAGE_FLAGS[lang];
               return (
                 // @ts-ignore
                 <div
@@ -169,9 +126,8 @@ function LanguageSelectorWeb({ style }: LanguageSelectorProps) {
                   onMouseEnter={(e: any) => { e.currentTarget.style.background = hoverBg; }}
                   onMouseLeave={(e: any) => { e.currentTarget.style.background = isActive ? activeBg : 'transparent'; }}
                 >
-                  <span style={{ display: 'flex', alignItems: 'center' }}>
-                    {/* @ts-ignore */}
-                    <FlagComponent />
+                  <span style={{ display: 'flex', alignItems: 'center', fontSize: 16 }}>
+                    {FLAG_ICONS[lang]}
                   </span>
                   <span style={{
                     fontSize: 14, fontWeight: isActive ? 700 : 500,
@@ -229,17 +185,13 @@ function LanguageSelectorMobile({ style }: LanguageSelectorProps) {
           }]}>
             {LANGUAGES.map((lang) => {
               const isActive = language === lang;
-              const FlagComponent = LANGUAGE_FLAGS[lang];
               return (
                 <TouchableOpacity
                   key={lang}
                   onPress={() => { changeLanguage(lang); setOpen(false); }}
                   style={[s.option, isActive && { backgroundColor: isDark ? '#404040' : '#E5E7EB' }]}
                 >
-                  <View style={{ display: 'flex', alignItems: 'center', marginRight: 12 }}>
-                    {/* @ts-ignore */}
-                    <FlagComponent />
-                  </View>
+                  <Text style={{ fontSize: 18, marginRight: 12 }}>{FLAG_ICONS[lang]}</Text>
                   <Text style={[s.optionText, {
                     color:      isActive ? (isDark ? '#FFFFFF' : '#0F172A') : theme.text,
                     fontWeight: isActive ? FontWeight.bold : FontWeight.medium,

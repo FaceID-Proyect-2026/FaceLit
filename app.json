@@ -7,7 +7,6 @@
     "icon": "./assets/images/icon.png",
     "scheme": "facelit",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
@@ -59,7 +58,10 @@
       "@react-native-community/datetimepicker",
       "expo-localization",
       "expo-web-browser",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-image",
+      "expo-sharing",
+      "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": true
