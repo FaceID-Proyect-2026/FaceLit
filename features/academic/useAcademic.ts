@@ -59,6 +59,12 @@ import {
 export type ProgramStatusFilter    = 'all' | Program['status'];
 export type InstructorStatusFilter = 'all' | 'active' | 'inactive';
 
+export async function refreshAcademicStoreFromBackend() {
+  const snapshot = await fetchAcademicSnapshot();
+  hydrateAcademicStore(snapshot);
+  return snapshot;
+}
+
 export function useAcademic() {
   const programs    = useSyncExternalStore(subscribe, getProgramsSnapshot);
   const fichas      = useSyncExternalStore(subscribe, getFichasSnapshot);
@@ -104,8 +110,7 @@ export function useAcademic() {
   }, []);
 
   const refreshAcademic = useCallback(async () => {
-    const snapshot = await fetchAcademicSnapshot();
-    hydrateAcademicStore(snapshot);
+    await refreshAcademicStoreFromBackend();
   }, []);
 
   // ── Programas filtrados ───────────────────

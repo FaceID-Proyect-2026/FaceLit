@@ -7,20 +7,22 @@ import { getProgramDisplayName } from '@/features/academic/types';
 import { ProgramStatusFilter, useAcademic } from '@/features/academic/useAcademic';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
+import { useAuth } from '@/shared/contexts/AuthContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { isRecent, wasEditedRecently } from '@/shared/utils/dates';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 
 export default function AcademicProgramsScreen() {
   const { theme, isDark } = useTheme();
+  const { user } = useAuth();
   const { t } = useTranslation();
   const {
-    programs, search, setSearch, statusFilter, setStatusFilter, deactivateProgram, reactivateProgram, deleteProgram, deactivateFicha, reactivateFicha, deleteFicha,
+    programs, allFichas, allInstructors, search, setSearch, statusFilter, setStatusFilter, deactivateProgram, reactivateProgram, deleteProgram, deactivateFicha, reactivateFicha, deleteFicha,
   } = useAcademic();
   const { alert, DialogUI } = useAppDialog();
   const { width } = useWindowDimensions();
@@ -40,6 +42,33 @@ export default function AcademicProgramsScreen() {
     { value: 'active', label: t('environments.filter.active') },
     { value: 'inactive', label: t('environments.filter.inactive') },
   ];
+
+  const currentInstructor = useMemo(
+    () => allInstructors.find(instructor =>
+      instructor.id === user?.id || instructor.document === user?.document || instructor.email === user?.email,
+    ),
+    [allInstructors, user],
+  );
+
+  const instructorPrograms = useMemo(() => {
+    if (!currentInstructor) return [];
+    return programs
+      .map(program => {
+        const programFichaIds = allFichas
+          .filter(ficha => ficha.programId === program.id)
+          .map(ficha => ficha.id);
+        const belongsToProgram = currentInstructor.programId === program.id;
+        const assignedFichaIds = programFichaIds.filter(fichaId => currentInstructor.fichaIds.includes(fichaId));
+
+        if (!belongsToProgram && assignedFichaIds.length === 0) return null;
+
+        return {
+          ...program,
+          fichas: belongsToProgram ? programFichaIds : assignedFichaIds,
+        };
+      })
+      .filter(Boolean) as typeof programs;
+  }, [allFichas, currentInstructor, programs]);
 
   // Eliminar (desactivación lógica) — solo disponible para programas Activos.
   const handleDeactivate = (id: string, name: string) => {
@@ -156,10 +185,10 @@ export default function AcademicProgramsScreen() {
             ))}
           </View>
 
-          <FlatList data={programs} keyExtractor={p => p.id}
+          <FlatList data={instructorPrograms} keyExtractor={p => p.id}
             contentContainerStyle={aps.list}
             renderItem={({ item }) => (
-              <TouchableOpacity onPress={() => router.push(`/admin/academic/programs/${item.id}` as any)}
+              <TouchableOpacity onPress={() => router.push(`/instructor/academic/programs/${item.id}` as any)}
                 style={[aps.card, { backgroundColor: cardBg, borderColor: border }]} activeOpacity={0.7}>
                 <View style={aps.cardHeader}>
                   <View style={[aps.typeBadge, { backgroundColor: theme.primary + '20' }]}>
@@ -189,7 +218,7 @@ export default function AcademicProgramsScreen() {
                 <Text style={[aps.cardSub, { color: muted }]}>{t('environments.detail.createdAt')}: {new Date(item.createdAt).toLocaleString()}</Text>
                 <Text style={[aps.cardDates, { color: muted }]}>{t('environments.detail.updatedAt')}: {new Date(item.updatedAt).toLocaleString()}</Text>
                 <View style={aps.cardActions}>
-                  <TouchableOpacity onPress={() => router.push(`/admin/academic/programs/${item.id}` as any)} style={[aps.actionBtn, { backgroundColor: theme.primary + '15' }]}>
+                  <TouchableOpacity onPress={() => router.push(`/instructor/academic/programs/${item.id}` as any)} style={[aps.actionBtn, { backgroundColor: theme.primary + '15' }]}>
                     <Ionicons name="eye-outline" size={16} color={theme.primary} />
                   </TouchableOpacity>
                   {item.status === 'active' && (

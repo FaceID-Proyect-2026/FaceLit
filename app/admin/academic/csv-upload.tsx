@@ -3,7 +3,9 @@
 //  RF-3.1 + RF-3.1.1 V4 — Carga académica por CSV
 // ─────────────────────────────────────────────
 import { downloadAcademicTemplate, uploadAcademicCsv } from '@/features/academic/academicApi';
+import { parseAcademicCsvV4 } from '@/features/academic/csvImport';
 import { CsvImportSummaryV4, CsvRowResult } from '@/features/academic/types';
+import { refreshAcademicStoreFromBackend } from '@/features/academic/useAcademic';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useTheme } from '@/shared/contexts/ThemeContext';
@@ -22,6 +24,7 @@ import {
     View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as XLSX from 'xlsx';
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 
@@ -54,6 +57,33 @@ function catLabel(cat: CsvRowResult['category'], t: (k: string) => string) {
   return { created: t('academic.csvV4Created'), updated: t('academic.csvV4Updated'), blocked: t('academic.csvV4Blocked'), error: t('academic.csvV4Errors') }[cat];
 }
 
+type PasswordRow = CsvImportSummaryV4['generatedPasswords'][number];
+
+function firstValue(...values: unknown[]) {
+  return values.find(value => typeof value === 'string' && value.trim()) as string | undefined;
+}
+
+function getPasswordRows(result: any, csvRows: ReturnType<typeof parseAcademicCsvV4>['rows'] = []): PasswordRow[] {
+  return (result.contrasenasGeneradas ?? []).map((item: any) => {
+    const document = String(firstValue(item.documento, item.document, item.numeroDocumento) ?? '');
+    const csvRow = csvRows.find(row => row.documento === document);
+    const name = firstValue(
+      item.nombreCompleto,
+      item.nombreCompletoUsuario,
+      [item.nombre, item.apellido].filter(value => typeof value === 'string' && value.trim()).join(' '),
+      csvRow && [csvRow.nombre, csvRow.apellido].filter(Boolean).join(' '),
+    );
+    return {
+      document,
+      password: String(firstValue(item.contrasenaTemporal, item.password, item.contrasena) ?? ''),
+      name,
+      role: firstValue(item.rol, item.role, item.tipo, csvRow?.tipo),
+      ficha: firstValue(item.ficha, item.fichaCodigo, item.numeroFicha, csvRow?.fichaCodigo),
+      program: firstValue(item.programa, item.programaCodigo, item.codigoPrograma, csvRow?.programaCodigo),
+    };
+  });
+}
+
 export default function CsvUploadScreen() {
   const { t }             = useTranslation();
   const { theme, isDark } = useTheme();
@@ -83,12 +113,44 @@ export default function CsvUploadScreen() {
     console.info('[Plantilla CSV] disponible en /api/academic/csv/template');
   };
 
+  const downloadCredentials = () => {
+    if (!summary || summary.generatedPasswords.length === 0) return;
+    if (Platform.OS !== 'web') {
+      setFileError('La descarga de credenciales está disponible desde la versión web.');
+      return;
+    }
+
+    const rows = summary.generatedPasswords.map(item => ({
+      Documento: item.document,
+      Nombre: item.name ?? '',
+      Rol: item.role ?? '',
+      Ficha: item.ficha ?? '',
+      Programa: item.program ?? '',
+      Contraseña: item.password,
+    }));
+    const workbook = XLSX.utils.book_new();
+    const sheet = XLSX.utils.json_to_sheet(rows);
+    XLSX.utils.book_append_sheet(workbook, sheet, 'Credenciales');
+    const output = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([output], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'credenciales-usuarios-facelit.xlsx';
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   // ── Procesamiento ─────────────────────────
   const processFile = async (file: { uri: string; name: string } | Blob) => {
     const name = file instanceof Blob ? 'carga-academica.csv' : file.name;
     setFileName(name); setFileError(null); setSummary(null); setLoading(true);
     try {
       const backendResult = await uploadAcademicCsv(file);
+      let csvRows: ReturnType<typeof parseAcademicCsvV4>['rows'] = [];
+      if (file instanceof Blob) {
+        csvRows = parseAcademicCsvV4(await file.text()).rows;
+      }
       const rows: CsvRowResult[] = [
         ...backendResult.creados.map((r: any) => ({ rowIndex: r.fila, category: 'created' as const, tipo: r.tipo, identifier: '', message: r.detalle })),
         ...backendResult.actualizados.map((r: any) => ({ rowIndex: r.fila, category: 'updated' as const, tipo: r.tipo, identifier: '', message: r.detalle })),
@@ -101,11 +163,9 @@ export default function CsvUploadScreen() {
         blocked: backendResult.inconsistenciasBloqueadas.length,
         errors: backendResult.erroresDeReferencia.length,
         rows,
-        generatedPasswords: (backendResult.contrasenasGeneradas ?? []).map((item: any) => ({
-          document: item.documento,
-          password: item.contrasenaTemporal,
-        })),
+        generatedPasswords: getPasswordRows(backendResult, csvRows),
       });
+      await refreshAcademicStoreFromBackend();
     } catch (error: any) {
       // Log completo para depuración — ver exactamente qué devuelve el backend
       console.error('[CSV Upload] Error al procesar el archivo:', {
@@ -280,11 +340,24 @@ export default function CsvUploadScreen() {
 
             {summary.generatedPasswords.length > 0 && (
               <View style={[s.guideCard, { backgroundColor: cardBg, borderColor: border }]}>
-                <Text style={[s.resultHeader, { color: text }]}>Contraseñas iniciales generadas</Text>
+                <View style={s.credentialsHeader}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[s.resultHeader, { color: text }]}>Credenciales iniciales generadas</Text>
+                    <Text style={[s.resultMsg, { color: muted }]}>Documento, nombre, rol y ubicación académica.</Text>
+                  </View>
+                  <TouchableOpacity onPress={downloadCredentials} style={[s.downloadBtn, { borderColor: theme.primary, backgroundColor: theme.primary + '12' }]} activeOpacity={0.8}>
+                    <Ionicons name="download-outline" size={16} color={theme.primary} />
+                    <Text style={[s.downloadBtnText, { color: theme.primary }]}>Excel</Text>
+                  </TouchableOpacity>
+                </View>
                 <Text style={[s.resultMsg, { color: muted }]}>Entrégalas al usuario correspondiente. Solo se muestran en esta respuesta.</Text>
                 {summary.generatedPasswords.map((item) => (
                   <View key={item.document} style={[s.passwordRow, { borderBottomColor: border }]}>
-                    <Text style={[s.passwordDocument, { color: text }]}>{item.document}</Text>
+                    <View style={s.passwordIdentity}>
+                      <Text style={[s.passwordDocument, { color: text }]}>{item.document}</Text>
+                      <Text style={[s.passwordMeta, { color: muted }]}>{item.name || 'Nombre no informado'} · {item.role || 'Rol no informado'}</Text>
+                      <Text style={[s.passwordMeta, { color: muted }]}>Ficha: {item.ficha || 'No aplica'} · Programa: {item.program || 'No informado'}</Text>
+                    </View>
                     <Text selectable style={[s.passwordValue, { color: theme.primary }]}>{item.password}</Text>
                   </View>
                 ))}
@@ -379,8 +452,13 @@ const s = StyleSheet.create({
   resultRow:    { flexDirection: 'row', alignItems: 'flex-start', gap: 8, borderLeftWidth: 3, paddingLeft: 10, paddingVertical: 10, borderBottomWidth: 1 },
   resultId:     { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
   resultMsg:    { fontSize: FontSize.xs, lineHeight: 17, marginTop: 2 },
+  credentialsHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 4 },
+  downloadBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1.5, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 },
+  downloadBtnText: { fontSize: FontSize.xs, fontWeight: FontWeight.bold },
   passwordRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, paddingVertical: 10, borderBottomWidth: 1 },
+  passwordIdentity: { flex: 1, minWidth: 0 },
   passwordDocument: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
+  passwordMeta: { fontSize: FontSize.xs, lineHeight: 16, marginTop: 2 },
   passwordValue: { fontSize: FontSize.sm, fontWeight: FontWeight.black },
   fixBtn:       { borderWidth: 1.5, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5, flexShrink: 0 },
   fixBtnText:   { fontSize: FontSize.xs, fontWeight: FontWeight.bold },

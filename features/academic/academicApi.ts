@@ -75,7 +75,6 @@ const toFicha = (chip: BackendChip, learners: Learner[] = []): Ficha => ({
 
 export async function fetchAcademicSnapshot() {
   const { data: rawPrograms } = await api.get<BackendProgram[]>('/api/academic/programs');
-  const programs = rawPrograms.map(toProgram);
   const fichas: Ficha[] = [];
 
   for (const program of rawPrograms) {
@@ -115,11 +114,21 @@ export async function fetchAcademicSnapshot() {
     email:          i.email        ?? '',
     instructorType: i.instructorType === 'ESPECIFICO' ? 'especifico' : 'transversal',
     programId:      i.programIds?.[0],
-    fichaIds:       [],
+    fichaIds:       fichas
+      .filter(f => i.programIds?.includes(f.programId))
+      .map(f => f.id),
     status:         'active',
     initialPassword: null,
     createdAt:      '',
     updatedAt:      '',
+  }));
+
+  const programs = rawPrograms.map(program => ({
+    ...toProgram(program),
+    fichas: fichas.filter(ficha => ficha.programId === program.idProgram).map(ficha => ficha.id),
+    instructorIds: instructors
+      .filter(instructor => rawInstructors.find(raw => raw.idInstructor === instructor.id)?.programIds?.includes(program.idProgram))
+      .map(instructor => instructor.id),
   }));
 
   return { programs, fichas, instructors };

@@ -131,7 +131,14 @@ export interface CsvImportSummaryV4 {
   blocked: number;
   errors: number;
   rows: CsvRowResult[];
-  generatedPasswords: Array<{ document: string; password: string }>;
+  generatedPasswords: Array<{
+    document: string;
+    password: string;
+    name?: string;
+    role?: 'aprendiz' | 'instructor' | string;
+    ficha?: string;
+    program?: string;
+  }>;
 }
 
 // ── Generador de contraseña inicial ──────────

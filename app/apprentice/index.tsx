@@ -3,7 +3,7 @@
 //  Pantallas disponibles: Mi Asistencia,
 //  Reconocimiento Facial, Notificaciones, Perfil
 // ─────────────────────────────────────────────
-import { getFichasSnapshot } from '@/features/academic/academicStore';
+import { useAcademic } from '@/features/academic/useAcademic';
 import { ATTENDANCE_EVENTS } from '@/features/attendance/types';
 import { MOCK_NOTIFICATIONS_RF8 } from '@/features/notifications/types';
 import { Colors } from '@/shared/constants/colors';
@@ -21,6 +21,7 @@ export default function ApprenticeDashboard() {
   const { user } = useAuth();
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
+  const { allFichas } = useAcademic();
 
   const text    = isDark ? Colors.dark.text       : Colors.light.text;
   const muted   = isDark ? Colors.dark.textMuted  : Colors.light.textMuted;
@@ -39,8 +40,9 @@ export default function ApprenticeDashboard() {
     : 0;
 
   // ── Ficha del aprendiz ─────────────────────
-  const fichas  = getFichasSnapshot();
-  const myFicha = fichas.find(f => f.learners?.some((l: any) => l.id === user?.id));
+  const myFicha = allFichas.find(f =>
+    f.learners?.some((l: any) => l.id === user?.id || l.document === user?.document),
+  );
 
   // ── Notificaciones no leídas ───────────────
   const unreadNotifications = MOCK_NOTIFICATIONS_RF8.filter(n => !n.read).length;

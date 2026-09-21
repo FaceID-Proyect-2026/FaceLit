@@ -3,19 +3,21 @@ import { getProgramDisplayName } from '@/features/academic/types';
 import { useAcademic } from '@/features/academic/useAcademic';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
+import { useAuth } from '@/shared/contexts/AuthContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function ProgramDetailScreen() {
   const { theme, isDark } = useTheme();
+  const { user } = useAuth();
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { getProgram, allFichas, unlinkFichaFromProgram } = useAcademic();
+  const { getProgram, allFichas, allInstructors, unlinkFichaFromProgram } = useAcademic();
   const { alert, DialogUI } = useAppDialog();
   const [editModalOpen, setEditModalOpen] = useState(false);
   const program = getProgram(id ?? '');
@@ -26,7 +28,18 @@ export default function ProgramDetailScreen() {
   const bg = isDark ? Colors.dark.background : Colors.light.background;
   if (!program) return <View style={[pds.safe, { backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }]}><Text style={{ color: muted }}>Programa no encontrado</Text></View>;
 
-  const programFichas = allFichas.filter(f => program.fichas.includes(f.id));
+  const currentInstructor = useMemo(
+    () => allInstructors.find(instructor =>
+      instructor.id === user?.id || instructor.document === user?.document || instructor.email === user?.email,
+    ),
+    [allInstructors, user],
+  );
+
+  const programFichas = allFichas.filter(f => {
+    if (f.programId !== program.id) return false;
+    if (!currentInstructor) return false;
+    return currentInstructor.programId === program.id || currentInstructor.fichaIds.includes(f.id);
+  });
 
   return (
     <View style={[pds.safe, { backgroundColor: bg }]}>
@@ -74,7 +87,7 @@ export default function ProgramDetailScreen() {
           </View>
         }
         renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => router.push(`/admin/academic/fichas/${item.id}` as any)}
+          <TouchableOpacity onPress={() => router.push(`/instructor/academic/fichas/${item.id}` as any)}
             style={[pds.card, { backgroundColor: cardBg, borderColor: border }]} activeOpacity={0.7}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
               <View style={[pds.iconCircle, { backgroundColor: theme.primary + '20' }]}><Ionicons name="document-text-outline" size={20} color={theme.primary} /></View>
