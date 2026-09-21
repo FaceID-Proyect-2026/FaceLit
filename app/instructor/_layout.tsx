@@ -5,13 +5,14 @@
 import Sidebar from "@/shared/components/layout/Sidebar";
 import { LanguageSelector, ThemeToggle } from "@/shared/components/ui";
 import { Colors } from "@/shared/constants/colors";
+import { Routes } from "@/shared/constants/routes";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { useAuth } from "@/shared/contexts/AuthContext";
 import { useTheme } from "@/shared/contexts/ThemeContext";
 import { useAuthGuard } from "@/shared/hooks/useAuthGuard";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, router, usePathname } from "expo-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
     ActivityIndicator,
@@ -23,12 +24,13 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function AdminLayout() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { canRenderContent } = useAuthGuard(isAuthenticated);
   const pathname = usePathname();
+  const previousPathnameRef = useRef<string | null>(null);
 
   // La pantalla de Reconocimiento Facial no debe ofrecer ninguna vía de
   // regreso al menú principal: ni la flecha propia ni el menú lateral,
@@ -37,6 +39,21 @@ export default function AdminLayout() {
   const isFacialLockedScreen =
     pathname.startsWith("/admin/facial") ||
     pathname.startsWith("/instructor/facial");
+
+  useEffect(() => {
+    const previousPathname = previousPathnameRef.current;
+    previousPathnameRef.current = pathname;
+
+    if (
+      isAuthenticated &&
+      previousPathname === Routes.FACIAL.MANAGEMENT &&
+      pathname === Routes.INSTRUCTOR.DASHBOARD
+    ) {
+      void logout().finally(() => {
+        router.replace(Routes.AUTH.LOGIN as any);
+      });
+    }
+  }, [isAuthenticated, logout, pathname]);
 
   if (!canRenderContent) {
     return (

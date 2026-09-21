@@ -20,14 +20,17 @@ import {
 import { useFacialRegistry } from '@/features/facial/useFacialRegistry';
 import { AppButton, SelectField } from '@/shared/components/ui';
 import { Colors } from '@/shared/constants/colors';
+import { Routes } from '@/shared/constants/routes';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+const FACIAL_SETTINGS_ACTIVE_KEY = 'facialSettingsActive';
 
 export default function FacialSettingsScreen() {
   const { theme, isDark } = useTheme();
@@ -40,6 +43,15 @@ export default function FacialSettingsScreen() {
   const [exitTime, setExitTime] = useState(initial.exitTime);
   const [shutdownTime, setShutdownTime] = useState(initial.shutdownTime);
   const [errors, setErrors] = useState<{ registrationMinutes?: string; exitTime?: string; shutdownTime?: string }>({});
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    window.sessionStorage.setItem(FACIAL_SETTINGS_ACTIVE_KEY, 'true');
+    return () => {
+      window.sessionStorage.removeItem(FACIAL_SETTINGS_ACTIVE_KEY);
+    };
+  }, []);
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -84,12 +96,19 @@ export default function FacialSettingsScreen() {
     }
   };
 
+  const handleBackToFacial = () => {
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.removeItem(FACIAL_SETTINGS_ACTIVE_KEY);
+    }
+    router.replace(Routes.FACIAL.MANAGEMENT as any);
+  };
+
   return (
     <View style={[fs.safe, { backgroundColor: bg }]}>
       {/* Header con flecha propia: regresa a la pantalla de configuración
           de sesión (facial/index), no al menú principal ni al dashboard. */}
       <View style={fs.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={handleBackToFacial}>
           <Ionicons name="arrow-back" size={22} color={text} />
         </TouchableOpacity>
         <View style={{ flex: 1, marginLeft: 8 }}>

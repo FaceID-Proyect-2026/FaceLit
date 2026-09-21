@@ -23,6 +23,13 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
+const facialSetupDraft = {
+  environmentId: "",
+  instructorId: "",
+  fichaId: "",
+};
+const FACIAL_SETTINGS_ACTIVE_KEY = "facialSettingsActive";
+
 export default function FacialManagementScreen() {
   const { logout } = useAuth();
   const { theme, isDark } = useTheme();
@@ -33,10 +40,14 @@ export default function FacialManagementScreen() {
   const { alert, DialogUI } = useAppDialog();
 
   const [environmentId, setEnvironmentId] = useState(
-    config?.environmentId ?? "",
+    facialSetupDraft.environmentId || config?.environmentId || "",
   );
-  const [instructorId, setInstructorId] = useState(config?.instructorId ?? "");
-  const [fichaId, setFichaId] = useState(config?.fichaId ?? "");
+  const [instructorId, setInstructorId] = useState(
+    facialSetupDraft.instructorId || config?.instructorId || "",
+  );
+  const [fichaId, setFichaId] = useState(
+    facialSetupDraft.fichaId || config?.fichaId || "",
+  );
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -48,11 +59,21 @@ export default function FacialManagementScreen() {
     );
 
     const handleBrowserBack = async () => {
+      const isReturningFromSettings =
+        window.sessionStorage.getItem(FACIAL_SETTINGS_ACTIVE_KEY) === "true";
+
       window.history.pushState(
         { facialBackGuard: true },
         "",
         window.location.href,
       );
+
+      if (isReturningFromSettings) {
+        window.sessionStorage.removeItem(FACIAL_SETTINGS_ACTIVE_KEY);
+        router.replace(Routes.FACIAL.MANAGEMENT as any);
+        return;
+      }
+
       await logout();
       router.replace(Routes.AUTH.LOGIN as any);
     };
@@ -80,6 +101,21 @@ export default function FacialManagementScreen() {
     label: `Ficha ${f.number}`,
   }));
 
+  const handleEnvironmentSelect = (value: string) => {
+    facialSetupDraft.environmentId = value;
+    setEnvironmentId(value);
+  };
+
+  const handleInstructorSelect = (value: string) => {
+    facialSetupDraft.instructorId = value;
+    setInstructorId(value);
+  };
+
+  const handleFichaSelect = (value: string) => {
+    facialSetupDraft.fichaId = value;
+    setFichaId(value);
+  };
+
   const handleSave = () => {
     const environment = environments.find((e) => e.id === environmentId);
     const instructor = MOCK_INSTRUCTORS.find((i) => i.id === instructorId);
@@ -100,6 +136,9 @@ export default function FacialManagementScreen() {
     });
 
     if (result.success) {
+      facialSetupDraft.environmentId = environment.id;
+      facialSetupDraft.instructorId = instructor.id;
+      facialSetupDraft.fichaId = ficha.id;
       router.replace(`${Routes.APPRENTICE.FACIAL}?autoStart=1` as any);
     } else {
       alert(t("common.error"), t(result.error));
@@ -140,21 +179,21 @@ export default function FacialManagementScreen() {
               label={t("facial.setup.fields.environment")}
               value={environmentId}
               options={environmentOptions}
-              onSelect={setEnvironmentId}
+              onSelect={handleEnvironmentSelect}
               placeholder={t("facial.setup.placeholders.environment")}
             />
             <SelectField
               label={t("facial.setup.fields.instructor")}
               value={instructorId}
               options={instructorOptions}
-              onSelect={setInstructorId}
+              onSelect={handleInstructorSelect}
               placeholder={t("facial.setup.placeholders.instructor")}
             />
             <SelectField
               label={t("facial.setup.fields.ficha")}
               value={fichaId}
               options={fichaOptions}
-              onSelect={setFichaId}
+              onSelect={handleFichaSelect}
               placeholder={t("facial.setup.placeholders.ficha")}
             />
 
