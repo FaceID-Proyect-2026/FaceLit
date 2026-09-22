@@ -3,6 +3,8 @@
 //  Sidebar de navegación para admin/instructor
 // ─────────────────────────────────────────────
 import { Colors } from "@/shared/constants/colors";
+import { useProfilePhoto } from '@/features/profile/useProfilePhoto';
+import { Image } from 'react-native';
 import { Routes } from "@/shared/constants/routes";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { useAuth } from "@/shared/contexts/AuthContext";
@@ -31,6 +33,7 @@ interface MenuItem {
 }
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
+  const { photo } = useProfilePhoto();
   const { user, logout } = useAuth();
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
@@ -214,7 +217,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         {user && (
           <View style={[ss.userSection, { borderBottomColor: border }]}>
             <View style={[ss.avatar, { backgroundColor: theme.primary }]}>
-              <Text style={ss.avatarText}>{getInitials()}</Text>
+              {photo ? <Image source={{ uri: photo }} accessibilityLabel="Foto de perfil" style={{ width: 40, height: 40, borderRadius: 20 }} /> : <Text style={ss.avatarText}>{getInitials()}</Text>}
             </View>
             <View style={ss.userInfo}>
               <Text style={[ss.userName, { color: text }]} numberOfLines={1}>

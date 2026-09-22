@@ -4,6 +4,8 @@
 //  los valores de la sesión como respaldo para no romper la UI.
 // ─────────────────────────────────────────────
 import { Colors } from '@/shared/constants/colors';
+import { useProfilePhoto } from '@/features/profile/useProfilePhoto';
+import { Image } from 'react-native';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
@@ -29,6 +31,7 @@ function pickValue(...values: Array<string | undefined | null>): string {
 }
 
 export default function ProfileScreen() {
+  const { photo, loading: photoLoading, error: photoError, reload: reloadPhoto } = useProfilePhoto();
   const { user, logout } = useAuth();
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
@@ -108,8 +111,25 @@ export default function ProfileScreen() {
           <View style={ps.headerDecoTop} />
 
           <LinearGradient colors={[theme.primaryLight, theme.primary, theme.primaryDark]} style={ps.avatar}>
-            <Text style={ps.avatarText}>{avatarText}</Text>
+            {photo ? <Image source={{ uri: photo }} accessibilityLabel="Foto de perfil" style={{ width: '100%', height: '100%', borderRadius: 100 }} /> : <Text style={ps.avatarText}>{avatarText}</Text>}
           </LinearGradient>
+
+          {user.role === 'APPRENTICE' && !photo && (
+            <View style={{ alignItems: 'center', marginBottom: 16, gap: 8 }}>
+              <Text style={{ color: muted, textAlign: 'center' }}>
+                {photoLoading ? 'Cargando tu foto…' : photoError
+                  ? 'No se pudo cargar tu foto de perfil.'
+                  : 'Completa la captura facial para guardar tu foto de perfil.'}
+              </Text>
+              {!photoLoading && <TouchableOpacity
+                onPress={() => photoError ? reloadPhoto() : router.push('/apprentice/facial')}
+                style={{ padding: 10 }}>
+                <Text style={{ color: theme.primary, fontWeight: '700' }}>
+                  {photoError ? 'Reintentar' : 'Capturar mi rostro'}
+                </Text>
+              </TouchableOpacity>}
+            </View>
+          )}
 
           <Text style={[ps.userName, { color: text }]}>{userName}</Text>
 

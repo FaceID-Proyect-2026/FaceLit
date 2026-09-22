@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
 import { api } from '@/shared/services/api';
+import { useAuth } from '@/shared/contexts/AuthContext';
+import { router } from 'expo-router';
 import { cosineSimilarity, matchesPose, validEmbedding, type FaceSample, type Pose } from '../liveness';
 
 const instructions: Record<Pose, string> = {
@@ -10,6 +12,7 @@ const instructions: Record<Pose, string> = {
 };
 
 export default function InstructorEnrollment() {
+  const { user } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [attempt, setAttempt] = useState(0);
   const [message, setMessage] = useState('Preparando registro…');
@@ -17,6 +20,7 @@ export default function InstructorEnrollment() {
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState(false);
   const [done, setDone] = useState(false);
+  const [savedPhoto, setSavedPhoto] = useState<string>();
 
   useEffect(() => {
     let cancelled = false;
@@ -34,11 +38,16 @@ export default function InstructorEnrollment() {
         'No se pudo completar el registro. Revisa el permiso de cámara, la conexión y vuelve a intentarlo.');
     }
     const run = async () => {
-      setError(false); setBusy(true); setDone(false); setStep(0);
+      setError(false); setBusy(true); setDone(false); setStep(0); setSavedPhoto(undefined);
       setMessage('Cargando detector facial…');
       const status = await api.get('/api/facial/me');
       if (cancelled) return;
-      if (status.data.registered) {
+      const existingPhoto = status.data.registered && user?.role === 'APPRENTICE'
+        ? (await api.get('/api/facial/profile-photo')).data.photo : undefined;
+      const updatePhoto = status.data.registered && user?.role === 'APPRENTICE' && !existingPhoto;
+      if (cancelled) return;
+      setSavedPhoto(existingPhoto);
+      if (status.data.registered && !updatePhoto) {
         setDone(true); setBusy(false); setMessage('Tu rostro ya está registrado.'); return;
       }
       const { Human } = await import('@vladmandic/human/dist/human.esm.js');
@@ -65,11 +74,12 @@ export default function InstructorEnrollment() {
       const video = videoRef.current!;
       video.srcObject = stream;
       await video.play();
-      const { data: challenge } = await api.post('/api/facial/challenge');
+      const { data: challenge } = await api.post('/api/facial/challenge', null, { params: { updatePhoto: Boolean(updatePhoto) } });
       if (cancelled) { stop(); return; }
       const poses: Pose[] = challenge.poses;
       setBusy(false);
       let samples: FaceSample[] = [];
+      let profilePhoto: string | undefined;
       let heldSince = 0;
       let heldFrames = 0;
       let previousTime = 0;
@@ -109,14 +119,27 @@ export default function InstructorEnrollment() {
             if (!heldSince) heldSince = now;
             heldFrames++;
             if (now - heldSince >= 400 && heldFrames >= 2) {
+              if (pose === 'center' && user?.role === 'APPRENTICE') {
+                const canvas = document.createElement('canvas');
+                canvas.width = 320; canvas.height = 320;
+                const context = canvas.getContext('2d');
+                if (!context) throw new Error('No se pudo capturar la foto');
+                const [x, y, w, h] = face.boxRaw;
+                const size = Math.min(Math.max(w * video.videoWidth, h * video.videoHeight) * 1.5, video.videoWidth, video.videoHeight);
+                const left = Math.max(0, Math.min((x + w / 2) * video.videoWidth - size / 2, video.videoWidth - size));
+                const top = Math.max(0, Math.min((y + h / 2) * video.videoHeight - size / 2, video.videoHeight - size));
+                context.drawImage(video, left, top, size, size, 0, 0, 320, 320);
+                profilePhoto = canvas.toDataURL('image/jpeg', 0.85);
+              }
               samples.push({ pose, yaw, real: face.real!, live: face.live!, embedding: face.embedding! });
               heldSince = 0; heldFrames = 0; setStep(samples.length);
             }
           } else { heldSince = 0; heldFrames = 0; }
           if (samples.length === poses.length) {
             stop(); setBusy(true); setMessage('Guardando tu rostro…');
-            await api.post('/api/facial/enrollment', { challengeId: challenge.id, samples });
+            await api.post('/api/facial/enrollment', { challengeId: challenge.id, samples, profilePhoto });
             if (cancelled) return;
+            setSavedPhoto(profilePhoto);
             setDone(true); setBusy(false); setMessage('Rostro registrado correctamente.'); return;
           }
         }
@@ -126,7 +149,7 @@ export default function InstructorEnrollment() {
     };
     void run().catch(handleError);
     return () => { cancelled = true; clearTimeout(timer); stop(); };
-  }, [attempt]);
+  }, [attempt, user?.id, user?.role]);
 
   return <View style={{ flex: 1, alignItems: 'center', padding: 20, gap: 16 }}>
     <Text style={{ color: 'white', fontSize: 22, fontWeight: '700', textAlign: 'center' }}>Registro de rostro</Text>
@@ -136,6 +159,10 @@ export default function InstructorEnrollment() {
       <View pointerEvents="none" style={{ position: 'absolute', left: '22%', top: '8%', width: '56%', height: '84%', borderRadius: 200, borderWidth: 3, borderColor: error ? '#ff6b6b' : '#55dba0' }} />
     </View>}
     {busy && <ActivityIndicator color="#55dba0" />}
+    {done && savedPhoto && <img src={savedPhoto} alt="Tu foto de perfil guardada" style={{ width: 120, height: 120, borderRadius: 60, objectFit: 'cover' }} />}
+    {done && user?.role === 'APPRENTICE' && <TouchableOpacity onPress={() => router.push('/profile')} style={{ padding: 16, backgroundColor: '#167d54', borderRadius: 12 }}>
+      <Text style={{ color: 'white' }}>Ver mi perfil</Text>
+    </TouchableOpacity>}
     <Text accessibilityLiveRegion="polite" style={{ color: 'white', textAlign: 'center', fontSize: 19 }}>{message}</Text>
     {!done && <Text style={{ color: '#aaa' }}>Pasos completados: {step} / 5</Text>}
     {error && <TouchableOpacity onPress={() => setAttempt(n => n + 1)} style={{ padding: 16, backgroundColor: '#167d54', borderRadius: 12 }}><Text style={{ color: 'white' }}>Intentar nuevamente</Text></TouchableOpacity>}
