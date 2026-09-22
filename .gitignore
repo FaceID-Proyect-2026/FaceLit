@@ -42,3 +42,5 @@ app-example
 # generated native folders
 /ios
 /android
+# Generated from the installed, versioned Human package.
+/public/models/human/

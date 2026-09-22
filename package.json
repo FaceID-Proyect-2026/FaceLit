@@ -3,6 +3,8 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
+    "postinstall": "node scripts/prepare-face-models.cjs",
+    "prepare:face-models": "node scripts/prepare-face-models.cjs",
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
