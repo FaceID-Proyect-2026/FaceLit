@@ -3,13 +3,14 @@
 //  RF-3 V4 — Hook de Gestión Académica
 //  Programas · Fichas · Aprendices · Instructores
 // ─────────────────────────────────────────────
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
 import {
   createFicha as createFichaApi,
   createProgram as createProgramApi,
-  fetchAcademicSnapshot,
+  fetchAcademicSnapshotForRole,
   setFichaLifecycle,
   setProgramLifecycle,
+  transferLearner as transferLearnerApi,
   updateFicha as updateFichaApi,
   updateProgram as updateProgramApi,
 } from './academicApi';
@@ -49,9 +50,6 @@ import {
 import {
   Ficha,
   InstructorType,
-  MOCK_FICHAS,
-  MOCK_INSTRUCTORS,
-  MOCK_PROGRAMS,
   Program,
   ValidationStatus,
 } from './types';
@@ -59,10 +57,27 @@ import {
 export type ProgramStatusFilter    = 'all' | Program['status'];
 export type InstructorStatusFilter = 'all' | 'active' | 'inactive';
 
-export async function refreshAcademicStoreFromBackend() {
-  const snapshot = await fetchAcademicSnapshot();
-  hydrateAcademicStore(snapshot);
-  return snapshot;
+let latestRefreshRequest = 0;
+
+export async function refreshAcademicStoreFromBackend(role?: string | null) {
+  const request = ++latestRefreshRequest;
+  try {
+    const snapshot = await fetchAcademicSnapshotForRole(role);
+    // Distintas pantallas y modales usan este hook. Si dos lecturas se cruzan,
+    // una respuesta antigua nunca debe reemplazar el snapshot mas reciente.
+    if (request === latestRefreshRequest) hydrateAcademicStore(snapshot);
+    return snapshot;
+  } catch (error) {
+    // Un fallo de una peticion ya reemplazada tampoco debe borrar datos frescos.
+    if (request !== latestRefreshRequest) {
+      return {
+        programs: getProgramsSnapshot(),
+        fichas: getFichasSnapshot(),
+        instructors: getInstructorsSnapshot(),
+      };
+    }
+    throw error;
+  }
 }
 
 export function useAcademic() {
@@ -74,41 +89,6 @@ export function useAcademic() {
   const [search, setSearch]                     = useState('');
   const [statusFilter, setStatusFilter]         = useState<ProgramStatusFilter>('all');
   const [instructorFilter, setInstructorFilter] = useState<InstructorStatusFilter>('all');
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    fetchAcademicSnapshot()
-      .then(snapshot => {
-        if (!active) return;
-        // Si el backend devuelve vacío o no está listo todavía, el store quedaría
-        // completamente en blanco y la pantalla de Gestión Académica no mostraría
-        // fichas ni aprendices aunque la lógica del cliente esté bien. Por eso
-        // evitamos reemplazar el estado con un snapshot vacío y usamos fallback local.
-        const normalized = {
-          programs: snapshot?.programs?.length ? snapshot.programs : MOCK_PROGRAMS,
-          fichas: snapshot?.fichas?.length ? snapshot.fichas : MOCK_FICHAS,
-          instructors: snapshot?.instructors?.length ? snapshot.instructors : MOCK_INSTRUCTORS,
-        };
-        hydrateAcademicStore(normalized);
-        setLoadError(null);
-      })
-      .catch(() => {
-        if (!active) return;
-        hydrateAcademicStore({
-          programs: MOCK_PROGRAMS,
-          fichas: MOCK_FICHAS,
-          instructors: MOCK_INSTRUCTORS,
-        });
-        setLoadError(null);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => { active = false; };
-  }, []);
-
   const refreshAcademic = useCallback(async () => {
     await refreshAcademicStoreFromBackend();
   }, []);
@@ -182,7 +162,7 @@ export function useAcademic() {
   }, [refreshAcademic]);
 
   // ── Acciones — Fichas ─────────────────────
-  const addFicha = useCallback(async (number: string, _jornada: Ficha['jornada'], programId: string) => {
+  const addFicha = useCallback(async (number: string, programId: string) => {
     const ficha = await createFichaApi(programId, number);
     await refreshAcademic();
     return ficha;
@@ -224,6 +204,11 @@ export function useAcademic() {
   );
   const markValidation      = useCallback((learnerId: string, status: ValidationStatus) => markLearnerValidation(learnerId, status), []);
   const moveLearnerToOrphanPool = useCallback((fichaId: string, learnerId: string) => moveLearnerToOrphanPoolStore(fichaId, learnerId), []);
+  const transferLearner = useCallback(async (learnerId: string, destinationFichaId: string) => {
+    await transferLearnerApi(learnerId, destinationFichaId);
+    await refreshAcademic();
+    return { success: true };
+  }, [refreshAcademic]);
   const deleteOrphanLearner = useCallback((learnerId: string) => deleteOrphanLearnerStore(learnerId), []);
   const joinFichaByTransferCode = useCallback(
     (learnerId: string, transferCode: string) => joinFichaByTransferCodeStore(learnerId, transferCode),
@@ -262,7 +247,7 @@ export function useAcademic() {
     search, setSearch,
     statusFilter, setStatusFilter,
     instructorFilter, setInstructorFilter,
-    loading, loadError,
+    loading: false, loadError: null,
 
     // Getters
     getProgram, getFicha, getInstructor,
@@ -277,7 +262,7 @@ export function useAcademic() {
     // Aprendices
     addLearner, removeLearner, deactivateLearner, reactivateLearner,
     updateLearnerInfo, markValidation,
-    moveLearnerToOrphanPool, joinFichaByTransferCode, joinFichaByCode,
+    moveLearnerToOrphanPool, transferLearner, joinFichaByTransferCode, joinFichaByCode,
     deleteOrphanLearner,
 
     // Instructores

@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { acceptPendingTransfer, cancelPendingTransfer, fetchPendingTransfers } from './academicApi';
 import type { TransferRequest } from './types';
+import { refreshAcademicStoreFromBackend } from './useAcademic';
 import {
     approveTransferRequest,
     createTransferRequest,
@@ -51,12 +52,14 @@ export function useTransferRequests() {
     /** Coordinador aprueba el traslado pendiente del CSV en el backend. */
     approve: useCallback(async (id: string) => {
       await acceptPendingTransfer(id);
+      await refreshAcademicStoreFromBackend();
       await reload();
       return { success: true };
     }, [reload]),
     /** Coordinador cancela el traslado pendiente del CSV en el backend. */
     reject: useCallback(async (id: string) => {
       await cancelPendingTransfer(id);
+      await refreshAcademicStoreFromBackend();
       await reload();
       return { success: true };
     }, [reload]),

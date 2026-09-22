@@ -3,7 +3,6 @@
 //  RF-3 V4 — Gestión Académica
 // ─────────────────────────────────────────────
 
-export type JornadaType       = 'morning' | 'afternoon' | 'night' | 'full';
 export type ValidationStatus  = 'pending_validation' | 'validated' | 'inconsistency';
 export type TransferStatus    = 'pending' | 'approved' | 'rejected';
 
@@ -56,7 +55,6 @@ export interface Program {
 export interface Ficha {
   id: string;
   number: string;        // 7 dígitos — ej. 2825551
-  jornada: JornadaType;
   status: 'active' | 'inactive';
   programId: string;
   code: string;          // código interno FCH-XXXXXX (no adivinable, no es el transferCode)
@@ -91,6 +89,7 @@ export interface Learner {
 // RF-3.0 — Instructor (entidad nueva en V4)
 export interface Instructor {
   id: string;
+  userId?: string;
   name: string;
   lastname: string;
   document: string;      // 6 a 15 dígitos
@@ -98,6 +97,7 @@ export interface Instructor {
   instructorType: InstructorType;
   /** Solo se usa si instructorType === 'especifico' */
   programId?: string;
+  programIds?: string[];
   /** RF-3 — Fichas a las que está asignado como responsable (1 o varias) */
   fichaIds: string[];
   status: 'active' | 'inactive';
@@ -198,7 +198,7 @@ export function getProgramDisplayName(
 
 export const MOCK_FICHAS: Ficha[] = [
   {
-    id: '1', number: '3145555', jornada: 'morning',
+    id: '1', number: '3145555',
     status: 'active', programId: '1',
     code: 'FCH-001', transferCode: 'A1B2C3D4',
     learners: [
@@ -227,7 +227,7 @@ export const MOCK_FICHAS: Ficha[] = [
     createdAt: '2026-08-01T10:00:00.000Z', updatedAt: '2026-08-01T10:00:00.000Z',
   },
   {
-    id: '2', number: '3145556', jornada: 'afternoon',
+    id: '2', number: '3145556',
     status: 'active', programId: '1',
     code: 'FCH-002', transferCode: 'E5F6G7H8',
     learners: [
@@ -242,28 +242,28 @@ export const MOCK_FICHAS: Ficha[] = [
     createdAt: '2026-08-10T10:00:00.000Z', updatedAt: '2026-08-10T10:00:00.000Z',
   },
   {
-    id: '3', number: '3145557', jornada: 'night',
+    id: '3', number: '3145557',
     status: 'active', programId: '1',
     code: 'FCH-003', transferCode: 'J9K0L1M2',
     learners: [],
     createdAt: '2026-08-15T10:00:00.000Z', updatedAt: '2026-08-15T10:00:00.000Z',
   },
   {
-    id: '4', number: '3145558', jornada: 'full',
+    id: '4', number: '3145558',
     status: 'active', programId: '1',
     code: 'FCH-004', transferCode: 'N3O4P5Q6',
     learners: [],
     createdAt: '2026-08-20T10:00:00.000Z', updatedAt: '2026-08-20T10:00:00.000Z',
   },
   {
-    id: '5', number: '4100001', jornada: 'morning',
+    id: '5', number: '4100001',
     status: 'active', programId: '2',
     code: 'FCH-005', transferCode: 'R7S8T9U0',
     learners: [],
     createdAt: '2026-08-25T10:00:00.000Z', updatedAt: '2026-08-25T10:00:00.000Z',
   },
   {
-    id: '6', number: '5200001', jornada: 'afternoon',
+    id: '6', number: '5200001',
     status: 'active', programId: '4',
     code: 'FCH-006', transferCode: 'V1W2X3Y4',
     learners: [],

@@ -5,6 +5,7 @@ import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
+import { formatDateTime } from '@/shared/utils/dates';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
@@ -15,7 +16,7 @@ export default function ProgramDetailScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { getProgram, allFichas, allInstructors, unlinkFichaFromProgram } = useAcademic();
+  const { getProgram, allFichas, allInstructors, deleteFicha } = useAcademic();
   const { alert, DialogUI } = useAppDialog();
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [fichaSearch, setFichaSearch]     = useState('');
@@ -108,11 +109,11 @@ export default function ProgramDetailScreen() {
               </View>
               <View style={[pds.infoRow, { borderBottomColor: border }]}>
                 <Text style={[pds.infoLabel, { color: muted }]}>{t('environments.detail.createdAt')}</Text>
-                <Text style={[pds.infoValue, { color: text }]}>{new Date(program.createdAt).toLocaleString()}</Text>
+                <Text style={[pds.infoValue, { color: text }]}>{formatDateTime(program.createdAt)}</Text>
               </View>
               <View style={[pds.infoRow, { borderBottomWidth: 0 }]}>
                 <Text style={[pds.infoLabel, { color: muted }]}>{t('environments.detail.updatedAt')}</Text>
-                <Text style={[pds.infoValue, { color: text }]}>{new Date(program.updatedAt).toLocaleString()}</Text>
+                <Text style={[pds.infoValue, { color: text }]}>{formatDateTime(program.updatedAt)}</Text>
               </View>
 
               <TouchableOpacity onPress={() => setEditModalOpen(true)} style={[pds.editBtn, { borderColor: theme.primary }]} activeOpacity={0.7}>
@@ -164,14 +165,14 @@ export default function ProgramDetailScreen() {
                 <View style={[pds.iconCircle, { backgroundColor: theme.primary + '20' }]}><Ionicons name="document-text-outline" size={20} color={theme.primary} /></View>
                 <View style={{ flex: 1 }}>
                   <Text style={[pds.cardTitle, { color: text }]}>Ficha {item.number}</Text>
-                  <Text style={[pds.cardMeta, { color: muted }]}>{t(`academic.jornadas.${item.jornada}`)} · {item.learners.length} aprendices · Código: {item.code}</Text>
+                  <Text style={[pds.cardMeta, { color: muted }]}>{item.learners.length} aprendices</Text>
                 </View>
               </View>
               <TouchableOpacity onPress={() => {
-                if (item.learners.length > 0) { alert(t('common.error'), t('academic.fichaHasLearnersUnlink')); return; }
-                alert(t('academic.unlinkConfirm')??'', '', [{ text: t('common.cancel'), style: 'cancel' }, { text: t('academic.unlinkFromProgram'), style: 'destructive', onPress: () => {
-                  const result = unlinkFichaFromProgram(item.id, program.id);
-                  if (!result.success && result.error) alert(t('common.error'), t(result.error));
+                if (item.learners.length > 0) { alert(t('common.error'), 'No se puede eliminar la ficha porque tiene aprendices asociados.'); return; }
+                alert('Eliminar ficha permanentemente', 'Esta accion no se puede deshacer.', [{ text: t('common.cancel'), style: 'cancel' }, { text: 'Eliminar', style: 'destructive', onPress: async () => {
+                  try { await deleteFicha(item.id); alert('Ficha eliminada', 'La ficha fue eliminada permanentemente.'); }
+                  catch (error: any) { alert(t('common.error'), error?.response?.data?.message ?? 'No se pudo eliminar la ficha.'); }
                 } }]);
               }}
                 style={{ padding: 6 }}><Ionicons name="link-outline" size={18} color={Colors.warning} /></TouchableOpacity>

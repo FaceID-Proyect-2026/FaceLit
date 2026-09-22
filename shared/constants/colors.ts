@@ -53,20 +53,20 @@ export const Colors = {
 
   // ── SUPERFICIES (Dark Theme - Carbón con tinte verde) ───────────
   dark: {
-    background:        '#07120D',     // Fondo verde carbón de la aplicación
-    surface:           '#121A16',     // Contenedores y modales
-    surfaceSecondary:  '#17231C',     // Superficies internas destacadas
-    card:              '#121A16',     // Alias de compatibilidad para tarjetas
-    border:            '#2C4032',     // Líneas divisorias y bordes
-    borderStrong:      '#3D5A42',     // Bordes destacados
-    inputBg:           '#151E19',
-    inputBorder:       '#2C4032',
+    background:        '#000000',     // Negro real como fondo global
+    surface:           '#06100A',     // Negro con un matiz verde profundo
+    surfaceSecondary:  '#0A1710',     // Superficies internas verde oscuro
+    card:              '#06100A',     // Alias de compatibilidad para tarjetas
+    border:            '#173522',     // Bordes verdes discretos
+    borderStrong:      '#285238',     // Bordes destacados
+    inputBg:           '#08130D',
+    inputBorder:       '#1B3B27',
     text:              '#FFFFFF',     // Texto principal blanco puro
-    textSecondary:     '#A3A3A3',     // Párrafos explicativos
-    textMuted:         '#757575',
-    placeholder:       '#555555',
+    textSecondary:     '#B7C5BC',     // Párrafos explicativos
+    textMuted:         '#7F9587',
+    placeholder:       '#587060',
     link:              '#F59E0B',     // Ámbar para links y acciones secundarias
-    gradient:          ['#07120D', '#121A16', '#17231C'] as const,
+    gradient:          ['#000000', '#06100A', '#0A1710'] as const,
   },
 
   // ── FIJOS ─────────────────────────────────────────────────────

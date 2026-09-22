@@ -10,7 +10,7 @@ import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
-import { isRecent, wasEditedRecently } from '@/shared/utils/dates';
+import { formatDateTime, isRecent, wasEditedRecently } from '@/shared/utils/dates';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
@@ -45,7 +45,7 @@ export default function AcademicProgramsScreen() {
 
   const currentInstructor = useMemo(
     () => allInstructors.find(instructor =>
-      instructor.id === user?.id || instructor.document === user?.document || instructor.email === user?.email,
+      instructor.userId === user?.id || instructor.document === user?.document || instructor.email === user?.email,
     ),
     [allInstructors, user],
   );
@@ -57,7 +57,8 @@ export default function AcademicProgramsScreen() {
         const programFichaIds = allFichas
           .filter(ficha => ficha.programId === program.id)
           .map(ficha => ficha.id);
-        const belongsToProgram = currentInstructor.programId === program.id;
+        const belongsToProgram = currentInstructor.programIds?.includes(program.id)
+          || currentInstructor.programId === program.id;
         const assignedFichaIds = programFichaIds.filter(fichaId => currentInstructor.fichaIds.includes(fichaId));
 
         if (!belongsToProgram && assignedFichaIds.length === 0) return null;
@@ -215,8 +216,8 @@ export default function AcademicProgramsScreen() {
                 <View style={aps.titleRow}>
                   <Text style={[aps.cardTitle, { color: text }]}>{getProgramDisplayName(item, t)}</Text>
                 </View>
-                <Text style={[aps.cardSub, { color: muted }]}>{t('environments.detail.createdAt')}: {new Date(item.createdAt).toLocaleString()}</Text>
-                <Text style={[aps.cardDates, { color: muted }]}>{t('environments.detail.updatedAt')}: {new Date(item.updatedAt).toLocaleString()}</Text>
+                <Text style={[aps.cardSub, { color: muted }]}>{t('environments.detail.createdAt')}: {formatDateTime(item.createdAt)}</Text>
+                <Text style={[aps.cardDates, { color: muted }]}>{t('environments.detail.updatedAt')}: {formatDateTime(item.updatedAt)}</Text>
                 <View style={aps.cardActions}>
                   <TouchableOpacity onPress={() => router.push(`/instructor/academic/programs/${item.id}` as any)} style={[aps.actionBtn, { backgroundColor: theme.primary + '15' }]}>
                     <Ionicons name="eye-outline" size={16} color={theme.primary} />

@@ -8,6 +8,8 @@ type BackendProgram = {
   programCode: string;
   state: 'ACTIVE' | 'INACTIVE';
   deactivationReason?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
 };
 
 type BackendChip = {
@@ -16,6 +18,8 @@ type BackendChip = {
   chipCode: string;
   state: 'ACTIVE' | 'INACTIVE';
   deactivationReason?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
 };
 
 // ─── InstructorResponseDTO del backend ───────
@@ -41,6 +45,11 @@ type BackendUserChip = {
   idUser: string;
   idChip: string;
   chipCode?: string;
+  idProgram?: string;
+  programName?: string;
+  programCode?: string;
+  programState?: 'ACTIVE' | 'INACTIVE';
+  chipState?: 'ACTIVE' | 'INACTIVE';
   firstName: string;
   lastName: string;
   document: string;
@@ -49,6 +58,38 @@ type BackendUserChip = {
   assignmentDate: string;
 };
 
+const toLearner = (learner: BackendUserChip): Learner => ({
+  id: learner.idUser,
+  name: learner.firstName ?? '',
+  lastname: learner.lastName ?? '',
+  document: learner.document ?? '',
+  email: learner.email ?? '',
+  role: 'aprendiz',
+  status: learner.state === 'ACTIVE' ? 'active' : 'inactive',
+  validationStatus: 'validated',
+  initialPassword: null,
+  createdAt: learner.assignmentDate,
+  updatedAt: learner.assignmentDate,
+  documentChangeLog: [],
+});
+
+const toInstructor = (instructor: BackendInstructor, fichas: Ficha[]): Instructor => ({
+  id: instructor.idInstructor,
+  userId: instructor.idUser,
+  name: instructor.firstName ?? '',
+  lastname: instructor.lastName ?? '',
+  document: instructor.document ?? '',
+  email: instructor.email ?? '',
+  instructorType: instructor.instructorType === 'ESPECIFICO' ? 'especifico' : 'transversal',
+  programId: instructor.programIds?.[0],
+  programIds: instructor.programIds ?? [],
+  fichaIds: fichas.filter(ficha => instructor.programIds?.includes(ficha.programId)).map(ficha => ficha.id),
+  status: 'active',
+  initialPassword: null,
+  createdAt: '',
+  updatedAt: '',
+});
+
 const toProgram = (program: BackendProgram): Program => ({
   id: program.idProgram,
   name: program.programName,
@@ -56,72 +97,53 @@ const toProgram = (program: BackendProgram): Program => ({
   status: program.state.toLowerCase() as Program['status'],
   fichas: [],
   instructorIds: [],
-  createdAt: '',
-  updatedAt: '',
+  createdAt: program.createdAt ?? '',
+  updatedAt: program.updatedAt ?? program.createdAt ?? '',
 });
 
 const toFicha = (chip: BackendChip, learners: Learner[] = []): Ficha => ({
   id: chip.idChip,
   number: chip.chipCode,
-  jornada: 'morning',
   status: chip.state.toLowerCase() as Ficha['status'],
   programId: chip.idProgram,
   code: chip.chipCode,
   transferCode: '',
   learners,
-  createdAt: '',
-  updatedAt: '',
+  createdAt: chip.createdAt ?? '',
+  updatedAt: chip.updatedAt ?? chip.createdAt ?? '',
 });
 
 export async function fetchAcademicSnapshot() {
-  const { data: rawPrograms } = await api.get<BackendProgram[]>('/api/academic/programs');
+  // Cada snapshot debe reflejar el estado posterior a una mutacion o carga CSV.
+  // El query param evita que el navegador reutilice una respuesta GET anterior.
+  const cacheBust = Date.now();
+  const freshParams = { _refresh: cacheBust };
+  const { data: rawPrograms } = await api.get<BackendProgram[]>('/api/academic/programs', {
+    params: freshParams,
+  });
   const fichas: Ficha[] = [];
 
   for (const program of rawPrograms) {
     const { data: rawChips } = await api.get<BackendChip[]>(
       `/api/academic/programs/${program.idProgram}/chips`,
+      { params: freshParams },
     );
     for (const chip of rawChips) {
       const { data: rawLearners } = await api.get<BackendUserChip[]>(
         `/api/academic/chips/${chip.idChip}/apprentices`,
+        { params: freshParams },
       );
       // UserChipResponseDTO ya incluye firstName, lastName, document, email
-      const learners = rawLearners.map<Learner>(l => ({
-        id:               l.idUser,
-        name:             l.firstName  ?? '',
-        lastname:         l.lastName   ?? '',
-        document:         l.document   ?? '',
-        email:            l.email      ?? '',
-        role:             'aprendiz',
-        status:           l.state === 'ACTIVE' ? 'active' : 'inactive',
-        validationStatus: 'validated',
-        initialPassword:  null,
-        createdAt:        l.assignmentDate,
-        updatedAt:        l.assignmentDate,
-        documentChangeLog: [],
-      }));
+      const learners = rawLearners.map(toLearner);
       fichas.push(toFicha(chip, learners));
     }
   }
 
   // InstructorResponseDTO ya incluye firstName, lastName, document, email
-  const { data: rawInstructors } = await api.get<BackendInstructor[]>('/api/academic/instructors');
-  const instructors: Instructor[] = rawInstructors.map(i => ({
-    id:             i.idInstructor,
-    name:           i.firstName    ?? '',
-    lastname:       i.lastName     ?? '',
-    document:       i.document     ?? '',
-    email:          i.email        ?? '',
-    instructorType: i.instructorType === 'ESPECIFICO' ? 'especifico' : 'transversal',
-    programId:      i.programIds?.[0],
-    fichaIds:       fichas
-      .filter(f => i.programIds?.includes(f.programId))
-      .map(f => f.id),
-    status:         'active',
-    initialPassword: null,
-    createdAt:      '',
-    updatedAt:      '',
-  }));
+  const { data: rawInstructors } = await api.get<BackendInstructor[]>('/api/academic/instructors', {
+    params: freshParams,
+  });
+  const instructors: Instructor[] = rawInstructors.map(instructor => toInstructor(instructor, fichas));
 
   const programs = rawPrograms.map(program => ({
     ...toProgram(program),
@@ -132,6 +154,83 @@ export async function fetchAcademicSnapshot() {
   }));
 
   return { programs, fichas, instructors };
+}
+
+async function fetchInstructorAcademicSnapshot() {
+  const freshParams = { _refresh: Date.now() };
+  const { data: rawInstructor } = await api.get<BackendInstructor>('/api/academic/me/instructor', {
+    params: freshParams,
+  });
+  const rawPrograms = await Promise.all(
+    (rawInstructor.programIds ?? []).map(async idProgram => {
+      const { data } = await api.get<BackendProgram>(`/api/academic/programs/${idProgram}`, { params: freshParams });
+      return data;
+    }),
+  );
+  const fichas: Ficha[] = [];
+  for (const program of rawPrograms) {
+    const { data: rawChips } = await api.get<BackendChip[]>(
+      `/api/academic/programs/${program.idProgram}/chips`,
+      { params: freshParams },
+    );
+    for (const chip of rawChips) {
+      const { data: rawLearners } = await api.get<BackendUserChip[]>(
+        `/api/academic/chips/${chip.idChip}/apprentices`,
+        { params: freshParams },
+      );
+      fichas.push(toFicha(chip, rawLearners.map(toLearner)));
+    }
+  }
+  const instructor = toInstructor(rawInstructor, fichas);
+  const programs = rawPrograms.map(program => ({
+    ...toProgram(program),
+    fichas: fichas.filter(ficha => ficha.programId === program.idProgram).map(ficha => ficha.id),
+    instructorIds: [instructor.id],
+  }));
+  return { programs, fichas, instructors: [instructor] };
+}
+
+async function fetchApprenticeAcademicSnapshot() {
+  try {
+    const { data } = await api.get<BackendUserChip>('/api/academic/me/chip', {
+      params: { _refresh: Date.now() },
+    });
+    if (!data.idProgram) return { programs: [], fichas: [], instructors: [] };
+    const learner = toLearner(data);
+    const ficha: Ficha = {
+      id: data.idChip,
+      number: data.chipCode ?? '',
+      status: data.chipState === 'INACTIVE' ? 'inactive' : 'active',
+      programId: data.idProgram,
+      code: data.chipCode ?? '',
+      transferCode: '',
+      learners: [learner],
+      createdAt: data.assignmentDate,
+      updatedAt: data.assignmentDate,
+    };
+    const program: Program = {
+      id: data.idProgram,
+      name: data.programName ?? data.programCode ?? '',
+      code: data.programCode ?? '',
+      status: data.programState === 'INACTIVE' ? 'inactive' : 'active',
+      fichas: [ficha.id],
+      instructorIds: [],
+      createdAt: '',
+      updatedAt: '',
+    };
+    return { programs: [program], fichas: [ficha], instructors: [] };
+  } catch (error: any) {
+    if (error?.response?.status === 400 || error?.response?.status === 404) {
+      return { programs: [], fichas: [], instructors: [] };
+    }
+    throw error;
+  }
+}
+
+export function fetchAcademicSnapshotForRole(role?: string | null) {
+  if (role === 'INSTRUCTOR') return fetchInstructorAcademicSnapshot();
+  if (role === 'APPRENTICE') return fetchApprenticeAcademicSnapshot();
+  return fetchAcademicSnapshot();
 }
 
 export async function createProgram(programName: string, programCode: string) {
@@ -192,6 +291,11 @@ export async function setFichaLifecycle(id: string, action: 'reactivate' | 'dele
     ? await api.patch<BackendChip>(path)
     : await api.delete<BackendChip>(path);
   return toFicha(data);
+}
+
+export async function transferLearner(idUser: string, idNewChip: string) {
+  const { data } = await api.post(`/api/academic/users/${idUser}/chip/transfer`, { idNewChip });
+  return data;
 }
 
 export async function uploadAcademicCsv(file: { uri: string; name: string } | Blob) {

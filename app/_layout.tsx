@@ -3,15 +3,17 @@
 //  Root layout con AuthProvider + temas + i18n
 // ─────────────────────────────────────────────
 import { useUserSettings } from "@/features/profile/useUserSettings";
+import { refreshAcademicStoreFromBackend } from "@/features/academic/useAcademic";
+import { clearAcademicStore } from "@/features/academic/academicStore";
 import { AuthProvider, useAuth } from "@/shared/contexts/AuthContext";
 import { I18nProvider } from "@/shared/contexts/I18nContext";
 import { ThemeProvider, useTheme } from "@/shared/contexts/ThemeContext";
 import i18n from "@/shared/i18n/index";
-import { Stack } from "expo-router";
+import { Stack, usePathname } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { I18nextProvider } from "react-i18next";
-import { StyleSheet, View } from "react-native";
+import { AppState, StyleSheet, View } from "react-native";
 
 // ── Carga y aplica las preferencias guardadas del usuario
 //    (tema, idioma, notificaciones) apenas hay sesión activa ──
@@ -29,6 +31,36 @@ function UserSettingsLoader() {
       setApplied(false); // permite recargar la próxima vez que inicie sesión
     }
   }, [authLoading, isAuthenticated, applied]);
+
+  return null;
+}
+
+function AcademicDataLoader() {
+  const { user, loading: authLoading } = useAuth();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    clearAcademicStore();
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (authLoading || !user?.id) return;
+    void refreshAcademicStoreFromBackend(user.role).catch(error => {
+      console.warn('No se pudo sincronizar la información académica:', error);
+    });
+  }, [authLoading, pathname, user?.id]);
+
+  useEffect(() => {
+    if (authLoading || !user?.id) return;
+    const subscription = AppState.addEventListener('change', state => {
+      if (state === 'active') {
+        void refreshAcademicStoreFromBackend(user.role).catch(error => {
+          console.warn('No se pudo actualizar la información académica:', error);
+        });
+      }
+    });
+    return () => subscription.remove();
+  }, [authLoading, user?.id]);
 
   return null;
 }
@@ -92,6 +124,7 @@ export default function RootLayout() {
         <I18nProvider>
           <AuthProvider>
             <UserSettingsLoader />
+            <AcademicDataLoader />
             <RootLayoutInner />
           </AuthProvider>
         </I18nProvider>

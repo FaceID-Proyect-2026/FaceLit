@@ -8,6 +8,7 @@ import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { getSystemUsers } from '@/shared/contexts/AuthContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
+import { formatDateTime } from '@/shared/utils/dates';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
@@ -138,11 +139,10 @@ export default function FichaDetailScreen() {
               <Text style={[fds.fichaTitle, { color: text }]}>Ficha {ficha.number}</Text>
               <Text style={[fds.fichaSubtitle, { color: muted }]}>{t('academic.fichaDetailSubtitle')}</Text>
               <View style={fds.infoRow}><Text style={[fds.infoLabel, { color: muted }]}>Programa</Text><Text style={[fds.infoValue, { color: text }]}>{program ? getProgramDisplayName(program, t) : 'Sin programa'}</Text></View>
-              <View style={fds.infoRow}><Text style={[fds.infoLabel, { color: muted }]}>Jornada</Text><Text style={[fds.infoValue, { color: text }]}>{t(`academic.jornadas.${ficha.jornada}`)}</Text></View>
               <View style={fds.infoRow}><Text style={[fds.infoLabel, { color: muted }]}>{t('academic.fichaCode')}</Text><Text style={[fds.infoValue, { color: theme.primary, fontWeight: '800' }]}>{ficha.code}</Text></View>
               <View style={fds.infoRow}><Text style={[fds.infoLabel, { color: muted }]}>Estado</Text><Text style={{ color: ficha.status==='active'?Colors.success:Colors.error, fontWeight:'700' }}>{t(`environments.statuses.${ficha.status}`)}</Text></View>
-              <View style={fds.infoRow}><Text style={[fds.infoLabel, { color: muted }]}>{t('environments.detail.createdAt')}</Text><Text style={[fds.infoValue, { color: text }]}>{new Date(ficha.createdAt).toLocaleString()}</Text></View>
-              <View style={fds.infoRow}><Text style={[fds.infoLabel, { color: muted }]}>{t('environments.detail.updatedAt')}</Text><Text style={[fds.infoValue, { color: text }]}>{new Date(ficha.updatedAt).toLocaleString()}</Text></View>
+              <View style={fds.infoRow}><Text style={[fds.infoLabel, { color: muted }]}>{t('environments.detail.createdAt')}</Text><Text style={[fds.infoValue, { color: text }]}>{formatDateTime(ficha.createdAt)}</Text></View>
+              <View style={fds.infoRow}><Text style={[fds.infoLabel, { color: muted }]}>{t('environments.detail.updatedAt')}</Text><Text style={[fds.infoValue, { color: text }]}>{formatDateTime(ficha.updatedAt)}</Text></View>
             </View>
             <View style={fds.headerActions}>
               <TouchableOpacity onPress={() => setEditModalOpen(true)} style={[fds.actionBtn, { borderColor: theme.primary }]} activeOpacity={0.7}>

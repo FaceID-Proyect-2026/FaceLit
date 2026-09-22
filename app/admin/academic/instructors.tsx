@@ -10,7 +10,7 @@ import {
     fetchInstructors,
     updateInstructor
 } from '@/features/academic/academicApi';
-import { useAcademic } from '@/features/academic/useAcademic';
+import { refreshAcademicStoreFromBackend, useAcademic } from '@/features/academic/useAcademic';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useTheme } from '@/shared/contexts/ThemeContext';
@@ -106,6 +106,7 @@ function InstructorFormModal({
       });
       // El backend puede devolver initialPassword en la respuesta
       const pwd = (result as any)?.initialPassword ?? (result as any)?.password ?? null;
+      await refreshAcademicStoreFromBackend();
       if (pwd) {
         setPwdResult(pwd);
       } else {

@@ -239,10 +239,6 @@ export default function CsvUploadScreen() {
             <Text style={[s.pageTitle, { color: text }]}>Cargar información (CSV)</Text>
             <Text style={[s.pageSubtitle, { color: muted }]}>Programas · Fichas · Aprendices · Instructores</Text>
           </View>
-          <TouchableOpacity onPress={downloadTemplate} style={[s.templatePill, { borderColor: theme.primary, backgroundColor: theme.primary + '12' }]} activeOpacity={0.8}>
-            <Ionicons name="download-outline" size={14} color={theme.primary} />
-            <Text style={[s.templatePillText, { color: theme.primary }]}>Plantilla</Text>
-          </TouchableOpacity>
         </View>
 
         {/* ── Zona de carga (arriba, protagonista) ── */}
@@ -274,7 +270,7 @@ export default function CsvUploadScreen() {
                   <Text style={[s.dropMain, { color: text }]}>
                     {Platform.OS === 'web' ? 'Arrastra el archivo aquí o haz clic para seleccionar' : 'Toca para seleccionar el archivo'}
                   </Text>
-                  <Text style={[s.dropSub, { color: muted }]}>Solo archivos .csv · Máx. 5 MB · 5 000 filas</Text>
+                  <Text style={[s.dropSub, { color: muted }]}>Solo archivos .csv · Máximo indicado: 31 KB · 5 000 filas</Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -291,6 +287,11 @@ export default function CsvUploadScreen() {
 
           {guideOpen && (
             <View style={s.guideBody}>
+              <View style={[s.fileSizeNotice, { backgroundColor: theme.primary + '12', borderColor: theme.primary + '44' }]}>
+                <Ionicons name="information-circle-outline" size={16} color={theme.primary} />
+                <Text style={[s.fileSizeNoticeText, { color: text }]}>Los archivos deben tener un tamaño máximo indicado de 31 KB.</Text>
+              </View>
+
               {/* Chips de columnas */}
               <Text style={[s.guideSection, { color: muted }]}>COLUMNAS</Text>
               {COLUMN_GUIDE.map(row => (
@@ -313,6 +314,11 @@ export default function CsvUploadScreen() {
                   <Text style={[s.tipText, { color: text }]}>{tip.text}</Text>
                 </View>
               ))}
+
+              <TouchableOpacity onPress={downloadTemplate} style={[s.templateButton, { borderColor: theme.primary, backgroundColor: theme.primary + '12' }]} activeOpacity={0.8}>
+                <Ionicons name="download-outline" size={16} color={theme.primary} />
+                <Text style={[s.templateButtonText, { color: theme.primary }]}>Descargar plantilla</Text>
+              </TouchableOpacity>
             </View>
           )}
         </View>
@@ -430,6 +436,8 @@ const s = StyleSheet.create({
   guideToggle:    { flexDirection: 'row', alignItems: 'center', gap: 8 },
   guideToggleText:{ fontSize: FontSize.base, fontWeight: FontWeight.bold, flex: 1 },
   guideBody:      { marginTop: 14 },
+  fileSizeNotice: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderRadius: 10, padding: 10, marginBottom: 16 },
+  fileSizeNoticeText: { flex: 1, fontSize: FontSize.sm, fontWeight: FontWeight.semibold, lineHeight: 18 },
   guideSection:   { fontSize: FontSize.xs, fontWeight: FontWeight.extrabold, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 },
   colRow:         { flexDirection: 'row', alignItems: 'flex-start', paddingVertical: 10, borderBottomWidth: 1, gap: 12 },
   colLeft:        { width: 130, gap: 4 },
@@ -439,6 +447,8 @@ const s = StyleSheet.create({
   colWhat:        { flex: 1, fontSize: FontSize.sm, lineHeight: 18 },
   tipRow:         { flexDirection: 'row', gap: 8, alignItems: 'flex-start', marginBottom: 6 },
   tipText:        { flex: 1, fontSize: FontSize.sm, lineHeight: 18 },
+  templateButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, borderWidth: 1.5, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, marginTop: 12, alignSelf: 'flex-start' },
+  templateButtonText: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
 
   // Stats
   statsRow:  { flexDirection: 'row', gap: 10, marginBottom: 12 },

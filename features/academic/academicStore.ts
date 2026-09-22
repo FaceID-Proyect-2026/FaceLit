@@ -11,20 +11,16 @@ import {
     generateInitialPassword,
     Instructor,
     InstructorType,
-    JornadaType,
     Learner,
-    MOCK_FICHAS,
-    MOCK_INSTRUCTORS,
-    MOCK_PROGRAMS,
     Program,
     ValidationStatus
 } from './types';
 
 type Listener = () => void;
 
-let programs: Program[]         = MOCK_PROGRAMS;
-let fichas: Ficha[]             = MOCK_FICHAS;
-let instructors: Instructor[]   = MOCK_INSTRUCTORS;
+let programs: Program[]         = [];
+let fichas: Ficha[]             = [];
+let instructors: Instructor[]   = [];
 
 const listeners = new Set<Listener>();
 function emit() { listeners.forEach(l => l()); }
@@ -39,6 +35,14 @@ export function hydrateAcademicStore(next: {
   programs = next.programs;
   fichas = next.fichas;
   instructors = next.instructors;
+  emit();
+}
+
+export function clearAcademicStore() {
+  programs = [];
+  fichas = [];
+  instructors = [];
+  orphanLearners = [];
   emit();
 }
 
@@ -141,7 +145,7 @@ export function deleteProgramStore(id: string) {
 
 // ── Fichas ────────────────────────────────────
 
-export function registerFicha(number: string, jornada: JornadaType, programId: string) {
+export function registerFicha(number: string, programId: string) {
   const normalizedNumber = number.trim();
   const program = programs.find(p => p.id === programId);
   if (!normalizedNumber || !program || program.status !== 'active') return null;
@@ -150,7 +154,6 @@ export function registerFicha(number: string, jornada: JornadaType, programId: s
   const f: Ficha = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     number: normalizedNumber,
-    jornada,
     status: 'active',
     programId,
     code: `FCH-${Date.now().toString().slice(-6)}`,

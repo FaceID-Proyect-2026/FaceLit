@@ -93,7 +93,7 @@ export default function ProgramDetailScreen() {
               <View style={[pds.iconCircle, { backgroundColor: theme.primary + '20' }]}><Ionicons name="document-text-outline" size={20} color={theme.primary} /></View>
               <View style={{ flex: 1 }}>
                 <Text style={[pds.cardTitle, { color: text }]}>Ficha {item.number}</Text>
-                <Text style={[pds.cardMeta, { color: muted }]}>{t(`academic.jornadas.${item.jornada}`)} · {item.learners.length} aprendices · Código: {item.code}</Text>
+                  <Text style={[pds.cardMeta, { color: muted }]}>{item.learners.length} aprendices</Text>
               </View>
             </View>
             <TouchableOpacity onPress={() => {

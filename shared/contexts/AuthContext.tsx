@@ -19,7 +19,7 @@
 import { initPrivacyStore } from '@/features/auth/privacyAcceptanceStore';
 import { Routes } from '@/shared/constants/routes';
 import { logBlocked, logFailure, logSuccess } from '@/shared/services/auditLogger';
-import { login as loginRequest } from '@/shared/services/authService';
+import { getMyProfile, login as loginRequest } from '@/shared/services/authService';
 import { getToken, removeToken } from '@/shared/services/tokenStorage';
 import { router } from 'expo-router';
 import React, {
@@ -254,7 +254,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             logSuccess('SESSION_EXPIRED', { detail: 'Token expirado al restaurar sesión' });
           } else {
             const restoredUser = buildUserFromPayload(payload);
-            setUser(restoredUser);
+            try {
+              const profile = await getMyProfile();
+              setUser({
+                ...restoredUser,
+                id: readStringField(profile, ['idUser', 'userId', 'id']) ?? restoredUser.id,
+                document: readStringField(profile, ['documentNumber', 'document', 'numberDocument']) ?? restoredUser.document,
+                email: readStringField(profile, ['email', 'mail']) ?? restoredUser.email,
+                firstName: readStringField(profile, ['firstName', 'name']) ?? restoredUser.firstName,
+                lastName: readStringField(profile, ['lastName', 'lastname']) ?? restoredUser.lastName,
+              });
+            } catch {
+              setUser(restoredUser);
+            }
             // No registrar auditoría aquí — no es un login nuevo,
             // es una restauración silenciosa de sesión existente.
           }

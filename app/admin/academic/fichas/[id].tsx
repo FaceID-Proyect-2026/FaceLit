@@ -5,6 +5,7 @@ import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
+import { formatDateTime } from '@/shared/utils/dates';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -127,15 +128,18 @@ export default function FichaDetailScreen() {
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const {
-    getFicha, programs,
+    getFicha, programs, allFichas,
     deactivateLearner, reactivateLearner, updateLearnerInfo,
-    moveLearnerToOrphanPool, regenerateTransferCode,
+    transferLearner, regenerateTransferCode,
   } = useAcademic();
   const { alert, DialogUI } = useAppDialog();
 
   const [editFichaOpen, setEditFichaOpen]       = useState(false);
   const [copyMsg, setCopyMsg]                   = useState(false);
   const [editingLearner, setEditingLearner]     = useState<string | null>(null);
+  const [transferLearnerId, setTransferLearnerId] = useState<string | null>(null);
+  const [destinationFichaId, setDestinationFichaId] = useState('');
+  const [transferBusy, setTransferBusy] = useState(false);
   // Búsqueda de aprendices — filtra por nombre, documento o correo
   const [learnerSearch, setLearnerSearch]       = useState('');
 
@@ -154,6 +158,10 @@ export default function FichaDetailScreen() {
 
   const program = programs.find(p => p.id === ficha.programId);
   const editingLearnerData = editingLearner ? ficha.learners.find(l => l.id === editingLearner) : null;
+  const transferLearnerData = transferLearnerId ? ficha.learners.find(l => l.id === transferLearnerId) : null;
+  const availableTransferFichas = allFichas.filter(target =>
+    target.programId === ficha.programId && target.id !== ficha.id && target.status === 'active'
+  );
 
   // Filtrar aprendices según búsqueda (nombre, documento, correo)
   const filteredLearners = learnerSearch.trim()
@@ -213,9 +221,8 @@ export default function FichaDetailScreen() {
             text: 'Trasladar a otra ficha',
             style: 'default',
             onPress: () => {
-              const result = moveLearnerToOrphanPool(ficha.id, learnerId);
-              if (result.success) alert(t('academic.transferMovedTitle') ?? '', t('academic.transferMovedMessage') ?? '');
-              else if (result.error) alert(t('common.error'), t(result.error as any, { defaultValue: result.error }));
+              setTransferLearnerId(learnerId);
+              setDestinationFichaId('');
             },
           },
         ],
@@ -256,15 +263,13 @@ export default function FichaDetailScreen() {
               <Text style={[fds.fichaTitle, { color: text }]}>Ficha {ficha.number}</Text>
               <Text style={[fds.fichaSubtitle, { color: muted }]}>{t('academic.fichaDetailSubtitle')}</Text>
               <View style={fds.infoRow}><Text style={[fds.infoLabel, { color: muted }]}>Programa</Text><Text style={[fds.infoValue, { color: text }]}>{program ? getProgramDisplayName(program, t) : 'Sin programa'}</Text></View>
-              <View style={fds.infoRow}><Text style={[fds.infoLabel, { color: muted }]}>Jornada</Text><Text style={[fds.infoValue, { color: text }]}>{t(`academic.jornadas.${ficha.jornada}`)}</Text></View>
-              <View style={fds.infoRow}><Text style={[fds.infoLabel, { color: muted }]}>{t('academic.fichaCode')}</Text><Text style={[fds.infoValue, { color: theme.primary, fontWeight: '800' }]}>{ficha.code}</Text></View>
               <View style={fds.infoRow}><Text style={[fds.infoLabel, { color: muted }]}>Estado</Text><Text style={{ color: ficha.status === 'active' ? Colors.success : Colors.error, fontWeight: '700' }}>{t(`environments.statuses.${ficha.status}`)}</Text></View>
-              <View style={fds.infoRow}><Text style={[fds.infoLabel, { color: muted }]}>{t('environments.detail.createdAt')}</Text><Text style={[fds.infoValue, { color: text }]}>{new Date(ficha.createdAt).toLocaleString()}</Text></View>
-              <View style={fds.infoRow}><Text style={[fds.infoLabel, { color: muted }]}>{t('environments.detail.updatedAt')}</Text><Text style={[fds.infoValue, { color: text }]}>{new Date(ficha.updatedAt).toLocaleString()}</Text></View>
+              <View style={fds.infoRow}><Text style={[fds.infoLabel, { color: muted }]}>{t('environments.detail.createdAt')}</Text><Text style={[fds.infoValue, { color: text }]}>{formatDateTime(ficha.createdAt)}</Text></View>
+              <View style={fds.infoRow}><Text style={[fds.infoLabel, { color: muted }]}>{t('environments.detail.updatedAt')}</Text><Text style={[fds.infoValue, { color: text }]}>{formatDateTime(ficha.updatedAt)}</Text></View>
             </View>
 
             {/* ── Código de traslado RF-3.3 ── */}
-            <View style={[fds.transferCard, { backgroundColor: theme.primary + '0D', borderColor: theme.primary + '33' }]}>
+            <View style={[fds.transferCard, { display: 'none', backgroundColor: theme.primary + '0D', borderColor: theme.primary + '33' }]}>
               <View style={fds.transferHeader}>
                 <Ionicons name="key-outline" size={18} color={theme.primary} />
                 <Text style={[fds.transferTitle, { color: theme.primary }]}>{t('academic.transferCode')}</Text>
@@ -379,6 +384,31 @@ export default function FichaDetailScreen() {
 
       {DialogUI}
 
+      <Modal visible={!!transferLearnerData} transparent animationType={'fade'} onRequestClose={() => setTransferLearnerId(null)}>
+        <View style={fds.modalOverlay}>
+          <View style={[fds.transferModal, { backgroundColor: cardBg, borderColor: border }]}>
+            <View style={fds.transferModalHeader}>
+              <View style={[fds.transferModalIcon, { backgroundColor: theme.primary + '18' }]}><Ionicons name={'swap-horizontal'} size={22} color={theme.primary} /></View>
+              <View style={{ flex: 1 }}><Text style={[fds.transferModalTitle, { color: text }]}>Trasladar aprendiz</Text><Text style={[fds.transferModalSubtitle, { color: muted }]}>{transferLearnerData?.name} {transferLearnerData?.lastname} · Ficha actual {ficha.number}</Text></View>
+            </View>
+            <Text style={[fds.transferModalLabel, { color: text }]}>Selecciona una ficha del mismo programa</Text>
+            <ScrollView style={fds.transferOptions}>
+              {availableTransferFichas.map(target => (
+                <TouchableOpacity key={target.id} onPress={() => setDestinationFichaId(target.id)} style={[fds.transferOption, { borderColor: destinationFichaId === target.id ? theme.primary : border, backgroundColor: destinationFichaId === target.id ? theme.primary + '14' : 'transparent' }]}>
+                  <Ionicons name={destinationFichaId === target.id ? 'radio-button-on' : 'radio-button-off'} size={20} color={destinationFichaId === target.id ? theme.primary : muted} />
+                  <View><Text style={[fds.transferOptionTitle, { color: text }]}>Ficha {target.number}</Text><Text style={[fds.transferOptionMeta, { color: muted }]}>{program ? getProgramDisplayName(program, t) : ''}</Text></View>
+                </TouchableOpacity>
+              ))}
+              {availableTransferFichas.length === 0 && <Text style={[fds.transferEmpty, { color: muted }]}>No hay otra ficha activa disponible dentro de este programa.</Text>}
+            </ScrollView>
+            <View style={fds.transferModalActions}>
+              <TouchableOpacity onPress={() => setTransferLearnerId(null)} style={[fds.transferModalButton, { borderColor: border }]}><Text style={{ color: text, fontWeight: '700' }}>Cancelar</Text></TouchableOpacity>
+              <TouchableOpacity disabled={!destinationFichaId || transferBusy} onPress={() => alert('Confirmar traslado', `¿Estás seguro de trasladar a ${transferLearnerData?.name} de la ficha ${ficha.number} a la ficha ${availableTransferFichas.find(target => target.id === destinationFichaId)?.number}?`, [{ text: 'Cancelar', style: 'cancel' }, { text: 'Sí, trasladar', onPress: async () => { if (!transferLearnerData) return; setTransferBusy(true); try { await transferLearner(transferLearnerData.id, destinationFichaId); setTransferLearnerId(null); alert('Traslado exitoso', 'El aprendiz fue asignado a la nueva ficha correctamente.'); } catch (error: any) { alert(t('common.error'), error?.response?.data?.message ?? 'No se pudo realizar el traslado.'); } finally { setTransferBusy(false); } } }])} style={[fds.transferModalButton, { backgroundColor: destinationFichaId ? theme.primary : muted, borderColor: 'transparent', opacity: transferBusy ? 0.7 : 1 }]}><Text style={{ color: Colors.white, fontWeight: '700' }}>{transferBusy ? 'Trasladando...' : 'Continuar'}</Text></TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       <FichaFormModal
         visible={editFichaOpen}
         editId={ficha.id}
@@ -404,6 +434,20 @@ export default function FichaDetailScreen() {
 
 const fds = StyleSheet.create({
   safe: { flex: 1 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.72)', alignItems: 'center', justifyContent: 'center', padding: 20 },
+  transferModal: { width: '100%', maxWidth: 520, maxHeight: '80%', borderRadius: 22, borderWidth: 1, padding: 22 },
+  transferModalHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 22 },
+  transferModalIcon: { width: 46, height: 46, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  transferModalTitle: { fontSize: FontSize.xl, fontWeight: FontWeight.black },
+  transferModalSubtitle: { fontSize: FontSize.sm, marginTop: 3 },
+  transferModalLabel: { fontSize: FontSize.sm, fontWeight: FontWeight.bold, marginBottom: 10 },
+  transferOptions: { maxHeight: 300 },
+  transferOption: { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderRadius: 13, padding: 14, marginBottom: 9 },
+  transferOptionTitle: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
+  transferOptionMeta: { fontSize: FontSize.xs, marginTop: 2 },
+  transferEmpty: { textAlign: 'center', paddingVertical: 24, lineHeight: 20 },
+  transferModalActions: { flexDirection: 'row', gap: 10, marginTop: 18 },
+  transferModalButton: { flex: 1, borderWidth: 1, borderRadius: 12, paddingVertical: 13, alignItems: 'center' },
   scroll: { padding: 16, paddingBottom: 40 },
 
   backBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 12 },

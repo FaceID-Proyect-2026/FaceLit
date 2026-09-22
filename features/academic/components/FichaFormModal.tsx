@@ -4,7 +4,7 @@
 //  de una pantalla completa. Misma lógica que antes vivía en
 //  app/admin/academic/fichas/register.tsx.
 // ─────────────────────────────────────────────
-import { getProgramDisplayName, JornadaType } from '@/features/academic/types';
+import { getProgramDisplayName } from '@/features/academic/types';
 import { useAcademic } from '@/features/academic/useAcademic';
 import FormModal from '@/shared/components/ui/FormModal';
 import { Colors } from '@/shared/constants/colors';
@@ -14,13 +14,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-
-const JORNADAS: { value: JornadaType; icon: string }[] = [
-  { value: 'morning', icon: 'sunny-outline' },
-  { value: 'afternoon', icon: 'partly-sunny-outline' },
-  { value: 'night', icon: 'moon-outline' },
-  { value: 'full', icon: 'time-outline' },
-];
 
 interface FichaFormModalProps {
   visible: boolean;
@@ -41,7 +34,6 @@ export default function FichaFormModal({ visible, onClose, editId, defaultProgra
   const inputBorder = isDark ? 'rgba(255,255,255,0.30)' : '#BBBBBB';
 
   const [number, setNumber] = useState('');
-  const [jornada, setJornada] = useState<JornadaType>('morning');
   const [selectedProgram, setSelectedProgram] = useState('');
   const [programQuery, setProgramQuery] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -62,7 +54,6 @@ export default function FichaFormModal({ visible, onClose, editId, defaultProgra
   useEffect(() => {
     if (!visible) return;
     setNumber(existing?.number ?? '');
-    setJornada(existing?.jornada ?? 'morning');
     setSelectedProgram(existing?.programId ?? defaultProgramId ?? '');
     setErrors({});
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -81,14 +72,14 @@ export default function FichaFormModal({ visible, onClose, editId, defaultProgra
     if (!validate()) return;
     if (existing) {
       try {
-        await updateFicha(existing.id, { number, jornada, programId: selectedProgram });
+        await updateFicha(existing.id, { number, programId: selectedProgram });
       } catch (error: any) {
         setErrors({ number: error?.response?.data?.message ?? t('academic.fichaSaveError') });
         return;
       }
     } else {
       try {
-        await addFicha(number, jornada, selectedProgram);
+        await addFicha(number, selectedProgram);
       } catch (error: any) {
         setErrors({ number: error?.response?.data?.message ?? t('academic.duplicateFicha') });
         return;
@@ -123,17 +114,6 @@ export default function FichaFormModal({ visible, onClose, editId, defaultProgra
       />
       {errors.number ? <Text style={ffm.error}>{errors.number}</Text> : null}
 
-      <Text style={[ffm.label, { color: text, marginTop: 12 }]}>{t('academic.fields.jornada')}</Text>
-      <View style={ffm.jornadaGrid}>
-        {JORNADAS.map(({ value, icon }) => (
-          <TouchableOpacity key={value} onPress={() => setJornada(value)}
-            style={[ffm.jornadaCard, { backgroundColor: jornada === value ? theme.primary + '20' : inputBg, borderColor: jornada === value ? theme.primary : inputBorder }]} activeOpacity={0.7}>
-            <Ionicons name={icon as any} size={22} color={jornada === value ? theme.primary : muted} />
-            <Text style={[ffm.jornadaLabel, { color: jornada === value ? theme.primary : text }]}>{t(`academic.jornadas.${value}`)}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
       <Text style={[ffm.label, { color: text, marginTop: 12 }]}>{t('academic.fields.programName')}</Text>
       <TextInput
         style={[ffm.input, { backgroundColor: inputBg, borderColor: inputBorder, color: text, marginBottom: 8 }] as any}
@@ -161,9 +141,6 @@ const ffm = StyleSheet.create({
   label: { fontSize: FontSize.base, fontWeight: FontWeight.bold, marginBottom: 6 },
   input: { height: 48, borderWidth: 1.2, borderRadius: 12, paddingHorizontal: 14, fontSize: FontSize.lg, outlineStyle: 'none' } as any,
   error: { color: Colors.error, fontSize: FontSize.xs, marginTop: 3 },
-  jornadaGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  jornadaCard: { flex: 1, minWidth: 80, borderRadius: 12, borderWidth: 1.2, padding: 12, alignItems: 'center', gap: 6 },
-  jornadaLabel: { fontSize: FontSize.xs, fontWeight: FontWeight.bold, textAlign: 'center' },
   programList: { gap: 8 },
   programCard: { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 10, borderWidth: 1.2, padding: 12 },
   programName: { fontSize: FontSize.base, fontWeight: FontWeight.bold },

@@ -8,7 +8,7 @@
 //  genera la contraseña automáticamente.
 // ─────────────────────────────────────────────
 import { assignApprentice } from '@/features/academic/academicApi';
-import { useAcademic } from '@/features/academic/useAcademic';
+import { refreshAcademicStoreFromBackend, useAcademic } from '@/features/academic/useAcademic';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useTheme } from '@/shared/contexts/ThemeContext';
@@ -111,6 +111,7 @@ export default function AcademicAssignmentsScreen() {
       });
       const data = (resp as any)?.data ?? resp;
       const pwd  = (data as any)?.initialPassword ?? (data as any)?.password ?? null;
+      await refreshAcademicStoreFromBackend();
       setResult({
         success:         true,
         apprenticeName:  `${name.trim()} ${lastname.trim()}`,

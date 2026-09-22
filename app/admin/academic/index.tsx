@@ -9,23 +9,23 @@ import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
-import { isRecent, wasEditedRecently } from '@/shared/utils/dates';
+import { formatDateTime, isRecent, wasEditedRecently } from '@/shared/utils/dates';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  Animated,
-  Easing,
-  FlatList,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  useWindowDimensions,
-  View
+    Animated,
+    Easing,
+    FlatList,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    useWindowDimensions,
+    View
 } from 'react-native';
 
 type ViewMode = 'programs' | 'unlinked' | 'orphans';
@@ -36,6 +36,8 @@ type ViewMode = 'programs' | 'unlinked' | 'orphans';
 //  primero, con pasos animados y botón de acceso directo.
 // ─────────────────────────────────────────────
 function OnboardingEmpty({ isDark, theme, t }: { isDark: boolean; theme: any; t: (k: string) => string }) {
+  const { width } = useWindowDimensions();
+  const compact = width < 760;
   const fadeIn  = useRef(new Animated.Value(0)).current;
   const slideY  = useRef(new Animated.Value(24)).current;
   const pulse   = useRef(new Animated.Value(1)).current;
@@ -65,7 +67,6 @@ function OnboardingEmpty({ isDark, theme, t }: { isDark: boolean; theme: any; t:
     ).start();
   }, []);
 
-  const bg   = theme.surface;
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted= isDark ? Colors.dark.textMuted : Colors.light.textMuted;
   const soft = theme.primary + '14';
@@ -159,6 +160,113 @@ const ob = StyleSheet.create({
   btn:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 15 },
   btnText:    { color: Colors.white, fontSize: FontSize.lg, fontWeight: FontWeight.bold },
   hint:       { fontSize: FontSize.xs, textAlign: 'center', lineHeight: 18, maxWidth: 400 },
+});
+
+function OnboardingModern({ isDark, theme }: { isDark: boolean; theme: any }) {
+  const { width } = useWindowDimensions();
+  const compact = width < 760;
+  const fade = useRef(new Animated.Value(0)).current;
+  const lift = useRef(new Animated.Value(22)).current;
+  const pulse = useRef(new Animated.Value(1)).current;
+  const text = isDark ? Colors.dark.text : Colors.light.text;
+  const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
+  const soft = theme.primary + '14';
+  const border = theme.primary + '33';
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fade, { toValue: 1, duration: 520, useNativeDriver: true }),
+      Animated.timing(lift, { toValue: 0, duration: 520, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+    ]).start();
+    Animated.loop(Animated.sequence([
+      Animated.timing(pulse, { toValue: 1.045, duration: 1100, useNativeDriver: true }),
+      Animated.timing(pulse, { toValue: 1, duration: 1100, useNativeDriver: true }),
+    ])).start();
+  }, []);
+
+  const steps = [
+    ['document-text-outline', 'Descarga la plantilla', 'Obtén un archivo de ejemplo con la estructura correcta y todos los campos necesarios.'],
+    ['create-outline', 'Completa tus datos', 'Ábrelo en Excel y agrega los programas, fichas, aprendices e instructores de tu centro.'],
+    ['cloud-upload-outline', 'Sube y valida', 'FaceLit procesa la información y te muestra claramente qué se creó o necesita corrección.'],
+  ];
+
+  return (
+    <Animated.View style={[modern.wrap, { opacity: fade, transform: [{ translateY: lift }] }]}>
+      <LinearGradient colors={isDark ? ['#10281B', '#08150F', '#050B08'] : ['#EAF8EC', '#F8FCF8', '#FFFFFF']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[modern.panel, { borderColor: border }]}>
+        <View style={[modern.glow, { backgroundColor: theme.primary + '18' }]} />
+        <View style={[modern.hero, compact && modern.heroCompact]}>
+          <View style={modern.heroCopy}>
+            <View style={[modern.eyebrow, { backgroundColor: soft, borderColor: border }]}>
+              <Ionicons name={'sparkles-outline'} size={15} color={theme.primary} />
+              <Text style={[modern.eyebrowText, { color: theme.primary }]}>CONFIGURACIÓN INICIAL</Text>
+            </View>
+            <Text style={[modern.title, { color: text }]}>Tu gestión académica, lista en minutos</Text>
+            <Text style={[modern.subtitle, { color: muted }]}>Importa programas, fichas, aprendices e instructores en un solo archivo. Te acompañamos paso a paso para que todo quede organizado.</Text>
+            <View style={modern.benefits}>
+              {['Carga masiva de archivos de 31 KB', 'Validación antes de guardar', 'Resumen claro de resultados'].map(item => (
+                <View key={item} style={modern.benefit}><Ionicons name={'checkmark-circle'} size={18} color={theme.primary} /><Text style={[modern.benefitText, { color: text }]}>{item}</Text></View>
+              ))}
+            </View>
+          </View>
+          <Animated.View style={[modern.iconScene, { backgroundColor: soft, borderColor: border, transform: [{ scale: pulse }] }]}>
+            <View style={[modern.iconRing, { borderColor: theme.primary + '55' }]}><Ionicons name={'school-outline'} size={58} color={theme.primary} /></View>
+            <View style={[modern.fileBadge, { backgroundColor: theme.primary }]}><Ionicons name={'document-text'} size={20} color={Colors.white} /><Text style={modern.fileBadgeText}>CSV</Text></View>
+          </Animated.View>
+        </View>
+        <Text style={[modern.kicker, { color: theme.primary }]}>CÓMO FUNCIONA</Text>
+        <Text style={[modern.sectionTitle, { color: text }]}>Tres pasos, sin complicaciones</Text>
+        <View style={[modern.steps, compact && modern.stepsCompact]}>
+          {steps.map((step, index) => (
+            <View key={step[1]} style={[modern.stepCard, { backgroundColor: isDark ? '#0B1711' : '#FFFFFF', borderColor: border }]}>
+              <Text style={[modern.stepNumber, { color: theme.primary + '55' }]}>0{index + 1}</Text>
+              <View style={[modern.stepIcon, { backgroundColor: soft, borderColor: border }]}><Ionicons name={step[0] as any} size={24} color={theme.primary} /></View>
+              <Text style={[modern.stepTitle, { color: text }]}>{step[1]}</Text>
+              <Text style={[modern.stepDesc, { color: muted }]}>{step[2]}</Text>
+            </View>
+          ))}
+        </View>
+        <View style={[modern.action, { backgroundColor: isDark ? '#0A1A11' : '#F1FAF2', borderColor: border }]}>
+          <View style={modern.actionCopy}><Text style={[modern.actionTitle, { color: text }]}>¿Listo para comenzar?</Text><Text style={[modern.actionDesc, { color: muted }]}>Descarga la plantilla, complétala y deja que FaceLit haga el resto.</Text></View>
+          <TouchableOpacity onPress={() => router.push('/admin/academic/csv-upload' as any)} activeOpacity={0.85} style={modern.buttonWrap}>
+            <LinearGradient colors={['#72C96D', '#55AD52', '#3D8F43']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={modern.button}>
+              <Ionicons name={'cloud-upload-outline'} size={21} color={Colors.white} /><Text style={modern.buttonText}>Cargar información por CSV</Text><Ionicons name={'arrow-forward'} size={19} color={Colors.white} />
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+        <View style={modern.hint}><Ionicons name={'information-circle-outline'} size={17} color={muted} /><Text style={{ color: muted, fontSize: FontSize.xs }}>También puedes registrar programas y fichas manualmente desde los botones superiores.</Text></View>
+      </LinearGradient>
+    </Animated.View>
+  );
+}
+
+const modern = StyleSheet.create({
+  wrap: { flex: 1, padding: 24, alignItems: 'center' },
+  panel: { width: '100%', maxWidth: 1180, borderRadius: 28, borderWidth: 1, padding: 32, overflow: 'hidden' },
+  glow: { position: 'absolute', width: 360, height: 360, borderRadius: 180, right: -100, top: -180 },
+  hero: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 36, padding: 18, paddingBottom: 42 },
+  heroCompact: { flexDirection: 'column-reverse', paddingHorizontal: 0 },
+  heroCopy: { flex: 1, maxWidth: 650 },
+  eyebrow: { flexDirection: 'row', alignItems: 'center', gap: 7, alignSelf: 'flex-start', borderWidth: 1, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7, marginBottom: 18 },
+  eyebrowText: { fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2 },
+  title: { fontSize: 36, lineHeight: 43, fontWeight: FontWeight.black, marginBottom: 13 },
+  subtitle: { fontSize: FontSize.base, lineHeight: 24, marginBottom: 21, maxWidth: 610 },
+  benefits: { gap: 9 }, benefit: { flexDirection: 'row', alignItems: 'center', gap: 9 }, benefitText: { fontSize: FontSize.sm, fontWeight: FontWeight.semibold },
+  iconScene: { width: 190, height: 190, borderRadius: 52, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  iconRing: { width: 126, height: 126, borderRadius: 63, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  fileBadge: { position: 'absolute', right: 16, bottom: 16, flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 11, paddingVertical: 8, borderRadius: 12 },
+  fileBadgeText: { color: Colors.white, fontSize: 12, fontWeight: FontWeight.black },
+  kicker: { fontSize: 11, letterSpacing: 1.4, fontWeight: FontWeight.bold, marginBottom: 5 },
+  sectionTitle: { fontSize: FontSize.xl, fontWeight: FontWeight.black, marginBottom: 18 },
+  steps: { width: '100%', flexDirection: 'row', gap: 14, marginBottom: 22 }, stepsCompact: { flexDirection: 'column' },
+  stepCard: { flex: 1, minHeight: 190, borderRadius: 20, borderWidth: 1, padding: 20, overflow: 'hidden' },
+  stepNumber: { position: 'absolute', right: 14, top: 5, fontSize: 44, fontWeight: FontWeight.black },
+  stepIcon: { width: 48, height: 48, borderRadius: 14, borderWidth: 1, alignItems: 'center', justifyContent: 'center', marginBottom: 18 },
+  stepTitle: { fontSize: FontSize.base, fontWeight: FontWeight.bold, marginBottom: 7 }, stepDesc: { fontSize: FontSize.sm, lineHeight: 20 },
+  action: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 18, borderRadius: 20, borderWidth: 1, padding: 20 },
+  actionCopy: { flex: 1, minWidth: 230 }, actionTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.black, marginBottom: 4 }, actionDesc: { fontSize: FontSize.sm, lineHeight: 20 },
+  buttonWrap: { borderRadius: 14, overflow: 'hidden' }, button: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 15, paddingHorizontal: 22 },
+  buttonText: { color: Colors.white, fontSize: FontSize.base, fontWeight: FontWeight.bold },
+  hint: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 7, marginTop: 17 },
 });
 
 export default function AcademicProgramsScreen() {
@@ -275,7 +383,7 @@ export default function AcademicProgramsScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <OnboardingEmpty isDark={isDark} theme={theme} t={t} />
+          <OnboardingModern isDark={isDark} theme={theme} />
         </ScrollView>
       )}
 
@@ -370,8 +478,8 @@ export default function AcademicProgramsScreen() {
                 <View style={aps.titleRow}>
                   <Text style={[aps.cardTitle, { color: text }]}>{getProgramDisplayName(item, t)}</Text>
                 </View>
-                <Text style={[aps.cardSub, { color: muted }]}>{t('environments.detail.createdAt')}: {new Date(item.createdAt).toLocaleString()}</Text>
-                <Text style={[aps.cardDates, { color: muted }]}>{t('environments.detail.updatedAt')}: {new Date(item.updatedAt).toLocaleString()}</Text>
+                <Text style={[aps.cardSub, { color: muted }]}>{t('environments.detail.createdAt')}: {formatDateTime(item.createdAt)}</Text>
+                <Text style={[aps.cardDates, { color: muted }]}>{t('environments.detail.updatedAt')}: {formatDateTime(item.updatedAt)}</Text>
                 <View style={aps.cardActions}>
                   <TouchableOpacity onPress={() => router.push(`/admin/academic/programs/${item.id}` as any)} style={[aps.actionBtn, { backgroundColor: theme.primary + '15' }]}>
                     <Ionicons name="eye-outline" size={16} color={theme.primary} />
