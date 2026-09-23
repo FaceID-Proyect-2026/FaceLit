@@ -7,7 +7,6 @@ import {
     FacialSettings,
     FacialUser,
     MOCK_FACIAL_RECORDS,
-    VALID_FACIAL_ROLES,
 } from "./types";
 
 type Listener = () => void;
@@ -58,35 +57,13 @@ export function saveFacialSettings(
 }
 
 export function registerFacialCapture(
-  user: FacialUser | undefined,
-  captureUri: string | null,
-  trainingSucceeded = true,
+  _user: FacialUser | undefined,
+  _captureUri: string | null,
+  _trainingSucceeded = false,
 ): RegistrationResult {
-  if (!user) return { success: false, error: "facial.validation.userNotFound" };
-  if (!VALID_FACIAL_ROLES.includes(user.role))
-    return { success: false, error: "facial.validation.invalidRole" };
-  if (!captureUri) return { success: false, error: "facial.validation.noFace" };
-  if (!trainingSucceeded)
-    return { success: false, error: "facial.validation.trainingFailed" };
-  if (
-    records.some(
-      (record) => record.userId === user.id && record.status === "registered",
-    )
-  ) {
-    return { success: false, error: "facial.validation.alreadyRegistered" };
-  }
-
-  const record: FacialRecord = {
-    id: `face-${Date.now()}`,
-    userId: user.id,
-    userName: user.name,
-    status: "registered",
-    date: new Date().toISOString().slice(0, 10),
-    captureUri,
-  };
-  records = [...records.filter((item) => item.userId !== user.id), record];
-  emit();
-  return { success: true, record };
+  // A local photograph cannot issue a trusted PAD verdict.
+  // Registration must use the authenticated /api/facial/enrollment route.
+  return { success: false, error: "facial.validation.trainingFailed" };
 }
 
 export function registerFacialEvent(

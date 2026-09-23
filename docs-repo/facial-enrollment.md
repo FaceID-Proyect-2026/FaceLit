@@ -1,56 +1,108 @@
-# Registro facial guiado de instructor
+﻿# Registro facial y Presentation Attack Detection (PAD)
 
-La ruta `/instructor/facial/register` usa Human (BlazeFace, FaceMesh,
-FaceRes, AntiSpoof y Liveness). Sustituye el análisis de colores de piel por
-detección de un único rostro, tamaño y encuadre, estimación de giro y
-comprobación de continuidad de identidad. No utiliza selección de archivos.
+## Estado de la integración
 
-El servidor genera una secuencia de cinco posiciones (frente, un lado,
-frente, otro lado, frente), con orden lateral aleatorio, asociada al usuario
-autenticado y válida durante 90 segundos. Cada posición requiere al menos
-tres inferencias y 650 ms. Si desaparece el rostro, aparece otra persona,
-la pestaña se oculta o fallan los controles, se reinicia la secuencia.
+El guardado está **bloqueado por defecto**. Este repositorio no incluye un servicio
+PAD independiente entrenado y validado ni captura de profundidad de un sensor.
+Se implementó el adaptador del backend, no un proveedor PAD. No configurar un
+servicio simulado que responda siempre REAL: anularía la protección.
 
-## Ejecución
+Human aporta detección facial, malla estimada, embeddings y modelos rápidos
+AntiSpoof/Liveness. Sus puntuaciones son controles preliminares, no un dictamen
+confiable. Su malla no mide profundidad física. Documentación oficial:
+https://github.com/vladmandic/human/tree/main/demo/faceid
 
-- Instalar dependencias normalmente; `postinstall` copia los cinco modelos
-  desde el paquete instalado a `public/models/human`. Para instalaciones
-  existentes ejecutar `npm run prepare:face-models`.
-- Ejecutar el backend con la base de datos habitual. Deben existir las tablas
-  `security.user_app` y `facialrecognition.user_face` del DDL del proyecto.
-- Abrir la aplicación web desde localhost o HTTPS y permitir la cámara.
-- La app nativa muestra que esta validación aún no está disponible y no permite
-  guardar una foto sin verificar. Se necesita un detector nativo o SDK de
-  prueba de vida para habilitar ese entorno.
+## Captura web
 
-## Persistencia y alcance
+Instructor y aprendiz comparten `InstructorEnrollment.web.tsx`. El servidor genera
+siete acciones con `SecureRandom`: cinco posiciones (frente, un lado, frente, otro
+lado, frente), más parpadeo simple o doble y sonrisa, insertados en posiciones
+aleatorias. El desafío pertenece al usuario del JWT, vence a los 90 segundos y
+se consume una sola vez, incluso si falla PAD.
 
-Los endpoints autenticados `/api/facial/me`, `/api/facial/challenge` y
-`/api/facial/enrollment` trabajan exclusivamente sobre el usuario del JWT.
-La selección de instructor en la configuración del ambiente no cambia esa identidad.
-El registro guarda cinco vectores de 1024 floats en `biometric_vector`, no
-fotografías ni video. Formato big endian: cabecera `FLH1` y los cinco vectores,
-en orden de captura. Una fila activa no se sobrescribe; el bloqueo de la fila
-del usuario serializa solicitudes concurrentes. No se modifica `.env`.
-Los registros anteriores simulados del store no se migran a la base de datos.
-Este cambio implementa registro, no identificación ni asistencia automática.
+Cada posición requiere al menos 650 ms y cuatro observaciones. El parpadeo exige
+abiertos → cerrados → abiertos en 60–800 ms; la sonrisa exige transición neutra →
+sonrisa mantenida. Una interrupción temporal reinicia la acción. Perder el rostro,
+cambiar de persona, ocultar la pestaña o fallar las puntuaciones una vez iniciado
+el seguimiento exige un intento nuevo. Los umbrales son provisionales y necesitan
+calibración con cámaras, personas y ataques reales.
 
-## Límites que requieren validación antes de producción
+Se envían hasta 240 fotogramas JPEG de 320×240 con marcas temporales junto con las
+muestras. El backend limita tamaño, orden, duración y cobertura por acción.
+Las marcas y puntuaciones del cliente son datos no confiables. La inferencia en
+el navegador usa el mismo fotograma que se adjunta como evidencia. PAD debe
+comprobar también que los embeddings y la foto corresponden a la evidencia.
 
-La inferencia y los indicadores `real`/`live` se calculan en el navegador.
-El servidor valida formato, secuencia, sesión y similitud, pero NO vuelve a
-analizar imágenes. Un cliente modificado puede falsificar esos indicadores.
-Esto no es prueba de vida certificada ni ofrece garantías equivalentes a Nequi;
-para esa protección debe integrarse un proveedor PAD que emita un resultado
-verificable por el servidor o un servicio de inferencia independiente.
-Los umbrales son iniciales y requieren pruebas con cámaras y personas reales.
-Las sesiones se mantienen en memoria del backend: un reinicio las invalida y
-varias instancias necesitan almacenamiento compartido o afinidad de sesión.
+## Contrato del adaptador PAD
 
-Pruebas manuales pendientes: persona real con ambos órdenes de giro, foto
-impresa, foto y video en otro teléfono, rostro lejano, dos personas, cambio de
-persona entre pasos, iluminación variada, permisos denegados, ocultar pestaña,
-recarga tras guardar y pérdida de conexión al guardar. Verificar también la
-dirección percibida de los giros en cámaras frontales.
+Configurar en el backend `facial.pad.url` (variable `FACIAL_PAD_URL`, HTTPS) y
+`facial.pad.token` (`FACIAL_PAD_TOKEN`). No se agregaron credenciales ni se modificó
+`.env`. El navegador nunca recibe el token. Sin configuración, la interfaz informa
+el bloqueo antes de abrir la cámara. Un error o timeout bloquea el guardado.
 
-Referencia de la biblioteca: https://github.com/vladmandic/human/wiki
+El adaptador hace POST autenticado mediante Bearer, con este cuerpo:
+
+```json
+{
+  "userId": "UUID del usuario autenticado",
+  "challenge": { "id": "UUID", "poses": ["center", "..."], "expiresAt": "ISO-8601" },
+  "enrollment": {
+    "challengeId": "UUID",
+    "samples": [{ "pose": "center", "yaw": 0, "real": 0.95, "live": 0.95,
+      "embedding": ["1024 números"], "elapsedMs": 1000, "durationMs": 800,
+      "frames": 4, "blinks": 0, "smileTransition": false }],
+    "profilePhoto": "data:image/jpeg;base64,... o null",
+    "evidence": [{ "elapsedMs": 0, "jpeg": "data:image/jpeg;base64,..." }]
+  }
+}
+```
+
+El servicio debe analizar los fotogramas y devolver para ESA solicitud:
+
+```json
+{
+  "userId": "mismo UUID", "challengeId": "mismo UUID", "liveness": "REAL",
+  "depth": true, "textureAndReflection": true, "activeChallenge": true,
+  "temporal": true, "faceAntiSpoof": true, "identityAndEmbeddingMatch": true
+}
+```
+
+Únicamente REAL con todos los controles afirmativos y ambos UUID coincidentes
+permite escribir. PHOTO, VIDEO, SCREEN, PRINT, UNKNOWN, resultados incompletos y
+fallos se rechazan. El servicio debe rechazar evidencia insuficiente, decodificar
+y validar los JPEG, verificar los gestos en orden, analizar textura/reflejos y
+movimiento, ejecutar un modelo facial anti-spoof y comprobar la vinculación de
+identidad. No puede copiar puntuaciones aportadas por el cliente.
+
+`depth` requiere evidencia válida para la política de profundidad adoptada; no
+debe marcarse verdadero por la simple presencia de una malla facial. Si se exige
+profundidad física, esta captura RGB web es insuficiente: falta implementar un
+SDK/sensor compatible y transportar su evidencia verificable. El contrato actual
+no transporta mapas de profundidad. Mantener el bloqueo hasta completar esa parte.
+
+## Persistencia y compatibilidad
+
+Solo tras PAD se guardan los cinco embeddings de posición, conservando el formato
+FLH1: cabecera y cinco vectores de 1024 floats big endian (20484 bytes). Las dos
+acciones adicionales no cambian ese formato. También se protege la actualización
+de foto de perfil. El cliente no puede autorizarse enviando `liveness: REAL`.
+Los fotogramas no se guardan en la base de datos de esta aplicación; el servicio
+externo debe definir su tratamiento y retención de evidencia biométrica.
+El registro local antiguo a partir de una foto queda deshabilitado. La versión
+nativa sigue bloqueada hasta disponer de una integración compatible.
+
+Los registros existentes no se eliminan ni pasan a considerarse verificados por
+esta modificación. Las sesiones siguen en memoria; varias instancias requieren
+almacenamiento compartido o afinidad de sesión.
+
+## Comprobación
+
+Frontend: `npm run prepare:face-models`, `npm run test:liveness`, `npx tsc --noEmit`.
+Backend: `mvnw.cmd "-Dtest=FacialEnrollmentControllerTest,RemotePadVerifierTest" test`.
+Los tests verifican transiciones, inmovilidad, interrupciones, secuencia, evidencia,
+rechazo PAD, identidad, consumo de sesiones y bloqueo previo a escribir.
+
+Antes de habilitar registros faltan pruebas físicas con persona real, fotos,
+impresiones y videos en pantallas; iluminación, tonos de piel, gafas y cámaras
+variadas; y medición de aceptación de ataques y rechazo de personas reales.
+Los tests unitarios no prueban la eficacia de detección de ataques físicos.

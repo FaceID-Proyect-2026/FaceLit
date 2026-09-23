@@ -3,12 +3,15 @@ import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
 import { api } from '@/shared/services/api';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { router } from 'expo-router';
-import { cosineSimilarity, matchesPose, validEmbedding, type FaceSample, type Pose } from '../liveness';
+import { ActiveChallenge, eyeOpenness, cosineSimilarity, validEmbedding, type FaceSample, type Pose } from '../liveness';
 
 const instructions: Record<Pose, string> = {
   center: 'Mira de frente a la cámara',
   left: 'Gira despacio tu cara hacia tu izquierda',
   right: 'Gira despacio tu cara hacia tu derecha',
+  blink: 'Mira de frente: abre los ojos, parpadea y vuelve a abrirlos',
+  blink_twice: 'Mira de frente y parpadea dos veces, abriendo los ojos entre cada parpadeo',
+  smile: 'Mira de frente con expresión neutra y luego sonríe',
 };
 
 export default function InstructorEnrollment() {
@@ -17,6 +20,7 @@ export default function InstructorEnrollment() {
   const [attempt, setAttempt] = useState(0);
   const [message, setMessage] = useState('Preparando registro…');
   const [step, setStep] = useState(0);
+  const [totalSteps, setTotalSteps] = useState(7);
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState(false);
   const [done, setDone] = useState(false);
@@ -32,9 +36,10 @@ export default function InstructorEnrollment() {
       stop(); setMessage(message); setError(true); setBusy(false);
     };
     function handleError(error: any) {
-      console.error('Facial enrollment error:', error);
       const status = error?.response?.status;
-      fail(status === 409 ? 'Tu rostro ya está registrado.' : status === 410 ? 'La sesión venció. Vuelve a intentarlo.' :
+      fail(status === 503 ? 'Verificación PAD no disponible. El registro está bloqueado hasta habilitarla.' :
+        status === 422 ? 'No se confirmó una persona real. No se guardó el rostro. Vuelve a intentarlo.' :
+        status === 409 ? 'Tu rostro ya está registrado.' : status === 410 ? 'La sesión venció. Vuelve a intentarlo.' :
         'No se pudo completar el registro. Revisa el permiso de cámara, la conexión y vuelve a intentarlo.');
     }
     const run = async () => {
@@ -50,6 +55,9 @@ export default function InstructorEnrollment() {
       if (status.data.registered && !updatePhoto) {
         setDone(true); setBusy(false); setMessage('Tu rostro ya está registrado.'); return;
       }
+      if (!status.data.padAvailable) {
+        fail('El registro está bloqueado: falta habilitar la verificación PAD en el servidor.'); return;
+      }
       const { Human } = await import('@vladmandic/human/dist/human.esm.js');
       if (cancelled) return;
       const human = new Human({
@@ -59,7 +67,7 @@ export default function InstructorEnrollment() {
         face: {
           enabled: true,
           detector: { maxDetected: 2, minConfidence: 0.7, rotation: true, skipFrames: 0, skipTime: 0 },
-          mesh: { enabled: true }, iris: { enabled: false }, emotion: { enabled: false },
+          mesh: { enabled: true }, iris: { enabled: false }, emotion: { enabled: true, skipFrames: 0, skipTime: 0 },
           description: { enabled: true, skipFrames: 0, skipTime: 0 },
           antispoof: { enabled: true, skipFrames: 0, skipTime: 0 },
           liveness: { enabled: true, skipFrames: 0, skipTime: 0 },
@@ -77,24 +85,36 @@ export default function InstructorEnrollment() {
       const { data: challenge } = await api.post('/api/facial/challenge', null, { params: { updatePhoto: Boolean(updatePhoto) } });
       if (cancelled) { stop(); return; }
       const poses: Pose[] = challenge.poses;
+      setTotalSteps(poses.length);
       setBusy(false);
-      let samples: FaceSample[] = [];
+      const samples: FaceSample[] = [];
+      const evidence: { elapsedMs: number; jpeg: string }[] = [];
+      const active = new ActiveChallenge();
+      const started = performance.now();
+      const capture = document.createElement('canvas');
+      capture.width = 320; capture.height = 240;
+      const captureContext = capture.getContext('2d');
+      if (!captureContext) throw new Error('No se pudo iniciar la captura');
+      let reference: number[] | undefined;
       let profilePhoto: string | undefined;
-      let heldSince = 0;
-      let heldFrames = 0;
-      let previousTime = 0;
       let lastFrame = -1;
       const tick = async () => {
         if (cancelled) return;
         if (Date.now() >= Date.parse(challenge.expiresAt)) { fail('Se agotó el tiempo. Vuelve a intentarlo.'); return; }
         if (document.hidden || video.paused || video.readyState < 2 || video.currentTime === lastFrame) {
-          samples = []; heldSince = 0; heldFrames = 0; setStep(0);
-          setMessage('Mantén la cámara activa y la aplicación visible.');
-          timer = setTimeout(() => { void tick().catch(handleError); }, 250); return;
+          fail('La captura se interrumpió. Vuelve a iniciar con la cámara activa y la aplicación visible.'); return;
         }
         lastFrame = video.currentTime;
-        const result = await human.detect(video);
+        captureContext.drawImage(video, 0, 0, 320, 240);
+        const elapsedMs = Math.floor(performance.now() - started);
+        const jpeg = capture.toDataURL('image/jpeg', 0.8);
+        if (evidence.length >= 240 || jpeg.length > 60000) { fail('La captura excedió el límite. Vuelve a intentarlo.'); return; }
+        evidence.push({ elapsedMs, jpeg });
+        const result = await human.detect(capture);
         if (cancelled) return;
+        if (document.hidden || video.paused || stream?.getVideoTracks()[0]?.readyState !== 'live') {
+          fail('La captura se interrumpió. Inicia un nuevo intento.'); return;
+        }
         const face = result.face[0];
         let warning = '';
         if (result.face.length !== 1) warning = result.face.length > 1 ? 'Solo debe aparecer una persona.' : 'Coloca tu rostro dentro del óvalo.';
@@ -102,23 +122,22 @@ export default function InstructorEnrollment() {
           const [x, y, w, h] = face.boxRaw;
           if (w < 0.20 || h < 0.25) warning = 'Acerca tu rostro; no puede estar al fondo.';
           else if (w > 0.88 || h > 0.95 || x < 0.01 || x + w > 0.99 || y < 0.01 || y + h > 0.99) warning = 'Centra tu rostro completo y aléjate un poco.';
-          else if (!(face.real! >= 0.65 && face.live! >= 0.65)) warning = 'No se pudo confirmar presencia. Retira fotos o pantallas y mejora la iluminación.';
+          else if (!(face.real! >= 0.85 && face.live! >= 0.85)) warning = 'No se pudo confirmar presencia. Retira fotos o pantallas y mejora la iluminación.';
           else if (!validEmbedding(face.embedding) || !face.rotation) warning = 'Mantén tu rostro visible y bien iluminado.';
-          else if (samples.length && cosineSimilarity(samples[0].embedding, face.embedding) < 0.45) warning = 'El rostro cambió. Repite la secuencia con la misma persona.';
+          else if (reference && cosineSimilarity(reference, face.embedding) < 0.45) warning = 'El rostro cambió. Repite la secuencia con la misma persona.';
         }
         if (warning) {
-          heldSince = 0; heldFrames = 0; setMessage(warning);
+          if (reference) { fail(warning + ' Inicia un nuevo intento.'); return; }
+          active.reset(); setMessage(warning);
         } else {
           const pose = poses[samples.length];
           const yaw = face.rotation!.angle.yaw;
-          const now = performance.now();
-          if (now - previousTime > 2000) { heldSince = 0; heldFrames = 0; }
-          previousTime = now;
+          reference ??= face.embedding;
           setMessage(instructions[pose]);
-          if (matchesPose(pose, yaw) && Math.abs(face.rotation!.angle.roll) < 0.40 && Math.abs(face.rotation!.angle.pitch) < 0.40) {
-            if (!heldSince) heldSince = now;
-            heldFrames++;
-            if (now - heldSince >= 400 && heldFrames >= 2) {
+          if (Math.abs(face.rotation!.angle.roll) < 0.40 && Math.abs(face.rotation!.angle.pitch) < 0.40) {
+            const happy = face.emotion?.find(item => item.emotion === 'happy')?.score ?? 0;
+            const completion = active.observe(pose, elapsedMs, yaw, eyeOpenness(face.mesh), happy);
+            if (completion) {
               if (pose === 'center' && user?.role === 'APPRENTICE') {
                 const canvas = document.createElement('canvas');
                 canvas.width = 320; canvas.height = 320;
@@ -131,19 +150,19 @@ export default function InstructorEnrollment() {
                 context.drawImage(video, left, top, size, size, 0, 0, 320, 320);
                 profilePhoto = canvas.toDataURL('image/jpeg', 0.85);
               }
-              samples.push({ pose, yaw, real: face.real!, live: face.live!, embedding: face.embedding! });
-              heldSince = 0; heldFrames = 0; setStep(samples.length);
+              samples.push({ pose, yaw, real: face.real!, live: face.live!, embedding: face.embedding!, elapsedMs, ...completion });
+              active.reset(); setStep(samples.length);
             }
-          } else { heldSince = 0; heldFrames = 0; }
+          } else { active.reset(); }
           if (samples.length === poses.length) {
-            stop(); setBusy(true); setMessage('Guardando tu rostro…');
-            await api.post('/api/facial/enrollment', { challengeId: challenge.id, samples, profilePhoto });
+            stop(); setBusy(true); setMessage('Verificando presencia antes de guardar…');
+            await api.post('/api/facial/enrollment', { challengeId: challenge.id, samples, profilePhoto, evidence }, { timeout: 30000 });
             if (cancelled) return;
             setSavedPhoto(profilePhoto);
             setDone(true); setBusy(false); setMessage('Rostro registrado correctamente.'); return;
           }
         }
-        timer = setTimeout(() => { void tick().catch(handleError); }, 150);
+        timer = setTimeout(() => { void tick().catch(handleError); }, 40);
       };
       await tick();
     };
@@ -164,7 +183,7 @@ export default function InstructorEnrollment() {
       <Text style={{ color: 'white' }}>Ver mi perfil</Text>
     </TouchableOpacity>}
     <Text accessibilityLiveRegion="polite" style={{ color: 'white', textAlign: 'center', fontSize: 19 }}>{message}</Text>
-    {!done && <Text style={{ color: '#aaa' }}>Pasos completados: {step} / 5</Text>}
+    {!done && <Text style={{ color: '#aaa' }}>Pasos completados: {step} / {totalSteps}</Text>}
     {error && <TouchableOpacity onPress={() => setAttempt(n => n + 1)} style={{ padding: 16, backgroundColor: '#167d54', borderRadius: 12 }}><Text style={{ color: 'white' }}>Intentar nuevamente</Text></TouchableOpacity>}
   </View>;
 }
