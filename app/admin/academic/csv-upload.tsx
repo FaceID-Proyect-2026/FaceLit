@@ -28,24 +28,24 @@ import * as XLSX from 'xlsx';
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 
-// ── Guía de columnas ─────────────────────────
-const COLUMN_GUIDE = [
-  { col: 'tipo',            badge: 'Siempre',            what: 'programa · ficha · aprendiz · instructor',   required: true  },
-  { col: 'documento',       badge: 'aprendiz/instructor', what: 'Número de documento (6 a 15 dígitos)',       required: false },
-  { col: 'nombre',          badge: 'aprendiz/instructor', what: 'Nombre de la persona',                        required: false },
-  { col: 'apellido',        badge: 'aprendiz/instructor', what: 'Apellido de la persona',                      required: false },
-  { col: 'correo',          badge: 'aprendiz/instructor', what: 'Correo electrónico personal',                 required: false },
-  { col: 'programa_codigo', badge: 'programa/ficha/inst.','what': 'Código del programa (ej. ADSO)',             required: false },
-  { col: 'ficha_codigo',    badge: 'ficha/aprendiz',      what: 'Código de la ficha (7 dígitos)',               required: false },
-  { col: 'instructor_tipo', badge: 'instructor',          what: 'especifico  ó  transversal',                  required: false },
-] as const;
+function getColumnGuide(t: (k: string) => string) {
+  return [
+    { col: 'tipo', badge: t('academic.csvV4Columns.tipo.when'), what: t('academic.csvV4Columns.tipo.what'), required: true },
+    { col: 'documento', badge: t('academic.csvV4Columns.documento.when'), what: t('academic.csvV4Columns.documento.what'), required: false },
+    { col: 'nombre', badge: t('academic.csvV4Columns.nombre.when'), what: t('academic.csvV4Columns.nombre.what'), required: false },
+    { col: 'apellido', badge: t('academic.csvV4Columns.apellido.when'), what: t('academic.csvV4Columns.apellido.what'), required: false },
+    { col: 'correo', badge: t('academic.csvV4Columns.correo.when'), what: t('academic.csvV4Columns.correo.what'), required: false },
+    { col: 'programa_codigo', badge: t('academic.csvV4Columns.programa_codigo.when'), what: t('academic.csvV4Columns.programa_codigo.what'), required: false },
+    { col: 'ficha_codigo', badge: t('academic.csvV4Columns.ficha_codigo.when'), what: t('academic.csvV4Columns.ficha_codigo.what'), required: false },
+    { col: 'instructor_tipo', badge: t('academic.csvV4Columns.instructor_tipo.when'), what: t('academic.csvV4Columns.instructor_tipo.what'), required: false },
+  ];
+}
 
-const TIPS = [
-  { icon: 'ban-outline',         text: 'No elimines la primera fila (encabezados).' },
-  { icon: 'remove-outline',      text: 'Columnas que no apliquen déjalas en blanco — no escribas N/A ni guiones.' },
-  { icon: 'document-outline',    text: 'Puedes subir un archivo de una sola fila para actualizar un dato puntual.' },
-  { icon: 'search-outline',      text: "Consulta los códigos ya existentes en 'Gestión académica' antes de armar el archivo." },
-] as const;
+function getTips(t: any) {
+  const instructions = (t('academic.csvV4Instructions', { returnObjects: true }) as string[]) || [];
+  const icons = ['ban-outline', 'remove-outline', 'document-outline', 'search-outline'];
+  return instructions.map((text, i) => ({ icon: icons[i] || 'information-circle-outline', text }));
+}
 
 function catColor(cat: CsvRowResult['category']) {
   return { created: Colors.success, updated: Colors.info, blocked: Colors.warning, error: Colors.error }[cat];
@@ -56,8 +56,13 @@ function catIcon(cat: CsvRowResult['category']) {
 function catLabel(cat: CsvRowResult['category'], t: (k: string) => string) {
   return { created: t('academic.csvV4Created'), updated: t('academic.csvV4Updated'), blocked: t('academic.csvV4Blocked'), error: t('academic.csvV4Errors') }[cat];
 }
-function resultCategoryLabel(cat: CsvRowResult['category']) {
-  return { created: 'Creado', updated: 'Actualizado', blocked: 'Inconsistencia bloqueada', error: 'Error' }[cat];
+function resultCategoryLabel(cat: CsvRowResult['category'], t: (k: string) => string) {
+  return {
+    created: t('academic.csvStatusCreated'),
+    updated: t('academic.csvStatusUpdated'),
+    blocked: t('academic.csvStatusBlocked'),
+    error: t('academic.csvStatusError'),
+  }[cat];
 }
 
 type PasswordRow = CsvImportSummaryV4['generatedPasswords'][number];
@@ -118,7 +123,7 @@ export default function CsvUploadScreen() {
 
   const ensureWebExport = () => {
     if (Platform.OS !== 'web') {
-      setFileError('La descarga de Excel esta disponible desde la version web.');
+      setFileError(t('academic.csvUploadWebNotice'));
       return false;
     }
     return true;
@@ -193,7 +198,7 @@ export default function CsvUploadScreen() {
     const generatedAt = new Date();
     const detailRows: Record<string, string | number>[] = summary.rows.map(row => ({
       Fila: row.rowIndex,
-      Categoria: resultCategoryLabel(row.category),
+      Categoria: resultCategoryLabel(row.category, t),
       Tipo: row.tipo,
       Identificador: row.identifier || '',
       Mensaje: row.message,
@@ -272,17 +277,17 @@ export default function CsvUploadScreen() {
         const isHtml = serverMessage.includes('<html') || serverMessage.includes('internal server error');
         setFileError(
           isHtml
-            ? 'El servidor falló al procesar este CSV. Revisa el formato del archivo y prueba con la plantilla oficial.'
-            : `Error del servidor (${status || 'sin conexión'}): ${msg || 'El backend no pudo procesar el archivo. Revisa los logs del servidor.'}`,
+            ? t('academic.csvServerProcessError')
+            : `${t('common.error')} (${status || 'offline'}): ${msg || t('academic.csvServerProcessError')}`,
         );
       } else if (status === 413) {
-        setFileError('El archivo es demasiado grande para el servidor. Divide el CSV en partes más pequeñas.');
+        setFileError(t('academic.csvFileTooLargeServer'));
       } else if (status === 415) {
-        setFileError('Formato no soportado por el servidor. Asegúrate de que el archivo sea un CSV válido.');
+        setFileError(t('academic.csvFormatNotSupportedServer'));
       } else if (status === 400) {
-        setFileError(msg || 'El archivo tiene errores de formato. Verifica que las columnas sean correctas.');
+        setFileError(msg || t('academic.csvServerProcessError'));
       } else {
-        setFileError(msg || 'No se pudo procesar el archivo CSV.');
+        setFileError(msg || t('academic.csvServerProcessError'));
       }
     } finally {
       setLoading(false);
@@ -324,8 +329,8 @@ export default function CsvUploadScreen() {
             <Ionicons name="arrow-back" size={20} color={text} />
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
-            <Text style={[s.pageTitle, { color: text }]}>Cargar información (CSV)</Text>
-            <Text style={[s.pageSubtitle, { color: muted }]}>Programas · Fichas · Aprendices · Instructores</Text>
+            <Text style={[s.pageTitle, { color: text }]}>{t('academic.csvV4Title')}</Text>
+            <Text style={[s.pageSubtitle, { color: muted }]}>{t('academic.csvV4Subtitle')}</Text>
           </View>
         </View>
 
@@ -348,7 +353,7 @@ export default function CsvUploadScreen() {
               {loading ? (
                 <View style={s.dropInner}>
                   <ActivityIndicator color={theme.primary} size="large" />
-                  <Text style={[s.dropMain, { color: muted }]}>Procesando…</Text>
+                  <Text style={[s.dropMain, { color: muted }]}>{t('academic.csvProcessing')}</Text>
                 </View>
               ) : (
                 <View style={s.dropInner}>
@@ -356,9 +361,9 @@ export default function CsvUploadScreen() {
                     <Ionicons name="cloud-upload-outline" size={34} color={theme.primary} />
                   </View>
                   <Text style={[s.dropMain, { color: text }]}>
-                    {Platform.OS === 'web' ? 'Arrastra el archivo aquí o haz clic para seleccionar' : 'Toca para seleccionar el archivo'}
+                    {Platform.OS === 'web' ? t('academic.csvDropPromptWeb') : t('academic.csvDropPromptMobile')}
                   </Text>
-                  <Text style={[s.dropSub, { color: muted }]}>Solo archivos .csv · Máximo indicado: 31 KB · 5 000 filas</Text>
+                  <Text style={[s.dropSub, { color: muted }]}>{t('academic.csvDropLimit')}</Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -369,7 +374,7 @@ export default function CsvUploadScreen() {
         <View style={[s.guideCard, { backgroundColor: cardBg, borderColor: border }]}>
           <TouchableOpacity onPress={() => setGuideOpen(v => !v)} style={s.guideToggle} activeOpacity={0.7}>
             <Ionicons name="help-circle-outline" size={18} color={theme.primary} />
-            <Text style={[s.guideToggleText, { color: theme.primary }]}>¿Cómo debe estar el archivo?</Text>
+            <Text style={[s.guideToggleText, { color: theme.primary }]}>{t('academic.csvGuideToggle')}</Text>
             <Ionicons name={guideOpen ? 'chevron-up' : 'chevron-down'} size={16} color={muted} style={{ marginLeft: 'auto' }} />
           </TouchableOpacity>
 
@@ -377,12 +382,12 @@ export default function CsvUploadScreen() {
             <View style={s.guideBody}>
               <View style={[s.fileSizeNotice, { backgroundColor: theme.primary + '12', borderColor: theme.primary + '44' }]}>
                 <Ionicons name="information-circle-outline" size={16} color={theme.primary} />
-                <Text style={[s.fileSizeNoticeText, { color: text }]}>Los archivos deben tener un tamaño máximo indicado de 31 KB.</Text>
+                <Text style={[s.fileSizeNoticeText, { color: text }]}>{t('academic.csvFileSizeNotice')}</Text>
               </View>
 
               {/* Chips de columnas */}
-              <Text style={[s.guideSection, { color: muted }]}>COLUMNAS</Text>
-              {COLUMN_GUIDE.map(row => (
+              <Text style={[s.guideSection, { color: muted }]}>{t('academic.csvColumnsSection')}</Text>
+              {getColumnGuide(t).map(row => (
                 <View key={row.col} style={[s.colRow, { borderBottomColor: border }]}>
                   <View style={s.colLeft}>
                     <Text style={[s.colName, { color: theme.primary }]}>{row.col}</Text>
@@ -395,8 +400,8 @@ export default function CsvUploadScreen() {
               ))}
 
               {/* Tips */}
-              <Text style={[s.guideSection, { color: muted, marginTop: 14 }]}>CONSEJOS</Text>
-              {TIPS.map((tip, i) => (
+              <Text style={[s.guideSection, { color: muted, marginTop: 14 }]}>{t('academic.csvTipsSection')}</Text>
+              {getTips(t).map((tip, i) => (
                 <View key={i} style={s.tipRow}>
                   <Ionicons name={tip.icon as any} size={14} color={theme.primary} style={{ marginTop: 1 }} />
                   <Text style={[s.tipText, { color: text }]}>{tip.text}</Text>
@@ -405,7 +410,7 @@ export default function CsvUploadScreen() {
 
               <TouchableOpacity onPress={downloadTemplate} style={[s.templateButton, { borderColor: theme.primary, backgroundColor: theme.primary + '12' }]} activeOpacity={0.8}>
                 <Ionicons name="download-outline" size={16} color={theme.primary} />
-                <Text style={[s.templateButtonText, { color: theme.primary }]}>Descargar plantilla</Text>
+                <Text style={[s.templateButtonText, { color: theme.primary }]}>{t('academic.csvDownloadTemplateBtn')}</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -431,10 +436,10 @@ export default function CsvUploadScreen() {
 
             {/* Nombre de archivo */}
             <View style={s.resultToolbar}>
-              {fileName ? <Text style={[s.fileChip, { color: muted }]}>Archivo: {fileName}</Text> : <View />}
+              {fileName ? <Text style={[s.fileChip, { color: muted }]}>{t('academic.csvFilePrefix')}: {fileName}</Text> : <View />}
               <TouchableOpacity onPress={downloadResultReport} style={[s.downloadBtn, { borderColor: theme.primary, backgroundColor: theme.primary + '12' }]} activeOpacity={0.8}>
                 <Ionicons name="download-outline" size={16} color={theme.primary} />
-                <Text style={[s.downloadBtnText, { color: theme.primary }]}>Descargar reporte Excel</Text>
+                <Text style={[s.downloadBtnText, { color: theme.primary }]}>{t('academic.csvDownloadExcelReport')}</Text>
               </TouchableOpacity>
             </View>
 
@@ -442,21 +447,21 @@ export default function CsvUploadScreen() {
               <View style={[s.guideCard, { backgroundColor: cardBg, borderColor: border }]}>
                 <View style={s.credentialsHeader}>
                   <View style={{ flex: 1 }}>
-                    <Text style={[s.resultHeader, { color: text }]}>Credenciales iniciales generadas</Text>
-                    <Text style={[s.resultMsg, { color: muted }]}>Documento, nombre, rol y ubicación académica.</Text>
+                    <Text style={[s.resultHeader, { color: text }]}>{t('academic.csvGeneratedCredentials')}</Text>
+                    <Text style={[s.resultMsg, { color: muted }]}>{t('academic.csvCredentialsSubtitle')}</Text>
                   </View>
                   <TouchableOpacity onPress={downloadCredentials} style={[s.downloadBtn, { borderColor: theme.primary, backgroundColor: theme.primary + '12' }]} activeOpacity={0.8}>
                     <Ionicons name="download-outline" size={16} color={theme.primary} />
                     <Text style={[s.downloadBtnText, { color: theme.primary }]}>Excel</Text>
                   </TouchableOpacity>
                 </View>
-                <Text style={[s.resultMsg, { color: muted }]}>Entrégalas al usuario correspondiente. Solo se muestran en esta respuesta.</Text>
+                <Text style={[s.resultMsg, { color: muted }]}>{t('academic.csvCredentialsWarning')}</Text>
                 {summary.generatedPasswords.map((item) => (
                   <View key={item.document} style={[s.passwordRow, { borderBottomColor: border }]}>
                     <View style={s.passwordIdentity}>
                       <Text style={[s.passwordDocument, { color: text }]}>{item.document}</Text>
-                      <Text style={[s.passwordMeta, { color: muted }]}>{item.name || 'Nombre no informado'} · {item.role || 'Rol no informado'}</Text>
-                      <Text style={[s.passwordMeta, { color: muted }]}>Ficha: {item.ficha || 'No aplica'} · Programa: {item.program || 'No informado'}</Text>
+                      <Text style={[s.passwordMeta, { color: muted }]}>{item.name || t('academic.csvNameNotReported')} · {item.role || t('academic.csvRoleNotReported')}</Text>
+                      <Text style={[s.passwordMeta, { color: muted }]}>{t('academic.ficha')}: {item.ficha || t('academic.csvNotApplicable')} · {t('academic.program')}: {item.program || t('academic.csvNotReported')}</Text>
                     </View>
                     <Text selectable style={[s.passwordValue, { color: theme.primary }]}>{item.password}</Text>
                   </View>
@@ -466,12 +471,12 @@ export default function CsvUploadScreen() {
 
             {/* Lista de filas */}
             <View style={[s.guideCard, { backgroundColor: cardBg, borderColor: border }]}>
-              <Text style={[s.resultHeader, { color: text }]}>Detalle por fila</Text>
+              <Text style={[s.resultHeader, { color: text }]}>{t('academic.csvRowDetail')}</Text>
               {summary.rows.map(row => (
                 <View key={row.rowIndex} style={[s.resultRow, { borderLeftColor: catColor(row.category), borderBottomColor: border }]}>
                   <Ionicons name={catIcon(row.category) as any} size={14} color={catColor(row.category)} style={{ marginTop: 2, flexShrink: 0 }} />
                   <View style={{ flex: 1 }}>
-                    <Text style={[s.resultId, { color: text }]}>Fila {row.rowIndex} · <Text style={{ color: theme.primary }}>{row.tipo}</Text> · {row.identifier}</Text>
+                    <Text style={[s.resultId, { color: text }]}>{t('academic.csvRowPrefix')} {row.rowIndex} · <Text style={{ color: theme.primary }}>{row.tipo}</Text> · {row.identifier}</Text>
                     <Text style={[s.resultMsg, { color: muted }]}>{row.message}</Text>
                   </View>
                   {row.category === 'blocked' && row.conflictRecordId && (
@@ -479,7 +484,7 @@ export default function CsvUploadScreen() {
                       onPress={() => router.push(row.conflictRecordType === 'ficha' ? `/admin/academic/fichas/${row.conflictRecordId}` as any : '/admin/academic' as any)}
                       style={[s.fixBtn, { borderColor: Colors.warning }]}
                     >
-                      <Text style={[s.fixBtnText, { color: Colors.warning }]}>Corregir</Text>
+                      <Text style={[s.fixBtnText, { color: Colors.warning }]}>{t('academic.csvFix')}</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -489,7 +494,7 @@ export default function CsvUploadScreen() {
             {/* Nuevo archivo */}
             <TouchableOpacity onPress={reset} style={[s.reloadBtn, { borderColor: theme.primary }]} activeOpacity={0.8}>
               <Ionicons name="reload-outline" size={16} color={theme.primary} />
-              <Text style={[s.reloadText, { color: theme.primary }]}>Cargar otro archivo</Text>
+              <Text style={[s.reloadText, { color: theme.primary }]}>{t('academic.csvUploadAnother')}</Text>
             </TouchableOpacity>
           </>
         )}
