@@ -61,8 +61,8 @@ export default function FichaFormModal({ visible, onClose, editId, defaultProgra
 
   const validate = () => {
     const e: Record<string, string> = {};
-    if (!number.trim()) e.number = 'El código de ficha es obligatorio.';
-    else if (!/^\d{7}$/.test(number.trim())) e.number = 'El código de ficha debe tener exactamente 7 dígitos numéricos.';
+    if (!number.trim()) e.number = t('academic.fichaValidationNumber');
+    else if (!/^\d{7}$/.test(number.trim())) e.number = t('academic.fichaValidationNumberFormat');
     if (!selectedProgram) e.program = t('academic.selectProgram', 'Selecciona un programa');
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -119,7 +119,7 @@ export default function FichaFormModal({ visible, onClose, editId, defaultProgra
         style={[ffm.input, { backgroundColor: inputBg, borderColor: inputBorder, color: text, marginBottom: 8 }] as any}
         value={programQuery}
         onChangeText={setProgramQuery}
-        placeholder="Buscar programa por nombre o código"
+        placeholder={t('academic.fichaSearchProgramPlaceholder')}
         placeholderTextColor={isDark ? '#5A7258' : '#AAAAAA'}
       />
       <View style={ffm.programList}>

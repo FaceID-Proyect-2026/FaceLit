@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     ActivityIndicator,
     FlatList,
@@ -39,6 +40,7 @@ type AssignResult = {
 };
 
 export default function AcademicAssignmentsScreen() {
+  const { t } = useTranslation();
   const { theme, isDark } = useTheme();
   const { allFichas, programs } = useAcademic();
 
@@ -75,12 +77,12 @@ export default function AcademicAssignmentsScreen() {
           id:          f.id,
           code:        f.code,
           number:      f.number,
-          programName: prog?.name ?? 'Sin programa',
+          programName: prog?.name ?? t('academic.assignNoProgram'),
           programCode: prog?.code ?? '',
         };
       })
       .filter(f => !q || f.number.includes(q) || f.code.toLowerCase().includes(q) || f.programName.toLowerCase().includes(q));
-  }, [allFichas, programs, fichaSearch]);
+  }, [allFichas, programs, fichaSearch, t]);
 
   const reset = () => {
     setDocument(''); setName(''); setLastname(''); setEmail('');
@@ -88,11 +90,11 @@ export default function AcademicAssignmentsScreen() {
   };
 
   const validate = (): string | null => {
-    if (!/^\d{6,15}$/.test(document.trim()))                    return 'El documento debe tener entre 6 y 15 dígitos.';
-    if (!name.trim())                                            return 'El nombre es obligatorio.';
-    if (!lastname.trim())                                          return 'El apellido es obligatorio.';
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))         return 'El correo electrónico no es válido.';
-    if (!selectedFicha)                                            return 'Debes seleccionar una ficha.';
+    if (!/^\d{6,15}$/.test(document.trim()))                    return t('academic.assignValidationDoc');
+    if (!name.trim())                                            return t('academic.assignValidationName');
+    if (!lastname.trim())                                        return t('academic.assignValidationLastName');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))       return t('academic.assignValidationEmail');
+    if (!selectedFicha)                                          return t('academic.assignValidationFicha');
     return null;
   };
 
@@ -120,7 +122,7 @@ export default function AcademicAssignmentsScreen() {
         document:        document.trim(),
       });
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? 'No se pudo asignar el aprendiz.');
+      setError(err?.response?.data?.message ?? t('academic.assignError'));
     } finally {
       setSaving(false);
     }
@@ -137,12 +139,12 @@ export default function AcademicAssignmentsScreen() {
               <Ionicons name="checkmark-circle" size={48} color={theme.primary} />
             </View>
 
-            <Text style={[s.resultTitle,    { color: text  }]}>Aprendiz asignado</Text>
+            <Text style={[s.resultTitle,    { color: text  }]}>{t('academic.assignSuccessTitle')}</Text>
             <Text style={[s.resultSubtitle, { color: muted }]}>
               <Text style={{ fontWeight: FontWeight.black, color: text }}>{result.apprenticeName}</Text>
-              {' '}fue asignado a la ficha{' '}
+              {' '}{t('academic.assignSuccessSubtitle')}{' '}
               <Text style={{ fontWeight: FontWeight.black, color: theme.primary }}>{result.fichaCode}</Text>
-              {' '}exitosamente.
+              {' '}{t('academic.assignSuccessAdverb')}
             </Text>
 
             {/* Contraseña generada */}
@@ -150,17 +152,17 @@ export default function AcademicAssignmentsScreen() {
               <View style={[s.pwdSection, { backgroundColor: theme.primary + '0D', borderColor: theme.primary + '44' }]}>
                 <View style={s.pwdHeader}>
                   <Ionicons name="key-outline" size={16} color={theme.primary} />
-                  <Text style={[s.pwdLabel, { color: theme.primary }]}>Contraseña inicial generada</Text>
+                  <Text style={[s.pwdLabel, { color: theme.primary }]}>{t('academic.assignPwdLabel')}</Text>
                 </View>
                 <Text style={[s.pwdValue, { color: theme.primary }]}>{result.initialPassword}</Text>
                 <Text style={[s.pwdHint, { color: muted }]}>
-                  Número de documento:{' '}
+                  {t('academic.assignPwdDocHint')}:{' '}
                   <Text style={{ fontWeight: FontWeight.black, color: text }}>{result.document}</Text>
                 </Text>
                 <View style={[s.pwdWarning, { backgroundColor: Colors.warning + '15', borderColor: Colors.warning + '44' }]}>
                   <Ionicons name="information-circle-outline" size={14} color={Colors.warning} />
                   <Text style={[s.pwdWarningText, { color: Colors.warning }]}>
-                    Esta contraseña solo se muestra una vez. Entrégala al aprendiz directamente.
+                    {t('academic.assignPwdWarning')}
                   </Text>
                 </View>
               </View>
@@ -171,12 +173,12 @@ export default function AcademicAssignmentsScreen() {
               <TouchableOpacity onPress={reset} style={[s.newBtn, { backgroundColor: theme.primary }]} activeOpacity={0.85}>
                 <LinearGradient colors={['#72C96D', '#65B361', '#4FA14B']} style={s.newBtnGrad}>
                   <Ionicons name="person-add-outline" size={18} color={Colors.white} />
-                  <Text style={{ color: Colors.white, fontWeight: FontWeight.bold }}>Registrar otro aprendiz</Text>
+                  <Text style={{ color: Colors.white, fontWeight: FontWeight.bold }}>{t('academic.assignAnotherBtn')}</Text>
                 </LinearGradient>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => router.back()} style={[s.backLink, { borderColor: border }]} activeOpacity={0.7}>
                 <Ionicons name="arrow-back-outline" size={16} color={muted} />
-                <Text style={{ color: muted, fontWeight: FontWeight.semibold }}>Volver a Gestión Académica</Text>
+                <Text style={{ color: muted, fontWeight: FontWeight.semibold }}>{t('academic.assignBackBtn')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -194,8 +196,8 @@ export default function AcademicAssignmentsScreen() {
           <Ionicons name="arrow-back" size={20} color={text} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={[s.title, { color: text }]}>Asignar aprendiz</Text>
-          <Text style={[s.subtitle, { color: muted }]}>Registra un aprendiz y asígnalo a una ficha activa</Text>
+          <Text style={[s.title, { color: text }]}>{t('academic.assignTitle')}</Text>
+          <Text style={[s.subtitle, { color: muted }]}>{t('academic.assignSubtitle')}</Text>
         </View>
       </View>
 
@@ -210,24 +212,24 @@ export default function AcademicAssignmentsScreen() {
             <View style={[s.sectionIcon, { backgroundColor: theme.primary + '18' }]}>
               <Ionicons name="person-outline" size={18} color={theme.primary} />
             </View>
-            <Text style={[s.sectionTitle, { color: text }]}>Datos del aprendiz</Text>
+            <Text style={[s.sectionTitle, { color: text }]}>{t('academic.assignSectionLearner')}</Text>
           </View>
 
           {/* Documento */}
           <View style={s.field}>
-            <Text style={[s.label, { color: text }]}>Número de documento *</Text>
+            <Text style={[s.label, { color: text }]}>{t('academic.assignDocLabel')}</Text>
             <View style={[s.inputWrap, { backgroundColor: inputBg, borderColor: error && !document ? Colors.error : border }]}>
               <Ionicons name="card-outline" size={16} color={muted} />
               <TextInput
                 style={[s.input, { color: text }] as any}
                 value={document}
-                onChangeText={v => { setDocument(v.replace(/\D/g, '').slice(0, 10)); setError(''); }}
-                placeholder="6 a 15 dígitos"
+                onChangeText={v => { setDocument(v.replace(/\D/g, '').slice(0, 15)); setError(''); }}
+                placeholder={t('academic.assignDocPlaceholder')}
                 placeholderTextColor={muted}
                 keyboardType="numeric"
-                maxLength={10}
+                maxLength={15}
               />
-              {document.length === 10 && (
+              {document.length >= 6 && (
                 <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
               )}
             </View>
@@ -235,14 +237,14 @@ export default function AcademicAssignmentsScreen() {
 
           {/* Nombre */}
           <View style={s.field}>
-            <Text style={[s.label, { color: text }]}>Nombre *</Text>
+            <Text style={[s.label, { color: text }]}>{t('academic.assignNameLabel')}</Text>
             <View style={[s.inputWrap, { backgroundColor: inputBg, borderColor: border }]}>
               <Ionicons name="person-outline" size={16} color={muted} />
               <TextInput
                 style={[s.input, { color: text }] as any}
                 value={name}
                 onChangeText={v => { setName(v); setError(''); }}
-                placeholder="Ej: Juan"
+                placeholder={t('academic.assignNamePlaceholder')}
                 placeholderTextColor={muted}
                 autoCapitalize="words"
               />
@@ -251,14 +253,14 @@ export default function AcademicAssignmentsScreen() {
 
           {/* Apellido */}
           <View style={s.field}>
-            <Text style={[s.label, { color: text }]}>Apellido *</Text>
+            <Text style={[s.label, { color: text }]}>{t('academic.assignLastNameLabel')}</Text>
             <View style={[s.inputWrap, { backgroundColor: inputBg, borderColor: border }]}>
               <Ionicons name="person-outline" size={16} color={muted} />
               <TextInput
                 style={[s.input, { color: text }] as any}
                 value={lastname}
                 onChangeText={v => { setLastname(v); setError(''); }}
-                placeholder="Ej: Pérez"
+                placeholder={t('academic.assignLastNamePlaceholder')}
                 placeholderTextColor={muted}
                 autoCapitalize="words"
               />
@@ -267,14 +269,14 @@ export default function AcademicAssignmentsScreen() {
 
           {/* Correo */}
           <View style={s.field}>
-            <Text style={[s.label, { color: text }]}>Correo electrónico *</Text>
+            <Text style={[s.label, { color: text }]}>{t('academic.assignEmailLabel')}</Text>
             <View style={[s.inputWrap, { backgroundColor: inputBg, borderColor: border }]}>
               <Ionicons name="mail-outline" size={16} color={muted} />
               <TextInput
                 style={[s.input, { color: text }] as any}
                 value={email}
                 onChangeText={v => { setEmail(v); setError(''); }}
-                placeholder="correo@ejemplo.com"
+                placeholder={t('academic.assignEmailPlaceholder')}
                 placeholderTextColor={muted}
                 keyboardType="email-address"
                 autoCapitalize="none"
@@ -290,7 +292,7 @@ export default function AcademicAssignmentsScreen() {
             <View style={[s.sectionIcon, { backgroundColor: theme.primary + '18' }]}>
               <Ionicons name="document-text-outline" size={18} color={theme.primary} />
             </View>
-            <Text style={[s.sectionTitle, { color: text }]}>Seleccionar ficha *</Text>
+            <Text style={[s.sectionTitle, { color: text }]}>{t('academic.assignSectionFicha')}</Text>
           </View>
 
           {/* Ficha seleccionada */}
@@ -298,7 +300,7 @@ export default function AcademicAssignmentsScreen() {
             <View style={[s.selectedFicha, { backgroundColor: theme.primary + '10', borderColor: theme.primary + '55' }]}>
               <Ionicons name="checkmark-circle" size={18} color={theme.primary} />
               <View style={{ flex: 1 }}>
-                <Text style={[s.selectedFichaCode, { color: theme.primary }]}>Ficha {selectedFicha.number}</Text>
+                <Text style={[s.selectedFichaCode, { color: theme.primary }]}>{t('academic.assignFichaLabel')} {selectedFicha.number}</Text>
                 <Text style={[s.selectedFichaProg,  { color: muted }]}>{selectedFicha.programName}</Text>
               </View>
               <TouchableOpacity onPress={() => setSelectedFicha(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
@@ -316,7 +318,7 @@ export default function AcademicAssignmentsScreen() {
                   style={[s.input, { color: text }] as any}
                   value={fichaSearch}
                   onChangeText={setFichaSearch}
-                  placeholder="Buscar ficha por número, código o programa"
+                  placeholder={t('academic.assignFichaSearchPlaceholder')}
                   placeholderTextColor={muted}
                 />
                 {fichaSearch.length > 0 && (
@@ -328,7 +330,7 @@ export default function AcademicAssignmentsScreen() {
 
               {activeFichas.length === 0 ? (
                 <Text style={[s.fichaEmpty, { color: muted }]}>
-                  {fichaSearch ? 'Sin resultados.' : 'No hay fichas activas disponibles.'}
+                  {fichaSearch ? t('academic.assignFichaNoResults') : t('academic.assignFichaEmpty')}
                 </Text>
               ) : (
                 <FlatList
@@ -383,7 +385,7 @@ export default function AcademicAssignmentsScreen() {
               : <Ionicons name="person-add-outline" size={20} color={Colors.white} />
             }
             <Text style={s.submitBtnText}>
-              {saving ? 'Asignando…' : 'Asignar aprendiz a ficha'}
+              {saving ? t('academic.assignSaving') : t('academic.assignBtn')}
             </Text>
           </LinearGradient>
         </TouchableOpacity>
@@ -392,7 +394,7 @@ export default function AcademicAssignmentsScreen() {
         <View style={[s.infoNote, { backgroundColor: inputBg, borderColor: border }]}>
           <Ionicons name="information-circle-outline" size={15} color={muted} />
           <Text style={[s.infoNoteText, { color: muted }]}>
-            Si el aprendiz no tiene cuenta, el sistema la crea automáticamente y genera una contraseña inicial vinculada a su número de documento.
+            {t('academic.assignInfoNote')}
           </Text>
         </View>
       </ScrollView>

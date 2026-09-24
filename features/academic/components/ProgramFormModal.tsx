@@ -47,10 +47,10 @@ export default function ProgramFormModal({ visible, onClose, editId }: ProgramFo
     const nextErrors: typeof errors = {};
     const normalizedName = name.trim();
     const normalizedCode = code.trim().toUpperCase();
-    if (!normalizedName) nextErrors.name = 'El nombre del programa es obligatorio.';
-    else if (normalizedName.length > 100) nextErrors.name = 'El nombre no puede superar los 100 caracteres.';
-    if (!normalizedCode) nextErrors.code = 'El código de programa es obligatorio.';
-    else if (!/^[A-Z0-9]{2,15}$/.test(normalizedCode)) nextErrors.code = 'El código debe tener entre 2 y 15 caracteres alfanuméricos.';
+    if (!normalizedName) nextErrors.name = t('academic.programValidationName');
+    else if (normalizedName.length > 100) nextErrors.name = t('academic.programValidationNameLength');
+    if (!normalizedCode) nextErrors.code = t('academic.programValidationCode');
+    else if (!/^[A-Z0-9]{2,15}$/.test(normalizedCode)) nextErrors.code = t('academic.programValidationCodeFormat');
     if (Object.keys(nextErrors).length) { setErrors(nextErrors); return; }
     try {
       if (existing) await updateProgram(existing.id, normalizedName, normalizedCode);
@@ -83,12 +83,12 @@ export default function ProgramFormModal({ visible, onClose, editId }: ProgramFo
         style={[pfm.input, { backgroundColor: inputBg, borderColor: errors.name || errors.form ? Colors.error : inputBorder, color: text }] as any}
         value={name}
         onChangeText={v => { setName(v); setErrors(previous => ({ ...previous, name: undefined, form: undefined })); }}
-        placeholder="Nombre del programa"
+        placeholder={t('academic.programNamePlaceholder')}
         placeholderTextColor={isDark ? '#5A7258' : '#AAAAAA'}
       />
       {errors.name ? <Text style={pfm.error}>{errors.name}</Text> : null}
 
-      <Text style={[pfm.label, { color: text, marginTop: 16 }]}>Código del programa</Text>
+      <Text style={[pfm.label, { color: text, marginTop: 16 }]}>{t('academic.programCodeLabel')}</Text>
       <TextInput
         style={[pfm.input, { backgroundColor: inputBg, borderColor: errors.code || errors.form ? Colors.error : inputBorder, color: text }] as any}
         value={code}

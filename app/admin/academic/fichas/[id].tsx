@@ -1,4 +1,4 @@
-import FichaFormModal from '@/features/academic/components/FichaFormModal';
+﻿import FichaFormModal from '@/features/academic/components/FichaFormModal';
 import { getProgramDisplayName } from '@/features/academic/types';
 import { useAcademic } from '@/features/academic/useAcademic';
 import { Colors } from '@/shared/constants/colors';
@@ -66,11 +66,11 @@ function EditLearnerModal({
   const overlayBg = 'rgba(0,0,0,0.55)';
 
   const handleSave = () => {
-    if (!name.trim() || !lastname.trim()) { setError('Nombre y apellido son obligatorios.'); return; }
+    if (!name.trim() || !lastname.trim()) { setError(t('academic.fichaEditLearnerValidation')); return; }
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError('Correo inválido.'); return; }
-    if (!document.trim() || !/^\d{6,15}$/.test(document.trim())) { setError('El documento debe tener entre 6 y 15 dígitos.'); return; }
+    if (!document.trim() || !/^\d{6,15}$/.test(document.trim())) { setError(t('academic.fichaEditLearnerDocError')); return; }
     const result = onSave({ name: name.trim(), lastname: lastname.trim(), email: email.trim(), document: document.trim() });
-    if (!result.success) { setError(result.error ? t(result.error as any, { defaultValue: result.error }) : 'Error al guardar.'); return; }
+    if (!result.success) { setError(result.error ? t(result.error as any, { defaultValue: result.error }) : t('academic.fichaEditLearnerSaveError')); return; }
     onClose();
   };
 
@@ -87,9 +87,9 @@ function EditLearnerModal({
 
           <ScrollView showsVerticalScrollIndicator={false}>
             {[
-              { label: 'Nombre', value: name, onChange: setName, keyboard: 'default' as const },
-              { label: 'Apellido', value: lastname, onChange: setLastname, keyboard: 'default' as const },
-              { label: 'Correo', value: email, onChange: setEmail, keyboard: 'email-address' as const },
+              { label: t('academic.fichaEditLearnerNameLabel'), value: name, onChange: setName, keyboard: 'default' as const },
+              { label: t('academic.fichaEditLearnerLastNameLabel'), value: lastname, onChange: setLastname, keyboard: 'default' as const },
+              { label: t('academic.fichaEditLearnerEmailLabel'), value: email, onChange: setEmail, keyboard: 'email-address' as const },
               { label: 'Documento (6 a 15 dígitos)', value: document, onChange: setDoc, keyboard: 'numeric' as const },
             ].map(f => (
               <View key={f.label} style={{ marginBottom: 14 }}>
@@ -232,7 +232,7 @@ export default function FichaDetailScreen() {
             },
           },
           {
-            text: 'Trasladar a otra ficha',
+            text: t('academic.fichaTransferTitle'),
             style: 'default',
             onPress: () => {
               setTransferLearnerId(learnerId);
@@ -321,7 +321,7 @@ export default function FichaDetailScreen() {
                 style={[fds.searchInput, { color: text }] as any}
                 value={instructorSearch}
                 onChangeText={setInstructorSearch}
-                placeholder="Buscar instructor por nombre, documento o correo..."
+                placeholder={t('academic.fichaSearchLearnerPlaceholder')}
                 placeholderTextColor={muted}
                 autoCorrect={false}
               />
@@ -340,7 +340,7 @@ export default function FichaDetailScreen() {
                   <View style={{ flex: 1 }}>
                     <Text style={[fds.instructorName, { color: text }]}>{instructor.name} {instructor.lastname}</Text>
                     <Text style={[fds.learnerMeta, { color: muted }]}>
-                      {instructor.instructorType === 'transversal' ? 'Transversal' : 'Especifico'} � Doc: {instructor.document}
+                      {instructor.instructorType === 'transversal' ? t('academic.fichaInstructorTransversal') : t('academic.fichaInstructorEspecifico')} � Doc: {instructor.document}
                     </Text>
                     <Text style={[fds.learnerMeta, { color: muted }]}>{instructor.email}</Text>
                   </View>
@@ -359,7 +359,7 @@ export default function FichaDetailScreen() {
                 style={[fds.searchInput, { color: text }] as any}
                 value={learnerSearch}
                 onChangeText={setLearnerSearch}
-                placeholder="Buscar por nombre, documento o correo…"
+                placeholder={t('academic.fichaSearchLearnerPlaceholder')}
                 placeholderTextColor={muted}
                 autoCorrect={false}
                 clearButtonMode="while-editing"
@@ -388,7 +388,7 @@ export default function FichaDetailScreen() {
               ) : null}
               {item.updatedAt ? (
                 <Text style={[fds.learnerMeta, { color: muted }]}>
-                  Ultima edicion: {formatDateTime(item.updatedAt)}
+                  {t('academic.fichaLastEdit')}: {formatDateTime(item.updatedAt)}
                 </Text>
               ) : null}
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
@@ -449,21 +449,21 @@ export default function FichaDetailScreen() {
           <View style={[fds.transferModal, { backgroundColor: cardBg, borderColor: border }]}>
             <View style={fds.transferModalHeader}>
               <View style={[fds.transferModalIcon, { backgroundColor: theme.primary + '18' }]}><Ionicons name={'swap-horizontal'} size={22} color={theme.primary} /></View>
-              <View style={{ flex: 1 }}><Text style={[fds.transferModalTitle, { color: text }]}>Trasladar aprendiz</Text><Text style={[fds.transferModalSubtitle, { color: muted }]}>{transferLearnerData?.name} {transferLearnerData?.lastname} · Ficha actual {ficha.number}</Text></View>
+              <View style={{ flex: 1 }}><Text style={[fds.transferModalTitle, { color: text }]}>{t('academic.fichaTransferTitle')}</Text><Text style={[fds.transferModalSubtitle, { color: muted }]}>{transferLearnerData?.name} {transferLearnerData?.lastname} · {t('academic.fichaTransferSubtitle')} {ficha.number}</Text></View>
             </View>
-            <Text style={[fds.transferModalLabel, { color: text }]}>Selecciona una ficha del mismo programa</Text>
+            <Text style={[fds.transferModalLabel, { color: text }]}>{t('academic.fichaTransferSelectLabel')}</Text>
             <ScrollView style={fds.transferOptions}>
               {availableTransferFichas.map(target => (
                 <TouchableOpacity key={target.id} onPress={() => setDestinationFichaId(target.id)} style={[fds.transferOption, { borderColor: destinationFichaId === target.id ? theme.primary : border, backgroundColor: destinationFichaId === target.id ? theme.primary + '14' : 'transparent' }]}>
                   <Ionicons name={destinationFichaId === target.id ? 'radio-button-on' : 'radio-button-off'} size={20} color={destinationFichaId === target.id ? theme.primary : muted} />
-                  <View><Text style={[fds.transferOptionTitle, { color: text }]}>Ficha {target.number}</Text><Text style={[fds.transferOptionMeta, { color: muted }]}>{program ? getProgramDisplayName(program, t) : ''}</Text></View>
+                  <View><Text style={[fds.transferOptionTitle, { color: text }]}>{t('academic.fichaTransferFichaLabel')} {target.number}</Text><Text style={[fds.transferOptionMeta, { color: muted }]}>{program ? getProgramDisplayName(program, t) : ''}</Text></View>
                 </TouchableOpacity>
               ))}
               {availableTransferFichas.length === 0 && <Text style={[fds.transferEmpty, { color: muted }]}>No hay otra ficha activa disponible dentro de este programa.</Text>}
             </ScrollView>
             <View style={fds.transferModalActions}>
-              <TouchableOpacity onPress={() => setTransferLearnerId(null)} style={[fds.transferModalButton, { borderColor: border }]}><Text style={{ color: text, fontWeight: '700' }}>Cancelar</Text></TouchableOpacity>
-              <TouchableOpacity disabled={!destinationFichaId || transferBusy} onPress={() => alert('Confirmar traslado', `¿Estás seguro de trasladar a ${transferLearnerData?.name} de la ficha ${ficha.number} a la ficha ${availableTransferFichas.find(target => target.id === destinationFichaId)?.number}?`, [{ text: 'Cancelar', style: 'cancel' }, { text: 'Sí, trasladar', onPress: async () => { if (!transferLearnerData) return; setTransferBusy(true); try { await transferLearner(transferLearnerData.id, destinationFichaId); setTransferLearnerId(null); alert('Traslado exitoso', 'El aprendiz fue asignado a la nueva ficha correctamente.'); } catch (error: any) { alert(t('common.error'), error?.response?.data?.message ?? 'No se pudo realizar el traslado.'); } finally { setTransferBusy(false); } } }])} style={[fds.transferModalButton, { backgroundColor: destinationFichaId ? theme.primary : muted, borderColor: 'transparent', opacity: transferBusy ? 0.7 : 1 }]}><Text style={{ color: Colors.white, fontWeight: '700' }}>{transferBusy ? 'Trasladando...' : 'Continuar'}</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => setTransferLearnerId(null)} style={[fds.transferModalButton, { borderColor: border }]}>{}<Text style={{ color: text, fontWeight: '700' }}>{t('academic.fichaTransferCancel')}</Text></TouchableOpacity>
+              <TouchableOpacity disabled={!destinationFichaId || transferBusy} onPress={() => alert(t('academic.fichaTransferConfirmTitle'), `¿Estás seguro de trasladar a ${transferLearnerData?.name} de la ficha ${ficha.number} a la ficha ${availableTransferFichas.find(target => target.id === destinationFichaId)?.number}?`, [{ text: t('academic.fichaTransferCancel'), style: 'cancel' }, { text: 'Sí, trasladar', onPress: async () => { if (!transferLearnerData) return; setTransferBusy(true); try { await transferLearner(transferLearnerData.id, destinationFichaId); setTransferLearnerId(null); alert(t('academic.fichaTransferSuccess'), t('academic.fichaTransferSuccess')); } catch (error: any) { alert(t('common.error'), error?.response?.data?.message ?? t('academic.fichaTransferError')); } finally { setTransferBusy(false); } } }])} style={[fds.transferModalButton, { backgroundColor: destinationFichaId ? theme.primary : muted, borderColor: 'transparent', opacity: transferBusy ? 0.7 : 1 }]}><Text style={{ color: Colors.white, fontWeight: '700' }}>{transferBusy ? t('academic.fichaTransferring') : t('academic.fichaTransferContinue')}</Text></TouchableOpacity>
             </View>
           </View>
         </View>
@@ -571,3 +571,4 @@ const elm = StyleSheet.create({
   footer:      { flexDirection: 'row', gap: 10, marginTop: 18 },
   btn:         { flex: 1, borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
 });
+
