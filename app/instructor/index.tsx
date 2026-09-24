@@ -1,9 +1,7 @@
-// ─────────────────────────────────────────────
-//  app/admin/index.tsx — Dashboard Admin
-// ─────────────────────────────────────────────
+import { findCurrentInstructor, getFichasForInstructor } from "@/features/academic/currentAcademic";
+import { getProgramDisplayName } from "@/features/academic/types";
 import { useAcademic } from "@/features/academic/useAcademic";
 import { useAttendance } from "@/features/attendance/useAttendance";
-import { useEnvironments } from "@/features/environments/useEnvironments";
 import { Colors } from "@/shared/constants/colors";
 import { Routes } from "@/shared/constants/routes";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
@@ -12,15 +10,9 @@ import { useTheme } from "@/shared/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from "react-native";
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 interface StatCard {
   icon: string;
@@ -34,13 +26,13 @@ interface QuickAction {
   route: string;
 }
 
-export default function AdminDashboard() {
+export default function InstructorDashboard() {
   const { user } = useAuth();
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
-  const { allFichas, orphanLearners } = useAcademic();
-  const { environments } = useEnvironments();
+  const { allFichas, allInstructors, allPrograms } = useAcademic();
   const attendanceRecords = useAttendance();
+  const [fichaSearch, setFichaSearch] = useState("");
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -48,188 +40,155 @@ export default function AdminDashboard() {
   const border = theme.border;
   const bg = isDark ? Colors.dark.background : Colors.light.background;
 
-  // Al admin (Coordinador) le interesa esencialmente: cuántos aprendices
-  // hay registrados en el sistema y qué tan puntuales han sido — el
-  // detalle de asistencia por usuario lo cubre el módulo de Asistencia,
-  // aquí solo se resume.
-  const {
-    totalLearners,
-    activeFichasCount,
-    activeEnvironmentsCount,
-    attendanceRate,
-  } = useMemo(() => {
+  const currentInstructor = useMemo(
+    () => findCurrentInstructor(allInstructors, user),
+    [allInstructors, user],
+  );
+  const assignedFichas = useMemo(
+    () => getFichasForInstructor(allFichas, currentInstructor),
+    [allFichas, currentInstructor],
+  );
+  const assignedPrograms = useMemo(() => {
+    const ids = new Set(assignedFichas.map(ficha => ficha.programId));
+    return allPrograms.filter(program => ids.has(program.id));
+  }, [allPrograms, assignedFichas]);
+  const visibleFichas = useMemo(() => {
+    const term = fichaSearch.trim().toLowerCase();
+    if (term.length === 0) return [];
+    return assignedFichas.filter(ficha => {
+      const program = allPrograms.find(item => item.id === ficha.programId);
+      return ficha.number.toLowerCase().includes(term)
+        || ficha.code.toLowerCase().includes(term)
+        || (program ? getProgramDisplayName(program, t).toLowerCase().includes(term) : false);
+    });
+  }, [allPrograms, assignedFichas, fichaSearch, t]);
+  const activeLearners = useMemo(() => {
     const learnerIds = new Set<string>();
-    allFichas.forEach((f) => f.learners.forEach((l) => learnerIds.add(l.id)));
-    orphanLearners.forEach((l) => learnerIds.add(l.id));
-
-    const total = attendanceRecords.length;
-    const present = attendanceRecords.filter(
-      (r) => r.status !== "absent",
-    ).length;
-
-    return {
-      totalLearners: learnerIds.size,
-      activeFichasCount: allFichas.filter((f) => f.status === "active").length,
-      activeEnvironmentsCount: environments.filter((e) => e.status === "active")
-        .length,
-      attendanceRate: total > 0 ? Math.round((present / total) * 100) : 0,
-    };
-  }, [allFichas, orphanLearners, environments, attendanceRecords]);
+    assignedFichas.forEach(ficha => {
+      ficha.learners.forEach(learner => {
+        if (learner.status === "active") learnerIds.add(learner.id);
+      });
+    });
+    return learnerIds.size;
+  }, [assignedFichas]);
+  const attendanceRate = useMemo(() => {
+    const fichaIds = new Set(assignedFichas.map(ficha => ficha.id));
+    const scoped = attendanceRecords.filter(record => fichaIds.has(record.fichaId));
+    if (scoped.length === 0) return 0;
+    const present = scoped.filter(record => record.status !== "absent").length;
+    return Math.round((present / scoped.length) * 100);
+  }, [assignedFichas, attendanceRecords]);
 
   const stats: StatCard[] = [
-    {
-      icon: "people-outline",
-      value: String(totalLearners),
-      label: t("dashboard.totalUsers"),
-    },
-    {
-      icon: "school-outline",
-      value: String(activeFichasCount),
-      label: t("dashboard.activeFichas"),
-    },
-    {
-      icon: "business-outline",
-      value: String(activeEnvironmentsCount),
-      label: t("dashboard.environments"),
-    },
-    {
-      icon: "checkmark-circle-outline",
-      value: `${attendanceRate}%`,
-      label: t("dashboard.attendanceRate"),
-    },
+    { icon: "people-outline", value: String(activeLearners), label: "Aprendices a cargo" },
+    { icon: "school-outline", value: String(assignedFichas.length), label: "Fichas asignadas" },
+    { icon: "library-outline", value: String(assignedPrograms.length), label: "Programas" },
+    { icon: "checkmark-circle-outline", value: `${attendanceRate}%`, label: t("dashboard.attendanceRate") },
   ];
 
-  // Accesos rápidos del dashboard: se limitan a los módulos que
-  // permanecen visibles en la barra lateral (Reconocimiento Facial,
-  // Notificaciones y Perfil).
   const quickActions: QuickAction[] = [
-    {
-      icon: "scan-outline",
-      label: t("sidebar.facial"),
-      route: Routes.INSTRUCTOR.FACIAL,
-    },
-    {
-      icon: "notifications-outline",
-      label: t("sidebar.notifications"),
-      route: Routes.NOTIFICATIONS.CENTER,
-    },
-    {
-      icon: "person-outline",
-      label: t("sidebar.profile"),
-      route: Routes.PROFILE.VIEW,
-    },
+    { icon: "school-outline", label: "Mis fichas", route: "/instructor/academic" },
+    { icon: "people-outline", label: "Asistencia", route: "/instructor/attendance" },
+    { icon: "scan-outline", label: t("sidebar.facial"), route: Routes.INSTRUCTOR.FACIAL },
+    { icon: "person-outline", label: t("sidebar.profile"), route: Routes.PROFILE.VIEW },
   ];
 
-  // ── Datos mock ────────────────────────────
-  const recentActivity = [
-    {
-      icon: "person-add-outline",
-      text: "Nuevo aprendiz registrado: Ana Martínez",
-      time: "Hace 5 min",
-      color: theme.success,
-    },
-    {
-      icon: "checkmark-circle-outline",
-      text: "Asistencia registrada: Ficha 3145555",
-      time: "Hace 12 min",
-      color: theme.info,
-    },
-    {
-      icon: "alert-circle-outline",
-      text: "Ambiente 304 sin instructor asignado",
-      time: "Hace 1 hora",
-      color: theme.warning,
-    },
-    {
-      icon: "time-outline",
-      text: "Horario modificado: ADSO - Jornada mañana",
-      time: "Hace 2 horas",
-      color: theme.secondary,
-    },
-  ];
+  const displayName = user?.firstName ?? user?.name ?? user?.email?.split("@")[0] ?? "Instructor";
 
   return (
     <View style={[ads.safe, { backgroundColor: bg }]}>
-      <ScrollView
-        contentContainerStyle={ads.scroll}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Welcome */}
+      <ScrollView contentContainerStyle={ads.scroll} showsVerticalScrollIndicator={false}>
         <LinearGradient
-          colors={["#65B361", "#4A9146"]}
+          colors={["#2E7D32", "#65B361"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={ads.welcomeBanner}
         >
-          <View>
-            <Text style={ads.welcomeTitle}>
-              {t("dashboard.welcome")}, {user?.firstName ?? user?.name ?? 'Usuario'}!
-            </Text>
-            <Text style={ads.welcomeSubtitle}>
-              {t("dashboard.role")}:{" "}
-              {user?.role.charAt(0).toUpperCase() + (user?.role ?? "").slice(1)}
-            </Text>
+          <View style={{ flex: 1 }}>
+            <Text style={ads.welcomeKicker}>Panel de instructor</Text>
+            <Text style={ads.welcomeTitle}>{displayName}</Text>
+            <Text style={ads.welcomeSubtitle}>Consulta solo las fichas, aprendices y asistencias asignadas.</Text>
           </View>
-          <Ionicons
-            name="shield-checkmark"
-            size={40}
-            color="rgba(255,255,255,0.3)"
-          />
+          <Ionicons name="person-circle-outline" size={62} color="rgba(255,255,255,0.28)" />
         </LinearGradient>
 
-        {/* Stats */}
         <View style={ads.statsGrid}>
-          {stats.map((stat) => (
-            <View
-              key={stat.label}
-              style={[
-                ads.statCard,
-                { backgroundColor: cardBg, borderColor: border },
-              ]}
-            >
-              <Ionicons
-                name={stat.icon as any}
-                size={22}
-                color={theme.primary}
-              />
+          {stats.map(stat => (
+            <View key={stat.label} style={[ads.statCard, { backgroundColor: cardBg, borderColor: border }]}>
+              <Ionicons name={stat.icon as any} size={22} color={theme.primary} />
               <Text style={[ads.statValue, { color: text }]}>{stat.value}</Text>
-              <Text style={[ads.statLabel, { color: muted }]}>
-                {stat.label}
-              </Text>
+              <Text style={[ads.statLabel, { color: muted }]}>{stat.label}</Text>
             </View>
           ))}
         </View>
 
-        {/* Accesos rápidos */}
-        <Text style={[ads.sectionTitle, { color: text }]}>
-          {t("dashboard.quickActions")}
-        </Text>
+        <View style={[ads.scopeCard, { backgroundColor: cardBg, borderColor: border }]}>
+          <View style={ads.scopeHeader}>
+            <View style={[ads.scopeIcon, { backgroundColor: theme.primary + "18" }]}>
+              <Ionicons name="albums-outline" size={22} color={theme.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[ads.scopeTitle, { color: text }]}>Alcance académico</Text>
+              <Text style={[ads.scopeSubtitle, { color: muted }]}>Busca una ficha asignada para consultar su programa y aprendices.</Text>
+            </View>
+          </View>
+
+          <View style={[ads.searchWrap, { backgroundColor: bg, borderColor: border }]}>
+            <Ionicons name="search-outline" size={18} color={muted} />
+            <TextInput
+              value={fichaSearch}
+              onChangeText={setFichaSearch}
+              placeholder="Buscar por numero de ficha o programa"
+              placeholderTextColor={muted}
+              style={[ads.searchInput, { color: text }] as any}
+            />
+          </View>
+
+          <View style={ads.fichaList}>
+            {visibleFichas.map(ficha => {
+              const program = allPrograms.find(item => item.id === ficha.programId);
+              return (
+                <TouchableOpacity
+                  key={ficha.id}
+                  onPress={() => router.push(`/instructor/academic/fichas/${ficha.id}` as any)}
+                  style={[ads.fichaChip, { backgroundColor: theme.primary + "08", borderColor: border }]}
+                  activeOpacity={0.75}
+                >
+                  <View>
+                    <Text style={[ads.fichaChipTitle, { color: text }]}>Ficha {ficha.number}</Text>
+                    <Text style={[ads.fichaChipMeta, { color: muted }]} numberOfLines={1}>
+                      {program ? getProgramDisplayName(program, t) : "Sin programa"} · {ficha.learners.length} aprendices
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color={muted} />
+                </TouchableOpacity>
+              );
+            })}
+            {assignedFichas.length === 0 && (
+              <Text style={[ads.emptyScope, { color: muted }]}>No tienes fichas asignadas todavía.</Text>
+            )}
+            {assignedFichas.length > 0 && fichaSearch.trim().length === 0 && (
+              <Text style={[ads.emptyScope, { color: muted }]}>Escribe el numero de ficha o programa para buscar.</Text>
+            )}
+            {assignedFichas.length > 0 && fichaSearch.trim().length > 0 && visibleFichas.length === 0 && (
+              <Text style={[ads.emptyScope, { color: muted }]}>No hay fichas asignadas con esa busqueda.</Text>
+            )}
+          </View>
+        </View>
+
+        <Text style={[ads.sectionTitle, { color: text }]}>{t("dashboard.quickActions")}</Text>
         <View style={ads.quickGrid}>
-          {quickActions.map((action) => (
+          {quickActions.map(action => (
             <TouchableOpacity
               key={action.route}
               onPress={() => router.push(action.route as any)}
               activeOpacity={0.75}
-              style={[
-                ads.quickCard,
-                { backgroundColor: cardBg, borderColor: border },
-              ]}
+              style={[ads.quickCard, { backgroundColor: cardBg, borderColor: border }]}
             >
-              <View
-                style={[
-                  ads.quickIconWrap,
-                  { backgroundColor: theme.primary + "18" },
-                ]}
-              >
-                <Ionicons
-                  name={action.icon as any}
-                  size={24}
-                  color={theme.primary}
-                />
+              <View style={[ads.quickIconWrap, { backgroundColor: theme.primary + "18" }]}>
+                <Ionicons name={action.icon as any} size={24} color={theme.primary} />
               </View>
-              <Text style={[ads.quickLabel, { color: text }]}>
-                {action.label}
-              </Text>
+              <Text style={[ads.quickLabel, { color: text }]}>{action.label}</Text>
               <Ionicons name="chevron-forward" size={18} color={muted} />
             </TouchableOpacity>
           ))}
@@ -242,86 +201,29 @@ export default function AdminDashboard() {
 const ads = StyleSheet.create({
   safe: { flex: 1 },
   scroll: { padding: 16, paddingBottom: 40 },
-  welcomeBanner: {
-    borderRadius: 16,
-    padding: 22,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 20,
-  },
-  welcomeTitle: {
-    color: Colors.white,
-    fontSize: FontSize.xl,
-    fontWeight: FontWeight.black,
-  },
-  welcomeSubtitle: {
-    color: "rgba(255,255,255,0.85)",
-    fontSize: FontSize.md,
-    marginTop: 4,
-  },
-  statsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-    marginBottom: 24,
-  },
-  statCard: {
-    flex: 1,
-    minWidth: 150,
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 16,
-    alignItems: "center",
-  },
-  statValue: {
-    fontSize: FontSize["2xl"],
-    fontWeight: FontWeight.black,
-    marginTop: 8,
-  },
+  welcomeBanner: { borderRadius: 16, padding: 22, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 },
+  welcomeKicker: { color: "rgba(255,255,255,0.82)", fontSize: FontSize.sm, marginBottom: 4 },
+  welcomeTitle: { color: Colors.white, fontSize: FontSize["2xl"], fontWeight: FontWeight.black },
+  welcomeSubtitle: { color: "rgba(255,255,255,0.88)", fontSize: FontSize.sm, marginTop: 6, lineHeight: 19 },
+  statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginBottom: 16 },
+  statCard: { flex: 1, minWidth: 150, borderRadius: 14, borderWidth: 1, padding: 16, alignItems: "center" },
+  statValue: { fontSize: FontSize["2xl"], fontWeight: FontWeight.black, marginTop: 8 },
   statLabel: { fontSize: FontSize.sm, marginTop: 4, textAlign: "center" },
-  sectionTitle: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.bold,
-    marginBottom: 12,
-  },
+  scopeCard: { borderRadius: 16, borderWidth: 1, padding: 16, marginBottom: 20 },
+  scopeHeader: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 },
+  scopeIcon: { width: 46, height: 46, borderRadius: 13, alignItems: "center", justifyContent: "center" },
+  scopeTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.black },
+  scopeSubtitle: { fontSize: FontSize.xs, marginTop: 2, lineHeight: 16 },
+  searchWrap: { flexDirection: "row", alignItems: "center", gap: 10, borderRadius: 12, borderWidth: 1, height: 44, paddingHorizontal: 12, marginBottom: 12 },
+  searchInput: { flex: 1, fontSize: FontSize.sm, outlineStyle: "none" } as any,
+  fichaList: { gap: 8 },
+  fichaChip: { borderRadius: 12, borderWidth: 1, padding: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
+  fichaChipTitle: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
+  fichaChipMeta: { fontSize: FontSize.xs, marginTop: 2 },
+  emptyScope: { fontSize: FontSize.sm, textAlign: "center", paddingVertical: 14 },
+  sectionTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, marginBottom: 12 },
   quickGrid: { gap: 12, marginBottom: 24 },
-  quickCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 16,
-  },
-  quickIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  quickCard: { flexDirection: "row", alignItems: "center", gap: 14, borderRadius: 14, borderWidth: 1, padding: 16 },
+  quickIconWrap: { width: 44, height: 44, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   quickLabel: { flex: 1, fontSize: FontSize.base, fontWeight: FontWeight.bold },
-  activityCard: {
-    borderRadius: 14,
-    borderWidth: 1,
-    overflow: "hidden",
-  },
-  activityItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    padding: 14,
-  },
-  activityIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-  activityContent: { flex: 1 },
-  activityText: { fontSize: FontSize.md, lineHeight: 20 },
-  activityTime: { fontSize: FontSize.xs, marginTop: 2 },
 });

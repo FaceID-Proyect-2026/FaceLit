@@ -4,6 +4,7 @@
 //  Reconocimiento Facial, Notificaciones, Perfil
 // ─────────────────────────────────────────────
 import { useAcademic } from '@/features/academic/useAcademic';
+import { findCurrentLearner, getProgramForFicha } from '@/features/academic/currentAcademic';
 import { ATTENDANCE_EVENTS } from '@/features/attendance/types';
 import { MOCK_NOTIFICATIONS_RF8 } from '@/features/notifications/types';
 import { Colors } from '@/shared/constants/colors';
@@ -14,6 +15,7 @@ import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -21,7 +23,7 @@ export default function ApprenticeDashboard() {
   const { user } = useAuth();
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
-  const { allFichas } = useAcademic();
+  const { allFichas, allPrograms } = useAcademic();
 
   const text    = isDark ? Colors.dark.text       : Colors.light.text;
   const muted   = isDark ? Colors.dark.textMuted  : Colors.light.textMuted;
@@ -40,9 +42,10 @@ export default function ApprenticeDashboard() {
     : 0;
 
   // ── Ficha del aprendiz ─────────────────────
-  const myFicha = allFichas.find(f =>
-    f.learners?.some((l: any) => l.id === user?.id || l.document === user?.document),
-  );
+  const learnerAcademic = useMemo(() => findCurrentLearner(allFichas, user), [allFichas, user]);
+  const myFicha = learnerAcademic?.ficha ?? null;
+  const myLearner = learnerAcademic?.learner ?? null;
+  const myProgram = useMemo(() => getProgramForFicha(allPrograms, myFicha), [allPrograms, myFicha]);
 
   // ── Notificaciones no leídas ───────────────
   const unreadNotifications = MOCK_NOTIFICATIONS_RF8.filter(n => !n.read).length;
@@ -107,14 +110,40 @@ export default function ApprenticeDashboard() {
               <Ionicons name="school-outline" size={12} color={Colors.white} />
               <Text style={s.rolePillText}>{t('users.roles.APPRENTICE')}</Text>
             </View>
-            {myFicha && (
-              <Text style={s.fichaTag}>
-                {t('academic.ficha', 'Ficha')} {myFicha.number}
-              </Text>
-            )}
+            <Text style={s.fichaTag}>
+              {myFicha ? `Ficha ${myFicha.number} - ${myProgram?.name ?? 'Sin programa'}` : 'Sin ficha asignada'}
+            </Text>
           </View>
           <Ionicons name="person-circle-outline" size={64} color="rgba(255,255,255,0.25)" />
         </LinearGradient>
+
+        <View style={[s.academicCard, { backgroundColor: cardBg, borderColor: border }]}>
+          <View style={s.academicHeader}>
+            <View style={[s.academicIcon, { backgroundColor: theme.primary + '18' }]}>
+              <Ionicons name="school-outline" size={24} color={theme.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[s.academicTitle, { color: text }]}>Mi formación</Text>
+              <Text style={[s.academicSubtitle, { color: muted }]}>Ficha y programa asignados por coordinación.</Text>
+            </View>
+          </View>
+          <View style={s.academicGrid}>
+            <View style={s.academicItem}>
+              <Text style={[s.academicLabel, { color: muted }]}>Ficha</Text>
+              <Text style={[s.academicValue, { color: text }]}>{myFicha?.number ?? 'Sin ficha'}</Text>
+            </View>
+            <View style={s.academicItem}>
+              <Text style={[s.academicLabel, { color: muted }]}>Programa</Text>
+              <Text style={[s.academicValue, { color: text }]} numberOfLines={2}>{myProgram?.name ?? 'Sin programa'}</Text>
+            </View>
+            <View style={s.academicItem}>
+              <Text style={[s.academicLabel, { color: muted }]}>Estado</Text>
+              <Text style={[s.academicValue, { color: myLearner?.status === 'inactive' ? Colors.error : Colors.success }]}>
+                {myLearner?.status === 'inactive' ? 'Inactivo' : myLearner ? 'Activo' : 'No asignado'}
+              </Text>
+            </View>
+          </View>
+        </View>
 
         {/* ── Tarjetas de estadísticas ─────────── */}
         <View style={s.statsRow}>
@@ -223,6 +252,31 @@ const s = StyleSheet.create({
     fontSize: FontSize.sm,
     marginTop: 6,
   },
+  academicCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 18,
+  },
+  academicHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 14,
+  },
+  academicIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  academicTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.black },
+  academicSubtitle: { fontSize: FontSize.xs, marginTop: 2 },
+  academicGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  academicItem: { flex: 1, minWidth: 140 },
+  academicLabel: { fontSize: FontSize.xs, marginBottom: 3 },
+  academicValue: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
 
   // Stats
   statsRow: {

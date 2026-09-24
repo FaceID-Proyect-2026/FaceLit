@@ -7,4 +7,12 @@ module.exports = defineConfig([
   {
     ignores: ['dist/*'],
   },
+  {
+    rules: {
+      // React Native Animated.Value se usa como referencia mutable en render.
+      // Estas reglas de React Compiler generan falsos positivos en este patrón.
+      'react-hooks/refs': 'off',
+      'react-hooks/set-state-in-effect': 'off',
+    },
+  },
 ]);

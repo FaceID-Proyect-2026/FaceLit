@@ -16,6 +16,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View 
 interface FormModalProps {
   visible: boolean;
   onClose: () => void;
+  closeOnBackdropPress?: boolean;
   title: string;
   subtitle?: string;
   children: ReactNode;
@@ -23,7 +24,7 @@ interface FormModalProps {
   maxWidth?: number;
 }
 
-export default function FormModal({ visible, onClose, title, subtitle, children, footer, maxWidth = 520 }: FormModalProps) {
+export default function FormModal({ visible, onClose, closeOnBackdropPress = false, title, subtitle, children, footer, maxWidth = 520 }: FormModalProps) {
   const { isDark } = useTheme();
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -34,7 +35,7 @@ export default function FormModal({ visible, onClose, title, subtitle, children,
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={fm.overlay} onPress={onClose}>
+      <Pressable style={fm.overlay} onPress={closeOnBackdropPress ? onClose : undefined}>
         <Pressable style={[fm.card, { backgroundColor: cardBg, borderColor: border, maxWidth }]} onPress={() => {}}>
           <View style={fm.header}>
             <View style={{ flex: 1 }}>

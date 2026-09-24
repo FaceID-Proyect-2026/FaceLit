@@ -27,7 +27,7 @@ import { useAuth } from '@/shared/contexts/AuthContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -173,15 +173,18 @@ export default function ApprenticeAttendanceScreen() {
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(e);
     });
-    const currentKey = today.slice(0, 7);
-    if (expandedMonths.size === 0 && map.has(currentKey)) {
-      setExpandedMonths(new Set([currentKey]));
-    }
     return Array.from(map.entries()).map(([key, events]) => ({
       key, label: monthLabel(key, i18n.language), events,
     }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [myEvents]);
+
+  useEffect(() => {
+    const currentKey = today.slice(0, 7);
+    if (expandedMonths.size === 0 && monthGroups.some(group => group.key === currentKey)) {
+      setExpandedMonths(new Set([currentKey]));
+    }
+  }, [expandedMonths.size, monthGroups]);
 
   function toggleMonth(key: string) {
     setExpandedMonths(prev => {

@@ -56,6 +56,9 @@ function catIcon(cat: CsvRowResult['category']) {
 function catLabel(cat: CsvRowResult['category'], t: (k: string) => string) {
   return { created: t('academic.csvV4Created'), updated: t('academic.csvV4Updated'), blocked: t('academic.csvV4Blocked'), error: t('academic.csvV4Errors') }[cat];
 }
+function resultCategoryLabel(cat: CsvRowResult['category']) {
+  return { created: 'Creado', updated: 'Actualizado', blocked: 'Inconsistencia bloqueada', error: 'Error' }[cat];
+}
 
 type PasswordRow = CsvImportSummaryV4['generatedPasswords'][number];
 
@@ -113,12 +116,51 @@ export default function CsvUploadScreen() {
     console.info('[Plantilla CSV] disponible en /api/academic/csv/template');
   };
 
-  const downloadCredentials = () => {
-    if (!summary || summary.generatedPasswords.length === 0) return;
+  const ensureWebExport = () => {
     if (Platform.OS !== 'web') {
-      setFileError('La descarga de credenciales está disponible desde la versión web.');
-      return;
+      setFileError('La descarga de Excel esta disponible desde la version web.');
+      return false;
     }
+    return true;
+  };
+
+  const fitSheetColumns = (sheet: XLSX.WorkSheet, rows: unknown[][]) => {
+    const widthCount = Math.max(...rows.map(row => row.length), 1);
+    sheet['!cols'] = Array.from({ length: widthCount }, (_, columnIndex) => {
+      const maxLength = rows.reduce((max, row) => Math.max(max, String(row[columnIndex] ?? '').length), 10);
+      return { wch: Math.min(Math.max(maxLength + 2, 12), 55) };
+    });
+  };
+
+  const setSheetFilter = (sheet: XLSX.WorkSheet, startRow = 0) => {
+    if (!sheet['!ref']) return;
+    const range = XLSX.utils.decode_range(sheet['!ref']);
+    range.s.r = startRow;
+    sheet['!autofilter'] = { ref: XLSX.utils.encode_range(range) };
+  };
+
+  const downloadWorkbook = (workbook: XLSX.WorkBook, fileNameToDownload: string) => {
+    const output = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([output], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileNameToDownload;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const buildRowsSheet = (rows: Record<string, unknown>[], emptyMessage: string) => {
+    const safeRows = rows.length > 0 ? rows : [{ Mensaje: emptyMessage }];
+    const matrix = [Object.keys(safeRows[0]), ...safeRows.map(row => Object.values(row))];
+    const sheet = XLSX.utils.json_to_sheet(safeRows);
+    fitSheetColumns(sheet, matrix);
+    setSheetFilter(sheet);
+    return sheet;
+  };
+
+  const downloadCredentials = () => {
+    if (!summary || summary.generatedPasswords.length === 0 || !ensureWebExport()) return;
 
     const rows = summary.generatedPasswords.map(item => ({
       Documento: item.document,
@@ -126,21 +168,66 @@ export default function CsvUploadScreen() {
       Rol: item.role ?? '',
       Ficha: item.ficha ?? '',
       Programa: item.program ?? '',
-      Contraseña: item.password,
+      Contrasena: item.password,
     }));
+
     const workbook = XLSX.utils.book_new();
-    const sheet = XLSX.utils.json_to_sheet(rows);
+    const sheetRows = [
+      ['Credenciales iniciales generadas'],
+      ['Archivo', fileName ?? 'carga-academica.csv'],
+      ['Fecha de generacion', new Date().toLocaleString()],
+      [],
+      Object.keys(rows[0]),
+      ...rows.map(row => Object.values(row)),
+    ];
+    const sheet = XLSX.utils.aoa_to_sheet(sheetRows);
+    fitSheetColumns(sheet, sheetRows);
+    setSheetFilter(sheet, 4);
     XLSX.utils.book_append_sheet(workbook, sheet, 'Credenciales');
-    const output = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-    const blob = new Blob([output], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'credenciales-usuarios-facelit.xlsx';
-    link.click();
-    URL.revokeObjectURL(url);
+    downloadWorkbook(workbook, 'credenciales-usuarios-facelit.xlsx');
   };
 
+  const downloadResultReport = () => {
+    if (!summary || !ensureWebExport()) return;
+
+    const generatedAt = new Date();
+    const detailRows: Record<string, string | number>[] = summary.rows.map(row => ({
+      Fila: row.rowIndex,
+      Categoria: resultCategoryLabel(row.category),
+      Tipo: row.tipo,
+      Identificador: row.identifier || '',
+      Mensaje: row.message,
+      'Registro relacionado': row.conflictRecordId || '',
+      'Tipo registro relacionado': row.conflictRecordType || '',
+    }));
+
+    const headers = ['Fila', 'Categoria', 'Tipo', 'Identificador', 'Mensaje', 'Registro relacionado', 'Tipo registro relacionado'];
+    const reportRows = [
+      ['Reporte de carga CSV'],
+      ['Archivo', fileName ?? 'carga-academica.csv'],
+      ['Fecha de generacion', generatedAt.toLocaleString()],
+      ['Creados', summary.created],
+      ['Actualizados', summary.updated],
+      ['Inconsistencias bloqueadas', summary.blocked],
+      ['Errores', summary.errors],
+      ['Total filas reportadas', summary.rows.length],
+      [],
+      ['Detalle por fila'],
+      headers,
+      ...detailRows.map(row => headers.map(header => row[header] ?? '')),
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    const reportSheet = XLSX.utils.aoa_to_sheet(reportRows);
+    fitSheetColumns(reportSheet, reportRows);
+    setSheetFilter(reportSheet, 10);
+    XLSX.utils.book_append_sheet(workbook, reportSheet, 'Reporte completo');
+    XLSX.utils.book_append_sheet(workbook, buildRowsSheet(detailRows.filter(row => row.Categoria === 'Creado'), 'Sin creaciones'), 'Creaciones');
+    XLSX.utils.book_append_sheet(workbook, buildRowsSheet(detailRows.filter(row => row.Categoria === 'Actualizado'), 'Sin actualizaciones'), 'Actualizaciones');
+    XLSX.utils.book_append_sheet(workbook, buildRowsSheet(detailRows.filter(row => row.Categoria === 'Inconsistencia bloqueada'), 'Sin inconsistencias'), 'Inconsistencias');
+    XLSX.utils.book_append_sheet(workbook, buildRowsSheet(detailRows.filter(row => row.Categoria === 'Error'), 'Sin errores'), 'Errores');
+    downloadWorkbook(workbook, `resultado-csv-facelit-${generatedAt.toISOString().slice(0, 10)}.xlsx`);
+  };
   // ── Procesamiento ─────────────────────────
   const processFile = async (file: { uri: string; name: string } | Blob) => {
     const name = file instanceof Blob ? 'carga-academica.csv' : file.name;
@@ -224,6 +311,7 @@ export default function CsvUploadScreen() {
   };
   const handlePickFile = Platform.OS === 'web' ? openWebPicker : openNativePicker;
   const reset = () => { setSummary(null); setFileError(null); setFileName(null); };
+  const goBack = () => router.replace('/admin/academic' as any);
 
   // ── Render ────────────────────────────────
   return (
@@ -232,7 +320,7 @@ export default function CsvUploadScreen() {
 
         {/* ── Encabezado ── */}
         <View style={s.topBar}>
-          <TouchableOpacity onPress={() => router.back()} style={s.backBtn} activeOpacity={0.7}>
+          <TouchableOpacity onPress={goBack} style={s.backBtn} activeOpacity={0.7}>
             <Ionicons name="arrow-back" size={20} color={text} />
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
@@ -342,7 +430,13 @@ export default function CsvUploadScreen() {
             </View>
 
             {/* Nombre de archivo */}
-            {fileName && <Text style={[s.fileChip, { color: muted }]}>📄 {fileName}</Text>}
+            <View style={s.resultToolbar}>
+              {fileName ? <Text style={[s.fileChip, { color: muted }]}>Archivo: {fileName}</Text> : <View />}
+              <TouchableOpacity onPress={downloadResultReport} style={[s.downloadBtn, { borderColor: theme.primary, backgroundColor: theme.primary + '12' }]} activeOpacity={0.8}>
+                <Ionicons name="download-outline" size={16} color={theme.primary} />
+                <Text style={[s.downloadBtnText, { color: theme.primary }]}>Descargar reporte Excel</Text>
+              </TouchableOpacity>
+            </View>
 
             {summary.generatedPasswords.length > 0 && (
               <View style={[s.guideCard, { backgroundColor: cardBg, borderColor: border }]}>
@@ -455,6 +549,7 @@ const s = StyleSheet.create({
   statCard:  { flex: 1, borderRadius: 14, borderWidth: 1.5, padding: 12, alignItems: 'center', gap: 4 },
   statNum:   { fontSize: FontSize['2xl'], fontWeight: FontWeight.black },
   statLbl:   { fontSize: FontSize.xs, textAlign: 'center', lineHeight: 15 },
+  resultToolbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 10 },
   fileChip:  { fontSize: FontSize.xs, marginBottom: 10 },
 
   // Result rows

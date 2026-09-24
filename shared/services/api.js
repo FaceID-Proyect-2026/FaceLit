@@ -8,6 +8,10 @@ export const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+if (__DEV__) {
+  console.info('[API] Base URL:', API_URL);
+}
+
 api.interceptors.request.use(async (config) => {
   const token = await getToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;

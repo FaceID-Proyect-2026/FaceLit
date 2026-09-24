@@ -1,12 +1,12 @@
-// ─────────────────────────────────────────────
+// ------------------------------------------------------------
 //  app/admin/attendance/by-user.tsx
-//  RF-6.2 — Consulta de asistencia por usuario
+//  RF-6.2 - Consulta de asistencia por usuario
 //
-//  Estado persistido en attendanceUIStore → sobrevive
+//  Estado persistido en attendanceUIStore; sobrevive a los
 //  cambios de tab.
 //  Calendario: usa DateField (input date nativo web /
-//  DateTimePicker nativo móvil).
-// ─────────────────────────────────────────────
+//  DateTimePicker nativo movil).
+// ------------------------------------------------------------
 import {
     getAttendanceUISnapshot,
     setByUserDateFrom,
@@ -45,16 +45,16 @@ const CELL_LATE     = Colors.warning + '30';
 const BORDER_ABSENT = Colors.error   + '80';
 const BORDER_LATE   = Colors.warning + '80';
 
-export default function AttendanceByUserScreen() {
+export default function AttendanceByUserScreen({ allowedFichaIds }: { allowedFichaIds?: string[] } = {}) {
   const { isDark, theme } = useTheme();
   const { t, i18n }       = useTranslation();
   const { searchLearners, getLearnerTable } = useAttendanceRF6();
 
-  // ── Estado persistido desde el store ─────────
+  // Estado persistido desde el store.
   const ui = useSyncExternalStore(subscribeAttendanceUI, getAttendanceUISnapshot);
   const { query, selectedLearner, dateFrom, dateTo } = ui.byUser;
 
-  // ── Estado local (solo modal detalle celda) ───
+  // Estado local (solo modal detalle celda).
   const [cellDetail, setCellDetail] = useState<DayCell | null>(null);
   const [exporting,  setExporting]  = useState(false);
 
@@ -64,11 +64,17 @@ export default function AttendanceByUserScreen() {
   const border  = theme.border;
   const bg      = isDark ? Colors.dark.background  : Colors.light.background;
   const inputBg = isDark ? 'rgba(255,255,255,0.05)' : '#FAFAFA';
+  const allowedFichaSet = useMemo(
+    () => allowedFichaIds ? new Set(allowedFichaIds) : null,
+    [allowedFichaIds],
+  );
 
-  // ── Derivados ─────────────────────────────────
+  // Derivados.
   const searchResults = useMemo(
-    () => query.trim().length >= 2 ? searchLearners(query) : [],
-    [query, searchLearners],
+    () => query.trim().length >= 2
+      ? searchLearners(query).filter(result => !allowedFichaSet || allowedFichaSet.has(result.fichaId))
+      : [],
+    [query, searchLearners, allowedFichaSet],
   );
 
   const dates: string[] = useMemo(
@@ -83,16 +89,16 @@ export default function AttendanceByUserScreen() {
     [selectedLearner, dateFrom, dateTo, getLearnerTable],
   );
 
-  // ── Formato ───────────────────────────────────
+  // Formato.
   const fmtDate = (d: string) =>
     new Intl.DateTimeFormat(i18n.language, { month: 'short', day: 'numeric' }).format(new Date(`${d}T12:00:00Z`));
   const fmtDateLong = (d: string) =>
     new Intl.DateTimeFormat(i18n.language, { dateStyle: 'long' }).format(new Date(`${d}T12:00:00Z`));
   const fmtTime = (v: string) =>
     v ? new Intl.DateTimeFormat(i18n.language, { hour: 'numeric', minute: '2-digit', hour12: true })
-          .format(new Date(`1970-01-01T${v}:00`)) : '—';
+          .format(new Date(`1970-01-01T${v}:00`)) : '-';
 
-  // ── Exportación ───────────────────────────────
+  // Exportacion.
   const handleExport = async (format: 'excel' | 'csv') => {
     if (!cells.length || !selectedLearner) return;
     setExporting(true);
@@ -100,7 +106,7 @@ export default function AttendanceByUserScreen() {
       const headers = [t('reports.filters.dateFrom'), t('attendance.rf6.statusCol')];
       const rows = cells.map(cell => [
         fmtDate(cell.date),
-        !cell.status          ? '—'
+        !cell.status          ? '-'
         : cell.status === 'absent' ? t('attendance.statuses.absent')
         : cell.status === 'late'   ? `${t('attendance.statuses.late')} (${cell.delayMinutes} min)`
         : t('attendance.statuses.punctual'),
@@ -127,17 +133,17 @@ export default function AttendanceByUserScreen() {
     }
   };
 
-  // ─────────────────────────────────────────────
+  // ------------------------------------------------------------
   //  RENDER
-  // ─────────────────────────────────────────────
+  // ------------------------------------------------------------
   return (
     <ScrollView
       style={[s.root, { backgroundColor: bg }]}
-      contentContainerStyle={s.content}
       keyboardShouldPersistTaps="handled"
     >
+      <View style={s.content}>
 
-      {/* ── Buscador ── */}
+      {/* Buscador */}
       <View style={[s.card, { backgroundColor: cardBg, borderColor: border }]}>
         <Text style={[s.searchLabel, { color: muted }]}>{t('attendance.rf6.searchLearner')}</Text>
         <View style={[s.searchRow, { backgroundColor: inputBg, borderColor: border }]}>
@@ -177,7 +183,7 @@ export default function AttendanceByUserScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[s.resultName, { color: text }]}>{r.name}</Text>
-              <Text style={[s.resultDoc,  { color: muted }]}>{r.document} · Ficha {r.fichaNumber}</Text>
+              <Text style={[s.resultDoc,  { color: muted }]}>{r.document} - Ficha {r.fichaNumber}</Text>
             </View>
             {selectedLearner?.learnerId === r.learnerId && (
               <Ionicons name="checkmark-circle" size={18} color={theme.primary} />
@@ -186,7 +192,7 @@ export default function AttendanceByUserScreen() {
         ))}
       </View>
 
-      {/* ── Rango de fechas con DateField — solo si hay aprendiz seleccionado ── */}
+      {/* Rango de fechas con DateField; solo si hay aprendiz seleccionado */}
       {selectedLearner && (
         <View style={[s.card, { backgroundColor: cardBg, borderColor: border }]}>
           {/* Cabecera del aprendiz seleccionado */}
@@ -198,7 +204,7 @@ export default function AttendanceByUserScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[s.learnerName, { color: text }]}>{selectedLearner.name}</Text>
-              <Text style={[s.learnerDoc,  { color: muted }]}>{selectedLearner.document} · Ficha {selectedLearner.fichaNumber}</Text>
+              <Text style={[s.learnerDoc,  { color: muted }]}>{selectedLearner.document} - Ficha {selectedLearner.fichaNumber}</Text>
             </View>
           </View>
 
@@ -214,7 +220,7 @@ export default function AttendanceByUserScreen() {
               />
             </View>
             <View style={s.dateSepWrap}>
-              <Text style={[s.dateSep, { color: muted }]}>→</Text>
+              <Text style={[s.dateSep, { color: muted }]}>-&gt;</Text>
             </View>
             <View style={s.dateFieldWrap}>
               <DateField
@@ -233,7 +239,7 @@ export default function AttendanceByUserScreen() {
         </View>
       )}
 
-      {/* ── Tabla de celdas coloreadas ── */}
+      {/* Tabla de celdas coloreadas */}
       {cells.length > 0 && (
         <>
           <ScrollView horizontal showsHorizontalScrollIndicator style={s.tableScroll}>
@@ -265,7 +271,7 @@ export default function AttendanceByUserScreen() {
                       {isAbsent && <Ionicons name="close-circle" size={18} color={Colors.error} />}
                       {isLate   && <Ionicons name="time"         size={18} color={Colors.warning} />}
                       {cell.status === 'punctual' && <View style={[s.dot, { backgroundColor: Colors.success + '70' }]} />}
-                      {!cell.status && <Text style={[s.emptyCell, { color: muted }]}>—</Text>}
+                      {!cell.status && <Text style={[s.emptyCell, { color: muted }]}>-</Text>}
                     </TouchableOpacity>
                   );
                 })}
@@ -335,7 +341,7 @@ export default function AttendanceByUserScreen() {
         </View>
       )}
 
-      {/* ── Modal detalle de celda ── */}
+      {/* Modal detalle de celda */}
       <Modal visible={!!cellDetail} transparent animationType="slide">
         <Pressable style={s.modalOverlay} onPress={() => setCellDetail(null)}>
           <Pressable style={[s.detailBox, { backgroundColor: cardBg, borderColor: border }]}>
@@ -360,9 +366,9 @@ export default function AttendanceByUserScreen() {
                   ...(cellDetail.delayMinutes > 0
                     ? [['timer-outline', t('attendance.fields.delay'), `${cellDetail.delayMinutes} min`]]
                     : []),
-                  ['business-outline',      t('attendance.fields.environment'), cellDetail.environmentName || '—'],
-                  ['person-circle-outline', t('attendance.fields.instructor'),  cellDetail.instructorName  || '—'],
-                  ['school-outline',        t('attendance.rf6.ficha'),          cellDetail.fichaNumber      || '—'],
+                  ['business-outline',      t('attendance.fields.environment'), cellDetail.environmentName || '-'],
+                  ['person-circle-outline', t('attendance.fields.instructor'),  cellDetail.instructorName  || '-'],
+                  ['school-outline',        t('attendance.rf6.ficha'),          cellDetail.fichaNumber      || '-'],
                 ] as [string, string, string][]).map(([icon, label, value]) => (
                   <View key={label} style={[s.detailRow, { borderBottomColor: border }]}>
                     <View style={s.detailLabel}>
@@ -378,11 +384,12 @@ export default function AttendanceByUserScreen() {
           </Pressable>
         </Pressable>
       </Modal>
+      </View>
     </ScrollView>
   );
 }
 
-// ── Estilos ───────────────────────────────────
+// Estilos.
 const s = StyleSheet.create({
   root:    { flex: 1 },
   content: { padding: 16, paddingBottom: 48, gap: 12 },
@@ -450,3 +457,4 @@ const s = StyleSheet.create({
   detailLabelText: { fontSize: FontSize.sm },
   detailValue:  { fontSize: FontSize.sm, fontWeight: FontWeight.bold, flex: 1, textAlign: 'right' },
 });
+

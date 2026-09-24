@@ -1,136 +1,159 @@
-import ProgramFormModal from '@/features/academic/components/ProgramFormModal';
+import { findCurrentInstructor, getFichasForInstructor } from '@/features/academic/currentAcademic';
 import { getProgramDisplayName } from '@/features/academic/types';
 import { useAcademic } from '@/features/academic/useAcademic';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
-import { useAppDialog } from '@/shared/hooks/useAppDialog';
+import { formatDateTime } from '@/shared/utils/dates';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-export default function ProgramDetailScreen() {
+export default function InstructorProgramDetailScreen() {
   const { theme, isDark } = useTheme();
   const { user } = useAuth();
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { getProgram, allFichas, allInstructors, unlinkFichaFromProgram } = useAcademic();
-  const { alert, DialogUI } = useAppDialog();
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const program = getProgram(id ?? '');
+  const { getProgram, allFichas, allInstructors } = useAcademic();
+  const [fichaSearch, setFichaSearch] = useState('');
+
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
   const cardBg = theme.surface;
   const border = theme.border;
   const bg = isDark ? Colors.dark.background : Colors.light.background;
-  if (!program) return <View style={[pds.safe, { backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }]}><Text style={{ color: muted }}>Programa no encontrado</Text></View>;
+  const program = getProgram(id ?? '');
 
   const currentInstructor = useMemo(
-    () => allInstructors.find(instructor =>
-      instructor.id === user?.id || instructor.document === user?.document || instructor.email === user?.email,
-    ),
+    () => findCurrentInstructor(allInstructors, user),
     [allInstructors, user],
   );
+  const programFichas = useMemo(() => {
+    if (!program) return [];
+    const term = fichaSearch.trim().toLowerCase();
+    return getFichasForInstructor(allFichas, currentInstructor)
+      .filter(ficha => ficha.programId === program.id)
+      .filter(ficha => {
+        if (!term) return true;
+        return ficha.number.toLowerCase().includes(term) || ficha.code.toLowerCase().includes(term);
+      });
+  }, [allFichas, currentInstructor, fichaSearch, program]);
 
-  const programFichas = allFichas.filter(f => {
-    if (f.programId !== program.id) return false;
-    if (!currentInstructor) return false;
-    return currentInstructor.programId === program.id || currentInstructor.fichaIds.includes(f.id);
-  });
+  if (!program) {
+    return (
+      <View style={[s.safe, s.center, { backgroundColor: bg }]}>
+        <Text style={{ color: muted }}>Programa no disponible para este instructor.</Text>
+      </View>
+    );
+  }
 
   return (
-    <View style={[pds.safe, { backgroundColor: bg }]}>
+    <View style={[s.safe, { backgroundColor: bg }]}>
       <FlatList
         data={programFichas}
-        keyExtractor={f => f.id}
-        contentContainerStyle={pds.scroll}
+        keyExtractor={ficha => ficha.id}
+        contentContainerStyle={s.scroll}
         ListHeaderComponent={
           <View>
-            <TouchableOpacity onPress={() => router.back()} style={pds.backBtn}><Ionicons name="arrow-back" size={20} color={text} /><Text style={[pds.backText, { color: text }]}>{t('common.back')}</Text></TouchableOpacity>
-            <View style={[pds.headerCard, { backgroundColor: cardBg, borderColor: border }]}>
-              <View style={pds.headerTop}>
-                <View style={[pds.iconCircleLg, { backgroundColor: theme.primary + '20' }]}>
+            <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
+              <Ionicons name="arrow-back" size={20} color={text} />
+              <Text style={[s.backText, { color: text }]}>{t('common.back')}</Text>
+            </TouchableOpacity>
+
+            <View style={[s.headerCard, { backgroundColor: cardBg, borderColor: border }]}>
+              <View style={s.headerTop}>
+                <View style={[s.iconCircleLg, { backgroundColor: theme.primary + '20' }]}>
                   <Ionicons name="school" size={26} color={theme.primary} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[pds.title, { color: text }]}>{getProgramDisplayName(program, t)}</Text>
-                  <Text style={[pds.subtitle, { color: muted }]}>{t('academic.programDetailSubtitle')}</Text>
+                  <Text style={[s.title, { color: text }]}>{getProgramDisplayName(program, t)}</Text>
+                  <Text style={[s.subtitle, { color: muted }]}>Programa asignado a tus fichas de formacion.</Text>
                 </View>
-                <View style={[pds.statusBadge, { backgroundColor: program.status === 'active' ? Colors.success + '20' : Colors.error + '20' }]}>
-                  <View style={[pds.statusDot, { backgroundColor: program.status === 'active' ? Colors.success : Colors.error }]} />
-                  <Text style={{ color: program.status === 'active' ? Colors.success : Colors.error, fontWeight: '700', fontSize: 13 }}>{t(`environments.statuses.${program.status}`)}</Text>
+                <View style={[s.statusBadge, { backgroundColor: program.status === 'active' ? Colors.success + '20' : Colors.error + '20' }]}>
+                  <View style={[s.statusDot, { backgroundColor: program.status === 'active' ? Colors.success : Colors.error }]} />
+                  <Text style={{ color: program.status === 'active' ? Colors.success : Colors.error, fontWeight: '700', fontSize: 13 }}>
+                    {t(`environments.statuses.${program.status}`)}
+                  </Text>
                 </View>
               </View>
 
-              <View style={[pds.infoRow, { borderBottomColor: border }]}>
-                <Text style={[pds.infoLabel, { color: muted }]}>{t('academic.fichas')}</Text>
-                <Text style={[pds.infoValue, { color: text }]}>{programFichas.length}</Text>
+              <View style={[s.infoRow, { borderBottomColor: border }]}>
+                <Text style={[s.infoLabel, { color: muted }]}>Fichas asignadas</Text>
+                <Text style={[s.infoValue, { color: text }]}>{programFichas.length}</Text>
               </View>
-              <View style={[pds.infoRow, { borderBottomColor: border }]}>
-                <Text style={[pds.infoLabel, { color: muted }]}>{t('environments.detail.createdAt')}</Text>
-                <Text style={[pds.infoValue, { color: text }]}>{new Date(program.createdAt).toLocaleString()}</Text>
+              <View style={[s.infoRow, { borderBottomColor: border }]}>
+                <Text style={[s.infoLabel, { color: muted }]}>Creado</Text>
+                <Text style={[s.infoValue, { color: text }]}>{formatDateTime(program.createdAt)}</Text>
               </View>
-              <View style={[pds.infoRow, { borderBottomWidth: 0 }]}>
-                <Text style={[pds.infoLabel, { color: muted }]}>{t('environments.detail.updatedAt')}</Text>
-                <Text style={[pds.infoValue, { color: text }]}>{new Date(program.updatedAt).toLocaleString()}</Text>
+              <View style={[s.infoRow, { borderBottomWidth: 0 }]}>
+                <Text style={[s.infoLabel, { color: muted }]}>Ultima edicion</Text>
+                <Text style={[s.infoValue, { color: text }]}>{formatDateTime(program.updatedAt)}</Text>
               </View>
-
-              <TouchableOpacity onPress={() => setEditModalOpen(true)} style={[pds.editBtn, { borderColor: theme.primary }]} activeOpacity={0.7}>
-                <Ionicons name="create-outline" size={16} color={theme.primary} /><Text style={{ color: theme.primary, fontWeight: '700', fontSize: 13 }}>{t('academic.programEdit')}</Text>
-              </TouchableOpacity>
             </View>
 
-            <Text style={[pds.sectionTitle, { color: text }]}>{t('academic.fichas')} ({programFichas.length})</Text>
+            <View style={[s.searchWrap, { backgroundColor: theme.inputBg, borderColor: border }]}>
+              <Ionicons name="search-outline" size={18} color={muted} />
+              <TextInput
+                value={fichaSearch}
+                onChangeText={setFichaSearch}
+                placeholder="Buscar ficha"
+                placeholderTextColor={muted}
+                style={[s.searchInput, { color: text }] as any}
+              />
+            </View>
+
+            <Text style={[s.sectionTitle, { color: text }]}>Fichas ({programFichas.length})</Text>
           </View>
         }
         renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => router.push(`/instructor/academic/fichas/${item.id}` as any)}
-            style={[pds.card, { backgroundColor: cardBg, borderColor: border }]} activeOpacity={0.7}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
-              <View style={[pds.iconCircle, { backgroundColor: theme.primary + '20' }]}><Ionicons name="document-text-outline" size={20} color={theme.primary} /></View>
-              <View style={{ flex: 1 }}>
-                <Text style={[pds.cardTitle, { color: text }]}>Ficha {item.number}</Text>
-                  <Text style={[pds.cardMeta, { color: muted }]}>{item.learners.length} aprendices</Text>
-              </View>
+          <TouchableOpacity
+            onPress={() => router.push(`/instructor/academic/fichas/${item.id}` as any)}
+            style={[s.card, { backgroundColor: cardBg, borderColor: border }]}
+            activeOpacity={0.75}
+          >
+            <View style={[s.iconCircle, { backgroundColor: theme.primary + '20' }]}>
+              <Ionicons name="document-text-outline" size={20} color={theme.primary} />
             </View>
-            <TouchableOpacity onPress={() => {
-              if (item.learners.length > 0) { alert(t('common.error'), t('academic.fichaHasLearnersUnlink')); return; }
-              alert(t('academic.unlinkConfirm')??'', '', [{ text: t('common.cancel'), style: 'cancel' }, { text: t('academic.unlinkFromProgram'), style: 'destructive', onPress: () => {
-                const result = unlinkFichaFromProgram(item.id, program.id);
-                if (!result.success && result.error) alert(t('common.error'), t(result.error));
-              } }]);
-            }}
-              style={{ padding: 6 }}><Ionicons name="link-outline" size={18} color={Colors.warning} /></TouchableOpacity>
+            <View style={{ flex: 1 }}>
+              <Text style={[s.cardTitle, { color: text }]}>Ficha {item.number}</Text>
+              <Text style={[s.cardMeta, { color: muted }]}>{item.learners.length} aprendices</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={muted} />
           </TouchableOpacity>
         )}
-        ListEmptyComponent={<View style={pds.empty}><Text style={{ color: muted }}>{t('academic.fichaEmpty')}</Text></View>}
+        ListEmptyComponent={
+          <View style={s.empty}>
+            <Text style={{ color: muted }}>No hay fichas asignadas para este programa.</Text>
+          </View>
+        }
       />
-      {DialogUI}
-      <ProgramFormModal visible={editModalOpen} editId={program.id} onClose={() => setEditModalOpen(false)} />
     </View>
   );
 }
 
-const pds = StyleSheet.create({
-  safe: { flex: 1 }, scroll: { padding: 16, paddingBottom: 40 },
+const s = StyleSheet.create({
+  safe: { flex: 1 },
+  center: { alignItems: 'center', justifyContent: 'center' },
+  scroll: { padding: 16, paddingBottom: 40 },
   backBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 12 },
   backText: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
-  headerCard: { borderRadius: 16, borderWidth: 1, padding: 18, marginBottom: 20 },
+  headerCard: { borderRadius: 16, borderWidth: 1, padding: 18, marginBottom: 16 },
   headerTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 14, marginBottom: 14 },
   iconCircleLg: { width: 52, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   title: { fontSize: FontSize.xl, fontWeight: FontWeight.black, marginBottom: 4, flexShrink: 1, flexWrap: 'wrap' },
   subtitle: { fontSize: FontSize.sm, lineHeight: 18 },
   statusBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
   statusDot: { width: 6, height: 6, borderRadius: 3 },
-  infoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 9, borderBottomWidth: 1 },
+  infoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 9, borderBottomWidth: 1, gap: 12 },
   infoLabel: { fontSize: FontSize.sm },
-  infoValue: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
-  editBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 1.5, borderRadius: 10, paddingVertical: 10, marginTop: 16 },
+  infoValue: { fontSize: FontSize.sm, fontWeight: FontWeight.bold, textAlign: 'right', flex: 1 },
+  searchWrap: { flexDirection: 'row', alignItems: 'center', gap: 10, height: 44, borderRadius: 12, borderWidth: 1, paddingHorizontal: 12, marginBottom: 14 },
+  searchInput: { flex: 1, fontSize: FontSize.sm, outlineStyle: 'none' } as any,
   sectionTitle: { fontSize: FontSize.xl, fontWeight: FontWeight.black, marginBottom: 10 },
-  card: { borderRadius: 14, borderWidth: 1, padding: 16, flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  card: { borderRadius: 14, borderWidth: 1, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 },
   iconCircle: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   cardTitle: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
   cardMeta: { fontSize: FontSize.sm, marginTop: 2 },

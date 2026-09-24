@@ -23,11 +23,11 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function AdminLayout() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { canRenderContent } = useAuthGuard(isAuthenticated);
+  const { canRenderContent } = useAuthGuard(isAuthenticated, '/auth/login', authLoading);
   const pathname = usePathname();
 
   // La pantalla de Reconocimiento Facial no debe ofrecer ninguna vía de

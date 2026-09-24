@@ -1,8 +1,11 @@
+import { findCurrentInstructor, getFichasForInstructor } from "@/features/academic/currentAcademic";
+import { useAcademic } from "@/features/academic/useAcademic";
 import { Colors } from "@/shared/constants/colors";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { useTheme } from "@/shared/contexts/ThemeContext";
+import { useAuth } from "@/shared/contexts/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
@@ -13,13 +16,19 @@ type Tab = "byFicha" | "byUser";
 
 export default function InstructorAttendanceScreen() {
   const { isDark, theme } = useTheme();
+  const { user } = useAuth();
   const { t } = useTranslation();
+  const { allFichas, allInstructors } = useAcademic();
   const [activeTab, setActiveTab] = useState<Tab>("byFicha");
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
   const cardBg = theme.surface;
   const border = theme.border;
   const bg = isDark ? Colors.dark.background : Colors.light.background;
+  const allowedFichaIds = useMemo(() => {
+    const instructor = findCurrentInstructor(allInstructors, user);
+    return getFichasForInstructor(allFichas, instructor).map(ficha => ficha.id);
+  }, [allFichas, allInstructors, user]);
 
   return (
     <View style={[s.root, { backgroundColor: bg }]}>
@@ -80,8 +89,8 @@ export default function InstructorAttendanceScreen() {
         })}
       </View>
       <View style={s.tabContent}>
-        {activeTab === "byFicha" && <AttendanceByFichaScreen />}
-        {activeTab === "byUser" && <AttendanceByUserScreen />}
+        {activeTab === "byFicha" && <AttendanceByFichaScreen allowedFichaIds={allowedFichaIds} />}
+        {activeTab === "byUser" && <AttendanceByUserScreen allowedFichaIds={allowedFichaIds} />}
       </View>
     </View>
   );

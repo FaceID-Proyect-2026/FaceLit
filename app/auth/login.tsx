@@ -90,7 +90,7 @@ function TransitionOverlay({ visible, onDone }: { visible: boolean; onDone: () =
 
 const so = StyleSheet.create({
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(4,28,14,0.93)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -121,6 +121,7 @@ export default function LoginScreen() {
   const [focused, setFocused]           = useState<string | null>(null);
   const [showPrivacy, setShowPrivacy]   = useState(false);
   const [transitioning, setTransitioning] = useState(false);
+  const passwordRef = useRef<TextInput>(null);
 
   // Animaciones de entrada de la tarjeta
   const cardAnim  = useRef(new Animated.Value(0)).current;
@@ -172,11 +173,13 @@ export default function LoginScreen() {
         <SafeAreaView style={s.safe}>
           <KeyboardAvoidingView
             style={s.kav}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            enabled={Platform.OS === 'ios'}
           >
             <ScrollView
               contentContainerStyle={s.scroll}
-              keyboardShouldPersistTaps="handled"
+              keyboardShouldPersistTaps="always"
+              keyboardDismissMode="none"
               showsVerticalScrollIndicator={false}
             >
               <Animated.View style={[
@@ -232,10 +235,17 @@ export default function LoginScreen() {
                       placeholder={t('login.documentPlaceholder')}
                       placeholderTextColor={isDark ? '#5A7258' : '#AAAAAA'}
                       keyboardType="number-pad"
+                      inputMode="numeric"
                       autoCorrect={false}
-                      maxLength={10}
+                      autoCapitalize="none"
+                      autoComplete="username"
+                      textContentType="username"
+                      returnKeyType="next"
+                      blurOnSubmit={false}
+                      maxLength={15}
                       onFocus={() => setFocused('document')}
                       onBlur={() => setFocused(null)}
+                      onSubmitEditing={() => passwordRef.current?.focus()}
                     />
                   </View>
                   {errors.document ? <Text style={s.errorText}>{errors.document}</Text> : null}
@@ -258,6 +268,7 @@ export default function LoginScreen() {
                   }]}>
                     <Ionicons name="lock-closed-outline" size={18} color={focused === 'password' ? theme.text : muted} />
                     <TextInput
+                      ref={passwordRef}
                       style={[s.input, { color: text }] as any}
                       value={form.password}
                       onChangeText={v => setField('password', v)}
@@ -266,8 +277,13 @@ export default function LoginScreen() {
                       secureTextEntry={!showPassword}
                       autoCapitalize="none"
                       autoCorrect={false}
+                      autoComplete="password"
+                      textContentType="password"
+                      returnKeyType="done"
+                      blurOnSubmit={false}
                       onFocus={() => setFocused('password')}
                       onBlur={() => setFocused(null)}
+                      onSubmitEditing={handleSubmit}
                     />
                     <TouchableOpacity
                       onPress={() => setShowPassword(v => !v)}

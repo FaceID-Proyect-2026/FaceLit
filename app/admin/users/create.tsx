@@ -36,6 +36,8 @@ interface Errors {
   email?: string;
 }
 
+const LETTERS_ONLY = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+$/;
+
 const EMPTY_FORM: Form = {
   document: '',
   name: '',
@@ -129,10 +131,14 @@ export default function CreateCoordinatorScreen() {
 
     if (!form.name.trim()) {
       nextErrors.name = t('users.errors.requiredField');
+    } else if (!LETTERS_ONLY.test(form.name.trim())) {
+      nextErrors.name = 'El nombre solo puede contener letras.';
     }
 
     if (!form.lastname.trim()) {
       nextErrors.lastname = t('users.errors.requiredField');
+    } else if (!LETTERS_ONLY.test(form.lastname.trim())) {
+      nextErrors.lastname = 'El apellido solo puede contener letras.';
     }
 
     if (!form.email.trim()) {
@@ -164,7 +170,7 @@ export default function CreateCoordinatorScreen() {
       setPasswordVisible(true);
       alert(
         'Coordinador creado',
-        `Usuario coordinador creado correctamente. La contraseÃ±a inicial es: ${password}. Entregarla al usuario para que inicie sesiÃ³n.`,
+        `Usuario coordinador creado correctamente. La contraseña inicial es: ${password}. Entrégala al usuario para que inicie sesión.`,
         [{ text: t('common.ok') }],
       );
     } catch (error: any) {

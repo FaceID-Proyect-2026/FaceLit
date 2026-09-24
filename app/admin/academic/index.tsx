@@ -140,7 +140,7 @@ function OnboardingEmpty({ isDark, theme, t }: { isDark: boolean; theme: any; t:
       </TouchableOpacity>
 
       <Text style={[ob.hint, { color: muted }]}>
-        También puedes crear programas y fichas manualmente con el botón "+" en la parte superior una vez que hayas cargado el archivo.
+        Tambien puedes crear programas y fichas manualmente con el boton + en la parte superior una vez que hayas cargado el archivo.
       </Text>
     </Animated.View>
   );
@@ -273,7 +273,7 @@ export default function AcademicProgramsScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const {
-    programs, allFichas, search, setSearch, statusFilter, setStatusFilter, deactivateProgram, reactivateProgram, deleteProgram, deactivateFicha, reactivateFicha, deleteFicha,
+    programs, allPrograms, allFichas, allInstructors, orphanLearners, search, setSearch, statusFilter, setStatusFilter, deactivateProgram, reactivateProgram, deleteProgram, deactivateFicha, reactivateFicha, deleteFicha,
   } = useAcademic();
   const { alert, DialogUI } = useAppDialog();
   const { width } = useWindowDimensions();
@@ -284,7 +284,7 @@ export default function AcademicProgramsScreen() {
   const [fichaModalOpen, setFichaModalOpen] = useState(false);
 
   // Programas activos disponibles para vincular una ficha desvinculada.
-  const activePrograms = programs.filter(p => p.status === 'active');
+  const activePrograms = allPrograms.filter(p => p.status === 'active');
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -360,8 +360,13 @@ export default function AcademicProgramsScreen() {
 
   const activeFichaRefs = allFichas.filter(f => f.status === 'active');
 
-  // ── Muestra el onboarding si no hay ningún programa creado
-  const hasData = programs.length > 0;
+  // Muestra el onboarding solo si la base academica esta completamente vacia.
+  const hasData =
+    allPrograms.length > 0 ||
+    allFichas.length > 0 ||
+    allInstructors.length > 0 ||
+    orphanLearners.length > 0 ||
+    allFichas.some(ficha => ficha.learners.length > 0);
 
   const tabTitles: Record<ViewMode, string> = {
     programs: t('academic.programs'),

@@ -33,6 +33,9 @@ type BackendInstructor = {
   document: string;
   email: string;
   instructorType: 'ESPECIFICO' | 'TRANSVERSAL';
+  status?: 'ACTIVE' | 'INACTIVE';
+  createdAt?: string | null;
+  updatedAt?: string | null;
   programIds: string[];
   programNames?: string[];
 };
@@ -56,6 +59,8 @@ type BackendUserChip = {
   email: string;
   state: 'ACTIVE' | 'INACTIVE';
   assignmentDate: string;
+  createdAt?: string | null;
+  updatedAt?: string | null;
 };
 
 const toLearner = (learner: BackendUserChip): Learner => ({
@@ -68,8 +73,8 @@ const toLearner = (learner: BackendUserChip): Learner => ({
   status: learner.state === 'ACTIVE' ? 'active' : 'inactive',
   validationStatus: 'validated',
   initialPassword: null,
-  createdAt: learner.assignmentDate,
-  updatedAt: learner.assignmentDate,
+  createdAt: learner.createdAt ?? learner.assignmentDate,
+  updatedAt: learner.updatedAt ?? learner.createdAt ?? learner.assignmentDate,
   documentChangeLog: [],
 });
 
@@ -84,10 +89,10 @@ const toInstructor = (instructor: BackendInstructor, fichas: Ficha[]): Instructo
   programId: instructor.programIds?.[0],
   programIds: instructor.programIds ?? [],
   fichaIds: fichas.filter(ficha => instructor.programIds?.includes(ficha.programId)).map(ficha => ficha.id),
-  status: 'active',
+  status: instructor.status === 'INACTIVE' ? 'inactive' : 'active',
   initialPassword: null,
-  createdAt: '',
-  updatedAt: '',
+  createdAt: instructor.createdAt ?? '',
+  updatedAt: instructor.updatedAt ?? instructor.createdAt ?? '',
 });
 
 const toProgram = (program: BackendProgram): Program => ({
@@ -307,13 +312,10 @@ export async function uploadAcademicCsv(file: { uri: string; name: string } | Bl
 
   // El backend no siempre usa el mismo nombre de campo en multipart.
   // Enviamos varias claves compatibles para evitar 500 por campo perdido.
-  const fieldNames = ['file', 'archivo', 'csvFile', 'csv'];
-  for (const fieldName of fieldNames) {
-    if (file instanceof Blob) {
-      form.append(fieldName, filePayload as Blob, fileName);
-    } else {
-      form.append(fieldName, filePayload as any);
-    }
+  if (file instanceof Blob) {
+    form.append('file', filePayload as Blob, fileName);
+  } else {
+    form.append('file', filePayload as any);
   }
 
   // ⚠️ NO pasar Content-Type manualmente — axios lo genera con el boundary
@@ -366,6 +368,11 @@ export async function updateInstructor(id: string, payload: {
 
 export async function deleteInstructor(id: string) {
   return api.delete(`/api/academic/instructors/${id}`);
+}
+
+export async function reactivateInstructor(id: string) {
+  const { data } = await api.patch<BackendInstructor>(`/api/academic/instructors/${id}/reactivate`);
+  return data;
 }
 
 export async function fetchEligibleInstructors(idProgram: string) {

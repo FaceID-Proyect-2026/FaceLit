@@ -7,17 +7,20 @@
 // ─────────────────────────────────────────────
 import {
     createInstructor,
+    deleteInstructor as deleteInstructorApi,
     fetchInstructors,
+    reactivateInstructor,
     updateInstructor
 } from '@/features/academic/academicApi';
 import { refreshAcademicStoreFromBackend, useAcademic } from '@/features/academic/useAcademic';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useTheme } from '@/shared/contexts/ThemeContext';
+import { formatDateTime } from '@/shared/utils/dates';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
@@ -42,6 +45,9 @@ type InstructorItem = {
   instructorType: 'ESPECIFICO' | 'TRANSVERSAL';
   programIds: string[];
   programNames?: string[];
+  status?: 'ACTIVE' | 'INACTIVE';
+  createdAt?: string | null;
+  updatedAt?: string | null;
 };
 
 // ── Modal de registro / edición ───────────────
@@ -49,6 +55,7 @@ function InstructorFormModal({
   visible,
   onClose,
   onSaved,
+  editItem,
   programs,
   theme,
   isDark,
@@ -56,6 +63,7 @@ function InstructorFormModal({
   visible: boolean;
   onClose: () => void;
   onSaved: () => void;
+  editItem?: InstructorItem | null;
   programs: { id: string; name: string; code: string }[];
   theme: any;
   isDark: boolean;
@@ -66,9 +74,11 @@ function InstructorFormModal({
   const [email,     setEmail]     = useState('');
   const [type,      setType]      = useState<'ESPECIFICO' | 'TRANSVERSAL'>('TRANSVERSAL');
   const [selected,  setSelected]  = useState<string[]>([]);
+  const [programQuery, setProgramQuery] = useState('');
   const [saving,    setSaving]    = useState(false);
   const [error,     setError]     = useState('');
   const [pwdResult, setPwdResult] = useState('');
+  const editing = Boolean(editItem);
 
   const text    = isDark ? Colors.dark.text      : Colors.light.text;
   const muted   = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -77,13 +87,36 @@ function InstructorFormModal({
 
   const reset = () => {
     setDocument(''); setName(''); setLastname(''); setEmail('');
-    setType('TRANSVERSAL'); setSelected([]); setError(''); setPwdResult('');
+    setType('TRANSVERSAL'); setSelected([]); setProgramQuery(''); setError(''); setPwdResult('');
   };
 
   const handleClose = () => { reset(); onClose(); };
 
   const toggleProgram = (id: string) =>
     setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+
+  useEffect(() => {
+    if (!visible) return;
+    if (!editItem) {
+      reset();
+      return;
+    }
+    setDocument(editItem.document ?? '');
+    setName(editItem.firstName ?? '');
+    setLastname(editItem.lastName ?? '');
+    setEmail(editItem.email ?? '');
+    setType(editItem.instructorType ?? 'TRANSVERSAL');
+    setSelected(editItem.programIds ?? []);
+    setProgramQuery('');
+    setError('');
+    setPwdResult('');
+  }, [visible, editItem?.idInstructor]);
+
+  const filteredPrograms = useMemo(() => {
+    const q = programQuery.trim().toLowerCase();
+    if (!q) return programs;
+    return programs.filter(p => p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q));
+  }, [programQuery, programs]);
 
   const handleSave = async () => {
     setError('');
@@ -92,22 +125,25 @@ function InstructorFormModal({
     if (!name.trim())                                { setError('El nombre es obligatorio.'); return; }
     if (!lastname.trim())                            { setError('El apellido es obligatorio.'); return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError('El correo electrónico no es válido.'); return; }
-    if (type === 'ESPECIFICO' && selected.length === 0) { setError('Un instructor específico debe tener al menos un programa asignado.'); return; }
+    if (selected.length === 0) { setError('Selecciona al menos un programa en el que pueda dar formación.'); return; }
 
     setSaving(true);
     try {
-      const result = await createInstructor({
+      const payload = {
         document:       cleanedDocument,
         name:           name.trim(),
         lastname:       lastname.trim(),
         email:          email.trim(),
         instructorType: type,
-        programIds:     type === 'TRANSVERSAL' ? [] : selected,
-      });
+        programIds:     selected,
+      };
+      const result = editing && editItem
+        ? await updateInstructor(editItem.idInstructor, payload)
+        : await createInstructor(payload);
       // El backend puede devolver initialPassword en la respuesta
       const pwd = (result as any)?.initialPassword ?? (result as any)?.password ?? null;
       await refreshAcademicStoreFromBackend();
-      if (pwd) {
+      if (!editing && pwd) {
         setPwdResult(pwd);
       } else {
         reset();
@@ -130,7 +166,7 @@ function InstructorFormModal({
       <View style={fm.overlay}>
         <View style={[fm.sheet, { backgroundColor: isDark ? Colors.dark.surface : Colors.white }]}>
           <View style={fm.header}>
-            <Text style={[fm.title, { color: text }]}>Registrar instructor</Text>
+            <Text style={[fm.title, { color: text }]}>{editing ? 'Editar instructor' : 'Registrar instructor'}</Text>
             <TouchableOpacity onPress={handleClose} style={{ padding: 4 }}>
               <Ionicons name="close" size={22} color={muted} />
             </TouchableOpacity>
@@ -223,34 +259,45 @@ function InstructorFormModal({
                   ))}
                 </View>
               </View>
-              {/* Programas — solo si es ESPECÍFICO */}
-              {type === 'ESPECIFICO' && (
-                <View style={fm.field}>
-                  <Text style={[fm.label, { color: text }]}>Programas asignados *</Text>
-                  {programs.length === 0
-                    ? <Text style={{ color: muted, fontSize: FontSize.sm }}>No hay programas activos disponibles.</Text>
-                    : programs.map(p => {
-                        const on = selected.includes(p.id);
-                        return (
-                          <TouchableOpacity
-                            key={p.id}
-                            onPress={() => toggleProgram(p.id)}
-                            style={[fm.programOption, {
-                              borderColor:     on ? theme.primary : inpBdr,
-                              backgroundColor: on ? theme.primary + '12' : inputBg,
-                            }]}
-                            activeOpacity={0.7}
-                          >
-                            <Ionicons name={on ? 'checkbox' : 'square-outline'} size={18} color={on ? theme.primary : muted} />
-                            <Text style={{ color: on ? theme.primary : text, fontSize: FontSize.sm, fontWeight: on ? FontWeight.bold : FontWeight.semibold, flex: 1 }}>
-                              {p.name} <Text style={{ color: muted }}>({p.code})</Text>
-                            </Text>
-                          </TouchableOpacity>
-                        );
-                      })
-                  }
+              {/* Programas en los que puede dar formación */}
+              <View style={fm.field}>
+                <Text style={[fm.label, { color: text }]}>Programas en los que puede dar formación *</Text>
+                <View style={[fm.programSearch, { backgroundColor: inputBg, borderColor: inpBdr }]}>
+                  <Ionicons name="search-outline" size={16} color={muted} />
+                  <TextInput
+                    value={programQuery}
+                    onChangeText={setProgramQuery}
+                    placeholder="Buscar por programa o código"
+                    placeholderTextColor={muted}
+                    style={[fm.programSearchInput, { color: text }] as any}
+                  />
                 </View>
-              )}
+                {programs.length === 0
+                  ? <Text style={{ color: muted, fontSize: FontSize.sm }}>No hay programas activos disponibles.</Text>
+                  : filteredPrograms.map(p => {
+                      const on = selected.includes(p.id);
+                      return (
+                        <TouchableOpacity
+                          key={p.id}
+                          onPress={() => { toggleProgram(p.id); setError(''); }}
+                          style={[fm.programOption, {
+                            borderColor:     on ? theme.primary : inpBdr,
+                            backgroundColor: on ? theme.primary + '12' : inputBg,
+                          }]}
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons name={on ? 'checkbox' : 'square-outline'} size={18} color={on ? theme.primary : muted} />
+                          <Text style={{ color: on ? theme.primary : text, fontSize: FontSize.sm, fontWeight: on ? FontWeight.bold : FontWeight.semibold, flex: 1 }}>
+                            {p.name} <Text style={{ color: muted }}>({p.code})</Text>
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })
+                }
+                {programs.length > 0 && filteredPrograms.length === 0 ? (
+                  <Text style={{ color: muted, fontSize: FontSize.sm, textAlign: 'center', paddingVertical: 8 }}>No hay programas con esa búsqueda.</Text>
+                ) : null}
+              </View>
               {/* Error */}
               {error ? <Text style={fm.error}>{error}</Text> : null}
               {/* Botón */}
@@ -263,10 +310,10 @@ function InstructorFormModal({
                 <LinearGradient colors={['#72C96D', '#65B361', '#4FA14B']} style={fm.saveBtnGrad}>
                   {saving
                     ? <ActivityIndicator color={Colors.white} size="small" />
-                    : <Ionicons name="person-add-outline" size={18} color={Colors.white} />
+                    : <Ionicons name={editing ? 'save-outline' : 'person-add-outline'} size={18} color={Colors.white} />
                   }
                   <Text style={{ color: Colors.white, fontWeight: FontWeight.bold, fontSize: FontSize.base }}>
-                    {saving ? 'Creando…' : 'Crear instructor'}
+                    {saving ? 'Guardando...' : editing ? 'Guardar cambios' : 'Crear instructor'}
                   </Text>
                 </LinearGradient>
               </TouchableOpacity>
@@ -288,6 +335,8 @@ const fm = StyleSheet.create({
   input:        { height: 46, borderWidth: 1.2, borderRadius: 12, paddingHorizontal: 12, fontSize: FontSize.base, outlineStyle: 'none' } as any,
   typeRow:      { flexDirection: 'row', gap: 10 },
   typeBtn:      { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 7, borderWidth: 1.5, borderRadius: 12, paddingVertical: 11, paddingHorizontal: 14 },
+  programSearch:{ height: 42, borderWidth: 1.2, borderRadius: 11, paddingHorizontal: 12, marginBottom: 9, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  programSearchInput: { flex: 1, fontSize: FontSize.sm, outlineStyle: 'none' } as any,
   programOption:{ flexDirection: 'row', alignItems: 'center', gap: 9, borderWidth: 1.2, borderRadius: 11, paddingVertical: 10, paddingHorizontal: 12, marginBottom: 7 },
   error:        { color: Colors.error, fontSize: FontSize.sm, fontWeight: FontWeight.bold, marginBottom: 10 },
   saveBtn:      { borderRadius: 14, overflow: 'hidden', marginTop: 4, marginBottom: 12 },
@@ -305,7 +354,7 @@ const fm = StyleSheet.create({
 // ── Pantalla principal ────────────────────────
 export default function AcademicInstructorsScreen() {
   const { theme, isDark } = useTheme();
-  const { programs, allInstructors, deactivateInstructor, deleteInstructor: removeInstructor } = useAcademic();
+  const { programs } = useAcademic();
 
   const [search,     setSearch]     = useState('');
   const [typeFilter, setTypeFilter] = useState<'ALL' | 'ESPECIFICO' | 'TRANSVERSAL'>('ALL');
@@ -313,6 +362,7 @@ export default function AcademicInstructorsScreen() {
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState('');
   const [modalOpen,  setModalOpen]  = useState(false);
+  const [editingItem, setEditingItem] = useState<InstructorItem | null>(null);
 
   const text    = isDark ? Colors.dark.text       : Colors.light.text;
   const muted   = isDark ? Colors.dark.textMuted  : Colors.light.textMuted;
@@ -343,31 +393,51 @@ export default function AcademicInstructorsScreen() {
 
   useEffect(() => { load(); }, [search, typeFilter]);
 
-  const handleDelete = async (id: string, fullName: string) => {
-    const current = allInstructors.find(i => i.id === id);
+  const openCreateModal = () => {
+    setEditingItem(null);
+    setModalOpen(true);
+  };
+
+  const openEditModal = (item: InstructorItem) => {
+    setEditingItem(item);
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setEditingItem(null);
+  };
+
+  const refreshAfterLifecycleChange = async () => {
+    await refreshAcademicStoreFromBackend();
+    load();
+  };
+
+  const handleDeactivateInstructor = async (item: InstructorItem, fullName: string) => {
     try {
-      if (current?.status === 'active') {
-        const result = deactivateInstructor(id);
-        if (!result?.success) throw new Error('No se pudo desactivar al instructor.');
-      } else {
-        const result = removeInstructor(id);
-        if (!result?.success) throw new Error('No se pudo eliminar definitivamente al instructor.');
-      }
-      load();
+      await deleteInstructorApi(item.idInstructor);
+      await refreshAfterLifecycleChange();
     } catch (err: any) {
-      setError(err?.message ?? err?.response?.data?.message ?? `No se pudo eliminar a ${fullName}.`);
+      setError(err?.message ?? err?.response?.data?.message ?? `No se pudo desactivar a ${fullName}.`);
     }
   };
 
-  const handleToggleType = (item: InstructorItem) => {
-    const newType = item.instructorType === 'ESPECIFICO' ? 'TRANSVERSAL' : 'ESPECIFICO';
-    const targetProgramIds = newType === 'TRANSVERSAL' ? [] : item.programIds;
-    updateInstructor(item.idInstructor, {
-      instructorType: newType,
-      programIds:     targetProgramIds,
-    })
-      .then(() => load())
-      .catch(err => setError(err?.response?.data?.message ?? 'No se pudo cambiar el tipo.'));
+  const handleActivateInstructor = async (item: InstructorItem, fullName: string) => {
+    try {
+      await reactivateInstructor(item.idInstructor);
+      await refreshAfterLifecycleChange();
+    } catch (err: any) {
+      setError(err?.message ?? err?.response?.data?.message ?? `No se pudo activar a ${fullName}.`);
+    }
+  };
+
+  const handleDeleteInstructor = async (item: InstructorItem, fullName: string) => {
+    try {
+      await deleteInstructorApi(item.idInstructor);
+      await refreshAfterLifecycleChange();
+    } catch (err: any) {
+      setError(err?.message ?? err?.response?.data?.message ?? `No se pudo eliminar a ${fullName}.`);
+    }
   };
 
   return (
@@ -382,7 +452,7 @@ export default function AcademicInstructorsScreen() {
           <Text style={[s.subtitle, { color: muted }]}>Gestiona instructores específicos y transversales</Text>
         </View>
         <TouchableOpacity
-          onPress={() => setModalOpen(true)}
+          onPress={openCreateModal}
           style={[s.addBtn, { backgroundColor: theme.primary }]}
           activeOpacity={0.85}
         >
@@ -453,6 +523,7 @@ export default function AcademicInstructorsScreen() {
             renderItem={({ item }) => {
               const fullName = `${item.firstName ?? ''} ${item.lastName ?? ''}`.trim() || '(sin nombre)';
               const isEsp = item.instructorType === 'ESPECIFICO';
+              const isInactive = item.status === 'INACTIVE';
               return (
                 <View style={[s.card, { backgroundColor: cardBg, borderColor: border }]}>
                   {/* Cabecera tarjeta */}
@@ -470,12 +541,18 @@ export default function AcademicInstructorsScreen() {
                         ? <Text style={[s.cardEmail, { color: muted }]}>{item.email}</Text>
                         : null
                       }
+                      {item.createdAt ? (
+                        <Text style={[s.cardEmail, { color: muted }]}>Creado: {formatDateTime(item.createdAt)}</Text>
+                      ) : null}
+                      {item.updatedAt ? (
+                        <Text style={[s.cardEmail, { color: muted }]}>Ultima edicion: {formatDateTime(item.updatedAt)}</Text>
+                      ) : null}
                     </View>
                     <View style={[s.typeBadge, {
-                      backgroundColor: isEsp ? theme.primary + '20' : Colors.info + '20',
+                      backgroundColor: isInactive ? Colors.error + '15' : isEsp ? theme.primary + '20' : Colors.info + '20',
                     }]}>
-                      <Text style={[s.typeBadgeText, { color: isEsp ? theme.primary : Colors.info }]}>
-                        {isEsp ? 'Específico' : 'Transversal'}
+                      <Text style={[s.typeBadgeText, { color: isInactive ? Colors.error : isEsp ? theme.primary : Colors.info }]}>
+                        {isInactive ? 'Inactivo' : isEsp ? 'Especifico' : 'Transversal'}
                       </Text>
                     </View>
                   </View>
@@ -493,23 +570,42 @@ export default function AcademicInstructorsScreen() {
                   {/* Acciones */}
                   <View style={s.actions}>
                     <TouchableOpacity
-                      onPress={() => handleToggleType(item)}
+                      onPress={() => openEditModal(item)}
                       style={[s.actionBtn, { borderColor: theme.primary }]}
                       activeOpacity={0.7}
                     >
-                      <Ionicons name="swap-horizontal-outline" size={14} color={theme.primary} />
-                      <Text style={[s.actionBtnText, { color: theme.primary }]}>
-                        Cambiar a {isEsp ? 'Transversal' : 'Específico'}
-                      </Text>
+                      <Ionicons name="create-outline" size={14} color={theme.primary} />
+                      <Text style={[s.actionBtnText, { color: theme.primary }]}>Editar</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => handleDelete(item.idInstructor, fullName)}
-                      style={[s.actionBtn, { borderColor: Colors.error }]}
-                      activeOpacity={0.7}
-                    >
-                      <Ionicons name="trash-outline" size={14} color={Colors.error} />
-                      <Text style={[s.actionBtnText, { color: Colors.error }]}>Eliminar</Text>
-                    </TouchableOpacity>
+                    {isInactive ? (
+                      <>
+                        <TouchableOpacity
+                          onPress={() => handleActivateInstructor(item, fullName)}
+                          style={[s.actionBtn, { borderColor: theme.primary }]}
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons name="checkmark-circle-outline" size={14} color={theme.primary} />
+                          <Text style={[s.actionBtnText, { color: theme.primary }]}>Activar</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => handleDeleteInstructor(item, fullName)}
+                          style={[s.actionBtn, { borderColor: Colors.error }]}
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons name="trash-outline" size={14} color={Colors.error} />
+                          <Text style={[s.actionBtnText, { color: Colors.error }]}>Eliminar</Text>
+                        </TouchableOpacity>
+                      </>
+                    ) : (
+                      <TouchableOpacity
+                        onPress={() => handleDeactivateInstructor(item, fullName)}
+                        style={[s.actionBtn, { borderColor: Colors.error }]}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons name="ban-outline" size={14} color={Colors.error} />
+                        <Text style={[s.actionBtnText, { color: Colors.error }]}>Desactivar</Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 </View>
               );
@@ -520,8 +616,9 @@ export default function AcademicInstructorsScreen() {
 
       <InstructorFormModal
         visible={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={closeModal}
         onSaved={load}
+        editItem={editingItem}
         programs={activePrograms}
         theme={theme}
         isDark={isDark}

@@ -128,7 +128,7 @@ export default function FichaDetailScreen() {
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const {
-    getFicha, programs, allFichas,
+    getFicha, programs, allFichas, allInstructors,
     deactivateLearner, reactivateLearner, updateLearnerInfo,
     transferLearner, regenerateTransferCode,
   } = useAcademic();
@@ -142,6 +142,7 @@ export default function FichaDetailScreen() {
   const [transferBusy, setTransferBusy] = useState(false);
   // Búsqueda de aprendices — filtra por nombre, documento o correo
   const [learnerSearch, setLearnerSearch]       = useState('');
+  const [instructorSearch, setInstructorSearch] = useState('');
 
   const ficha = getFicha(id ?? '');
   const text    = isDark ? Colors.dark.text       : Colors.light.text;
@@ -157,6 +158,19 @@ export default function FichaDetailScreen() {
   );
 
   const program = programs.find(p => p.id === ficha.programId);
+  const fichaInstructors = allInstructors.filter(instructor =>
+    instructor.programId === ficha.programId ||
+    instructor.programIds?.includes(ficha.programId) ||
+    instructor.fichaIds.includes(ficha.id),
+  );
+  const filteredInstructors = instructorSearch.trim()
+    ? fichaInstructors.filter(instructor => {
+        const q = instructorSearch.trim().toLowerCase();
+        return `${instructor.name} ${instructor.lastname}`.toLowerCase().includes(q)
+          || instructor.document.includes(q)
+          || instructor.email.toLowerCase().includes(q);
+      })
+    : fichaInstructors;
   const editingLearnerData = editingLearner ? ficha.learners.find(l => l.id === editingLearner) : null;
   const transferLearnerData = transferLearnerId ? ficha.learners.find(l => l.id === transferLearnerId) : null;
   const availableTransferFichas = allFichas.filter(target =>
@@ -298,6 +312,47 @@ export default function FichaDetailScreen() {
             </View>
 
             {/* ── Buscador de aprendices ── */}
+            <Text style={[fds.sectionTitle, { color: text }]}>
+              Instructores ({filteredInstructors.length}{instructorSearch ? ` de ${fichaInstructors.length}` : ''})
+            </Text>
+            <View style={[fds.searchBar, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F2F2F2', borderColor: border }]}>
+              <Ionicons name="search-outline" size={16} color={muted} />
+              <TextInput
+                style={[fds.searchInput, { color: text }] as any}
+                value={instructorSearch}
+                onChangeText={setInstructorSearch}
+                placeholder="Buscar instructor por nombre, documento o correo..."
+                placeholderTextColor={muted}
+                autoCorrect={false}
+              />
+              {instructorSearch.length > 0 && (
+                <TouchableOpacity onPress={() => setInstructorSearch('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <Ionicons name="close-circle" size={16} color={muted} />
+                </TouchableOpacity>
+              )}
+            </View>
+            <View style={fds.instructorList}>
+              {filteredInstructors.map(instructor => (
+                <View key={instructor.id} style={[fds.instructorCard, { backgroundColor: cardBg, borderColor: border }]}>
+                  <View style={[fds.instructorIcon, { backgroundColor: theme.primary + '18' }]}>
+                    <Ionicons name="person-outline" size={18} color={theme.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[fds.instructorName, { color: text }]}>{instructor.name} {instructor.lastname}</Text>
+                    <Text style={[fds.learnerMeta, { color: muted }]}>
+                      {instructor.instructorType === 'transversal' ? 'Transversal' : 'Especifico'} � Doc: {instructor.document}
+                    </Text>
+                    <Text style={[fds.learnerMeta, { color: muted }]}>{instructor.email}</Text>
+                  </View>
+                  <Text style={{ color: instructor.status === 'active' ? Colors.success : Colors.error, fontWeight: '700', fontSize: 12 }}>
+                    {t(`environments.statuses.${instructor.status}`)}
+                  </Text>
+                </View>
+              ))}
+              {filteredInstructors.length === 0 && (
+                <Text style={[fds.emptyText, { color: muted }]}>No hay instructores asociados a esta ficha.</Text>
+              )}
+            </View>
             <View style={[fds.searchBar, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F2F2F2', borderColor: border }]}>
               <Ionicons name="search-outline" size={16} color={muted} />
               <TextInput
@@ -328,7 +383,12 @@ export default function FichaDetailScreen() {
               <Text style={[fds.learnerMeta, { color: muted }]}>Doc: {item.document}{item.email ? ` · ${item.email}` : ''}</Text>
               {item.createdAt ? (
                 <Text style={[fds.learnerMeta, { color: muted }]}>
-                  {t('academic.addedOn')}: {new Date(item.createdAt).toLocaleString()}
+                  {t('academic.addedOn')}: {formatDateTime(item.createdAt)}
+                </Text>
+              ) : null}
+              {item.updatedAt ? (
+                <Text style={[fds.learnerMeta, { color: muted }]}>
+                  Ultima edicion: {formatDateTime(item.updatedAt)}
                 </Text>
               ) : null}
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
@@ -478,6 +538,11 @@ const fds = StyleSheet.create({
   // ── Buscador de aprendices ──
   searchBar:   { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 12, borderWidth: 1, paddingHorizontal: 12, height: 42, marginBottom: 10 },
   searchInput: { flex: 1, fontSize: FontSize.sm, outlineStyle: 'none' } as any,
+  instructorList: { gap: 8, marginBottom: 18 },
+  instructorCard: { borderRadius: 12, borderWidth: 1, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  instructorIcon: { width: 38, height: 38, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  instructorName: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
+  emptyText: { fontSize: FontSize.sm, textAlign: 'center', paddingVertical: 14 },
 
   empty: { alignItems: 'center', paddingVertical: 40 },
 

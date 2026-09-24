@@ -57,8 +57,10 @@ const BORDER_LATE = Colors.warning + "80";
 
 export default function AttendanceByFichaScreen({
   directFichaOnly = false,
+  allowedFichaIds,
 }: {
   directFichaOnly?: boolean;
+  allowedFichaIds?: string[];
 }) {
   const { isDark, theme } = useTheme();
   const { t, i18n } = useTranslation();
@@ -84,34 +86,46 @@ export default function AttendanceByFichaScreen({
   const cardBg = theme.surface;
   const border = theme.border;
   const bg = isDark ? Colors.dark.background : Colors.light.background;
+  const allowedFichaSet = useMemo(
+    () => allowedFichaIds ? new Set(allowedFichaIds) : null,
+    [allowedFichaIds],
+  );
+  const visibleFichas = useMemo(
+    () => allowedFichaSet ? allFichas.filter(ficha => allowedFichaSet.has(ficha.id)) : allFichas,
+    [allFichas, allowedFichaSet],
+  );
+  const visibleProgramIds = useMemo(
+    () => new Set(visibleFichas.map(ficha => ficha.programId)),
+    [visibleFichas],
+  );
 
   // ── Derivados ─────────────────────────────────
   const programOptions = useMemo(
     () =>
-      programs.map((p) => ({
+      programs.filter(p => visibleProgramIds.has(p.id)).map((p) => ({
         value: p.id,
         label: getProgramDisplayName(p, t),
       })),
-    [programs, t],
+    [programs, t, visibleProgramIds],
   );
   const fichaOptions = useMemo(
     () =>
-      allFichas.map((ficha) => ({
+      visibleFichas.map((ficha) => ({
         value: ficha.id,
         label: `Ficha ${ficha.number}`,
         sublabel: ficha.code,
       })),
-    [allFichas],
+    [visibleFichas],
   );
 
   const fichaCards: FichaDaySummary[] = useMemo(
-    () => (selectedProgramId ? getFichaCardsForProgram(selectedProgramId) : []),
-    [selectedProgramId, getFichaCardsForProgram],
+    () => (selectedProgramId ? getFichaCardsForProgram(selectedProgramId).filter(card => !allowedFichaSet || allowedFichaSet.has(card.fichaId)) : []),
+    [selectedProgramId, getFichaCardsForProgram, allowedFichaSet],
   );
 
   const selectedFicha = useMemo(
-    () => allFichas.find((f) => f.id === selectedFichaId),
-    [allFichas, selectedFichaId],
+    () => visibleFichas.find((f) => f.id === selectedFichaId),
+    [visibleFichas, selectedFichaId],
   );
   const selectedProgram = useMemo(
     () => programs.find((p) => p.id === selectedProgramId),
@@ -237,7 +251,7 @@ export default function AttendanceByFichaScreen({
             value={selectedFichaId}
             options={fichaOptions}
             onSelect={(fichaId) => {
-              const ficha = allFichas.find((item) => item.id === fichaId);
+              const ficha = visibleFichas.find((item) => item.id === fichaId);
               if (ficha) setByFichaDirectFicha(ficha.id, ficha.programId);
             }}
             placeholder={t("attendance.selectFichaPlaceholder")}

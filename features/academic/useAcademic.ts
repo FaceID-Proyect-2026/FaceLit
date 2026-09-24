@@ -238,6 +238,7 @@ export function useAcademic() {
   return {
     // Estado
     programs: filteredPrograms,
+    allPrograms: programs,
     fichas: filteredFichas,
     allFichas: fichas,
     unlinkedFichas,

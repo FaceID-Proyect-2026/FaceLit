@@ -20,6 +20,7 @@ export default function ProgramDetailScreen() {
   const { alert, DialogUI } = useAppDialog();
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [fichaSearch, setFichaSearch]     = useState('');
+  const [instructorSearch, setInstructorSearch] = useState('');
 
   const program = getProgram(id ?? '');
   const text = isDark ? Colors.dark.text : Colors.light.text;
@@ -30,7 +31,15 @@ export default function ProgramDetailScreen() {
   if (!program) return <View style={[pds.safe, { backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }]}><Text style={{ color: muted }}>Programa no encontrado</Text></View>;
 
   const programFichas = allFichas.filter(f => program.fichas.includes(f.id));
-  const programInstructors = allInstructors.filter(i => i.programId === program.id);
+  const programInstructors = allInstructors.filter(i => i.programId === program.id || i.programIds?.includes(program.id));
+  const filteredInstructors = instructorSearch.trim()
+    ? programInstructors.filter(instructor => {
+        const q = instructorSearch.trim().toLowerCase();
+        return `${instructor.name} ${instructor.lastname}`.toLowerCase().includes(q)
+          || instructor.document.includes(q)
+          || instructor.email.toLowerCase().includes(q);
+      })
+    : programInstructors;
 
   // Filtrar fichas por número de ficha o nombre del instructor responsable
   const filteredFichas = fichaSearch.trim()
@@ -50,7 +59,7 @@ export default function ProgramDetailScreen() {
       <SectionList
         sections={[
           { key: 'header', data: [] as any[] },
-          { key: 'instructors', title: `Instructores (${programInstructors.length})`, data: programInstructors },
+          { key: 'instructors', title: `Instructores (${filteredInstructors.length}${instructorSearch ? ` de ${programInstructors.length}` : ''})`, data: filteredInstructors },
           { key: 'fichas', title: `${t('academic.fichas')} (${filteredFichas.length}${fichaSearch ? ` de ${programFichas.length}` : ''})`, data: filteredFichas },
         ]}
         keyExtractor={(item, i) => item?.id ?? String(i)}
@@ -73,6 +82,24 @@ export default function ProgramDetailScreen() {
                   />
                   {fichaSearch.length > 0 && (
                     <TouchableOpacity onPress={() => setFichaSearch('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                      <Ionicons name="close-circle" size={15} color={muted} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
+              {section.key === 'instructors' && (
+                <View style={[pds.searchBar, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F2F2F2', borderColor: border }]}>
+                  <Ionicons name="search-outline" size={15} color={muted} />
+                  <TextInput
+                    style={[pds.searchInput, { color: text }] as any}
+                    value={instructorSearch}
+                    onChangeText={setInstructorSearch}
+                    placeholder="Buscar instructor por nombre, documento o correo..."
+                    placeholderTextColor={muted}
+                    autoCorrect={false}
+                  />
+                  {instructorSearch.length > 0 && (
+                    <TouchableOpacity onPress={() => setInstructorSearch('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                       <Ionicons name="close-circle" size={15} color={muted} />
                     </TouchableOpacity>
                   )}
@@ -136,6 +163,12 @@ export default function ProgramDetailScreen() {
                     {item.instructorType === 'especifico' ? 'Específico' : 'Transversal'} · Doc: {item.document}
                   </Text>
                   <Text style={[pds.cardMeta, { color: muted }]}>{item.email}</Text>
+                  {item.createdAt ? (
+                    <Text style={[pds.cardMeta, { color: muted }]}>Creado: {formatDateTime(item.createdAt)}</Text>
+                  ) : null}
+                  {item.updatedAt ? (
+                    <Text style={[pds.cardMeta, { color: muted }]}>Ultima edicion: {formatDateTime(item.updatedAt)}</Text>
+                  ) : null}
                   {/* Contraseña inicial — el coordinador la ve para enviársela al instructor */}
                   {item.initialPassword ? (
                     <View style={[pds.pwdBadge, { backgroundColor: Colors.warning + '18', borderColor: Colors.warning + '55' }]}>
