@@ -156,7 +156,7 @@ export default function InstructorEnrollment() {
           } else { active.reset(); }
           if (samples.length === poses.length) {
             stop(); setBusy(true); setMessage('Verificando presencia antes de guardar…');
-            await api.post('/api/facial/enrollment', { challengeId: challenge.id, samples, profilePhoto, evidence }, { timeout: 30000 });
+            await api.post('/api/facial/enrollment', { challengeId: challenge.id, samples, profilePhoto, evidence }, { timeout: 80000 });
             if (cancelled) return;
             setSavedPhoto(profilePhoto);
             setDone(true); setBusy(false); setMessage('Rostro registrado correctamente.'); return;
