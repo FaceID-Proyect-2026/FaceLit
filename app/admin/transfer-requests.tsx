@@ -154,18 +154,18 @@ function RequestCard({
 
       {/* Fechas */}
       <Text style={[rc.meta, { color: muted }]}>
-        Solicitado: {new Date(item.requestedAt).toLocaleString()}
+        {t('academic.transferRequestedDate')}: {new Date(item.requestedAt).toLocaleString()}
       </Text>
       {item.decidedAt && (
         <Text style={[rc.meta, { color: muted }]}>
-          Decidido: {new Date(item.decidedAt).toLocaleString()}
-          {item.decidedBy ? ` · por ${item.decidedBy}` : ''}
+          {t('academic.transferDecidedDate')}: {new Date(item.decidedAt).toLocaleString()}
+          {item.decidedBy ? ` · ${t('academic.transferDecidedBy')} ${item.decidedBy}` : ''}
         </Text>
       )}
       {item.status === 'rejected' && item.reason && (
         <View style={[rc.reasonBox, { backgroundColor: Colors.error + '0D', borderColor: Colors.error + '25' }]}>
           <Ionicons name="information-circle-outline" size={14} color={Colors.error} />
-          <Text style={[rc.reasonText, { color: muted }]}>Motivo: {item.reason}</Text>
+          <Text style={[rc.reasonText, { color: muted }]}>{t('academic.transferReason')}: {item.reason}</Text>
         </View>
       )}
 
@@ -178,7 +178,7 @@ function RequestCard({
             activeOpacity={0.8}
           >
             <Ionicons name="close-circle-outline" size={16} color={Colors.error} />
-            <Text style={[rc.btnText, { color: Colors.error }]}>Rechazar</Text>
+            <Text style={[rc.btnText, { color: Colors.error }]}>{t('academic.transferReject')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={onApprove}
@@ -186,7 +186,7 @@ function RequestCard({
             activeOpacity={0.8}
           >
             <Ionicons name="checkmark-circle-outline" size={16} color={Colors.success} />
-            <Text style={[rc.btnText, { color: Colors.success }]}>Aprobar</Text>
+            <Text style={[rc.btnText, { color: Colors.success }]}>{t('academic.transferApprove')}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -250,19 +250,32 @@ export default function TransferRequestsScreen() {
   // ── Aprobar ───────────────────────────────
   const handleApprove = (item: TransferRequest) => {
     alert(
-      'Aprobar traslado',
-      `¿Confirmas el traslado de ${item.learnerName} de la ficha ${item.currentFichaNumber} a la ficha ${item.requestedFichaNumber}?\n\nEsta acción es inmediata e irreversible.`,
+      t('academic.transferApproveTitle'),
+      t('academic.transferApproveMessage', {
+        name: item.learnerName,
+        current: item.currentFichaNumber,
+        requested: item.requestedFichaNumber,
+      }),
       [
-        { text: 'Cancelar', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Aprobar',
+          text: t('academic.transferApprove'),
           style: 'default',
           onPress: async () => {
             try {
               await approve(item.id);
-              alert('✓ Traslado aplicado', `${item.learnerName} ahora está activo en la ficha ${item.requestedFichaNumber}.`);
+              alert(
+                t('academic.transferAppliedSuccess'),
+                t('academic.transferAppliedSuccessMsg', {
+                  name: item.learnerName,
+                  ficha: item.requestedFichaNumber,
+                }),
+              );
             } catch (error: any) {
-              alert('Error', error?.response?.data?.message ?? 'No se pudo aplicar el traslado. Intenta de nuevo.');
+              alert(
+                t('common.error'),
+                error?.response?.data?.message ?? t('academic.transferApplyError'),
+              );
             }
           },
         },
@@ -276,9 +289,15 @@ export default function TransferRequestsScreen() {
     setRejectingId(null);
     try {
       await reject(rejectingId);
-      alert('Solicitud rechazada', 'El aprendiz permanece en su ficha actual. Se notificará la decisión.');
+      alert(
+        t('academic.transferRejectSuccessTitle'),
+        t('academic.transferRejectSuccessMsg'),
+      );
     } catch (error: any) {
-      alert('Error', error?.response?.data?.message ?? 'No se pudo rechazar la solicitud. Intenta de nuevo.');
+      alert(
+        t('common.error'),
+        error?.response?.data?.message ?? t('academic.transferRejectError'),
+      );
     }
   };
 
@@ -302,7 +321,7 @@ export default function TransferRequestsScreen() {
           <View>
             <Text style={[trs.title, { color: text }]}>{t('academic.transferRequestsTitle')}</Text>
             <Text style={[trs.subtitle, { color: muted }]}>
-              {t('academic.transferRequestsDescription', 'Revisa y decide las solicitudes de traslado enviadas por los aprendices.')}
+              {t('academic.transferRequestsDescription')}
             </Text>
           </View>
           {pendingCount > 0 && (
@@ -370,8 +389,8 @@ export default function TransferRequestsScreen() {
             <Ionicons name="swap-horizontal-outline" size={48} color={muted} />
             <Text style={[trs.emptyTitle, { color: muted }]}>
               {statusFilter === 'pending'
-                ? 'No hay solicitudes pendientes'
-                : 'No hay solicitudes en esta categoría'}
+                ? t('academic.transferRequestsEmpty')
+                : t('academic.transferRequestsEmptyCategory')}
             </Text>
           </View>
         }

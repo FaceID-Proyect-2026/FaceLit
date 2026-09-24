@@ -93,21 +93,21 @@ export default function AdminDashboard() {
       icon: 'people-outline',
       value: String(totalLearners),
       label: t('dashboard.totalUsers'),
-      detail: 'Aprendices vinculados',
+      detail: t('dashboard.totalLearnersDetail'),
       color: theme.info,
     },
     {
       icon: 'school-outline',
       value: String(activeFichasCount),
       label: t('dashboard.activeFichas'),
-      detail: 'En formación actualmente',
+      detail: t('dashboard.activeFichasDetail'),
       color: theme.primary,
     },
     {
       icon: 'layers-outline',
       value: String(programsCount),
       label: t('dashboard.programs'),
-      detail: 'Oferta académica',
+      detail: t('dashboard.programsDetail'),
       color: theme.secondary,
     },
   ];
@@ -116,44 +116,44 @@ export default function AdminDashboard() {
     {
       icon: 'people-outline',
       label: t('sidebar.users'),
-      description: 'Administra cuentas y permisos',
+      description: t('dashboard.actionUsersDesc'),
       route: Routes.ADMIN.USERS,
       color: theme.info,
     },
     {
       icon: 'school-outline',
       label: t('sidebar.academic'),
-      description: 'Programas, fichas y aprendices',
+      description: t('dashboard.actionAcademicDesc'),
       route: Routes.ACADEMIC.PROGRAMS,
       color: theme.success,
     },
     {
       icon: 'checkmark-circle-outline',
       label: t('sidebar.attendance'),
-      description: 'Consulta y valida asistencias',
+      description: t('dashboard.actionAttendanceDesc'),
       route: Routes.ATTENDANCE.LIST,
       color: theme.primary,
     },
     {
       icon: 'notifications-outline',
       label: t('sidebar.notifications'),
-      description: 'Revisa alertas recientes',
+      description: t('dashboard.actionNotificationsDesc'),
       route: Routes.NOTIFICATIONS.CENTER,
       color: theme.secondary,
     },
     {
       icon: 'person-outline',
       label: t('sidebar.profile'),
-      description: 'Datos personales y seguridad',
+      description: t('dashboard.actionProfileDesc'),
       route: Routes.PROFILE.VIEW,
       color: theme.warning,
     },
   ];
 
-  const displayName = user?.firstName?.trim() || 'Coordinador';
+  const displayName = user?.firstName?.trim() || t('dashboard.coordinator');
   const role = user?.role
     ? user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase()
-    : 'Coordinador';
+    : t('dashboard.coordinator');
 
   return (
     <View style={[styles.safe, { backgroundColor: bg }]}>
@@ -163,14 +163,14 @@ export default function AdminDashboard() {
       >
         <View style={styles.pageHeading}>
           <View>
-            <Text style={[styles.eyebrow, { color: theme.primary }]}>CENTRO DE CONTROL</Text>
-            <Text style={[styles.pageTitle, { color: text }]}>Panel del coordinador</Text>
-            <Text style={[styles.pageSubtitle, { color: secondaryText }]}>Resumen general de la operación académica.</Text>
+            <Text style={[styles.eyebrow, { color: theme.primary }]}>{t('dashboard.controlCenter')}</Text>
+            <Text style={[styles.pageTitle, { color: text }]}>{t('dashboard.coordinatorDashboard')}</Text>
+            <Text style={[styles.pageSubtitle, { color: secondaryText }]}>{t('dashboard.academicOverview')}</Text>
           </View>
           {!isMobile && (
             <View style={[styles.livePill, { backgroundColor: cardBg, borderColor: border }]}>
               <View style={[styles.liveDot, { backgroundColor: theme.success }]} />
-              <Text style={[styles.liveText, { color: secondaryText }]}>Sistema actualizado</Text>
+              <Text style={[styles.liveText, { color: secondaryText }]}>{t('dashboard.systemUpdated')}</Text>
             </View>
           )}
         </View>
@@ -202,14 +202,14 @@ export default function AdminDashboard() {
               {t('dashboard.welcome')}, {displayName}
             </Text>
             <Text style={styles.heroSubtitle}>
-              Gestiona la comunidad educativa y consulta el estado de la formación desde un solo lugar.
+              {t('dashboard.heroSubtitle')}
             </Text>
             <TouchableOpacity
               onPress={() => router.push(Routes.ACADEMIC.PROGRAMS as any)}
               style={styles.heroButton}
               activeOpacity={0.86}
             >
-              <Text style={styles.heroButtonText}>Ir a gestión académica</Text>
+              <Text style={styles.heroButtonText}>{t('dashboard.goToAcademic')}</Text>
               <Ionicons name={'arrow-forward'} size={17} color={'#24613A'} />
             </TouchableOpacity>
           </View>
@@ -260,7 +260,7 @@ export default function AdminDashboard() {
         <View style={styles.sectionHeading}>
           <View>
             <Text style={[styles.sectionTitle, { color: text }]}>{t('dashboard.quickActions')}</Text>
-            <Text style={[styles.sectionSubtitle, { color: muted }]}>Accede rápidamente a las tareas más frecuentes.</Text>
+            <Text style={[styles.sectionSubtitle, { color: muted }]}>{t('dashboard.quickActionsSubtitle')}</Text>
           </View>
         </View>
 
@@ -298,8 +298,8 @@ export default function AdminDashboard() {
             <Ionicons name={'bulb-outline'} size={21} color={theme.primary} />
           </View>
           <View style={styles.tipContent}>
-            <Text style={[styles.tipTitle, { color: text }]}>Todo listo para empezar</Text>
-            <Text style={[styles.tipText, { color: secondaryText }]}>Los indicadores se actualizan con la información académica registrada en el sistema.</Text>
+            <Text style={[styles.tipTitle, { color: text }]}>{t('dashboard.tipTitle')}</Text>
+            <Text style={[styles.tipText, { color: secondaryText }]}>{t('dashboard.tipText')}</Text>
           </View>
         </View>
       </ScrollView>
