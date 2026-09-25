@@ -87,6 +87,22 @@ export default function NotificationsScreen() {
     setExpandedId(null);
   };
 
+  const getNotificationTitle = (notif: Notification) => {
+    const key = `notifications.items.${notif.type}.title`;
+    const translated = t(key);
+    return translated !== key ? translated : notif.title;
+  };
+
+  const getNotificationMessage = (notif: Notification) => {
+    const key = `notifications.items.${notif.type}.message`;
+    const params = {
+      ...(notif.meta ?? {}),
+      ...(notif.meta?.csvSummary ?? {}),
+    };
+    const translated = t(key, params);
+    return translated !== key ? translated : notif.message;
+  };
+
   // ── Render de detalle expandido ──────────
   const renderDetail = (notif: Notification) => {
     const m = notif.meta ?? {};
@@ -116,7 +132,11 @@ export default function NotificationsScreen() {
       rows.push(['alert-circle-outline', t('notifications.detail.blocked'), `${s.blocked}`]);
       rows.push(['close-circle-outline', t('notifications.detail.errors'),  `${s.errors}`]);
     }
-    if (m.entityType) rows.push(['information-circle-outline', t('notifications.detail.entityType'), m.entityType]);
+    if (m.entityType) {
+      const entityLabelKey = `notifications.detail.entityTypes.${m.entityType}`;
+      const entityLabel = t(entityLabelKey);
+      rows.push(['information-circle-outline', t('notifications.detail.entityType'), entityLabel !== entityLabelKey ? entityLabel : m.entityType]);
+    }
 
     // Canal y correo
     const channelLabel = notif.channel === 'app+email'
@@ -225,7 +245,7 @@ export default function NotificationsScreen() {
                   style={[ns.cardTitle, { color: text, fontWeight: isUnread ? FontWeight.black : FontWeight.medium }]}
                   numberOfLines={expanded ? undefined : 1}
                 >
-                  {item.title}
+                  {getNotificationTitle(item)}
                 </Text>
                 <View style={ns.badges}>
                   {isEmail && (
@@ -242,7 +262,7 @@ export default function NotificationsScreen() {
                 </View>
               </View>
               <Text style={[ns.cardMsg, { color: muted }]} numberOfLines={expanded ? undefined : 2}>
-                {item.message}
+                {getNotificationMessage(item)}
               </Text>
               <View style={ns.cardFooter}>
                 <Text style={[ns.cardDate, { color: muted }]}>{item.date} · {item.time}</Text>

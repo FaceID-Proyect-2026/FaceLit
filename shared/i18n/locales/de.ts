@@ -1476,11 +1476,18 @@ const de = {
   attendance: {
     rf6: {
       subtitle: "Anwesenheitseinträge anzeigen und verwalten.",
-      tabByFicha: "Nach Ficha",
+      tabByFicha: "Nach Klasse",
       tabByUser: "Nach Nutzer",
       tabHistory: "Verlauf",
       selectProgramPrompt:
         "Wählen Sie ein Ausbildungsprogramm aus, um fortzufahren.",
+      fichasToday: "Klassen heute",
+      absent: "Abwesenheit",
+      late: "Verspätungen",
+      absentCount: "Fehlzeiten",
+      lateCount: "Verspätungen",
+      total: "Auszubildende insgesamt",
+      viewDetail: "Details anzeigen",
       searchLearner: "Lernende suchen",
       searchPlaceholder: "Nach Name oder Dokument suchen",
       searchPrompt:
@@ -1493,8 +1500,17 @@ const de = {
       exportCsv: "CSV exportieren",
       learner: "Lernender",
       document: "Dokument",
-      ficha: "Ficha",
+      ficha: "Klasse",
       statusCol: "Status",
+      program: "Programm",
+      exportTitle: "Anwesenheitsbericht nach Klasse",
+      exportTitleUser: "Anwesenheitsbericht nach Auszubildendem",
+      records: "Einträge",
+      anomaliesOnly: "Nur Anomalien",
+      last3Months: "Letzte 3 Monate",
+      filterNameDoc: "Nach Name oder Dokument filtern...",
+      selectProgramForHistory: "Wählen Sie ein Programm, um den Verlauf anzuzeigen.",
+      noAnomalies3Months: "Keine Anomalien in den letzten 3 Monaten.",
     },
     punctual: "Pünktlich",
     late: "Zu spät",
@@ -1714,9 +1730,9 @@ const de = {
     detail: {
       learner: "Lernender",
       document: "Dokument",
-      fromFicha: "Frühere Ficha",
-      toFicha: "Neue Ficha",
-      ficha: "Ficha",
+      fromFicha: "Vorherige Klasse",
+      toFicha: "Neue Klasse",
+      ficha: "Klasse",
       failedCount: "Fehlgeschlagene Versuche",
       lockMinutes: "Sperrdauer",
       created: "Erstellt",
@@ -1724,6 +1740,12 @@ const de = {
       blocked: "Blockiert",
       errors: "Fehler",
       entityType: "Entitätstyp",
+      entityTypes: {
+        program: "Programm",
+        ficha: "Klasse",
+        learner: "Lernender",
+        instructor: "Ausbilder",
+      },
       channel: "Kanal",
       channelApp: "Nur App",
       channelEmail: "App + E-Mail",
@@ -1738,6 +1760,72 @@ const de = {
       accept: "Annehmen",
       reject: "Ablehnen",
       goCorrect: "Zur Korrektur",
+    },
+    items: {
+      csv_upload_done: {
+        title: "CSV-Upload abgeschlossen",
+        message: "Upload abgeschlossen: {{created}} erstellt, {{updated}} aktualisiert, {{blocked}} ausstehend, {{errors}} Fehler.",
+      },
+      csv_inconsistency: {
+        title: "Inkonsistenz zur Überprüfung ausstehend",
+        message: "Ausbilder mit Dok. {{learnerDocument}} ist ADSO zugewiesen, aber Datei verschiebt ihn in Verwaltung. Bitte manuell bestätigen.",
+      },
+      csv_transfer_applied: {
+        title: "Klassenwechsel angewendet",
+        message: "Auszubildender {{learnerName}} ({{learnerDocument}}) wurde von Klasse {{fromFichaNumber}} zu Klasse {{toFichaNumber}} verschoben.",
+      },
+      csv_transfer_rejected: {
+        title: "Klassenwechsel abgebrochen",
+        message: "Klassenwechsel für {{learnerName}} ({{learnerDocument}}) wurde nicht angewendet. Datensatz unverändert.",
+      },
+      csv_ref_error: {
+        title: "Zeile mit Referenzfehler",
+        message: "Zeile 14 erwähnt Klasse {{fichaNumber}}, die weder existiert noch erstellt wird.",
+      },
+      learner_transferred: {
+        title: "Versetzung per Code abgeschlossen",
+        message: "{{learnerName}} ({{learnerDocument}}) gab Versetzungscode ein und ist nun in Klasse {{toFichaNumber}} aktiv. Klasse {{fromFichaNumber}} deaktiviert.",
+      },
+      attendance_absent: {
+        title: "Abwesenheit erfasst",
+        message: "{{learnerName}} ({{learnerDocument}}) war in Sitzung der Klasse {{fichaNumber}} nicht anwesend.",
+      },
+      attendance_late: {
+        title: "Verspätung erfasst",
+        message: "{{learnerName}} ({{learnerDocument}}) kam {{delayMinutes}} Min zu spät zu Klasse {{fichaNumber}}.",
+      },
+      attendance_early_exit: {
+        title: "Vorzeitiges Verlassen erfasst",
+        message: "{{learnerName}} ({{learnerDocument}}) verließ die Sitzung vor dem Zeitfenster, Klasse {{fichaNumber}}.",
+      },
+      attendance_no_exit: {
+        title: "Ausgang nicht erfasst",
+        message: "{{learnerName}} ({{learnerDocument}}) hat keinen Ausgang für Klasse {{fichaNumber}} erfasst.",
+      },
+      attendance_wrong_env: {
+        title: "Eintrag in unpassender Sitzung",
+        message: "{{learnerName}} ({{learnerDocument}}) identifizierte sich in {{environmentName}}, nicht passend zu Klasse {{fichaNumber}}.",
+      },
+      attendance_substitute: {
+        title: "Sitzung durch Vertretung geöffnet",
+        message: "{{instructorName}} öffnete Sitzung als Vertretung für Klasse {{fichaNumber}}.",
+      },
+      academic_delete_blocked: {
+        title: "Löschversuch blockiert",
+        message: "Programm konnte nicht gelöscht werden, da aktive Klassen damit verknüpft sind.",
+      },
+      security_multiple_failures: {
+        title: "Mehrere fehlgeschlagene Anmeldeversuche",
+        message: "Konto mit Dokument {{accountDocument}} sammelte {{failedCount}} aufeinanderfolgende Fehlversuche.",
+      },
+      security_account_locked: {
+        title: "Konto wegen Fehlversuchen gesperrt",
+        message: "Konto mit Dokument {{accountDocument}} wurde nach Überschreitung für {{lockMinutes}} Minuten gesperrt.",
+      },
+      facial_reregister_request: {
+        title: "Antrag auf erneute Gesichtserfassung",
+        message: "{{learnerName}} ({{learnerDocument}}) beantragt erneute Erfassung seines Gesichts.",
+      },
     },
   },
   profile: {

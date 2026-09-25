@@ -1534,11 +1534,18 @@ const fr = {
   attendance: {
     rf6: {
       subtitle: "Consultez et gérez les registres de présence.",
-      tabByFicha: "Par ficha",
+      tabByFicha: "Par groupe",
       tabByUser: "Par utilisateur",
       tabHistory: "Historique",
       selectProgramPrompt:
         "Sélectionnez un programme de formation pour continuer.",
+      fichasToday: "Groupes aujourd'hui",
+      absent: "Absence",
+      late: "Retards",
+      absentCount: "absences",
+      lateCount: "retards",
+      total: "apprentis au total",
+      viewDetail: "Voir le détail",
       searchLearner: "Rechercher un apprenant",
       searchPlaceholder: "Rechercher par nom ou document",
       searchPrompt: "Recherchez un apprenant pour consulter ses présences.",
@@ -1550,8 +1557,17 @@ const fr = {
       exportCsv: "Exporter CSV",
       learner: "Apprenant",
       document: "Document",
-      ficha: "Ficha",
+      ficha: "Groupe",
       statusCol: "Statut",
+      program: "Programme",
+      exportTitle: "Rapport de présence par groupe",
+      exportTitleUser: "Rapport de présence par apprenti",
+      records: "enregistrements",
+      anomaliesOnly: "Anomalies uniquement",
+      last3Months: "3 derniers mois",
+      filterNameDoc: "Filtrer par nom ou document...",
+      selectProgramForHistory: "Sélectionnez un programme pour voir l'historique.",
+      noAnomalies3Months: "Aucune anomalie au cours des 3 derniers mois.",
     },
     punctual: "Ponctuel",
     late: "En retard",
@@ -1767,9 +1783,9 @@ const fr = {
     detail: {
       learner: "Apprenant",
       document: "Document",
-      fromFicha: "Ficha précédente",
-      toFicha: "Nouvelle ficha",
-      ficha: "Ficha",
+      fromFicha: "Groupe précédent",
+      toFicha: "Nouveau groupe",
+      ficha: "Groupe",
       failedCount: "Tentatives échouées",
       lockMinutes: "Durée du blocage",
       created: "Créés",
@@ -1777,6 +1793,12 @@ const fr = {
       blocked: "Bloqués",
       errors: "Erreurs",
       entityType: "Type d'entité",
+      entityTypes: {
+        program: "Programme",
+        ficha: "Groupe",
+        learner: "Apprenant",
+        instructor: "Formateur",
+      },
       channel: "Canal",
       channelApp: "App uniquement",
       channelEmail: "App + Email",
@@ -1791,6 +1813,72 @@ const fr = {
       accept: "Accepter",
       reject: "Rejeter",
       goCorrect: "Aller corriger",
+    },
+    items: {
+      csv_upload_done: {
+        title: "Téléversement CSV terminé",
+        message: "Téléversement terminé : {{created}} créés, {{updated}} mis à jour, {{blocked}} en attente, {{errors}} erreurs.",
+      },
+      csv_inconsistency: {
+        title: "Incohérence en attente de révision",
+        message: "Le formateur avec doc. {{learnerDocument}} est affecté à ADSO mais le fichier le déplace vers Gestion Administrative. Confirmez manuellement.",
+      },
+      csv_transfer_applied: {
+        title: "Changement de groupe appliqué",
+        message: "L'apprenti {{learnerName}} ({{learnerDocument}}) a été déplacé du groupe {{fromFichaNumber}} au groupe {{toFichaNumber}}.",
+      },
+      csv_transfer_rejected: {
+        title: "Changement de groupe annulé",
+        message: "Il a été décidé de ne pas appliquer le changement pour l'apprenti {{learnerName}} ({{learnerDocument}}). Enregistrement inchangé.",
+      },
+      csv_ref_error: {
+        title: "Ligne avec erreur de référence",
+        message: "La ligne 14 mentionne le groupe {{fichaNumber}}, qui n'existe pas et n'est pas créé dans ce fichier.",
+      },
+      learner_transferred: {
+        title: "Transfert complété par code",
+        message: "{{learnerName}} ({{learnerDocument}}) a saisi le code de transfert et est actif dans le groupe {{toFichaNumber}}. Groupe {{fromFichaNumber}} désactivé.",
+      },
+      attendance_absent: {
+        title: "Absence enregistrée",
+        message: "{{learnerName}} ({{learnerDocument}}) était absent de la séance du groupe {{fichaNumber}}.",
+      },
+      attendance_late: {
+        title: "Retard enregistré",
+        message: "{{learnerName}} ({{learnerDocument}}) est arrivé avec {{delayMinutes}} min de retard au groupe {{fichaNumber}}.",
+      },
+      attendance_early_exit: {
+        title: "Départ anticipé enregistré",
+        message: "{{learnerName}} ({{learnerDocument}}) a enregistré une sortie avant la plage prévue, groupe {{fichaNumber}}.",
+      },
+      attendance_no_exit: {
+        title: "Sortie non enregistrée",
+        message: "{{learnerName}} ({{learnerDocument}}) n'a pas enregistré de sortie pour la séance du groupe {{fichaNumber}}.",
+      },
+      attendance_wrong_env: {
+        title: "Enregistrement dans une session non correspondante",
+        message: "{{learnerName}} ({{learnerDocument}}) s'est identifié dans {{environmentName}}, non correspondant au groupe {{fichaNumber}}.",
+      },
+      attendance_substitute: {
+        title: "Session ouverte par suppléance",
+        message: "{{instructorName}} a ouvert la session en tant que remplaçant pour le groupe {{fichaNumber}}.",
+      },
+      academic_delete_blocked: {
+        title: "Tentative de suppression bloquée",
+        message: "Impossible de supprimer le programme car il a des groupes actifs associés.",
+      },
+      security_multiple_failures: {
+        title: "Multiples tentatives de connexion échouées",
+        message: "Le compte avec le document {{accountDocument}} a cumulé {{failedCount}} échecs consécutifs.",
+      },
+      security_account_locked: {
+        title: "Compte bloqué pour tentatives échouées",
+        message: "Le compte avec le document {{accountDocument}} a été bloqué pendant {{lockMinutes}} minutes.",
+      },
+      facial_reregister_request: {
+        title: "Demande de réenregistrement facial",
+        message: "{{learnerName}} ({{learnerDocument}}) demande à réenregistrer son visage.",
+      },
     },
   },
   profile: {

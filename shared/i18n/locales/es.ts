@@ -1652,6 +1652,13 @@ const es = {
       tabHistory: "Historial",
       selectProgramPrompt:
         "Selecciona un programa de formación para continuar.",
+      fichasToday: "Fichas hoy",
+      absent: "Inasistencia",
+      late: "Llegadas tarde",
+      absentCount: "inasistencias",
+      lateCount: "tardanzas",
+      total: "aprendices en total",
+      viewDetail: "Ver detalle",
       searchLearner: "Buscar aprendiz",
       searchPlaceholder: "Busca por nombre o documento",
       searchPrompt: "Busca un aprendiz para consultar su asistencia.",
@@ -1665,6 +1672,15 @@ const es = {
       document: "Documento",
       ficha: "Ficha",
       statusCol: "Estado",
+      program: "Programa",
+      exportTitle: "Reporte de Asistencia por Ficha",
+      exportTitleUser: "Reporte de Asistencia por Aprendiz",
+      records: "registros",
+      anomaliesOnly: "Solo anomalías",
+      last3Months: "Últimos 3 meses",
+      filterNameDoc: "Filtrar por nombre o documento...",
+      selectProgramForHistory: "Selecciona un programa para ver el historial.",
+      noAnomalies3Months: "No hay anomalías en los últimos 3 meses.",
     },
     title: "Control de Asistencia",
     adminSubtitle:
@@ -1894,6 +1910,12 @@ const es = {
       blocked: "Bloqueados",
       errors: "Errores",
       entityType: "Tipo de entidad",
+      entityTypes: {
+        program: "Programa",
+        ficha: "Ficha",
+        learner: "Aprendiz",
+        instructor: "Instructor",
+      },
       channel: "Canal",
       channelApp: "Solo app",
       channelEmail: "App + Correo",
@@ -1908,6 +1930,72 @@ const es = {
       accept: "Aceptar",
       reject: "Rechazar",
       goCorrect: "Ir a corregir",
+    },
+    items: {
+      csv_upload_done: {
+        title: "Carga de CSV finalizada",
+        message: "Carga finalizada: {{created}} creados, {{updated}} actualizados, {{blocked}} pendientes de confirmación, {{errors}} con error.",
+      },
+      csv_inconsistency: {
+        title: "Inconsistencia pendiente de revisión",
+        message: "El instructor con doc. {{learnerDocument}} está asignado al programa ADSO pero el archivo lo mueve a Gestión Administrativa. Confirma el cambio manualmente.",
+      },
+      csv_transfer_applied: {
+        title: "Cambio de ficha aplicado",
+        message: "El aprendiz {{learnerName}} ({{learnerDocument}}) fue movido de la ficha {{fromFichaNumber}} a la ficha {{toFichaNumber}}.",
+      },
+      csv_transfer_rejected: {
+        title: "Cambio de ficha cancelado",
+        message: "Se decidió no aplicar el cambio de ficha del aprendiz {{learnerName}} ({{learnerDocument}}). El registro no fue modificado.",
+      },
+      csv_ref_error: {
+        title: "Fila con error de referencia",
+        message: "La fila 14 del archivo menciona la ficha {{fichaNumber}}, que no existe ni está siendo creada en este archivo.",
+      },
+      learner_transferred: {
+        title: "Traslado completado por código",
+        message: "{{learnerName}} ({{learnerDocument}}) ingresó el código de traslado y ya está activo en la ficha {{toFichaNumber}}. La ficha anterior ({{fromFichaNumber}}) quedó inactiva para él.",
+      },
+      attendance_absent: {
+        title: "Inasistencia registrada",
+        message: "{{learnerName}} ({{learnerDocument}}) no se presentó en la sesión de la ficha {{fichaNumber}}.",
+      },
+      attendance_late: {
+        title: "Retraso registrado",
+        message: "{{learnerName}} ({{learnerDocument}}) llegó {{delayMinutes}} min tarde a la sesión de la ficha {{fichaNumber}}.",
+      },
+      attendance_early_exit: {
+        title: "Salida anticipada registrada",
+        message: "{{learnerName}} ({{learnerDocument}}) registró salida antes de la franja esperada, ficha {{fichaNumber}}.",
+      },
+      attendance_no_exit: {
+        title: "Salida no registrada",
+        message: "{{learnerName}} ({{learnerDocument}}) no registró salida en la sesión de la ficha {{fichaNumber}}.",
+      },
+      attendance_wrong_env: {
+        title: "Registro en sesión no correspondiente",
+        message: "{{learnerName}} ({{learnerDocument}}) se identificó en el {{environmentName}}, que no corresponde a su ficha {{fichaNumber}}.",
+      },
+      attendance_substitute: {
+        title: "Sesión abierta por suplencia",
+        message: "{{instructorName}} abrió la sesión del dispositivo como sustituto para la ficha {{fichaNumber}}.",
+      },
+      academic_delete_blocked: {
+        title: "Intento de eliminación bloqueado",
+        message: "No fue posible eliminar el programa porque tiene fichas activas asociadas.",
+      },
+      security_multiple_failures: {
+        title: "Múltiples intentos fallidos de sesión",
+        message: "La cuenta con documento {{accountDocument}} acumuló {{failedCount}} intentos fallidos consecutivos de inicio de sesión.",
+      },
+      security_account_locked: {
+        title: "Cuenta bloqueada por intentos fallidos",
+        message: "La cuenta con documento {{accountDocument}} quedó bloqueada por {{lockMinutes}} minutos tras superar el límite de intentos fallidos.",
+      },
+      facial_reregister_request: {
+        title: "Solicitud de re-registro facial",
+        message: "{{learnerName}} ({{learnerDocument}}) solicita volver a registrar su rostro.",
+      },
     },
   },
   profile: {

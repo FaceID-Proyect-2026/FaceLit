@@ -1614,10 +1614,17 @@ const en = {
   attendance: {
     rf6: {
       subtitle: "Review and manage attendance records.",
-      tabByFicha: "By ficha",
+      tabByFicha: "By cohort",
       tabByUser: "By user",
       tabHistory: "History",
       selectProgramPrompt: "Select a training program to continue.",
+      fichasToday: "Cohorts today",
+      absent: "Absent",
+      late: "Late arrivals",
+      absentCount: "absences",
+      lateCount: "late arrivals",
+      total: "total learners",
+      viewDetail: "View details",
       searchLearner: "Search learner",
       searchPlaceholder: "Search by name or document",
       searchPrompt: "Search for a learner to view attendance.",
@@ -1629,8 +1636,17 @@ const en = {
       exportCsv: "Export CSV",
       learner: "Learner",
       document: "Document",
-      ficha: "Ficha",
+      ficha: "Cohort",
       statusCol: "Status",
+      program: "Program",
+      exportTitle: "Attendance Report by Cohort",
+      exportTitleUser: "Attendance Report by Learner",
+      records: "records",
+      anomaliesOnly: "Anomalies only",
+      last3Months: "Last 3 months",
+      filterNameDoc: "Filter by name or document...",
+      selectProgramForHistory: "Select a program to view history.",
+      noAnomalies3Months: "No anomalies in the last 3 months.",
     },
     punctual: "Punctual",
     late: "Late",
@@ -1844,9 +1860,9 @@ const en = {
     detail: {
       learner: "Learner",
       document: "Document",
-      fromFicha: "From ficha",
-      toFicha: "To ficha",
-      ficha: "Ficha",
+      fromFicha: "Previous cohort",
+      toFicha: "New cohort",
+      ficha: "Cohort",
       failedCount: "Failed attempts",
       lockMinutes: "Lock duration",
       created: "Created",
@@ -1854,6 +1870,12 @@ const en = {
       blocked: "Blocked",
       errors: "Errors",
       entityType: "Entity type",
+      entityTypes: {
+        program: "Program",
+        ficha: "Cohort",
+        learner: "Learner",
+        instructor: "Instructor",
+      },
       channel: "Channel",
       channelApp: "App only",
       channelEmail: "App + Email",
@@ -1868,6 +1890,72 @@ const en = {
       accept: "Accept",
       reject: "Reject",
       goCorrect: "Go to correct",
+    },
+    items: {
+      csv_upload_done: {
+        title: "CSV upload completed",
+        message: "Upload completed: {{created}} created, {{updated}} updated, {{blocked}} pending confirmation, {{errors}} with error.",
+      },
+      csv_inconsistency: {
+        title: "Inconsistency pending review",
+        message: "Instructor with doc. {{learnerDocument}} is assigned to ADSO but file moves them to Administrative Management. Confirm change manually.",
+      },
+      csv_transfer_applied: {
+        title: "Cohort change applied",
+        message: "Apprentice {{learnerName}} ({{learnerDocument}}) was moved from cohort {{fromFichaNumber}} to cohort {{toFichaNumber}}.",
+      },
+      csv_transfer_rejected: {
+        title: "Cohort change canceled",
+        message: "Decided not to apply cohort change for apprentice {{learnerName}} ({{learnerDocument}}). Record was not modified.",
+      },
+      csv_ref_error: {
+        title: "Row with reference error",
+        message: "Row 14 of the file mentions cohort {{fichaNumber}}, which does not exist and is not being created.",
+      },
+      learner_transferred: {
+        title: "Transfer completed by code",
+        message: "{{learnerName}} ({{learnerDocument}}) entered transfer code and is now active in cohort {{toFichaNumber}}. Previous cohort ({{fromFichaNumber}}) is inactive.",
+      },
+      attendance_absent: {
+        title: "Absence recorded",
+        message: "{{learnerName}} ({{learnerDocument}}) was absent from cohort {{fichaNumber}} session.",
+      },
+      attendance_late: {
+        title: "Late arrival recorded",
+        message: "{{learnerName}} ({{learnerDocument}}) arrived {{delayMinutes}} min late to cohort {{fichaNumber}} session.",
+      },
+      attendance_early_exit: {
+        title: "Early departure recorded",
+        message: "{{learnerName}} ({{learnerDocument}}) recorded departure before expected time slot, cohort {{fichaNumber}}.",
+      },
+      attendance_no_exit: {
+        title: "Departure not recorded",
+        message: "{{learnerName}} ({{learnerDocument}}) did not record departure for cohort {{fichaNumber}} session.",
+      },
+      attendance_wrong_env: {
+        title: "Record in mismatched session",
+        message: "{{learnerName}} ({{learnerDocument}}) checked in at {{environmentName}}, which does not match cohort {{fichaNumber}}.",
+      },
+      attendance_substitute: {
+        title: "Session opened by substitute",
+        message: "{{instructorName}} opened device session as substitute for cohort {{fichaNumber}}.",
+      },
+      academic_delete_blocked: {
+        title: "Deletion attempt blocked",
+        message: "Could not delete the program because it has active cohorts associated.",
+      },
+      security_multiple_failures: {
+        title: "Multiple failed login attempts",
+        message: "Account with document {{accountDocument}} accumulated {{failedCount}} consecutive failed login attempts.",
+      },
+      security_account_locked: {
+        title: "Account locked due to failed attempts",
+        message: "Account with document {{accountDocument}} was locked for {{lockMinutes}} minutes after exceeding limit.",
+      },
+      facial_reregister_request: {
+        title: "Facial re-registration request",
+        message: "{{learnerName}} ({{learnerDocument}}) requests to re-register their face.",
+      },
     },
   },
   profile: {
