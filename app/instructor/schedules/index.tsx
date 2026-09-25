@@ -2,6 +2,7 @@
 //  app/admin/schedules/index.tsx — Horarios (Admin)
 // ─────────────────────────────────────────────
 import { useAcademic } from '@/features/academic/useAcademic';
+import { getProgramDisplayName } from '@/features/academic/types';
 import { useEnvironments } from '@/features/environments/useEnvironments';
 import ScheduleFormModal from '@/features/schedules/components/ScheduleFormModal';
 import { useSchedules } from '@/features/schedules/useSchedules';
@@ -23,12 +24,12 @@ import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimen
 // que cada uno navegue dentro de su propio módulo.
 export default function SchedulesListScreen() {
   const { theme, isDark } = useTheme();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const basePath = getRoleBasePath(user?.role);
   const { schedules, search, setSearch, statusFilter, setStatusFilter, deactivate, reactivate, removePermanently } = useSchedules();
   const { getById: getEnvironment } = useEnvironments();
-  const { getFicha } = useAcademic();
+  const { getFicha, getProgram } = useAcademic();
   const { alert, DialogUI } = useAppDialog();
   const { width } = useWindowDimensions();
   const isMobile = width < 480;
@@ -92,7 +93,7 @@ export default function SchedulesListScreen() {
       <View style={[sls.header, isMobile && sls.headerMobile]}>
         <View style={sls.headingCopy}>
           <Text style={[sls.title, { color: text }]}>{t('schedules.title')}</Text>
-          <Text style={[sls.subtitle, { color: muted }]}>{t('schedules.listSubtitle', 'Consulta y administra los horarios de formación registrados en el sistema.')}</Text>
+          <Text style={[sls.subtitle, { color: muted }]}>{t('schedules.listSubtitle')}</Text>
         </View>
         <TouchableOpacity onPress={openCreateModal} style={[sls.addBtn, isMobile && sls.addBtnMobile, { backgroundColor: theme.primary }]} activeOpacity={0.85}>
           <Ionicons name="add" size={20} color={Colors.white} /><Text style={sls.addBtnText}>{t('schedules.register')}</Text>
@@ -120,6 +121,9 @@ export default function SchedulesListScreen() {
           const environmentName = resolveEnvironmentName(item.environmentId, item.environmentName);
           const instructorName = resolveInstructorName(item.instructorId, item.instructorName);
           const fichaNumber = resolveFichaNumber(item.fichaId, item.fichaNumber);
+          const ficha = getFicha(item.fichaId);
+          const program = ficha?.programId ? getProgram(ficha.programId) : undefined;
+          const programName = program ? getProgramDisplayName(program, t) : item.programName;
           return (
             <TouchableOpacity onPress={() => router.push(`${basePath}/schedules/${item.id}` as any)} activeOpacity={0.7}
               style={[sls.card, { backgroundColor: cardBg, borderColor: border }]}>
@@ -135,7 +139,7 @@ export default function SchedulesListScreen() {
               </View>
 
               <View style={sls.titleRow}>
-                <Text style={[sls.cardTitle, { color: text }]}>Ficha {fichaNumber} - {item.programName}</Text>
+                <Text style={[sls.cardTitle, { color: text }]}>{t('dashboard.apprenticeFicha')} {fichaNumber} - {programName}</Text>
               </View>
               <Text style={[sls.cardSub, { color: muted }]}>{item.startTime} - {item.endTime}</Text>
 
@@ -143,7 +147,7 @@ export default function SchedulesListScreen() {
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}><Ionicons name="business-outline" size={13} color={muted} /><Text style={{ color: muted, fontSize: 12 }}>{environmentName}</Text></View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}><Ionicons name="person-outline" size={13} color={muted} /><Text style={{ color: muted, fontSize: 12 }}>{instructorName}</Text></View>
               </View>
-              <Text style={[sls.cardDates, { color: muted }]}>{t('environments.detail.createdAt')}: {new Date(item.createdAt).toLocaleString()} · {t('environments.detail.updatedAt')}: {new Date(item.updatedAt).toLocaleString()}</Text>
+              <Text style={[sls.cardDates, { color: muted }]}>{t('environments.detail.createdAt')}: {new Date(item.createdAt).toLocaleString(i18n.language)} · {t('environments.detail.updatedAt')}: {new Date(item.updatedAt).toLocaleString(i18n.language)}</Text>
 
               <View style={sls.cardActions}>
                 <TouchableOpacity onPress={() => router.push(`${basePath}/schedules/exceptions?scheduleId=${item.id}` as any)} style={[sls.actionBtn, { backgroundColor: Colors.warning + '15' }]}>

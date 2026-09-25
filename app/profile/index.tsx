@@ -77,7 +77,7 @@ export default function ProfileScreen() {
 
   const handleLogout = () => {
     alert(
-      t('profile.logoutConfirm') ?? '¿Cerrar sesión?',
+      t('profile.logoutConfirm'),
       '',
       [
         { text: t('common.cancel'), style: 'cancel' },

@@ -400,7 +400,7 @@ export default function AttendanceByFichaScreen({
                   label={t("reports.filters.dateFrom")}
                   value={dateFrom}
                   onChange={setByFichaDateFrom}
-                  placeholder="AAAA-MM-DD"
+                  placeholder="YYYY-MM-DD"
                   containerStyle={s.noMargin}
                 />
               </View>
@@ -413,7 +413,7 @@ export default function AttendanceByFichaScreen({
                   value={dateTo}
                   onChange={setByFichaDateTo}
                   minDate={dateFrom || undefined}
-                  placeholder="AAAA-MM-DD"
+                  placeholder="YYYY-MM-DD"
                   containerStyle={s.noMargin}
                 />
               </View>

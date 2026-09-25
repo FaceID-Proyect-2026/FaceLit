@@ -196,14 +196,14 @@ export default function ExcusesReviewScreen() {
               label={t('reports.filters.dateFrom')}
               value={dateFrom}
               onChange={setDateFrom}
-              placeholder="AAAA-MM-DD"
+              placeholder="YYYY-MM-DD"
               containerStyle={ers.filterField}
             />
             <DateField
               label={t('reports.filters.dateTo')}
               value={dateTo}
               onChange={setDateTo}
-              placeholder="AAAA-MM-DD"
+              placeholder="YYYY-MM-DD"
               containerStyle={ers.filterField}
             />
           </View>

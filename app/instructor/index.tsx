@@ -155,9 +155,9 @@ export default function InstructorDashboard() {
                   activeOpacity={0.75}
                 >
                   <View>
-                    <Text style={[ads.fichaChipTitle, { color: text }]}>Ficha {ficha.number}</Text>
+                    <Text style={[ads.fichaChipTitle, { color: text }]}>{t('dashboard.apprenticeFicha')} {ficha.number}</Text>
                     <Text style={[ads.fichaChipMeta, { color: muted }]} numberOfLines={1}>
-                      {program ? getProgramDisplayName(program, t) : t("dashboard.noProgram")} · {ficha.learners.length} {t("dashboard.learnersInCharge")}
+                      {program ? getProgramDisplayName(program, t) : t("dashboard.noProgram")} · {ficha.learners.length} {t("instructorAcademic.learners")}
                     </Text>
                   </View>
                   <Ionicons name="chevron-forward" size={18} color={muted} />

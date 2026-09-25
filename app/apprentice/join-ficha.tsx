@@ -193,7 +193,7 @@ export default function JoinFichaScreen() {
                   <Text style={[s.errorText, { color: Colors.error }]}>{error}</Text>
                 ) : (
                   <Text style={[s.hintText, { color: muted }]}>
-                    {t('academic.transferCodeHint')}
+                    {t('academic.transferCodeHelp')}
                   </Text>
                 )}
               </View>

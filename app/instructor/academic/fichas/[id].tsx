@@ -15,7 +15,7 @@ import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'r
 export default function InstructorFichaDetailScreen() {
   const { theme, isDark } = useTheme();
   const { user } = useAuth();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { getFicha, programs, allFichas, allInstructors } = useAcademic();
   const [learnerSearch, setLearnerSearch] = useState('');
@@ -52,7 +52,7 @@ export default function InstructorFichaDetailScreen() {
   if (!ficha || !canView) {
     return (
       <View style={[s.safe, s.center, { backgroundColor: bg }]}>
-        <Text style={{ color: muted }}>Ficha no disponible para este instructor.</Text>
+        <Text style={{ color: muted }}>{t('instructorAcademic.fichaUnavailable')}</Text>
       </View>
     );
   }
@@ -71,25 +71,25 @@ export default function InstructorFichaDetailScreen() {
             </TouchableOpacity>
 
             <View style={[s.card, { backgroundColor: cardBg, borderColor: border }]}>
-              <Text style={[s.fichaTitle, { color: text }]}>Ficha {ficha.number}</Text>
-              <Text style={[s.fichaSubtitle, { color: muted }]}>Informacion general y aprendices asociados.</Text>
+              <Text style={[s.fichaTitle, { color: text }]}>{t('academic.ficha')} {ficha.number}</Text>
+              <Text style={[s.fichaSubtitle, { color: muted }]}>{t('instructorAcademic.fichaSubtitle')}</Text>
               <View style={[s.infoRow, { borderBottomColor: border }]}>
-                <Text style={[s.infoLabel, { color: muted }]}>Programa</Text>
-                <Text style={[s.infoValue, { color: text }]}>{program ? getProgramDisplayName(program, t) : 'Sin programa'}</Text>
+                <Text style={[s.infoLabel, { color: muted }]}>{t('instructorAcademic.program')}</Text>
+                <Text style={[s.infoValue, { color: text }]}>{program ? getProgramDisplayName(program, t) : t('instructorAcademic.noProgram')}</Text>
               </View>
               <View style={[s.infoRow, { borderBottomColor: border }]}>
-                <Text style={[s.infoLabel, { color: muted }]}>Estado</Text>
+                <Text style={[s.infoLabel, { color: muted }]}>{t('instructorAcademic.status')}</Text>
                 <Text style={{ color: ficha.status === 'active' ? Colors.success : Colors.error, fontWeight: '700' }}>
                   {t(`environments.statuses.${ficha.status}`)}
                 </Text>
               </View>
               <View style={[s.infoRow, { borderBottomColor: border }]}>
-                <Text style={[s.infoLabel, { color: muted }]}>Creado</Text>
-                <Text style={[s.infoValue, { color: text }]}>{formatDateTime(ficha.createdAt)}</Text>
+                <Text style={[s.infoLabel, { color: muted }]}>{t('instructorAcademic.created')}</Text>
+                <Text style={[s.infoValue, { color: text }]}>{formatDateTime(ficha.createdAt, t('instructorAcademic.notRecorded'), i18n.language)}</Text>
               </View>
               <View style={[s.infoRow, { borderBottomWidth: 0 }]}>
-                <Text style={[s.infoLabel, { color: muted }]}>Ultima edicion</Text>
-                <Text style={[s.infoValue, { color: text }]}>{formatDateTime(ficha.updatedAt)}</Text>
+                <Text style={[s.infoLabel, { color: muted }]}>{t('instructorAcademic.lastEdited')}</Text>
+                <Text style={[s.infoValue, { color: text }]}>{formatDateTime(ficha.updatedAt, t('instructorAcademic.notRecorded'), i18n.language)}</Text>
               </View>
             </View>
 
@@ -98,13 +98,13 @@ export default function InstructorFichaDetailScreen() {
               <TextInput
                 value={learnerSearch}
                 onChangeText={setLearnerSearch}
-                placeholder="Buscar aprendiz por nombre, documento o correo"
+                placeholder={t('instructorAcademic.searchLearner')}
                 placeholderTextColor={muted}
                 style={[s.searchInput, { color: text }] as any}
               />
             </View>
 
-            <Text style={[s.sectionTitle, { color: text }]}>Aprendices ({learners.length})</Text>
+            <Text style={[s.sectionTitle, { color: text }]}>{t('instructorAcademic.learnersTitle', { count: learners.length })}</Text>
           </View>
         }
         renderItem={({ item }) => (
@@ -114,8 +114,8 @@ export default function InstructorFichaDetailScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[s.learnerName, { color: text }]}>{item.name} {item.lastname}</Text>
-              <Text style={[s.learnerMeta, { color: muted }]}>Doc: {item.document}{item.email ? ` - ${item.email}` : ''}</Text>
-              {item.createdAt ? <Text style={[s.learnerMeta, { color: muted }]}>Agregado: {formatDateTime(item.createdAt)}</Text> : null}
+              <Text style={[s.learnerMeta, { color: muted }]}>{t('instructorAcademic.document')}: {item.document}{item.email ? ` - ${item.email}` : ''}</Text>
+              {item.createdAt ? <Text style={[s.learnerMeta, { color: muted }]}>{t('instructorAcademic.added')}: {formatDateTime(item.createdAt, t('instructorAcademic.notRecorded'), i18n.language)}</Text> : null}
               <Text style={{ color: item.status === 'active' ? Colors.success : Colors.error, fontSize: 12, fontWeight: '700', marginTop: 4 }}>
                 {t(`environments.statuses.${item.status}`)}
               </Text>
@@ -124,7 +124,7 @@ export default function InstructorFichaDetailScreen() {
         )}
         ListEmptyComponent={
           <View style={s.empty}>
-            <Text style={{ color: muted }}>No hay aprendices para mostrar.</Text>
+            <Text style={{ color: muted }}>{t('instructorAcademic.noLearners')}</Text>
           </View>
         }
       />

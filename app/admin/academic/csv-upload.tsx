@@ -93,7 +93,7 @@ function getPasswordRows(result: any, csvRows: ReturnType<typeof parseAcademicCs
 }
 
 export default function CsvUploadScreen() {
-  const { t }             = useTranslation();
+  const { t, i18n }       = useTranslation();
   const { theme, isDark } = useTheme();
 
   const [loading, setLoading]     = useState(false);
@@ -155,8 +155,8 @@ export default function CsvUploadScreen() {
     URL.revokeObjectURL(url);
   };
 
-  const buildRowsSheet = (rows: Record<string, unknown>[], emptyMessage: string) => {
-    const safeRows = rows.length > 0 ? rows : [{ Mensaje: emptyMessage }];
+  const buildRowsSheet = (rows: Record<string, unknown>[], emptyMessage: string, messageHeader: string) => {
+    const safeRows = rows.length > 0 ? rows : [{ [messageHeader]: emptyMessage }];
     const matrix = [Object.keys(safeRows[0]), ...safeRows.map(row => Object.values(row))];
     const sheet = XLSX.utils.json_to_sheet(safeRows);
     fitSheetColumns(sheet, matrix);
@@ -168,19 +168,19 @@ export default function CsvUploadScreen() {
     if (!summary || summary.generatedPasswords.length === 0 || !ensureWebExport()) return;
 
     const rows = summary.generatedPasswords.map(item => ({
-      Documento: item.document,
-      Nombre: item.name ?? '',
-      Rol: item.role ?? '',
-      Ficha: item.ficha ?? '',
-      Programa: item.program ?? '',
-      Contrasena: item.password,
+      [t('academic.csvCredentials.document')]: item.document,
+      [t('academic.csvCredentials.name')]: item.name ?? '',
+      [t('academic.csvCredentials.role')]: item.role ?? '',
+      [t('academic.csvCredentials.ficha')]: item.ficha ?? '',
+      [t('academic.csvCredentials.program')]: item.program ?? '',
+      [t('academic.csvCredentials.password')]: item.password,
     }));
 
     const workbook = XLSX.utils.book_new();
     const sheetRows = [
-      ['Credenciales iniciales generadas'],
-      ['Archivo', fileName ?? 'carga-academica.csv'],
-      ['Fecha de generacion', new Date().toLocaleString()],
+      [t('academic.csvCredentials.title')],
+      [t('academic.csvReport.file'), fileName ?? 'carga-academica.csv'],
+      [t('academic.csvReport.generatedAt'), new Date().toLocaleString(i18n.language)],
       [],
       Object.keys(rows[0]),
       ...rows.map(row => Object.values(row)),
@@ -188,7 +188,7 @@ export default function CsvUploadScreen() {
     const sheet = XLSX.utils.aoa_to_sheet(sheetRows);
     fitSheetColumns(sheet, sheetRows);
     setSheetFilter(sheet, 4);
-    XLSX.utils.book_append_sheet(workbook, sheet, 'Credenciales');
+    XLSX.utils.book_append_sheet(workbook, sheet, t('academic.csvCredentials.sheet'));
     downloadWorkbook(workbook, 'credenciales-usuarios-facelit.xlsx');
   };
 
@@ -196,41 +196,50 @@ export default function CsvUploadScreen() {
     if (!summary || !ensureWebExport()) return;
 
     const generatedAt = new Date();
+    const headers = {
+      row: t('academic.csvReport.row'),
+      category: t('academic.csvReport.category'),
+      type: t('academic.csvReport.type'),
+      identifier: t('academic.csvReport.identifier'),
+      message: t('academic.csvReport.message'),
+      relatedRecord: t('academic.csvReport.relatedRecord'),
+      relatedRecordType: t('academic.csvReport.relatedRecordType'),
+    };
     const detailRows: Record<string, string | number>[] = summary.rows.map(row => ({
-      Fila: row.rowIndex,
-      Categoria: resultCategoryLabel(row.category, t),
-      Tipo: row.tipo,
-      Identificador: row.identifier || '',
-      Mensaje: row.message,
-      'Registro relacionado': row.conflictRecordId || '',
-      'Tipo registro relacionado': row.conflictRecordType || '',
+      [headers.row]: row.rowIndex,
+      [headers.category]: resultCategoryLabel(row.category, t),
+      [headers.type]: row.tipo,
+      [headers.identifier]: row.identifier || '',
+      [headers.message]: row.message,
+      [headers.relatedRecord]: row.conflictRecordId || '',
+      [headers.relatedRecordType]: row.conflictRecordType || '',
     }));
 
-    const headers = ['Fila', 'Categoria', 'Tipo', 'Identificador', 'Mensaje', 'Registro relacionado', 'Tipo registro relacionado'];
+    const columns = Object.values(headers);
     const reportRows = [
-      ['Reporte de carga CSV'],
-      ['Archivo', fileName ?? 'carga-academica.csv'],
-      ['Fecha de generacion', generatedAt.toLocaleString()],
-      ['Creados', summary.created],
-      ['Actualizados', summary.updated],
-      ['Inconsistencias bloqueadas', summary.blocked],
-      ['Errores', summary.errors],
-      ['Total filas reportadas', summary.rows.length],
+      [t('academic.csvReport.title')],
+      [t('academic.csvReport.file'), fileName ?? 'carga-academica.csv'],
+      [t('academic.csvReport.generatedAt'), generatedAt.toLocaleString(i18n.language)],
+      [t('academic.csvReport.created'), summary.created],
+      [t('academic.csvReport.updated'), summary.updated],
+      [t('academic.csvReport.blocked'), summary.blocked],
+      [t('academic.csvReport.errors'), summary.errors],
+      [t('academic.csvReport.totalRows'), summary.rows.length],
       [],
-      ['Detalle por fila'],
-      headers,
-      ...detailRows.map(row => headers.map(header => row[header] ?? '')),
+      [t('academic.csvReport.detailsByRow')],
+      columns,
+      ...detailRows.map(row => columns.map(header => row[header] ?? '')),
     ];
 
     const workbook = XLSX.utils.book_new();
     const reportSheet = XLSX.utils.aoa_to_sheet(reportRows);
     fitSheetColumns(reportSheet, reportRows);
     setSheetFilter(reportSheet, 10);
-    XLSX.utils.book_append_sheet(workbook, reportSheet, 'Reporte completo');
-    XLSX.utils.book_append_sheet(workbook, buildRowsSheet(detailRows.filter(row => row.Categoria === 'Creado'), 'Sin creaciones'), 'Creaciones');
-    XLSX.utils.book_append_sheet(workbook, buildRowsSheet(detailRows.filter(row => row.Categoria === 'Actualizado'), 'Sin actualizaciones'), 'Actualizaciones');
-    XLSX.utils.book_append_sheet(workbook, buildRowsSheet(detailRows.filter(row => row.Categoria === 'Inconsistencia bloqueada'), 'Sin inconsistencias'), 'Inconsistencias');
-    XLSX.utils.book_append_sheet(workbook, buildRowsSheet(detailRows.filter(row => row.Categoria === 'Error'), 'Sin errores'), 'Errores');
+    XLSX.utils.book_append_sheet(workbook, reportSheet, t('academic.csvReport.fullSheet'));
+    XLSX.utils.book_append_sheet(workbook, buildRowsSheet(detailRows.filter(row => row[headers.category] === t('academic.csvStatusCreated')), t('academic.csvReport.noCreations'), headers.message), t('academic.csvReport.creationsSheet'));
+    XLSX.utils.book_append_sheet(workbook, buildRowsSheet(detailRows.filter(row => row[headers.category] === t('academic.csvStatusUpdated')), t('academic.csvReport.noUpdates'), headers.message), t('academic.csvReport.updatesSheet'));
+    XLSX.utils.book_append_sheet(workbook, buildRowsSheet(detailRows.filter(row => row[headers.category] === t('academic.csvStatusBlocked')), t('academic.csvReport.noBlocked'), headers.message), t('academic.csvReport.inconsistenciesSheet'));
+    XLSX.utils.book_append_sheet(workbook, buildRowsSheet(detailRows.filter(row => row[headers.category] === t('academic.csvStatusError')), t('academic.csvReport.noErrors'), headers.message), t('academic.csvReport.errorsSheet'));
     downloadWorkbook(workbook, `resultado-csv-facelit-${generatedAt.toISOString().slice(0, 10)}.xlsx`);
   };
   // ── Procesamiento ─────────────────────────
@@ -452,7 +461,7 @@ export default function CsvUploadScreen() {
                   </View>
                   <TouchableOpacity onPress={downloadCredentials} style={[s.downloadBtn, { borderColor: theme.primary, backgroundColor: theme.primary + '12' }]} activeOpacity={0.8}>
                     <Ionicons name="download-outline" size={16} color={theme.primary} />
-                    <Text style={[s.downloadBtnText, { color: theme.primary }]}>Excel</Text>
+                    <Text style={[s.downloadBtnText, { color: theme.primary }]}>{t('academic.csvExcelFormat')}</Text>
                   </TouchableOpacity>
                 </View>
                 <Text style={[s.resultMsg, { color: muted }]}>{t('academic.csvCredentialsWarning')}</Text>

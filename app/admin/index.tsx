@@ -106,7 +106,7 @@ export default function AdminDashboard() {
     {
       icon: 'layers-outline',
       value: String(programsCount),
-      label: t('dashboard.programs'),
+      label: t('dashboard.registeredPrograms'),
       detail: t('dashboard.programsDetail'),
       color: theme.secondary,
     },

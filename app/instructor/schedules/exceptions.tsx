@@ -24,18 +24,16 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlatList, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 
-function formatDateTime(ts: number): string {
+function formatDateTime(ts: number, locale: string): string {
   const d = new Date(ts);
-  const date = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-  const time = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-  return `${date} ${time}`;
+  return new Intl.DateTimeFormat(locale, { dateStyle: 'short', timeStyle: 'short' }).format(d);
 }
 
 // Pantalla compartida entre administrador e instructor (ver
 // app/instructor/schedules/exceptions.tsx).
 export default function ScheduleExceptionsScreen() {
   const { theme, isDark } = useTheme();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const basePath = getRoleBasePath(user?.role);
   const { scheduleId } = useLocalSearchParams<{ scheduleId?: string }>();
@@ -98,7 +96,7 @@ export default function ScheduleExceptionsScreen() {
           <View style={{ flex: 1, marginLeft: 8 }}>
             <Text style={[ses.title, { color: text }]}>{t('schedules.exceptions')}</Text>
             <Text style={{ color: muted, fontSize: FontSize.xs, marginTop: 2 }} numberOfLines={1}>
-              Ficha {fichaNumber} · {t(`schedules.days.${schedule.day}`)} · {schedule.startTime}-{schedule.endTime} · {environmentName}
+              {t('academic.ficha')} {fichaNumber} · {t(`schedules.days.${schedule.day}`)} · {schedule.startTime}-{schedule.endTime} · {environmentName}
             </Text>
           </View>
         </View>
@@ -125,7 +123,7 @@ export default function ScheduleExceptionsScreen() {
                 </TouchableOpacity>
               </View>
               <Text style={[ses.cardText, { color: muted }]}>
-                {t('schedules.exceptionFields.startDate')}: {item.startDate} · {t('schedules.exceptionFields.activeUntil', { date: formatDateTime(item.endTimestamp) })}
+                {t('schedules.exceptionFields.startDate')}: {new Date(`${item.startDate}T12:00:00`).toLocaleDateString(i18n.language)} · {t('schedules.exceptionFields.activeUntil', { date: formatDateTime(item.endTimestamp, i18n.language) })}
               </Text>
               <Text style={[ses.cardText, { color: muted }]}>{item.reason}</Text>
               {item.replacementInstructorName && <Text style={[ses.cardText, { color: muted }]}>{t('schedules.exceptionFields.replacement')}: {item.replacementInstructorName}</Text>}

@@ -13,6 +13,7 @@ const de = {
     view: "Ansehen",
     show: "Anzeigen",
     hide: "Ausblenden",
+    close: "Schließen",
   },
   theme: { toggle: "Design", light: "Hell", dark: "Dunkel" },
   landing: {
@@ -172,6 +173,7 @@ const de = {
     emailLabel: "E-Mail",
     emailPlaceholder: "email@beispiel.com",
     sendBtn: "Code senden",
+    sendingBtn: "Wird gesendet…",
     cancelBtn: "Abbrechen",
     errors: {
       invalidEmail: "Ungültige E-Mail",
@@ -193,7 +195,18 @@ const de = {
     placeholder: "XXXXXX",
     hint: "6-stelligen Code eingeben",
     verifyBtn: "Prüfen",
-    errors: { length: "6 Ziffern erforderlich", invalid: "Ungültiger Code" },
+    timerExpired: "Der Code ist abgelaufen",
+    exhaustedTitle: "Zu viele Versuche",
+    exhaustedMsg: "Fordern Sie einen neuen Code an, um fortzufahren.",
+    verifyingBtn: "Wird überprüft…",
+    resendingBtn: "Wird erneut gesendet…",
+    resendAvailable: "Verfügbar in {{seconds}} s",
+    errors: {
+      length: "6 Ziffern erforderlich",
+      invalid: "Ungültiger Code",
+      expired: "Der Code ist abgelaufen. Fordern Sie einen neuen an.",
+      alreadyUsed: "Dieser Code wurde bereits verwendet. Fordern Sie einen neuen an.",
+    },
   },
   newPassword: {
     backBtn: "← Neuen Code anfordern",
@@ -212,6 +225,7 @@ const de = {
     confirmLabel: "Bestätigen",
     confirmPlaceholder: "Wiederholen",
     submitBtn: "Zurücksetzen",
+    submittingBtn: "Wird gespeichert…",
     errors: {
       passwordRequired: "Erforderlich",
       passwordInvalid: "Anforderungen nicht erfüllt",
@@ -474,6 +488,7 @@ const de = {
   //  Module 2-9
   // ─────────────────────────────────────────────
   sidebar: {
+    users: "Nutzer",
     dashboard: "Dashboard",
     userManagement: "Benutzerverwaltung",
     environments: "Umgebungen",
@@ -496,6 +511,34 @@ const de = {
     facialRecognition: "Gesichtserkennung",
     institutionalImport: "Institutionsliste laden",
     transferRequests: "Transferanfragen",
+  },
+  instructorAcademic: {
+    programsTitle: "Meine Programme",
+    programsSubtitle: "Sieh nur die von der Koordination zugewiesenen Programme und Fichas.",
+    searchProgram: "Programme suchen",
+    assignedFichasCount: "zugewiesene Fichas",
+    created: "Erstellt",
+    lastEdited: "Zuletzt bearbeitet",
+    viewFichas: "Fichas anzeigen",
+    noPrograms: "Diesem Ausbilder wurden keine Programme zugewiesen.",
+    programUnavailable: "Programm für diesen Ausbilder nicht verfügbar.",
+    programSubtitle: "Programm für deine Fichas.",
+    fichasAssigned: "Zugewiesene Fichas",
+    searchFicha: "Fichas suchen",
+    fichasTitle: "Fichas ({{count}})",
+    learners: "Auszubildende",
+    noFichas: "Diesem Programm sind keine Fichas zugewiesen.",
+    fichaUnavailable: "Ficha für diesen Ausbilder nicht verfügbar.",
+    fichaSubtitle: "Allgemeine Informationen und zugehörige Auszubildende.",
+    program: "Programm",
+    status: "Status",
+    searchLearner: "Auszubildende nach Name, Dokument oder E-Mail suchen",
+    learnersTitle: "Auszubildende ({{count}})",
+    document: "Dokument",
+    added: "Hinzugefügt",
+    noProgram: "Kein Programm",
+    noLearners: "Keine Auszubildenden vorhanden.",
+    notRecorded: "Nicht erfasst",
   },
   dashboard: {
     apprenticeTraining: "Meine Ausbildung",
@@ -529,7 +572,7 @@ const de = {
     totalUsers: "Gesamtnutzer",
     activeFichas: "Aktive Fichas",
     environments: "Umgebungen",
-    programs: "Registrierte Programme",
+    registeredPrograms: "Registrierte Programme",
     quickActions: "Schnellaktionen",
     recentActivity: "Letzte Aktivität",
     controlCenter: "KONTROLLZENTRUM",
@@ -709,6 +752,7 @@ const de = {
     },
   },
   environments: {
+    reactivateConfirm: "Diese Umgebung reaktivieren?",
     alreadyActive: "Umgebung ist bereits aktiv",
     reactivate: "Reaktivieren",
     confirmReactivate: "Diese Umgebung reaktivieren?",
@@ -803,6 +847,54 @@ const de = {
     },
   },
   academic: {
+    ficha: "Ficha",
+    program: "Programm",
+    status: "Status",
+    documentShort: "Dok.",
+    fichaDeactivateLearnerTitle: "Auszubildenden deaktivieren",
+    fichaDeactivateLearnerConfirm: "{{name}} deaktivieren? Der Auszubildende behält seinen Verlauf und kann wieder aktiviert werden.",
+    fichaDeactivateLearner: "Deaktivieren",
+    fichaReactivateLearnerTitle: "Auszubildenden reaktivieren",
+    fichaReactivateLearnerConfirm: "{{name}} reaktivieren?",
+    fichaReactivateLearner: "Reaktivieren",
+    csvExcelFormat: "Excel",
+    csvReport: {
+      title: "CSV-Importbericht",
+      file: "Datei",
+      generatedAt: "Erstellt am",
+      created: "Erstellt",
+      updated: "Aktualisiert",
+      blocked: "Blockierte Unstimmigkeiten",
+      errors: "Fehler",
+      totalRows: "Gemeldete Zeilen insgesamt",
+      detailsByRow: "Details pro Zeile",
+      row: "Zeile",
+      category: "Kategorie",
+      type: "Typ",
+      identifier: "Kennung",
+      message: "Meldung",
+      relatedRecord: "Zugehöriger Eintrag",
+      relatedRecordType: "Typ des zugehörigen Eintrags",
+      fullSheet: "Gesamtbericht",
+      creationsSheet: "Erstellt",
+      updatesSheet: "Aktualisiert",
+      inconsistenciesSheet: "Unstimmigkeiten",
+      errorsSheet: "Fehler",
+      noCreations: "Keine Einträge erstellt",
+      noUpdates: "Keine Einträge aktualisiert",
+      noBlocked: "Keine Unstimmigkeiten",
+      noErrors: "Keine Fehler",
+    },
+    csvCredentials: {
+      title: "Erstellte Zugangsdaten",
+      sheet: "Zugangsdaten",
+      document: "Dokument",
+      name: "Name",
+      role: "Rolle",
+      ficha: "Ficha",
+      program: "Programm",
+      password: "Passwort",
+    },
     institutionalTotal: "Gesamt",
     institutionalValidated: "Validiert",
     institutionalInconsistency: "Inkonsistenzen",
@@ -967,7 +1059,7 @@ const de = {
     fichaCode: "Ficha-Code",
     previousFicha: "Vorherige Ficha",
     currentFicha: "Aktuelle Ficha",
-    transferCodeHint: "8 Zeichen — Großbuchstaben und Zahlen",
+    transferCodeFormatHint: "8 Zeichen — Großbuchstaben und Zahlen",
     joinTitle: "Ficha beitreten",
     joinSubtitle: "Geben Sie den Code Ihres Ausbilders ein",
     joinSuccess: "Ficha-Code validiert",
@@ -1316,7 +1408,7 @@ const de = {
     // ── RF-3.3 V4 — Transfer-Code ─────────────
     transferCode: "Transfer-Code",
     transferCodeLabel: "Transfer-Code (8 Zeichen)",
-    transferCodeHint:
+    transferCodeHelp:
       "Dieser Code wurde vom System generiert. Teile ihn mit dem Lernenden, damit er dieser Ficha beitreten kann.",
     transferCodeGenerate: "Neuen Code generieren",
     transferCodeGenerateConfirm:
@@ -1985,5 +2077,83 @@ const de = {
       "Echte Person konnte nicht verifiziert werden. Erneut versuchen.",
   },
 } as const;
+
+// Ergänzt Einträge, die in den anderen Sprachkatalogen vorhanden sind.
+Object.assign(de.login.errors, {
+  passwordLength: "Das Passwort muss zwischen 8 und 15 Zeichen lang sein.",
+  passwordNoSpaces: "Das Passwort darf keine Leerzeichen enthalten.",
+  passwordWeak: "Das Passwort muss einen Groß- und Kleinbuchstaben, eine Zahl und ein Sonderzeichen enthalten.",
+  invalidCredentials: "Dokument oder Passwort falsch.",
+  policyRequired: "Sie müssen den Datenschutzhinweis akzeptieren, um fortzufahren.",
+  accountLocked: "Aus Sicherheitsgründen wurde dieses Konto vorübergehend gesperrt. Versuchen Sie es in {{minutes}} Minuten erneut.",
+  networkError: "Verbindung zum Server fehlgeschlagen. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+  serverError: "Unerwarteter Fehler. Bitte versuchen Sie es in einigen Minuten erneut.",
+  noSpaces: "Keine Leerzeichen",
+  invalidChars: "Ungültige Zeichen",
+});
+Object.assign(de.privacyNotice, {
+  articlesRef: "Anwendbare Artikel: 5 (sensible Daten, einschließlich biometrischer Daten), 8 (Rechte der betroffenen Person), 9 (Einwilligung) und 12 (Informationspflicht) des Gesetzes 1581 von 2012.",
+});
+Object.assign(de.passwordRecovery.errors, {
+  emailEmpty: "Bitte geben Sie Ihre E-Mail-Adresse ein.",
+  serverError: "Unerwarteter Fehler. Bitte versuchen Sie es in einigen Minuten erneut.",
+  networkError: "Verbindung zum Server fehlgeschlagen. Prüfen Sie Ihre Verbindung.",
+});
+Object.assign(de.verifyIdentity.errors, {
+  emptyCode: "Bitte geben Sie den Bestätigungscode ein.",
+  exhausted: "Sie haben die maximale Anzahl an Versuchen überschritten. Fordern Sie einen neuen Code an.",
+  resendCooldown: "Warten Sie kurz, bevor Sie einen neuen Code anfordern.",
+  resendFailed: "Der Code konnte nicht erneut gesendet werden. Bitte versuchen Sie es erneut.",
+});
+Object.assign(de.newPassword.req, {
+  letter: "Mindestens ein Buchstabe",
+  noSpaces: "Keine Leerzeichen",
+});
+Object.assign(de.newPassword.errors, {
+  passwordLength: "Das Passwort muss zwischen 8 und 15 Zeichen lang sein.",
+  passwordWeak: "Das Passwort muss mindestens einen Buchstaben, eine Zahl und ein Sonderzeichen enthalten.",
+  noSpaces: "Das Passwort darf keine Leerzeichen enthalten.",
+  tokenMissing: "Bestätigungscode nicht gefunden. Fordern Sie einen neuen an.",
+  tokenExpired: "Der Code ist abgelaufen. Fordern Sie einen neuen an.",
+  tokenUsed: "Dieser Code wurde bereits verwendet. Fordern Sie einen neuen an.",
+  serverError: "Unerwarteter Fehler. Bitte versuchen Sie es in einigen Minuten erneut.",
+  networkError: "Verbindung zum Server fehlgeschlagen. Prüfen Sie Ihre Verbindung.",
+  genericError: "Das Passwort konnte nicht zurückgesetzt werden.",
+});
+Object.assign(de.minorConsent, {
+  articlesRef: "Anwendbare Artikel: 7 (Rechte von Kindern und Jugendlichen), 6 Absatz b) (Einwilligung der gesetzlichen Vertreter) und 12 (Informationspflicht) des Gesetzes 1581 von 2012.",
+});
+Object.assign(de.register, {
+  identityPAS: "PAS — Reisepass",
+});
+Object.assign(de.register.errors, {
+  rightsDeclined: "Bitte lesen und akzeptieren Sie Ihre Rechte, bevor Sie fortfahren. Diese Information ist erforderlich, um die ordnungsgemäße Verwendung Ihrer Daten sicherzustellen.",
+  accountLocked: "Aus Sicherheitsgründen wurde dieses Konto vorübergehend gesperrt. Versuchen Sie es in {{minutes}} Minuten erneut.",
+});
+Object.assign(de, {
+  guardianVerification: {
+    title: "Einwilligung der erziehungsberechtigten Person",
+    subtitle: "Wir haben einen sechsstelligen Code gesendet an:",
+    backBtn: "Zurück",
+    timerLabel: "Verbleibende Zeit: ",
+    resendBtn: "Code erneut senden",
+    resending: "Wird erneut gesendet…",
+    inputLabel: "Bestätigungscode",
+    placeholder: "000000",
+    hint: "Die erziehungsberechtigte Person muss den per E-Mail erhaltenen Code eingeben, um die Registrierung des Minderjährigen zu bestätigen.",
+    verifyBtn: "Einwilligung bestätigen",
+    verifying: "Wird überprüft…",
+    errors: {
+      expired: "Der Code ist abgelaufen. Fordern Sie einen neuen an.",
+      length: "Der Code muss aus sechs Ziffern bestehen.",
+      invalid: "Ungültiger Code.",
+      resendFailed: "Der Code konnte nicht erneut gesendet werden.",
+    },
+  },
+});
+Object.assign(de.face, {
+  moving: "Halten Sie still, um das Bild aufzunehmen.",
+  stabilizing: "Halten Sie die Position…",
+});
 
 export default de;

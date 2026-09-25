@@ -18,6 +18,7 @@ const es = {
     view: "Ver",
     show: "Mostrar",
     hide: "Ocultar",
+    close: "Cerrar",
   },
   theme: {
     toggle: "Tema",
@@ -642,6 +643,34 @@ const es = {
     institutionalImport: "Cargar listado institucional",
     transferRequests: "Solicitudes de traslado",
   },
+  instructorAcademic: {
+    programsTitle: "Mis programas",
+    programsSubtitle: "Consulta solo los programas y fichas asignados por coordinación.",
+    searchProgram: "Buscar programa",
+    assignedFichasCount: "fichas asignadas",
+    created: "Creado",
+    lastEdited: "Última edición",
+    viewFichas: "Ver fichas",
+    noPrograms: "No hay programas asignados para este instructor.",
+    programUnavailable: "Programa no disponible para este instructor.",
+    programSubtitle: "Programa asignado a tus fichas de formación.",
+    fichasAssigned: "Fichas asignadas",
+    searchFicha: "Buscar ficha",
+    fichasTitle: "Fichas ({{count}})",
+    learners: "aprendices",
+    noFichas: "No hay fichas asignadas para este programa.",
+    fichaUnavailable: "Ficha no disponible para este instructor.",
+    fichaSubtitle: "Información general y aprendices asociados.",
+    program: "Programa",
+    status: "Estado",
+    searchLearner: "Buscar aprendiz por nombre, documento o correo",
+    learnersTitle: "Aprendices ({{count}})",
+    document: "Doc.",
+    added: "Agregado",
+    noProgram: "Sin programa",
+    noLearners: "No hay aprendices para mostrar.",
+    notRecorded: "Sin registro",
+  },
   dashboard: {
     apprenticeTraining: "Mi formación",
     apprenticeTrainingSubtitle: "Ficha y programa asignados por coordinación.",
@@ -674,7 +703,7 @@ const es = {
     totalUsers: "Usuarios totales",
     activeFichas: "Fichas activas",
     environments: "Ambientes",
-    programs: "Programas registrados",
+    registeredPrograms: "Programas registrados",
     quickActions: "Acciones rápidas",
     recentActivity: "Actividad reciente",
     controlCenter: "CENTRO DE CONTROL",
@@ -864,6 +893,7 @@ const es = {
     alreadyActive: "El ambiente ya está activo",
     reactivate: "Reactivar",
     confirmReactivate: "¿Deseas reactivar este ambiente?",
+    reactivateConfirm: "¿Deseas reactivar este ambiente?",
     reactivateSuccess: "Ambiente reactivado",
     recentBadge: "RECIENTE",
     editedRecentlyBadge: "EDITADO RECIENTEMENTE",
@@ -964,6 +994,54 @@ const es = {
     },
   },
   academic: {
+    ficha: "Ficha",
+    program: "Programa",
+    status: "Estado",
+    documentShort: "Doc.",
+    fichaDeactivateLearnerTitle: "Desactivar aprendiz",
+    fichaDeactivateLearnerConfirm: "¿Desactivar a {{name}}? El aprendiz conserva su historial y puede reactivarse.",
+    fichaDeactivateLearner: "Desactivar",
+    fichaReactivateLearnerTitle: "Reactivar aprendiz",
+    fichaReactivateLearnerConfirm: "¿Reactivar a {{name}}?",
+    fichaReactivateLearner: "Reactivar",
+    csvExcelFormat: "Excel",
+    csvReport: {
+      title: "Reporte de carga CSV",
+      file: "Archivo",
+      generatedAt: "Fecha de generación",
+      created: "Creados",
+      updated: "Actualizados",
+      blocked: "Inconsistencias bloqueadas",
+      errors: "Errores",
+      totalRows: "Total de filas reportadas",
+      detailsByRow: "Detalle por fila",
+      row: "Fila",
+      category: "Categoría",
+      type: "Tipo",
+      identifier: "Identificador",
+      message: "Mensaje",
+      relatedRecord: "Registro relacionado",
+      relatedRecordType: "Tipo de registro relacionado",
+      fullSheet: "Reporte completo",
+      creationsSheet: "Creaciones",
+      updatesSheet: "Actualizaciones",
+      inconsistenciesSheet: "Inconsistencias",
+      errorsSheet: "Errores",
+      noCreations: "Sin creaciones",
+      noUpdates: "Sin actualizaciones",
+      noBlocked: "Sin inconsistencias",
+      noErrors: "Sin errores",
+    },
+    csvCredentials: {
+      title: "Credenciales iniciales generadas",
+      sheet: "Credenciales",
+      document: "Documento",
+      name: "Nombre",
+      role: "Rol",
+      ficha: "Ficha",
+      program: "Programa",
+      password: "Contraseña",
+    },
     institutionalTotal: "Total",
     institutionalValidated: "Validados",
     institutionalInconsistency: "Inconsistencias",
@@ -1128,7 +1206,7 @@ const es = {
     fichaCode: "Código de Ficha",
     previousFicha: "Ficha anterior",
     currentFicha: "Ficha actual",
-    transferCodeHint: "8 caracteres — letras mayúsculas y números",
+    transferCodeFormatHint: "8 caracteres — letras mayúsculas y números",
     joinTitle: "Unirse a Ficha",
     joinSubtitle: "Ingresa el código proporcionado por tu instructor",
     joinSuccess: "Código de ficha validado",
@@ -1486,7 +1564,7 @@ const es = {
     // ── RF-3.3 V4 — Código de traslado ───────
     transferCode: "Código de traslado",
     transferCodeLabel: "Código de traslado (8 caracteres)",
-    transferCodeHint:
+    transferCodeHelp:
       "Este código fue generado por el sistema. Compártelo con el aprendiz para que pueda unirse a esta ficha.",
     transferCodeGenerate: "Generar nuevo código",
     transferCodeGenerateConfirm:
@@ -2156,5 +2234,31 @@ const es = {
       "No se pudo verificar que sea una persona real. Intenta de nuevo.",
   },
 } as const;
+
+// Completa las entradas compartidas por los otros catálogos.
+Object.assign(es.login.errors, {
+  documentNotFound: "Documento no registrado",
+  wrongPassword: "Documento o contraseña incorrectos",
+  passwordShort: "Mínimo 6 caracteres",
+  passwordLong: "Máximo 20 caracteres",
+  noSpaces: "No se permiten espacios",
+  invalidChars: "Caracteres no válidos",
+});
+Object.assign(es.register.errors, {
+  accountLocked: "Por seguridad, esta cuenta quedó bloqueada temporalmente. Intenta de nuevo en {{minutes}} minutos.",
+});
+Object.assign(es.attendance, {
+  punctual: "Puntual",
+  late: "Tarde",
+  absent: "Ausente",
+});
+Object.assign(es.face, {
+  moving: "Mantente quieto para capturar.",
+  stabilizing: "Mantén la posición…",
+});
+Object.assign(es.newPassword.req, {
+  upper: "Al menos una mayúscula",
+  lower: "Al menos una minúscula",
+});
 
 export default es;

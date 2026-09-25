@@ -15,7 +15,7 @@ import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'r
 export default function InstructorAcademicScreen() {
   const { theme, isDark } = useTheme();
   const { user } = useAuth();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { programs, allFichas, allInstructors, search, setSearch, statusFilter, setStatusFilter } = useAcademic();
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
@@ -68,9 +68,9 @@ export default function InstructorAcademicScreen() {
   return (
     <View style={[s.safe, { backgroundColor: bg }]}>
       <View style={s.header}>
-        <Text style={[s.title, { color: text }]}>Mis programas</Text>
+        <Text style={[s.title, { color: text }]}>{t('instructorAcademic.programsTitle')}</Text>
         <Text style={[s.subtitle, { color: muted }]}>
-          Consulta solo los programas y fichas asignados por coordinacion.
+          {t('instructorAcademic.programsSubtitle')}
         </Text>
       </View>
 
@@ -80,7 +80,7 @@ export default function InstructorAcademicScreen() {
           style={[s.searchInput, { color: text }] as any}
           value={search}
           onChangeText={setSearch}
-          placeholder="Buscar programa"
+          placeholder={t('instructorAcademic.searchProgram')}
           placeholderTextColor={isDark ? '#5A7258' : '#AAAAAA'}
         />
       </View>
@@ -119,7 +119,7 @@ export default function InstructorAcademicScreen() {
               <View style={[s.typeBadge, { backgroundColor: theme.primary + '18' }]}>
                 <Ionicons name="school-outline" size={16} color={theme.primary} />
                 <Text style={[s.typeText, { color: theme.primary }]}>
-                  {item.fichas.length} fichas asignadas
+                  {item.fichas.length} {t('instructorAcademic.assignedFichasCount')}
                 </Text>
               </View>
               <View style={s.statusWrap}>
@@ -130,10 +130,10 @@ export default function InstructorAcademicScreen() {
               </View>
             </View>
             <Text style={[s.cardTitle, { color: text }]}>{getProgramDisplayName(item, t)}</Text>
-            <Text style={[s.cardSub, { color: muted }]}>Creado: {formatDateTime(item.createdAt)}</Text>
-            <Text style={[s.cardSub, { color: muted }]}>Ultima edicion: {formatDateTime(item.updatedAt)}</Text>
+            <Text style={[s.cardSub, { color: muted }]}>{t('instructorAcademic.created')}: {formatDateTime(item.createdAt, t('instructorAcademic.notRecorded'), i18n.language)}</Text>
+            <Text style={[s.cardSub, { color: muted }]}>{t('instructorAcademic.lastEdited')}: {formatDateTime(item.updatedAt, t('instructorAcademic.notRecorded'), i18n.language)}</Text>
             <View style={s.viewHint}>
-              <Text style={[s.viewHintText, { color: theme.primary }]}>Ver fichas</Text>
+              <Text style={[s.viewHintText, { color: theme.primary }]}>{t('instructorAcademic.viewFichas')}</Text>
               <Ionicons name="chevron-forward" size={18} color={theme.primary} />
             </View>
           </TouchableOpacity>
@@ -141,7 +141,7 @@ export default function InstructorAcademicScreen() {
         ListEmptyComponent={
           <View style={s.empty}>
             <Ionicons name="school-outline" size={44} color={muted} />
-            <Text style={[s.emptyText, { color: muted }]}>No hay programas asignados para este instructor.</Text>
+            <Text style={[s.emptyText, { color: muted }]}>{t('instructorAcademic.noPrograms')}</Text>
           </View>
         }
       />

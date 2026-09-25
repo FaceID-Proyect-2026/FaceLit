@@ -160,7 +160,7 @@ export default function ProgramDetailScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={[pds.cardTitle, { color: text }]}>{item.name} {item.lastname}</Text>
                   <Text style={[pds.cardMeta, { color: muted }]}>
-                    {item.instructorType === 'especifico' ? t('academic.fichaInstructorEspecifico') : t('academic.fichaInstructorTransversal')} · Doc: {item.document}
+                    {item.instructorType === 'especifico' ? t('academic.fichaInstructorEspecifico') : t('academic.fichaInstructorTransversal')} · {t('academic.documentShort')}: {item.document}
                   </Text>
                   <Text style={[pds.cardMeta, { color: muted }]}>{item.email}</Text>
                   {item.createdAt ? (

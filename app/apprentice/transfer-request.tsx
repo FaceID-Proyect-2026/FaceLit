@@ -142,7 +142,7 @@ export default function TransferRequestScreen() {
             <Ionicons name="school-outline" size={20} color={theme.primary} />
             <Text style={[trs.cardLabel, { color: muted }]}>{t('apprentice.transferRequest.currentFicha')}</Text>
           </View>
-          <Text style={[trs.fichaNumber, { color: text }]}>Ficha {currentFicha.number}</Text>
+          <Text style={[trs.fichaNumber, { color: text }]}>{t('academic.ficha')} {currentFicha.number}</Text>
           <Text style={[trs.fichaMeta, { color: muted }]}>
             {t('apprentice.transferRequest.internalCode')}: {currentFicha.code} · {currentFicha.learners.filter(l => l.status === 'active').length} {t('apprentice.transferRequest.activeLearners')}
           </Text>
@@ -225,7 +225,7 @@ export default function TransferRequestScreen() {
                 <View style={trs.historyHeader}>
                   <View>
                     <Text style={[trs.historyFichas, { color: text }]}>
-                      Ficha {req.currentFichaNumber} → Ficha {req.requestedFichaNumber}
+                      {t('academic.ficha')} {req.currentFichaNumber} → {t('academic.ficha')} {req.requestedFichaNumber}
                     </Text>
                     <Text style={[trs.historyDate, { color: muted }]}>
                       {t('apprentice.transferRequest.requested')}: {new Date(req.requestedAt).toLocaleString(i18n.language)}

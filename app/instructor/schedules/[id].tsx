@@ -21,7 +21,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 // app/instructor/schedules/[id].tsx).
 export default function ScheduleDetailScreen() {
   const { theme, isDark } = useTheme();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const basePath = getRoleBasePath(user?.role);
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -122,8 +122,8 @@ export default function ScheduleDetailScreen() {
             { icon: 'time-outline', label: t('schedules.fields.endTime'), value: schedule.endTime },
             { icon: 'business-outline', label: t('schedules.fields.environment'), value: environmentName },
             { icon: 'person-outline', label: t('schedules.fields.instructor'), value: instructorName },
-            { icon: 'add-circle-outline', label: t('environments.detail.createdAt'), value: new Date(schedule.createdAt).toLocaleString() },
-            { icon: 'sync-outline', label: t('environments.detail.updatedAt'), value: new Date(schedule.updatedAt).toLocaleString() },
+            { icon: 'add-circle-outline', label: t('environments.detail.createdAt'), value: new Date(schedule.createdAt).toLocaleString(i18n.language) },
+            { icon: 'sync-outline', label: t('environments.detail.updatedAt'), value: new Date(schedule.updatedAt).toLocaleString(i18n.language) },
           ].map((row, i, arr) => (
             <View key={i} style={[sds.infoRow, i < arr.length - 1 && { borderBottomWidth: 1, borderBottomColor: border }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>

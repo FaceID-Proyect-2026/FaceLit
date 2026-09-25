@@ -33,7 +33,7 @@ interface Excuse {
 export default function ExcusesReviewScreen() {
   const { user, isAuthenticated } = useAuth();
   const { theme, isDark } = useTheme();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const attendance = useAttendance();
   const { allSchedules } = useSchedules();
 
@@ -201,14 +201,14 @@ export default function ExcusesReviewScreen() {
               label={t('reports.filters.dateFrom')}
               value={dateFrom}
               onChange={setDateFrom}
-              placeholder="AAAA-MM-DD"
+              placeholder="YYYY-MM-DD"
               containerStyle={ers.filterField}
             />
             <DateField
               label={t('reports.filters.dateTo')}
               value={dateTo}
               onChange={setDateTo}
-              placeholder="AAAA-MM-DD"
+              placeholder="YYYY-MM-DD"
               containerStyle={ers.filterField}
             />
           </View>
@@ -245,13 +245,13 @@ export default function ExcusesReviewScreen() {
             </View>
             
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16, marginTop: 8 }}>
-              <Text style={{ color: muted, fontSize: 12 }}>{item.date}</Text>
+              <Text style={{ color: muted, fontSize: 12 }}>{new Date(`${item.date}T12:00:00`).toLocaleDateString(i18n.language)}</Text>
               <Text style={{ color: muted, fontSize: 12 }}>
-                {t('reports.excuses.submittedAt')}: {new Date(item.submittedAt).toLocaleString()}
+                {t('reports.excuses.submittedAt')}: {new Date(item.submittedAt).toLocaleString(i18n.language)}
               </Text>
               {item.reviewedAt && (
                 <Text style={{ color: muted, fontSize: 12 }}>
-                  {t('reports.excuses.reviewedAt')}: {new Date(item.reviewedAt).toLocaleString()}
+                  {t('reports.excuses.reviewedAt')}: {new Date(item.reviewedAt).toLocaleString(i18n.language)}
                 </Text>
               )}
               {item.reviewerName && (

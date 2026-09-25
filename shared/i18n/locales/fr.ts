@@ -13,6 +13,7 @@ const fr = {
     view: "Voir",
     show: "Afficher",
     hide: "Masquer",
+    close: "Fermer",
   },
   theme: { toggle: "Thème", light: "Clair", dark: "Sombre" },
   landing: {
@@ -517,6 +518,7 @@ const fr = {
   //  Modules 2-9
   // ─────────────────────────────────────────────
   sidebar: {
+    users: "Utilisateurs",
     dashboard: "Tableau de bord",
     userManagement: "Gestion des utilisateurs",
     environments: "Environnements",
@@ -539,6 +541,34 @@ const fr = {
     facialRecognition: "Reconnaissance faciale",
     institutionalImport: "Charger la liste institutionnelle",
     transferRequests: "Demandes de transfert",
+  },
+  instructorAcademic: {
+    programsTitle: "Mes programmes",
+    programsSubtitle: "Consultez uniquement les programmes et fichas attribués par la coordination.",
+    searchProgram: "Rechercher un programme",
+    assignedFichasCount: "fichas attribuées",
+    created: "Créé le",
+    lastEdited: "Dernière modification",
+    viewFichas: "Voir les fichas",
+    noPrograms: "Aucun programme n’est attribué à ce formateur.",
+    programUnavailable: "Programme indisponible pour ce formateur.",
+    programSubtitle: "Programme attribué à vos fichas.",
+    fichasAssigned: "Fichas attribuées",
+    searchFicha: "Rechercher une ficha",
+    fichasTitle: "Fichas ({{count}})",
+    learners: "apprentis",
+    noFichas: "Aucune ficha n’est attribuée à ce programme.",
+    fichaUnavailable: "Ficha indisponible pour ce formateur.",
+    fichaSubtitle: "Informations générales et apprentis associés.",
+    program: "Programme",
+    status: "Statut",
+    searchLearner: "Rechercher par nom, document ou e-mail",
+    learnersTitle: "Apprentis ({{count}})",
+    document: "Document",
+    added: "Ajouté le",
+    noProgram: "Aucun programme",
+    noLearners: "Aucun apprenti à afficher.",
+    notRecorded: "Non enregistré",
   },
   dashboard: {
     apprenticeTraining: "Ma formation",
@@ -572,7 +602,7 @@ const fr = {
     totalUsers: "Utilisateurs",
     activeFichas: "Fichas actives",
     environments: "Environnements",
-    programs: "Programmes enregistrés",
+    registeredPrograms: "Programmes enregistrés",
     quickActions: "Actions rapides",
     recentActivity: "Activité récente",
     controlCenter: "CENTRE DE CONTRÔLE",
@@ -753,6 +783,7 @@ const fr = {
     },
   },
   environments: {
+    reactivateConfirm: "Réactiver cet environnement ?",
     alreadyActive: "Environnement déjà actif",
     reactivate: "Réactiver",
     confirmReactivate: "Réactiver cet environnement ?",
@@ -854,6 +885,54 @@ const fr = {
     },
   },
   academic: {
+    ficha: "Ficha",
+    program: "Programme",
+    status: "Statut",
+    documentShort: "Doc.",
+    fichaDeactivateLearnerTitle: "Désactiver l’apprenti",
+    fichaDeactivateLearnerConfirm: "Désactiver {{name}} ? L’apprenti conservera son historique et pourra être réactivé.",
+    fichaDeactivateLearner: "Désactiver",
+    fichaReactivateLearnerTitle: "Réactiver l’apprenti",
+    fichaReactivateLearnerConfirm: "Réactiver {{name}} ?",
+    fichaReactivateLearner: "Réactiver",
+    csvExcelFormat: "Excel",
+    csvReport: {
+      title: "Rapport d’importation CSV",
+      file: "Fichier",
+      generatedAt: "Généré le",
+      created: "Créés",
+      updated: "Mis à jour",
+      blocked: "Incohérences bloquées",
+      errors: "Erreurs",
+      totalRows: "Nombre total de lignes signalées",
+      detailsByRow: "Détail par ligne",
+      row: "Ligne",
+      category: "Catégorie",
+      type: "Type",
+      identifier: "Identifiant",
+      message: "Message",
+      relatedRecord: "Enregistrement associé",
+      relatedRecordType: "Type d’enregistrement associé",
+      fullSheet: "Rapport complet",
+      creationsSheet: "Créations",
+      updatesSheet: "Mises à jour",
+      inconsistenciesSheet: "Incohérences",
+      errorsSheet: "Erreurs",
+      noCreations: "Aucune création",
+      noUpdates: "Aucune mise à jour",
+      noBlocked: "Aucune incohérence",
+      noErrors: "Aucune erreur",
+    },
+    csvCredentials: {
+      title: "Identifiants initiaux générés",
+      sheet: "Identifiants",
+      document: "Document",
+      name: "Nom",
+      role: "Rôle",
+      ficha: "Ficha",
+      program: "Programme",
+      password: "Mot de passe",
+    },
     institutionalTotal: "Total",
     institutionalValidated: "Validés",
     institutionalInconsistency: "Incohérences",
@@ -1019,7 +1098,7 @@ const fr = {
     fichaCode: "Code Ficha",
     previousFicha: "Ficha précédente",
     currentFicha: "Ficha actuelle",
-    transferCodeHint: "8 caractères — lettres majuscules et chiffres",
+    transferCodeFormatHint: "8 caractères — lettres majuscules et chiffres",
     joinTitle: "Rejoindre Ficha",
     joinSubtitle: "Saisissez le code fourni",
     joinSuccess: "Code validé",
@@ -1372,7 +1451,7 @@ const fr = {
     // ── RF-3.3 V4 — Code de transfert ────────
     transferCode: "Code de transfert",
     transferCodeLabel: "Code de transfert (8 caractères)",
-    transferCodeHint:
+    transferCodeHelp:
       "Ce code a été généré par le système. Partagez-le avec l'apprenant pour qu'il puisse rejoindre cette ficha.",
     transferCodeGenerate: "Générer un nouveau code",
     transferCodeGenerateConfirm:
@@ -2038,5 +2117,61 @@ const fr = {
     livenessFailed: "Impossible de vérifier une vraie personne. Réessayez.",
   },
 } as const;
+
+// Complète les entrées présentes dans les autres catalogues.
+Object.assign(fr.login.errors, {
+  passwordWeak: "Le mot de passe doit inclure une majuscule, une minuscule, un chiffre et un caractère spécial.",
+  noSpaces: "Aucun espace autorisé",
+  invalidChars: "Caractères non valides",
+  documentNotFound: "Document non enregistré",
+  wrongPassword: "Document ou mot de passe incorrect",
+  passwordShort: "6 caractères minimum",
+  passwordLong: "20 caractères maximum",
+});
+Object.assign(fr.privacyNotice, {
+  articlesRef: "Articles applicables : 5 (données sensibles, y compris biométriques), 8 (droits de la personne concernée), 9 (autorisation) et 12 (devoir d’informer) de la loi 1581 de 2012.",
+});
+Object.assign(fr.newPassword.errors, {
+  networkError: "Impossible de se connecter au serveur. Vérifiez votre connexion.",
+});
+Object.assign(fr.minorConsent, {
+  articlesRef: "Articles applicables : 7 (droits des enfants et des adolescents), 6, paragraphe b) (autorisation des représentants légaux) et 12 (devoir d’informer) de la loi 1581 de 2012.",
+});
+Object.assign(fr.register, {
+  identityPAS: "PAS — Passeport",
+});
+Object.assign(fr.register.errors, {
+  rightsDeclined: "Vous devez lire et accepter vos droits avant de continuer. Cette information est nécessaire pour garantir le bon usage de vos données.",
+  accountLocked: "Pour des raisons de sécurité, ce compte a été temporairement bloqué. Réessayez dans {{minutes}} minutes.",
+});
+Object.assign(fr, {
+  guardianVerification: {
+    title: "Autorisation du représentant légal",
+    subtitle: "Nous avons envoyé un code à 6 chiffres à :",
+    backBtn: "Retour",
+    timerLabel: "Temps restant : ",
+    resendBtn: "Renvoyer le code",
+    resending: "Renvoi en cours…",
+    inputLabel: "Code de vérification",
+    placeholder: "000000",
+    hint: "Le représentant légal doit saisir le code reçu par e-mail pour autoriser l’inscription du mineur.",
+    verifyBtn: "Confirmer l’autorisation",
+    verifying: "Vérification…",
+    errors: {
+      expired: "Le code a expiré. Demandez-en un nouveau.",
+      length: "Le code doit comporter 6 chiffres.",
+      invalid: "Code incorrect.",
+      resendFailed: "Impossible de renvoyer le code.",
+    },
+  },
+});
+Object.assign(fr.newPassword.req, {
+  upper: "Au moins une majuscule",
+  lower: "Au moins une minuscule",
+});
+Object.assign(fr.face, {
+  moving: "Restez immobile pour prendre la photo.",
+  stabilizing: "Gardez la position…",
+});
 
 export default fr;

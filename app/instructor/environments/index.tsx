@@ -17,7 +17,7 @@ import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimen
 
 export default function EnvironmentsListScreen() {
   const { theme, isDark } = useTheme();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { environments, search, setSearch, statusFilter, setStatusFilter, deactivate, reactivate, deletePermanently } = useEnvironments();
   const { alert, DialogUI } = useAppDialog();
   const { width } = useWindowDimensions();
@@ -123,7 +123,7 @@ export default function EnvironmentsListScreen() {
         <Text style={[els.cardTitle, { color: text }]}>{t('environments.cardTitle', { code: item.code })}</Text>
       </View>
       <Text style={[els.cardSub, { color: muted }]}>{t('environments.fields.quantity')}: {item.quantity}</Text>
-      <Text style={[els.cardDates, { color: muted }]}>{t('environments.detail.createdAt')}: {new Date(item.createdAt).toLocaleString()} · {t('environments.detail.updatedAt')}: {new Date(item.updatedAt).toLocaleString()}</Text>
+      <Text style={[els.cardDates, { color: muted }]}>{t('environments.detail.createdAt')}: {new Date(item.createdAt).toLocaleString(i18n.language)} · {t('environments.detail.updatedAt')}: {new Date(item.updatedAt).toLocaleString(i18n.language)}</Text>
       <View style={els.cardActions}>
         <TouchableOpacity
           onPress={() => router.push(`/admin/environments/${item.id}` as any)}
@@ -160,7 +160,7 @@ export default function EnvironmentsListScreen() {
       <View style={[els.header, isMobile && els.headerMobile]}>
         <View style={els.headingCopy}>
           <Text style={[els.title, { color: text }]}>{t('environments.title')}</Text>
-          <Text style={[els.subtitle, { color: muted }]}>{t('environments.listSubtitle', 'Consulta, filtra y administra los ambientes de formación registrados en la institución.')}</Text>
+          <Text style={[els.subtitle, { color: muted }]}>{t('environments.listSubtitle')}</Text>
         </View>
         <TouchableOpacity
           onPress={() => setFormModalOpen(true)}
@@ -203,7 +203,7 @@ export default function EnvironmentsListScreen() {
           </TouchableOpacity>
         ))}
       </View>
-      <Text style={[els.filterHelp, { color: muted }]}>{t('environments.filterHelp', 'Los ambientes inactivos no están disponibles para horarios ni fichas.')}</Text>
+      <Text style={[els.filterHelp, { color: muted }]}>{t('environments.filterHelp')}</Text>
 
       <FlatList
         data={environments}

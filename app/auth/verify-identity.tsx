@@ -75,7 +75,7 @@ export default function VerifyIdentityScreen() {
           msg.toLowerCase().includes('expir') ||
           msg.toLowerCase().includes('vencid')
         ) {
-          throw new Error('El código ha expirado. Solicita uno nuevo.');
+          throw new Error(t('verifyIdentity.errors.expired'));
         }
 
         if (
@@ -83,11 +83,11 @@ export default function VerifyIdentityScreen() {
           msg.toLowerCase().includes('utilizado') ||
           msg.toLowerCase().includes('used')
         ) {
-          throw new Error('Este código ya fue utilizado.');
+          throw new Error(t('verifyIdentity.errors.alreadyUsed'));
         }
 
         // 400, 404, 500 o cualquier otro → código incorrecto
-        throw new Error('Código incorrecto. Verifica e inténtalo de nuevo.');
+        throw new Error(t('verifyIdentity.errors.invalid'));
       }
 
       // ── Solo llega aquí si verifyToken respondió 200 ────────────────
@@ -171,7 +171,7 @@ export default function VerifyIdentityScreen() {
                 <View style={[s.tokenErrorBox, { backgroundColor: Colors.error + '18', borderColor: Colors.error + '55' }]}>
                   <Ionicons name="alert-circle" size={18} color={Colors.error} />
                   <View style={{ flex: 1 }}>
-                    <Text style={[s.tokenErrorTitle, { color: Colors.error }]}>Código incorrecto</Text>
+                    <Text style={[s.tokenErrorTitle, { color: Colors.error }]}>{t('verifyIdentity.errors.invalid')}</Text>
                     <Text style={[s.tokenErrorMsg,   { color: Colors.error }]}>{tokenError}</Text>
                   </View>
                 </View>

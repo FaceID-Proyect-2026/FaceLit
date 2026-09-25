@@ -17,7 +17,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 
 export default function EnvironmentDetailScreen() {
   const { theme, isDark } = useTheme();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { getById, assignFicha, unassignFicha } = useEnvironments();
   const { alert, DialogUI } = useAppDialog();
@@ -84,7 +84,7 @@ export default function EnvironmentDetailScreen() {
           </View>
           <View style={eds.headingCopy}>
             <Text style={[eds.title, { color: text }]}>{t('environments.detail.title')}</Text>
-            <Text style={[eds.subtitle, { color: muted }]}>{t('environments.detail.subtitle', 'Información y fichas asociadas')}</Text>
+          <Text style={[eds.subtitle, { color: muted }]}>{t('environments.detail.subtitle')}</Text>
           </View>
         </View>
 
@@ -107,11 +107,11 @@ export default function EnvironmentDetailScreen() {
           </View>
           <View style={eds.infoRow}>
             <Text style={[eds.infoLabel, { color: muted }]}>{t('environments.detail.createdAt')}</Text>
-            <Text style={[eds.infoValue, { color: text }]}>{new Date(env.createdAt).toLocaleString()}</Text>
+            <Text style={[eds.infoValue, { color: text }]}>{new Date(env.createdAt).toLocaleString(i18n.language)}</Text>
           </View>
           <View style={[eds.infoRow, { borderBottomWidth: 0 }]}>
             <Text style={[eds.infoLabel, { color: muted }]}>{t('environments.detail.updatedAt')}</Text>
-            <Text style={[eds.infoValue, { color: text }]}>{new Date(env.updatedAt).toLocaleString()}</Text>
+            <Text style={[eds.infoValue, { color: text }]}>{new Date(env.updatedAt).toLocaleString(i18n.language)}</Text>
           </View>
         </View>
 
@@ -132,7 +132,7 @@ export default function EnvironmentDetailScreen() {
           </View>
           <View style={eds.sectionHeadingCopy}>
             <Text style={[eds.sectionTitle, { color: text }]}>{t('environments.detail.assignedFichas')}</Text>
-            <Text style={[eds.sectionHelp, { color: muted }]}>{t('environments.detail.assignedFichasHelp', 'Fichas que actualmente usan este ambiente. Puedes asignar nuevas o retirar las existentes.')}</Text>
+            <Text style={[eds.sectionHelp, { color: muted }]}>{t('environments.detail.assignedFichasHelp')}</Text>
           </View>
         </View>
         {assignedFichasData.length === 0 ? (
@@ -145,7 +145,7 @@ export default function EnvironmentDetailScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={[eds.fichaName, { color: text }]}>{f.name}</Text>
                 <Text style={[eds.fichaInfo, { color: muted }]}>{f.program} · {f.learners} {t('environments.detail.learners')}</Text>
-                {relation && <Text style={[eds.fichaAssignedAt, { color: muted }]}>{t('environments.detail.assignedAt')}: {new Date(relation.assignedAt).toLocaleDateString()}</Text>}
+                {relation && <Text style={[eds.fichaAssignedAt, { color: muted }]}>{t('environments.detail.assignedAt')}: {new Date(relation.assignedAt).toLocaleDateString(i18n.language)}</Text>}
               </View>
               <TouchableOpacity
                 onPress={() => handleRemoveFicha(f.code, f.name)}
@@ -167,7 +167,7 @@ export default function EnvironmentDetailScreen() {
               </View>
               <View style={eds.sectionHeadingCopy}>
                 <Text style={[eds.sectionTitle, { color: text }]}>{t('environments.assign.title')}</Text>
-                <Text style={[eds.sectionHelp, { color: muted }]}>{t('environments.detail.assignHelp', 'Selecciona una ficha para vincularla con este ambiente.')}</Text>
+                <Text style={[eds.sectionHelp, { color: muted }]}>{t('environments.detail.assignHelp')}</Text>
               </View>
             </View>
             {availableFichas.map(f => (
@@ -199,8 +199,8 @@ export default function EnvironmentDetailScreen() {
                 <View key={`${assignment.fichaCode}-${assignment.assignedAt}`} style={[eds.historyCard, { backgroundColor: cardBg, borderColor: border }]}>
                   <View style={{ flex: 1 }}>
                     <Text style={[eds.fichaName, { color: text }]}>{ficha?.name ?? assignment.fichaCode}</Text>
-                    <Text style={[eds.fichaInfo, { color: muted }]}>{t('environments.detail.assignedAt')}: {new Date(assignment.assignedAt).toLocaleDateString()}</Text>
-                    <Text style={[eds.fichaAssignedAt, { color: muted }]}>{t('environments.detail.unassignedAt')}: {new Date(assignment.unassignedAt!).toLocaleDateString()}</Text>
+                    <Text style={[eds.fichaInfo, { color: muted }]}>{t('environments.detail.assignedAt')}: {new Date(assignment.assignedAt).toLocaleDateString(i18n.language)}</Text>
+                    <Text style={[eds.fichaAssignedAt, { color: muted }]}>{t('environments.detail.unassignedAt')}: {new Date(assignment.unassignedAt!).toLocaleDateString(i18n.language)}</Text>
                   </View>
                   <Ionicons name="time-outline" size={20} color={muted} />
                 </View>

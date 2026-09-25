@@ -67,7 +67,7 @@ function EditLearnerModal({
 
   const handleSave = () => {
     if (!name.trim() || !lastname.trim()) { setError(t('academic.fichaEditLearnerValidation')); return; }
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError('Correo inválido.'); return; }
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError(t('academic.fichaEditLearnerEmailError')); return; }
     if (!document.trim() || !/^\d{6,15}$/.test(document.trim())) { setError(t('academic.fichaEditLearnerDocError')); return; }
     const result = onSave({ name: name.trim(), lastname: lastname.trim(), email: email.trim(), document: document.trim() });
     if (!result.success) { setError(result.error ? t(result.error as any, { defaultValue: result.error }) : t('academic.fichaEditLearnerSaveError')); return; }
@@ -79,7 +79,7 @@ function EditLearnerModal({
       <View style={[elm.overlay, { backgroundColor: overlayBg }]}>
         <View style={[elm.sheet, { backgroundColor: modalBg }]}>
           <View style={elm.modalHeader}>
-            <Text style={[elm.modalTitle, { color: text }]}>Editar aprendiz</Text>
+            <Text style={[elm.modalTitle, { color: text }]}>{t('academic.fichaEditLearnerTitle')}</Text>
             <TouchableOpacity onPress={onClose} style={{ padding: 4 }}>
               <Ionicons name="close" size={22} color={muted} />
             </TouchableOpacity>
@@ -90,7 +90,7 @@ function EditLearnerModal({
               { label: t('academic.fichaEditLearnerNameLabel'), value: name, onChange: setName, keyboard: 'default' as const },
               { label: t('academic.fichaEditLearnerLastNameLabel'), value: lastname, onChange: setLastname, keyboard: 'default' as const },
               { label: t('academic.fichaEditLearnerEmailLabel'), value: email, onChange: setEmail, keyboard: 'email-address' as const },
-              { label: 'Documento (6 a 15 dígitos)', value: document, onChange: setDoc, keyboard: 'numeric' as const },
+              { label: t('academic.fichaEditLearnerDocLabel'), value: document, onChange: setDoc, keyboard: 'numeric' as const },
             ].map(f => (
               <View key={f.label} style={{ marginBottom: 14 }}>
                 <Text style={[elm.label, { color: text }]}>{f.label}</Text>
@@ -153,7 +153,7 @@ export default function FichaDetailScreen() {
 
   if (!ficha) return (
     <View style={[fds.safe, { backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }]}>
-      <Text style={{ color: muted }}>Ficha no encontrada</Text>
+      <Text style={{ color: muted }}>{t('academic.fichaNotFound')}</Text>
     </View>
   );
 
@@ -219,12 +219,12 @@ export default function FichaDetailScreen() {
   const handleToggleLearner = (learnerId: string, currentStatus: string, name: string) => {
     if (currentStatus === 'active') {
       alert(
-        'Desactivar aprendiz',
-        `¿Desactivar a ${name}? El aprendiz conserva su historial y puede reactivarse.`,
+        t('academic.fichaDeactivateLearnerTitle'),
+        t('academic.fichaDeactivateLearnerConfirm', { name }),
         [
           { text: t('common.cancel'), style: 'cancel' },
           {
-            text: 'Desactivar',
+            text: t('academic.fichaDeactivateLearner'),
             style: 'destructive',
             onPress: () => {
               const r = deactivateLearner(ficha.id, learnerId);
@@ -243,12 +243,12 @@ export default function FichaDetailScreen() {
       );
     } else {
       alert(
-        'Reactivar aprendiz',
-        `¿Reactivar a ${name}?`,
+        t('academic.fichaReactivateLearnerTitle'),
+        t('academic.fichaReactivateLearnerConfirm', { name }),
         [
           { text: t('common.cancel'), style: 'cancel' },
           {
-            text: 'Reactivar',
+            text: t('academic.fichaReactivateLearner'),
             onPress: () => {
               const r = reactivateLearner(ficha.id, learnerId);
               if (!r.success && r.error) alert(t('common.error'), t(r.error as any, { defaultValue: r.error }));
@@ -274,10 +274,10 @@ export default function FichaDetailScreen() {
 
             {/* ── Info de la ficha ── */}
             <View style={[fds.card, { backgroundColor: cardBg, borderColor: border }]}>
-              <Text style={[fds.fichaTitle, { color: text }]}>Ficha {ficha.number}</Text>
+              <Text style={[fds.fichaTitle, { color: text }]}>{t('academic.ficha')} {ficha.number}</Text>
               <Text style={[fds.fichaSubtitle, { color: muted }]}>{t('academic.fichaDetailSubtitle')}</Text>
-              <View style={fds.infoRow}><Text style={[fds.infoLabel, { color: muted }]}>Programa</Text><Text style={[fds.infoValue, { color: text }]}>{program ? getProgramDisplayName(program, t) : 'Sin programa'}</Text></View>
-              <View style={fds.infoRow}><Text style={[fds.infoLabel, { color: muted }]}>Estado</Text><Text style={{ color: ficha.status === 'active' ? Colors.success : Colors.error, fontWeight: '700' }}>{t(`environments.statuses.${ficha.status}`)}</Text></View>
+              <View style={fds.infoRow}><Text style={[fds.infoLabel, { color: muted }]}>{t('academic.program')}</Text><Text style={[fds.infoValue, { color: text }]}>{program ? getProgramDisplayName(program, t) : t('instructorAcademic.noProgram')}</Text></View>
+              <View style={fds.infoRow}><Text style={[fds.infoLabel, { color: muted }]}>{t('academic.status')}</Text><Text style={{ color: ficha.status === 'active' ? Colors.success : Colors.error, fontWeight: '700' }}>{t(`environments.statuses.${ficha.status}`)}</Text></View>
               <View style={fds.infoRow}><Text style={[fds.infoLabel, { color: muted }]}>{t('environments.detail.createdAt')}</Text><Text style={[fds.infoValue, { color: text }]}>{formatDateTime(ficha.createdAt)}</Text></View>
               <View style={fds.infoRow}><Text style={[fds.infoLabel, { color: muted }]}>{t('environments.detail.updatedAt')}</Text><Text style={[fds.infoValue, { color: text }]}>{formatDateTime(ficha.updatedAt)}</Text></View>
             </View>
@@ -288,7 +288,7 @@ export default function FichaDetailScreen() {
                 <Ionicons name="key-outline" size={18} color={theme.primary} />
                 <Text style={[fds.transferTitle, { color: theme.primary }]}>{t('academic.transferCode')}</Text>
               </View>
-              <Text style={[fds.transferHint, { color: muted }]}>{t('academic.transferCodeHint')}</Text>
+              <Text style={[fds.transferHint, { color: muted }]}>{t('academic.transferCodeFormatHint')}</Text>
               <View style={fds.transferCodeRow}>
                 <Text style={[fds.transferCodeText, { color: theme.primary }]} selectable>
                   {ficha.transferCode ?? '—'}
@@ -313,7 +313,7 @@ export default function FichaDetailScreen() {
 
             {/* ── Buscador de aprendices ── */}
             <Text style={[fds.sectionTitle, { color: text }]}>
-              Instructores ({filteredInstructors.length}{instructorSearch ? ` de ${fichaInstructors.length}` : ''})
+              {t('academic.instructors')} ({filteredInstructors.length}{instructorSearch ? ` ${t('academic.fichaLearnersCountOf')} ${fichaInstructors.length}` : ''})
             </Text>
             <View style={[fds.searchBar, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F2F2F2', borderColor: border }]}>
               <Ionicons name="search-outline" size={16} color={muted} />
@@ -340,7 +340,7 @@ export default function FichaDetailScreen() {
                   <View style={{ flex: 1 }}>
                     <Text style={[fds.instructorName, { color: text }]}>{instructor.name} {instructor.lastname}</Text>
                     <Text style={[fds.learnerMeta, { color: muted }]}>
-                      {instructor.instructorType === 'transversal' ? t('academic.fichaInstructorTransversal') : t('academic.fichaInstructorEspecifico')} � Doc: {instructor.document}
+                      {instructor.instructorType === 'transversal' ? t('academic.fichaInstructorTransversal') : t('academic.fichaInstructorEspecifico')} · {t('academic.documentShort')}: {instructor.document}
                     </Text>
                     <Text style={[fds.learnerMeta, { color: muted }]}>{instructor.email}</Text>
                   </View>
@@ -350,7 +350,7 @@ export default function FichaDetailScreen() {
                 </View>
               ))}
               {filteredInstructors.length === 0 && (
-                <Text style={[fds.emptyText, { color: muted }]}>No hay instructores asociados a esta ficha.</Text>
+                <Text style={[fds.emptyText, { color: muted }]}>{t('academic.fichaNoInstructors')}</Text>
               )}
             </View>
             <View style={[fds.searchBar, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F2F2F2', borderColor: border }]}>
@@ -380,7 +380,7 @@ export default function FichaDetailScreen() {
           <View style={[fds.learnerCard, { backgroundColor: cardBg, borderColor: border, opacity: item.status === 'inactive' ? 0.65 : 1 }]}>
             <View style={{ flex: 1 }}>
               <Text style={[fds.learnerName, { color: text }]}>{item.name} {item.lastname}</Text>
-              <Text style={[fds.learnerMeta, { color: muted }]}>Doc: {item.document}{item.email ? ` · ${item.email}` : ''}</Text>
+              <Text style={[fds.learnerMeta, { color: muted }]}>{t('academic.documentShort')}: {item.document}{item.email ? ` · ${item.email}` : ''}</Text>
               {item.createdAt ? (
                 <Text style={[fds.learnerMeta, { color: muted }]}>
                   {t('academic.addedOn')}: {formatDateTime(item.createdAt)}
@@ -401,13 +401,13 @@ export default function FichaDetailScreen() {
               {item.initialPassword ? (
                 <View style={[fds.pwdBadge, { backgroundColor: Colors.warning + '18', borderColor: Colors.warning + '55' }]}>
                   <Ionicons name="key-outline" size={12} color={Colors.warning} />
-                  <Text style={[fds.pwdLabel, { color: Colors.warning }]}>Contraseña inicial: </Text>
+                  <Text style={[fds.pwdLabel, { color: Colors.warning }]}>{t('academic.fichaPwdInitial')}: </Text>
                   <Text style={[fds.pwdValue, { color: Colors.warning }]} selectable>{item.initialPassword}</Text>
                 </View>
               ) : (
                 <View style={[fds.pwdBadge, { backgroundColor: Colors.success + '14', borderColor: Colors.success + '44' }]}>
                   <Ionicons name="checkmark-circle-outline" size={12} color={Colors.success} />
-                  <Text style={[fds.pwdLabel, { color: Colors.success }]}>Contraseña propia activa</Text>
+                  <Text style={[fds.pwdLabel, { color: Colors.success }]}>{t('academic.fichaPwdOwn')}</Text>
                 </View>
               )}
             </View>
@@ -459,11 +459,11 @@ export default function FichaDetailScreen() {
                   <View><Text style={[fds.transferOptionTitle, { color: text }]}>{t('academic.fichaTransferFichaLabel')} {target.number}</Text><Text style={[fds.transferOptionMeta, { color: muted }]}>{program ? getProgramDisplayName(program, t) : ''}</Text></View>
                 </TouchableOpacity>
               ))}
-              {availableTransferFichas.length === 0 && <Text style={[fds.transferEmpty, { color: muted }]}>No hay otra ficha activa disponible dentro de este programa.</Text>}
+              {availableTransferFichas.length === 0 && <Text style={[fds.transferEmpty, { color: muted }]}>{t('academic.fichaTransferEmpty')}</Text>}
             </ScrollView>
             <View style={fds.transferModalActions}>
               <TouchableOpacity onPress={() => setTransferLearnerId(null)} style={[fds.transferModalButton, { borderColor: border }]}>{}<Text style={{ color: text, fontWeight: '700' }}>{t('academic.fichaTransferCancel')}</Text></TouchableOpacity>
-              <TouchableOpacity disabled={!destinationFichaId || transferBusy} onPress={() => alert(t('academic.fichaTransferConfirmTitle'), `¿Estás seguro de trasladar a ${transferLearnerData?.name} de la ficha ${ficha.number} a la ficha ${availableTransferFichas.find(target => target.id === destinationFichaId)?.number}?`, [{ text: t('academic.fichaTransferCancel'), style: 'cancel' }, { text: 'Sí, trasladar', onPress: async () => { if (!transferLearnerData) return; setTransferBusy(true); try { await transferLearner(transferLearnerData.id, destinationFichaId); setTransferLearnerId(null); alert(t('academic.fichaTransferSuccess'), t('academic.fichaTransferSuccess')); } catch (error: any) { alert(t('common.error'), error?.response?.data?.message ?? t('academic.fichaTransferError')); } finally { setTransferBusy(false); } } }])} style={[fds.transferModalButton, { backgroundColor: destinationFichaId ? theme.primary : muted, borderColor: 'transparent', opacity: transferBusy ? 0.7 : 1 }]}><Text style={{ color: Colors.white, fontWeight: '700' }}>{transferBusy ? t('academic.fichaTransferring') : t('academic.fichaTransferContinue')}</Text></TouchableOpacity>
+              <TouchableOpacity disabled={!destinationFichaId || transferBusy} onPress={() => alert(t('academic.fichaTransferConfirmTitle'), t('academic.fichaTransferConfirmMsg', { name: transferLearnerData?.name, from: ficha.number, to: availableTransferFichas.find(target => target.id === destinationFichaId)?.number }), [{ text: t('academic.fichaTransferCancel'), style: 'cancel' }, { text: t('academic.fichaTransferYes'), onPress: async () => { if (!transferLearnerData) return; setTransferBusy(true); try { await transferLearner(transferLearnerData.id, destinationFichaId); setTransferLearnerId(null); alert(t('academic.fichaTransferSuccess'), t('academic.fichaTransferSuccess')); } catch (error: any) { alert(t('common.error'), error?.response?.data?.message ?? t('academic.fichaTransferError')); } finally { setTransferBusy(false); } } }])} style={[fds.transferModalButton, { backgroundColor: destinationFichaId ? theme.primary : muted, borderColor: 'transparent', opacity: transferBusy ? 0.7 : 1 }]}><Text style={{ color: Colors.white, fontWeight: '700' }}>{transferBusy ? t('academic.fichaTransferring') : t('academic.fichaTransferContinue')}</Text></TouchableOpacity>
             </View>
           </View>
         </View>
