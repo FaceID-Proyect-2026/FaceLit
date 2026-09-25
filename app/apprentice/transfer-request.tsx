@@ -27,6 +27,7 @@ import {
 
 // ── Badge de estado de la solicitud ──────────
 function StatusBadge({ status }: { status: 'pending' | 'approved' | 'rejected' }) {
+  const { t } = useTranslation();
   const color =
     status === 'approved' ? Colors.success :
     status === 'rejected' ? Colors.error :
@@ -37,16 +38,10 @@ function StatusBadge({ status }: { status: 'pending' | 'approved' | 'rejected' }
     status === 'rejected' ? 'close-circle-outline' :
     'time-outline';
 
-  const labels: Record<string, string> = {
-    pending:  'Pendiente',
-    approved: 'Aprobada',
-    rejected: 'Rechazada',
-  };
-
   return (
     <View style={[sb.wrap, { backgroundColor: color + '18', borderColor: color + '40' }]}>
       <Ionicons name={icon as any} size={13} color={color} />
-      <Text style={[sb.text, { color }]}>{labels[status]}</Text>
+      <Text style={[sb.text, { color }]}>{t(`apprentice.transferRequest.${status}`)}</Text>
     </View>
   );
 }
@@ -59,7 +54,7 @@ const sb = StyleSheet.create({
 // ── Pantalla principal ────────────────────────
 export default function TransferRequestScreen() {
   const { theme, isDark } = useTheme();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const { allFichas } = useAcademic();
   const { create, requests } = useTransferRequests();
@@ -90,19 +85,19 @@ export default function TransferRequestScreen() {
   const handleSubmit = () => {
     setError('');
     if (!currentFicha) return;
-    if (!code.trim()) { setError('El código no puede estar vacío.'); return; }
+    if (!code.trim()) { setError(t('apprentice.transferRequest.codeRequired')); return; }
 
     const result = create(user?.id ?? '', currentFicha.id, code.trim());
     if (!result.success) {
       const errorMessages: Record<string, string> = {
-        'academic.transferCodeNotFound': 'El código ingresado no corresponde a ninguna ficha. Verifica que lo hayas escrito correctamente.',
-        'academic.fichaInactive':        'Esta ficha no está disponible para recibir nuevos aprendices en este momento.',
-        'academic.sameFicha':            'Ya perteneces a esta ficha.',
-        'academic.transferAlreadyPending': 'Ya tienes una solicitud de traslado pendiente. Espera a que el Coordinador la revise.',
-        'academic.learnerNotFound':      'No se encontró tu información en la ficha actual. Contacta al Coordinador.',
-        'academic.fichaNotFound':        'No se encontró tu ficha actual. Contacta al Coordinador.',
+        'academic.transferCodeNotFound': 'badCode',
+        'academic.fichaInactive': 'inactiveFicha',
+        'academic.sameFicha': 'sameFicha',
+        'academic.transferAlreadyPending': 'pendingExists',
+        'academic.learnerNotFound': 'learnerMissing',
+        'academic.fichaNotFound': 'fichaMissing',
       };
-      setError(errorMessages[result.error!] ?? 'Ocurrió un error. Intenta de nuevo.');
+      setError(t(`apprentice.transferRequest.${errorMessages[result.error!] ?? 'genericError'}`));
       return;
     }
     setCode('');
@@ -114,12 +109,12 @@ export default function TransferRequestScreen() {
     return (
       <View style={[trs.safe, { backgroundColor: bg, alignItems: 'center', justifyContent: 'center', padding: 32 }]}>
         <Ionicons name="alert-circle-outline" size={52} color={Colors.warning} />
-        <Text style={[trs.emptyTitle, { color: text }]}>Sin ficha activa</Text>
+        <Text style={[trs.emptyTitle, { color: text }]}>{t('apprentice.transferRequest.noActiveTitle')}</Text>
         <Text style={[trs.emptySub, { color: muted }]}>
-          Para solicitar un traslado debes estar activo en una ficha. Si crees que esto es un error, contacta al Coordinador.
+          {t('apprentice.transferRequest.noActiveBody')}
         </Text>
         <TouchableOpacity onPress={() => router.back()} style={[trs.backBtn, { borderColor: theme.primary }]}>
-          <Text style={{ color: theme.primary, fontWeight: FontWeight.bold }}>Volver</Text>
+          <Text style={{ color: theme.primary, fontWeight: FontWeight.bold }}>{t('common.back')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -133,11 +128,11 @@ export default function TransferRequestScreen() {
         <View style={trs.header}>
           <TouchableOpacity onPress={() => router.back()} style={trs.backRow} activeOpacity={0.7}>
             <Ionicons name="arrow-back" size={20} color={text} />
-            <Text style={[trs.backText, { color: text }]}>Volver</Text>
+            <Text style={[trs.backText, { color: text }]}>{t('common.back')}</Text>
           </TouchableOpacity>
-          <Text style={[trs.title, { color: text }]}>Solicitar traslado de ficha</Text>
+          <Text style={[trs.title, { color: text }]}>{t('apprentice.transferRequest.title')}</Text>
           <Text style={[trs.subtitle, { color: muted }]}>
-            Si acordaste un traslado con tu Coordinador, ingresa aquí el código que te entregó para la ficha destino.
+            {t('apprentice.transferRequest.subtitle')}
           </Text>
         </View>
 
@@ -145,11 +140,11 @@ export default function TransferRequestScreen() {
         <View style={[trs.card, { backgroundColor: cardBg, borderColor: border }]}>
           <View style={trs.cardRow}>
             <Ionicons name="school-outline" size={20} color={theme.primary} />
-            <Text style={[trs.cardLabel, { color: muted }]}>Tu ficha actual</Text>
+            <Text style={[trs.cardLabel, { color: muted }]}>{t('apprentice.transferRequest.currentFicha')}</Text>
           </View>
           <Text style={[trs.fichaNumber, { color: text }]}>Ficha {currentFicha.number}</Text>
           <Text style={[trs.fichaMeta, { color: muted }]}>
-            Código interno: {currentFicha.code} · {currentFicha.learners.filter(l => l.status === 'active').length} aprendices activos
+            {t('apprentice.transferRequest.internalCode')}: {currentFicha.code} · {currentFicha.learners.filter(l => l.status === 'active').length} {t('apprentice.transferRequest.activeLearners')}
           </Text>
         </View>
 
@@ -157,25 +152,25 @@ export default function TransferRequestScreen() {
         {sent ? (
           <View style={[trs.successCard, { backgroundColor: Colors.success + '12', borderColor: Colors.success + '30' }]}>
             <Ionicons name="checkmark-circle" size={40} color={Colors.success} />
-            <Text style={[trs.successTitle, { color: text }]}>¡Solicitud enviada!</Text>
+            <Text style={[trs.successTitle, { color: text }]}>{t('apprentice.transferRequest.sent')}</Text>
             <Text style={[trs.successSub, { color: muted }]}>
-              Tu Coordinador revisará la solicitud. Te notificaremos cuando haya una decisión.
+              {t('apprentice.transferRequest.sentBody')}
             </Text>
             <TouchableOpacity onPress={() => setSent(false)} style={[trs.newRequestBtn, { borderColor: theme.primary }]} activeOpacity={0.8}>
-              <Text style={{ color: theme.primary, fontWeight: FontWeight.bold }}>Hacer otra solicitud</Text>
+              <Text style={{ color: theme.primary, fontWeight: FontWeight.bold }}>{t('apprentice.transferRequest.another')}</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <View style={[trs.card, { backgroundColor: cardBg, borderColor: border }]}>
-            <Text style={[trs.sectionTitle, { color: text }]}>Código de traslado</Text>
+            <Text style={[trs.sectionTitle, { color: text }]}>{t('apprentice.transferRequest.codeTitle')}</Text>
             <Text style={[trs.fieldHint, { color: muted }]}>
-              El Coordinador te entregó este código (8 caracteres) fuera del sistema.
+              {t('apprentice.transferRequest.codeHint')}
             </Text>
 
             <TextInput
               value={code}
               onChangeText={v => { setCode(v.toUpperCase()); setError(''); }}
-              placeholder="Ej: A1B2C3D4"
+              placeholder={t('apprentice.transferRequest.placeholder')}
               placeholderTextColor={muted}
               autoCapitalize="characters"
               autoCorrect={false}
@@ -201,7 +196,7 @@ export default function TransferRequestScreen() {
               <View style={[trs.warnBox, { backgroundColor: Colors.warning + '12', borderColor: Colors.warning + '30' }]}>
                 <Ionicons name="time-outline" size={16} color={Colors.warning} />
                 <Text style={[trs.warnText, { color: muted }]}>
-                  Ya tienes una solicitud pendiente. Solo puedes tener una activa a la vez.
+                  {t('apprentice.transferRequest.pendingWarning')}
                 </Text>
               </View>
             )}
@@ -216,7 +211,7 @@ export default function TransferRequestScreen() {
               ]}
             >
               <Ionicons name="swap-horizontal-outline" size={18} color={Colors.white} />
-              <Text style={trs.submitBtnText}>Enviar solicitud de traslado</Text>
+              <Text style={trs.submitBtnText}>{t('apprentice.transferRequest.submit')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -224,7 +219,7 @@ export default function TransferRequestScreen() {
         {/* Historial de solicitudes */}
         {myRequests.length > 0 && (
           <View style={trs.historySection}>
-            <Text style={[trs.sectionTitle, { color: text }]}>Mis solicitudes</Text>
+            <Text style={[trs.sectionTitle, { color: text }]}>{t('apprentice.transferRequest.myRequests')}</Text>
             {myRequests.map(req => (
               <View key={req.id} style={[trs.historyCard, { backgroundColor: cardBg, borderColor: border }]}>
                 <View style={trs.historyHeader}>
@@ -233,7 +228,7 @@ export default function TransferRequestScreen() {
                       Ficha {req.currentFichaNumber} → Ficha {req.requestedFichaNumber}
                     </Text>
                     <Text style={[trs.historyDate, { color: muted }]}>
-                      Solicitado: {new Date(req.requestedAt).toLocaleString()}
+                      {t('apprentice.transferRequest.requested')}: {new Date(req.requestedAt).toLocaleString(i18n.language)}
                     </Text>
                   </View>
                   <StatusBadge status={req.status} />
@@ -242,13 +237,13 @@ export default function TransferRequestScreen() {
                 {req.status === 'rejected' && req.reason && (
                   <View style={[trs.reasonBox, { backgroundColor: Colors.error + '0D', borderColor: Colors.error + '25' }]}>
                     <Ionicons name="information-circle-outline" size={14} color={Colors.error} />
-                    <Text style={[trs.reasonText, { color: muted }]}>Motivo: {req.reason}</Text>
+                    <Text style={[trs.reasonText, { color: muted }]}>{t('apprentice.transferRequest.reason')}: {req.reason}</Text>
                   </View>
                 )}
 
                 {req.decidedAt && (
                   <Text style={[trs.historyDate, { color: muted, marginTop: 4 }]}>
-                    Decidido: {new Date(req.decidedAt).toLocaleString()}
+                    {t('apprentice.transferRequest.decided')}: {new Date(req.decidedAt).toLocaleString(i18n.language)}
                   </Text>
                 )}
               </View>
@@ -260,12 +255,9 @@ export default function TransferRequestScreen() {
         <View style={[trs.infoBox, { backgroundColor: theme.primary + '0D', borderColor: theme.primary + '25' }]}>
           <Ionicons name="information-circle-outline" size={18} color={theme.primary} />
           <View style={{ flex: 1 }}>
-            <Text style={[trs.infoTitle, { color: text }]}>¿Cómo funciona el traslado?</Text>
+            <Text style={[trs.infoTitle, { color: text }]}>{t('apprentice.transferRequest.howTitle')}</Text>
             <Text style={[trs.infoText, { color: muted }]}>
-              1. Solicita el traslado al Coordinador fuera del sistema.{'\n'}
-              2. Si lo aprueba, te entregará un código de 8 caracteres.{'\n'}
-              3. Ingresa ese código aquí para enviar la solicitud formal.{'\n'}
-              4. Una vez que el Coordinador confirme, quedarás activo en la nueva ficha automáticamente.
+              {t('apprentice.transferRequest.howSteps')}
             </Text>
           </View>
         </View>

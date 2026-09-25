@@ -5,6 +5,7 @@
 // ─────────────────────────────────────────────
 import { useAcademic } from '@/features/academic/useAcademic';
 import { findCurrentLearner, getProgramForFicha } from '@/features/academic/currentAcademic';
+import { getProgramDisplayName } from '@/features/academic/types';
 import { ATTENDANCE_EVENTS } from '@/features/attendance/types';
 import { MOCK_NOTIFICATIONS_RF8 } from '@/features/notifications/types';
 import { Colors } from '@/shared/constants/colors';
@@ -111,7 +112,7 @@ export default function ApprenticeDashboard() {
               <Text style={s.rolePillText}>{t('users.roles.APPRENTICE')}</Text>
             </View>
             <Text style={s.fichaTag}>
-              {myFicha ? `Ficha ${myFicha.number} - ${myProgram?.name ?? 'Sin programa'}` : 'Sin ficha asignada'}
+              {myFicha ? `${t('dashboard.apprenticeFicha')} ${myFicha.number} - ${myProgram ? getProgramDisplayName(myProgram, t) : t('dashboard.apprenticeNoProgram')}` : t('dashboard.apprenticeNoFichaAssigned')}
             </Text>
           </View>
           <Ionicons name="person-circle-outline" size={64} color="rgba(255,255,255,0.25)" />
@@ -123,23 +124,23 @@ export default function ApprenticeDashboard() {
               <Ionicons name="school-outline" size={24} color={theme.primary} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[s.academicTitle, { color: text }]}>Mi formación</Text>
-              <Text style={[s.academicSubtitle, { color: muted }]}>Ficha y programa asignados por coordinación.</Text>
+              <Text style={[s.academicTitle, { color: text }]}>{t('dashboard.apprenticeTraining')}</Text>
+              <Text style={[s.academicSubtitle, { color: muted }]}>{t('dashboard.apprenticeTrainingSubtitle')}</Text>
             </View>
           </View>
           <View style={s.academicGrid}>
             <View style={s.academicItem}>
-              <Text style={[s.academicLabel, { color: muted }]}>Ficha</Text>
-              <Text style={[s.academicValue, { color: text }]}>{myFicha?.number ?? 'Sin ficha'}</Text>
+              <Text style={[s.academicLabel, { color: muted }]}>{t('dashboard.apprenticeFicha')}</Text>
+              <Text style={[s.academicValue, { color: text }]}>{myFicha?.number ?? t('dashboard.apprenticeNoFicha')}</Text>
             </View>
             <View style={s.academicItem}>
-              <Text style={[s.academicLabel, { color: muted }]}>Programa</Text>
-              <Text style={[s.academicValue, { color: text }]} numberOfLines={2}>{myProgram?.name ?? 'Sin programa'}</Text>
+              <Text style={[s.academicLabel, { color: muted }]}>{t('dashboard.apprenticeProgram')}</Text>
+              <Text style={[s.academicValue, { color: text }]} numberOfLines={2}>{myProgram ? getProgramDisplayName(myProgram, t) : t('dashboard.apprenticeNoProgram')}</Text>
             </View>
             <View style={s.academicItem}>
-              <Text style={[s.academicLabel, { color: muted }]}>Estado</Text>
+              <Text style={[s.academicLabel, { color: muted }]}>{t('dashboard.apprenticeStatus')}</Text>
               <Text style={[s.academicValue, { color: myLearner?.status === 'inactive' ? Colors.error : Colors.success }]}>
-                {myLearner?.status === 'inactive' ? 'Inactivo' : myLearner ? 'Activo' : 'No asignado'}
+                {myLearner?.status === 'inactive' ? t('dashboard.apprenticeInactive') : myLearner ? t('dashboard.apprenticeActive') : t('dashboard.apprenticeUnassigned')}
               </Text>
             </View>
           </View>
@@ -205,10 +206,10 @@ export default function ApprenticeDashboard() {
           </View>
           <View style={s.facialInfo}>
             <Text style={[s.facialTitle, { color: text }]}>
-              {t('facialReg.registerFace', 'Registro biométrico')}
+              {t('facialReg.registerFace')}
             </Text>
             <Text style={[s.facialDesc, { color: muted }]}>
-              {t('facialReg.registerFaceDesc', 'Completa tu registro facial para que el sistema pueda registrar tu asistencia automáticamente.')}
+              {t('facialReg.registerFaceDesc')}
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={muted} />

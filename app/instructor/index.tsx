@@ -80,20 +80,20 @@ export default function InstructorDashboard() {
   }, [assignedFichas, attendanceRecords]);
 
   const stats: StatCard[] = [
-    { icon: "people-outline", value: String(activeLearners), label: "Aprendices a cargo" },
-    { icon: "school-outline", value: String(assignedFichas.length), label: "Fichas asignadas" },
-    { icon: "library-outline", value: String(assignedPrograms.length), label: "Programas" },
+    { icon: "people-outline", value: String(activeLearners), label: t("dashboard.learnersInCharge") },
+    { icon: "school-outline", value: String(assignedFichas.length), label: t("dashboard.assignedFichas") },
+    { icon: "library-outline", value: String(assignedPrograms.length), label: t("dashboard.programs") },
     { icon: "checkmark-circle-outline", value: `${attendanceRate}%`, label: t("dashboard.attendanceRate") },
   ];
 
   const quickActions: QuickAction[] = [
-    { icon: "school-outline", label: "Mis fichas", route: "/instructor/academic" },
-    { icon: "people-outline", label: "Asistencia", route: "/instructor/attendance" },
+    { icon: "school-outline", label: t("dashboard.myFichas"), route: "/instructor/academic" },
+    { icon: "people-outline", label: t("dashboard.attendance"), route: "/instructor/attendance" },
     { icon: "scan-outline", label: t("sidebar.facial"), route: Routes.INSTRUCTOR.FACIAL },
     { icon: "person-outline", label: t("sidebar.profile"), route: Routes.PROFILE.VIEW },
   ];
 
-  const displayName = user?.firstName ?? user?.name ?? user?.email?.split("@")[0] ?? "Instructor";
+  const displayName = user?.firstName ?? user?.name ?? user?.email?.split("@")[0] ?? t("users.roles.INSTRUCTOR");
 
   return (
     <View style={[ads.safe, { backgroundColor: bg }]}>
@@ -105,9 +105,9 @@ export default function InstructorDashboard() {
           style={ads.welcomeBanner}
         >
           <View style={{ flex: 1 }}>
-            <Text style={ads.welcomeKicker}>Panel de instructor</Text>
+            <Text style={ads.welcomeKicker}>{t("dashboard.instructorTitle")}</Text>
             <Text style={ads.welcomeTitle}>{displayName}</Text>
-            <Text style={ads.welcomeSubtitle}>Consulta solo las fichas, aprendices y asistencias asignadas.</Text>
+            <Text style={ads.welcomeSubtitle}>{t("dashboard.instructorSubtitle")}</Text>
           </View>
           <Ionicons name="person-circle-outline" size={62} color="rgba(255,255,255,0.28)" />
         </LinearGradient>
@@ -128,8 +128,8 @@ export default function InstructorDashboard() {
               <Ionicons name="albums-outline" size={22} color={theme.primary} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[ads.scopeTitle, { color: text }]}>Alcance académico</Text>
-              <Text style={[ads.scopeSubtitle, { color: muted }]}>Busca una ficha asignada para consultar su programa y aprendices.</Text>
+              <Text style={[ads.scopeTitle, { color: text }]}>{t("dashboard.academicScope")}</Text>
+              <Text style={[ads.scopeSubtitle, { color: muted }]}>{t("dashboard.searchAssignedFicha")}</Text>
             </View>
           </View>
 
@@ -138,7 +138,7 @@ export default function InstructorDashboard() {
             <TextInput
               value={fichaSearch}
               onChangeText={setFichaSearch}
-              placeholder="Buscar por numero de ficha o programa"
+              placeholder={t("dashboard.searchFichaPlaceholder")}
               placeholderTextColor={muted}
               style={[ads.searchInput, { color: text }] as any}
             />
@@ -157,7 +157,7 @@ export default function InstructorDashboard() {
                   <View>
                     <Text style={[ads.fichaChipTitle, { color: text }]}>Ficha {ficha.number}</Text>
                     <Text style={[ads.fichaChipMeta, { color: muted }]} numberOfLines={1}>
-                      {program ? getProgramDisplayName(program, t) : "Sin programa"} · {ficha.learners.length} aprendices
+                      {program ? getProgramDisplayName(program, t) : t("dashboard.noProgram")} · {ficha.learners.length} {t("dashboard.learnersInCharge")}
                     </Text>
                   </View>
                   <Ionicons name="chevron-forward" size={18} color={muted} />
@@ -165,13 +165,13 @@ export default function InstructorDashboard() {
               );
             })}
             {assignedFichas.length === 0 && (
-              <Text style={[ads.emptyScope, { color: muted }]}>No tienes fichas asignadas todavía.</Text>
+              <Text style={[ads.emptyScope, { color: muted }]}>{t("dashboard.noAssignedFichas")}</Text>
             )}
             {assignedFichas.length > 0 && fichaSearch.trim().length === 0 && (
-              <Text style={[ads.emptyScope, { color: muted }]}>Escribe el numero de ficha o programa para buscar.</Text>
+              <Text style={[ads.emptyScope, { color: muted }]}>{t("dashboard.typeToSearchFicha")}</Text>
             )}
             {assignedFichas.length > 0 && fichaSearch.trim().length > 0 && visibleFichas.length === 0 && (
-              <Text style={[ads.emptyScope, { color: muted }]}>No hay fichas asignadas con esa busqueda.</Text>
+              <Text style={[ads.emptyScope, { color: muted }]}>{t("dashboard.noFichasForSearch")}</Text>
             )}
           </View>
         </View>
