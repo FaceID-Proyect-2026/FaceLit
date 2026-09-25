@@ -15,7 +15,7 @@ import { ActivityIndicator, ScrollView, StyleSheet, Switch, Text, TouchableOpaci
 const LANGUAGES = [
   { code: 'es', label: 'Español' },
   { code: 'en', label: 'English' },
-  { code: 'pr', label: 'Português' },
+  { code: 'de', label: 'Deutsch' },
   { code: 'fr', label: 'Français' },
 ];
 
@@ -48,7 +48,7 @@ export default function SettingsScreen() {
   const handleSave = async () => {
     const result = await saveChanges();
     if (result.success) {
-      alert('✓', t('profile.settingsOptions.saved') ?? 'Cambios guardados');
+      alert('✓', t('profile.settingsOptions.saved'));
     } else {
       alert(t('common.error'), result.error);
     }
@@ -71,7 +71,7 @@ export default function SettingsScreen() {
           </View>
           <Text style={[ss.headerTitle, { color: text }]}>{t('profile.settings')}</Text>
           <Text style={[ss.headerSubtitle, { color: muted }]}>
-            {t('profile.settingsOptions.subtitle') ?? 'Personaliza tu experiencia en la app'}
+            {t('profile.settingsOptions.subtitle')}
           </Text>
         </View>
 
@@ -81,7 +81,7 @@ export default function SettingsScreen() {
             <Ionicons name="color-palette-outline" size={14} color={theme.primary} />
           </View>
           <Text style={[ss.sectionTitle, { color: text }]}>
-            {t('profile.settingsOptions.preferences') ?? 'Preferencias'}
+            {t('profile.settingsOptions.preferences')}
           </Text>
         </View>
 
@@ -193,7 +193,7 @@ export default function SettingsScreen() {
                 color={saved ? theme.primary : Colors.white}
               />
               <Text style={[ss.saveBtnText, { color: saved ? theme.primary : Colors.white }]}>
-                {saved ? (t('profile.settingsOptions.saved') ?? 'Guardado') : (t('profile.settingsOptions.saveChanges') ?? 'Guardar cambios')}
+                {saved ? t('profile.settingsOptions.saved') : t('profile.settingsOptions.saveChanges')}
               </Text>
             </>
           )}
