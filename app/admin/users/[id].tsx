@@ -47,17 +47,17 @@ type FormErrors = Partial<Record<keyof FormState, string>>;
 const EMPTY_FORM: FormState = { document: '', firstName: '', lastName: '', email: '' };
 const LETTERS_ONLY = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+$/;
 
-function normalizeDate(value?: string | null) {
-  if (!value) return 'Sin registro';
+function normalizeDate(value?: string | null, emptyLabel = 'Sin registro') {
+  if (!value) return emptyLabel;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
 }
 
-function roleLabel(role?: string) {
-  if (role === 'COORDINATOR') return 'Coordinador';
-  if (role === 'INSTRUCTOR') return 'Instructor';
-  if (role === 'APPRENTICE') return 'Aprendiz';
-  return role || 'Sin rol';
+function roleLabel(role: string | undefined, t: (key: any) => string) {
+  if (role === 'COORDINATOR') return t('users.roles.COORDINATOR');
+  if (role === 'INSTRUCTOR') return t('users.roles.INSTRUCTOR');
+  if (role === 'APPRENTICE') return t('users.roles.APPRENTICE');
+  return role || t('users.detail.noRole');
 }
 
 function PillList({ items, empty, color }: { items?: string[]; empty: string; color: string }) {
@@ -129,20 +129,20 @@ export default function UserDetailScreen() {
   const validate = () => {
     const nextErrors: FormErrors = {};
     if (!/^\d{6,15}$/.test(form.document.trim())) {
-      nextErrors.document = 'El documento debe tener entre 6 y 15 digitos.';
+      nextErrors.document = t('register.errors.documentLength');
     }
     if (!form.firstName.trim()) {
       nextErrors.firstName = t('users.errors.requiredField');
     } else if (!LETTERS_ONLY.test(form.firstName.trim())) {
-      nextErrors.firstName = 'El nombre solo puede contener letras.';
+      nextErrors.firstName = t('users.errors.lettersOnlyName');
     }
     if (!form.lastName.trim()) {
       nextErrors.lastName = t('users.errors.requiredField');
     } else if (!LETTERS_ONLY.test(form.lastName.trim())) {
-      nextErrors.lastName = 'El apellido solo puede contener letras.';
+      nextErrors.lastName = t('users.errors.lettersOnlyLastName');
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-      nextErrors.email = 'Ingresa un correo valido.';
+      nextErrors.email = t('register.errors.emailInvalid');
     }
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
@@ -161,9 +161,9 @@ export default function UserDetailScreen() {
         role: base.role,
       });
       setBase(updated);
-      alert(t('common.save'), 'Los cambios se guardaron correctamente.', [{ text: t('common.ok') }]);
+      alert(t('common.save'), t('users.detail.saveSuccess'), [{ text: t('common.ok') }]);
     } catch (error: any) {
-      alert(t('common.error'), error?.response?.data?.message || 'No se pudieron guardar los cambios.', [
+      alert(t('common.error'), error?.response?.data?.message || t('users.saveError'), [
         { text: t('common.ok') },
       ]);
     }
@@ -200,7 +200,7 @@ export default function UserDetailScreen() {
             <Text style={[styles.title, { color: text }]} numberOfLines={1}>
               {form.firstName} {form.lastName}
             </Text>
-            <Text style={[styles.subtitle, { color: muted }]}>Detalle del usuario</Text>
+            <Text style={[styles.subtitle, { color: muted }]}>{t('users.detail.title')}</Text>
           </View>
         </View>
 
@@ -211,22 +211,22 @@ export default function UserDetailScreen() {
           <View style={{ flex: 1 }}>
             <Text style={[styles.bannerName, { color: text }]}>{form.firstName} {form.lastName}</Text>
             <View style={[styles.rolePill, { backgroundColor: roleColor + '22' }]}>
-              <Text style={[styles.rolePillText, { color: roleColor }]}>{roleLabel(role)}</Text>
+              <Text style={[styles.rolePillText, { color: roleColor }]}>{roleLabel(role, t)}</Text>
             </View>
           </View>
           <View style={[styles.statusPill, { backgroundColor: theme.successSoft }]}>
             <View style={[styles.statusDot, { backgroundColor: base.accountStatus === 'ACTIVE' ? Colors.success : muted }]} />
             <Text style={[styles.statusText, { color: base.accountStatus === 'ACTIVE' ? Colors.success : muted }]}>
-              {base.accountStatus === 'ACTIVE' ? 'Activo' : 'Inactivo'}
+              {base.accountStatus === 'ACTIVE' ? t('users.statuses.ACTIVE') : t('users.statuses.INACTIVE')}
             </Text>
           </View>
         </View>
 
         <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
-          <Text style={[styles.section, { color: theme.primary }]}>Datos personales</Text>
+          <Text style={[styles.section, { color: theme.primary }]}>{t('users.detail.personalData')}</Text>
           <View style={styles.row}>
             <Field
-              label="Documento"
+              label={t('users.document')}
               value={form.document}
               onChange={updateField('document')}
               error={errors.document}
@@ -237,7 +237,7 @@ export default function UserDetailScreen() {
               labelColor={theme.primary}
             />
             <Field
-              label="Correo electronico"
+              label={t('register.email')}
               value={form.email}
               onChange={updateField('email')}
               error={errors.email}
@@ -250,7 +250,7 @@ export default function UserDetailScreen() {
           </View>
           <View style={styles.row}>
             <Field
-              label="Nombre"
+              label={t('users.firstName')}
               value={form.firstName}
               onChange={updateField('firstName')}
               error={errors.firstName}
@@ -260,7 +260,7 @@ export default function UserDetailScreen() {
               labelColor={theme.primary}
             />
             <Field
-              label="Apellido"
+              label={t('users.lastName')}
               value={form.lastName}
               onChange={updateField('lastName')}
               error={errors.lastName}
@@ -273,27 +273,39 @@ export default function UserDetailScreen() {
         </View>
 
         <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
-          <Text style={[styles.section, { color: theme.primary }]}>Sesion</Text>
-          <Text style={[styles.infoText, { color: muted }]}>Estado de sesion: {base.sessionStatus === 'ACTIVE' ? 'Activa' : 'Inactiva'}</Text>
-          <Text style={[styles.infoText, { color: muted }]}>Vence: {normalizeDate(base.sessionExpiresAt)}</Text>
-          <Text style={[styles.infoText, { color: muted }]}>Ha iniciado sesion: {base.hasSession ? 'Si' : 'No'}</Text>
+          <Text style={[styles.section, { color: theme.primary }]}>{t('users.detail.session')}</Text>
+          <Text style={[styles.infoText, { color: muted }]}>
+            {t('users.detail.sessionStatus', {
+              status: base.sessionStatus === 'ACTIVE' ? t('users.detail.sessionActive') : t('users.detail.sessionInactive'),
+            })}
+          </Text>
+          <Text style={[styles.infoText, { color: muted }]}>
+            {t('users.detail.sessionExpires', { date: normalizeDate(base.sessionExpiresAt, t('users.detail.noDate')) })}
+          </Text>
+          <Text style={[styles.infoText, { color: muted }]}>
+            {t('users.detail.hasLoggedIn', { value: base.hasSession ? t('common.yes') : t('common.no') })}
+          </Text>
         </View>
 
         {isApprentice ? (
           <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
-            <Text style={[styles.section, { color: theme.primary }]}>Datos academicos</Text>
-            <Text style={[styles.infoText, { color: muted }]}>Ficha: {base.chipCode || 'Sin ficha activa'}</Text>
-            <Text style={[styles.infoText, { color: muted }]}>Programa: {base.programName || 'Sin programa'}</Text>
+            <Text style={[styles.section, { color: theme.primary }]}>{t('users.detail.academicData')}</Text>
+            <Text style={[styles.infoText, { color: muted }]}>
+              {t('users.detail.fichaLabel', { ficha: base.chipCode || t('users.noFichaActive') })}
+            </Text>
+            <Text style={[styles.infoText, { color: muted }]}>
+              {t('users.detail.programLabel', { program: base.programName || t('users.noProgram') })}
+            </Text>
           </View>
         ) : null}
 
         {isInstructor ? (
           <View style={[styles.card, { backgroundColor: card, borderColor: border }]}>
-            <Text style={[styles.section, { color: theme.primary }]}>Datos academicos</Text>
-            <Text style={[styles.infoLabel, { color: text }]}>Programas asignados</Text>
-            <PillList items={base.instructorProgramNames} empty="Sin programas asignados" color={theme.primary} />
-            <Text style={[styles.infoLabel, { color: text }]}>Fichas relacionadas</Text>
-            <PillList items={base.instructorChipCodes} empty="Sin fichas relacionadas" color={theme.info} />
+            <Text style={[styles.section, { color: theme.primary }]}>{t('users.detail.academicData')}</Text>
+            <Text style={[styles.infoLabel, { color: text }]}>{t('users.detail.assignedPrograms')}</Text>
+            <PillList items={base.instructorProgramNames} empty={t('users.detail.noAssignedPrograms')} color={theme.primary} />
+            <Text style={[styles.infoLabel, { color: text }]}>{t('users.detail.relatedFichas')}</Text>
+            <PillList items={base.instructorChipCodes} empty={t('users.detail.noRelatedFichas')} color={theme.info} />
           </View>
         ) : null}
 
@@ -301,7 +313,7 @@ export default function UserDetailScreen() {
           <View style={[styles.note, { backgroundColor: theme.infoSoft, borderColor: theme.info + '40' }]}>
             <Ionicons name="information-circle-outline" size={14} color={theme.info} />
             <Text style={[styles.noteText, { color: theme.info }]}>
-              El coordinador no tiene datos academicos asociados; solo administra la informacion institucional.
+              {t('users.detail.coordinatorNote')}
             </Text>
           </View>
         ) : null}

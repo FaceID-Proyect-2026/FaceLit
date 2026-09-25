@@ -63,7 +63,7 @@ export default function ScheduleFormModal({ visible, onClose, editId, defaultFic
   const activeFichas = allFichas.filter(f => f.status === 'active' && !!f.programId);
   const activeEnvironments = environments.filter(e => e.status === 'active');
 
-  const fichaOptions = activeFichas.map(f => ({ value: f.id, label: `Ficha ${f.number} - ${f.code}` }));
+  const fichaOptions = activeFichas.map(f => ({ value: f.id, label: t('schedules.fichaRefProgram', { number: f.number, program: f.code }) }));
   const dayOptions = SCHEDULE_DAYS.map(d => ({ value: d, label: t(`schedules.days.${d}`) }));
   // El selector de hora de fin solo ofrece franjas posteriores a la de
   // inicio, para no depender de una validación de texto libre.
@@ -146,15 +146,15 @@ export default function ScheduleFormModal({ visible, onClose, editId, defaultFic
 
       <SelectField label={t('schedules.fields.startTime')} value={startTime} options={startOptions}
         onSelect={v => { setStartTime(v); if (endTime && endTime <= v) setEndTime(''); setErrors(p => ({ ...p, startTime: '', endTime: '' })); }}
-        error={errors.startTime} placeholder={t('schedules.placeholders.time', 'Seleccionar hora')} />
+        error={errors.startTime} placeholder={t('schedules.placeholders.time')} />
 
       <SelectField label={t('schedules.fields.endTime')} value={endTime} options={endOptions}
         onSelect={v => { setEndTime(v); setErrors(p => ({ ...p, endTime: '' })); }}
-        error={errors.endTime} placeholder={t('schedules.placeholders.time', 'Seleccionar hora')} />
+        error={errors.endTime} placeholder={t('schedules.placeholders.time')} />
 
       <SelectField label={t('schedules.fields.environment')} value={environmentId} options={environmentOptions}
         onSelect={v => { setEnvironmentId(v); setErrors(p => ({ ...p, env: '' })); }}
-        error={errors.env} placeholder={t('schedules.placeholders.environment', 'Seleccionar ambiente')} />
+        error={errors.env} placeholder={t('schedules.placeholders.environment')} />
 
       <SelectField label={t('schedules.fields.instructor')} value={instructorId} options={instructorOptions}
         onSelect={v => { setInstructorId(v); setErrors(p => ({ ...p, inst: '' })); }}

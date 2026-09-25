@@ -71,7 +71,7 @@ export default function UsersPanel() {
       .then((data) => {
         if (mounted) setUsers(data.map(mapManagedUser));
       })
-      .catch((error) => alert(t('common.error'), error?.response?.data?.message ?? 'No se pudieron cargar los usuarios.'))
+      .catch((error) => alert(t('common.error'), error?.response?.data?.message ?? t('users.loadError')))
       .finally(() => {
         if (mounted) setLoading(false);
       });
@@ -122,7 +122,7 @@ export default function UsersPanel() {
               await deleteManagedUser(id);
               setUsers((prev) => prev.filter((u) => u.id !== id));
             } catch (error: any) {
-              alert(t('common.error'), error?.response?.data?.message ?? 'No se pudo eliminar el usuario.');
+              alert(t('common.error'), error?.response?.data?.message ?? t('users.deleteError'));
             }
           },
         },
@@ -143,7 +143,7 @@ export default function UsersPanel() {
   };
 
   const roleLabel = (role: string) => {
-    if (role === 'COORDINATOR') return 'Coordinador';
+    if (role === 'COORDINATOR') return t('users.roles.COORDINATOR');
     if (role === 'INSTRUCTOR') return t('users.create.roleInstructor');
     return t('users.create.roleApprentice');
   };
@@ -153,7 +153,7 @@ export default function UsersPanel() {
     const statusColor = isActive ? Colors.success : muted;
     const statusBg = isActive ? softGreen : isDark ? 'rgba(255,255,255,0.06)' : '#F2F2F2';
     const displayName = `${item.name} ${item.lastname}`;
-    const apprenticeChip = item.role === 'APPRENTICE' ? item.chipCode ?? 'Sin ficha activa' : null;
+    const apprenticeChip = item.role === 'APPRENTICE' ? item.chipCode ?? t('users.noFichaActive') : null;
 
     return (
       <TouchableOpacity
@@ -190,12 +190,14 @@ export default function UsersPanel() {
           </View>
 
           {item.role === 'INSTRUCTOR' && (
-            <Text style={[styles.subMeta, { color: muted }]}>Programa: {item.programName ?? 'Sin programa'}</Text>
+            <Text style={[styles.subMeta, { color: muted }]}>
+              {t('users.programPrefix', { program: item.programName ?? t('users.noProgram') })}
+            </Text>
           )}
 
           {item.role === 'APPRENTICE' && apprenticeChip && (
             <Text style={[styles.subMeta, { color: muted }]}>
-              Ficha activa: {apprenticeChip}
+              {t('users.activeFichaPrefix', { ficha: apprenticeChip })}
             </Text>
           )}
         </View>
@@ -300,7 +302,7 @@ export default function UsersPanel() {
                       {f === 'ALL'
                         ? t('users.all')
                         : f === 'COORDINATOR'
-                          ? 'Coordinador'
+                          ? t('users.roles.COORDINATOR')
                           : f === 'INSTRUCTOR'
                             ? t('users.create.roleInstructor')
                             : t('users.create.roleApprentice')}

@@ -135,7 +135,7 @@ export default function ExceptionFormModal({ visible, onClose, schedule }: Excep
       visible={visible}
       onClose={onClose}
       title={t('schedules.exceptionRegister')}
-      subtitle={`Ficha ${schedule.fichaNumber} · ${t(`schedules.days.${schedule.day}`)} · ${schedule.startTime}-${schedule.endTime}`}
+      subtitle={`${t('schedules.fichaRef', { number: schedule.fichaNumber })} · ${t(`schedules.days.${schedule.day}`)} · ${schedule.startTime}-${schedule.endTime}`}
       footer={
         <>
           <TouchableOpacity onPress={onClose} style={[efm.footerBtn, { borderColor: inputBorder }]} activeOpacity={0.7}>

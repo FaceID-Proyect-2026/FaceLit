@@ -132,13 +132,13 @@ export default function CreateCoordinatorScreen() {
     if (!form.name.trim()) {
       nextErrors.name = t('users.errors.requiredField');
     } else if (!LETTERS_ONLY.test(form.name.trim())) {
-      nextErrors.name = 'El nombre solo puede contener letras.';
+      nextErrors.name = t('users.errors.lettersOnlyName');
     }
 
     if (!form.lastname.trim()) {
       nextErrors.lastname = t('users.errors.requiredField');
     } else if (!LETTERS_ONLY.test(form.lastname.trim())) {
-      nextErrors.lastname = 'El apellido solo puede contener letras.';
+      nextErrors.lastname = t('users.errors.lettersOnlyLastName');
     }
 
     if (!form.email.trim()) {
@@ -169,14 +169,14 @@ export default function CreateCoordinatorScreen() {
       setCreatedPassword(password);
       setPasswordVisible(true);
       alert(
-        'Coordinador creado',
-        `Usuario coordinador creado correctamente. La contraseña inicial es: ${password}. Entrégala al usuario para que inicie sesión.`,
+        t('users.createCoordinator.createdTitle'),
+        t('users.createCoordinator.createdBody', { password }),
         [{ text: t('common.ok') }],
       );
     } catch (error: any) {
       alert(
         t('common.error'),
-        error?.response?.data?.message || 'No se pudo crear el coordinador.',
+        error?.response?.data?.message || t('users.createCoordinator.errorCreate'),
         [{ text: t('common.ok') }],
       );
     }
@@ -200,8 +200,8 @@ export default function CreateCoordinatorScreen() {
             <Ionicons name="arrow-back" size={20} color={text} />
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.title, { color: text }]}>Crear Coordinador</Text>
-            <Text style={[styles.subtitle, { color: muted }]}>Registro exclusivo del coordinador</Text>
+            <Text style={[styles.title, { color: text }]}>{t('users.createCoordinator.title')}</Text>
+            <Text style={[styles.subtitle, { color: muted }]}>{t('users.createCoordinator.subtitle')}</Text>
           </View>
         </View>
 
@@ -265,17 +265,19 @@ export default function CreateCoordinatorScreen() {
           <View style={[styles.note, { backgroundColor: softAmber, borderColor: Colors.warning + '40' }]}>
             <Ionicons name="key-outline" size={14} color={Colors.warning} />
             <Text style={[styles.noteText, { color: Colors.warning }]}>
-              El sistema asigna el rol de Coordinador y genera la contraseña temporal para su primer inicio de sesión.
+              {t('users.createCoordinator.noteRole')}
             </Text>
           </View>
 
           {createdPassword ? (
             <View style={[styles.passwordBox, { backgroundColor: softGreen, borderColor: Colors.success + '55' }]}>
               <View style={styles.passwordHeader}>
-                <Text style={[styles.passwordTitle, { color: Colors.success }]}>Contraseña temporal</Text>
+                <Text style={[styles.passwordTitle, { color: Colors.success }]}>
+                  {t('users.createCoordinator.tempPasswordTitle')}
+                </Text>
                 <TouchableOpacity onPress={() => setPasswordVisible((visible) => !visible)}>
                   <Text style={[styles.passwordAction, { color: Colors.success }]}>
-                    {passwordVisible ? 'Ocultar' : 'Mostrar'}
+                    {passwordVisible ? t('common.hide') : t('common.show')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -289,7 +291,7 @@ export default function CreateCoordinatorScreen() {
           <View style={[styles.note, { backgroundColor: softBlue, borderColor: theme.info + '40' }]}>
             <Ionicons name="lock-closed-outline" size={14} color={theme.info} />
             <Text style={[styles.noteText, { color: theme.info }]}>
-              El documento se conserva como dato de identificación y la contraseña solo se muestra durante la creación de la cuenta.
+              {t('users.createCoordinator.noteSecurity')}
             </Text>
           </View>
 
@@ -302,7 +304,7 @@ export default function CreateCoordinatorScreen() {
               style={[styles.submitBtn, { backgroundColor: theme.primary }]}
             >
               <Ionicons name="person-add-outline" size={16} color={Colors.white} />
-              <Text style={styles.submitBtnText}>Crear Coordinador</Text>
+              <Text style={styles.submitBtnText}>{t('users.createCoordinator.submitBtn')}</Text>
             </TouchableOpacity>
           </View>
         </View>

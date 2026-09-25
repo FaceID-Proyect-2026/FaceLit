@@ -92,7 +92,7 @@ export default function ScheduleExceptionsScreen() {
           <View style={{ flex: 1, marginLeft: 8 }}>
             <Text style={[ses.title, { color: text }]}>{t('schedules.exceptions')}</Text>
             <Text style={{ color: muted, fontSize: FontSize.xs, marginTop: 2 }} numberOfLines={1}>
-              Ficha {fichaNumber} · {t(`schedules.days.${schedule.day}`)} · {schedule.startTime}-{schedule.endTime} · {environmentName}
+              {t('schedules.fichaRef', { number: fichaNumber })} · {t(`schedules.days.${schedule.day}`)} · {schedule.startTime}-{schedule.endTime} · {environmentName}
             </Text>
           </View>
         </View>

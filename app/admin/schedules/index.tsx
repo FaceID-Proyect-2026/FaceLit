@@ -127,7 +127,7 @@ export default function SchedulesListScreen() {
               </View>
 
               <View style={sls.titleRow}>
-                <Text style={[sls.cardTitle, { color: text }]}>Ficha {fichaNumber} - {item.programName}</Text>
+                <Text style={[sls.cardTitle, { color: text }]}>{t('schedules.fichaRefProgram', { number: fichaNumber, program: item.programName })}</Text>
               </View>
               <Text style={[sls.cardSub, { color: muted }]}>{item.startTime} - {item.endTime}</Text>
 
