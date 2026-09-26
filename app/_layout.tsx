@@ -76,9 +76,10 @@ function RootLayoutInner() {
           headerShown: false,
           contentStyle: { backgroundColor: "transparent" },
           animation: "slide_from_right",
+          animationDuration: 260,
         }}
       >
-        <Stack.Screen name="index" options={{ animation: "fade" }} />
+        <Stack.Screen name="index" />
         {/* Auth — RF-1: solo login y recuperación de contraseña */}
         <Stack.Screen
           name="auth/login"
@@ -101,15 +102,19 @@ function RootLayoutInner() {
           options={{ animation: "slide_from_right" }}
         />
         {/* Dashboards por rol */}
-        <Stack.Screen name="admin" options={{ animation: "fade" }} />
-        <Stack.Screen name="instructor" options={{ animation: "fade" }} />
-        <Stack.Screen name="apprentice" options={{ animation: "fade" }} />
+        <Stack.Screen name="admin" />
+        <Stack.Screen name="instructor" />
+        <Stack.Screen name="apprentice" />
         <Stack.Screen
           name="notifications/index"
           options={{ animation: "slide_from_right" }}
         />
         <Stack.Screen
           name="profile/index"
+          options={{ animation: "slide_from_right" }}
+        />
+        <Stack.Screen
+          name="profile/settings"
           options={{ animation: "slide_from_right" }}
         />
       </Stack>

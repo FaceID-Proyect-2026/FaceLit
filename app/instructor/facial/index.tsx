@@ -1,16 +1,6 @@
-// ─────────────────────────────────────────────
-//  app/admin/facial/index.tsx — Reconocimiento Facial (Admin)
-//
-//  Pantalla de acceso desde la barra lateral y desde los accesos
-//  rápidos del Dashboard. Permite configurar la sesión de
-//  reconocimiento facial eligiendo Ambiente, Instructor y Ficha
-//  esperados, y guardar la selección.
-// ─────────────────────────────────────────────
-import { useAcademic } from "@/features/academic/useAcademic";
-import { useEnvironments } from "@/features/environments/useEnvironments";
+import { useEnvironmentSession } from "@/features/environments/useEnvironmentSession";
 import { useFacialRegistry } from "@/features/facial/useFacialRegistry";
-import { MOCK_INSTRUCTORS } from "@/features/schedules/types";
-import { AppButton, SelectField } from "@/shared/components/ui";
+import { AppButton, InputField, SelectField } from "@/shared/components/ui";
 import { Colors } from "@/shared/constants/colors";
 import { Routes } from "@/shared/constants/routes";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
@@ -19,40 +9,42 @@ import { useTheme } from "@/shared/contexts/ThemeContext";
 import { useAppDialog } from "@/shared/hooks/useAppDialog";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function FacialManagementScreen() {
   const { logout } = useAuth();
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
-  const { environments } = useEnvironments();
-  const { allFichas } = useAcademic();
-  const { config, saveConfig } = useFacialRegistry();
+  const { settings, saveConfig } = useFacialRegistry();
   const { alert, DialogUI } = useAppDialog();
-
-  const [environmentId, setEnvironmentId] = useState(
-    config?.environmentId ?? "",
-  );
-  const [instructorId, setInstructorId] = useState(config?.instructorId ?? "");
-  const [fichaId, setFichaId] = useState(config?.fichaId ?? "");
+  const {
+    environmentQuery,
+    setEnvironmentQuery,
+    environments,
+    selectedEnvironment,
+    selectEnvironment,
+    createEnvironment,
+    exactEnvironmentMatch,
+    instructors,
+    selectedInstructorId,
+    setSelectedInstructorId,
+    chips,
+    selectedChipId,
+    setSelectedChipId,
+    loading,
+    saving,
+    saveSession,
+  } = useEnvironmentSession();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    window.history.pushState(
-      { facialBackGuard: true },
-      "",
-      window.location.href,
-    );
+    window.history.pushState({ facialBackGuard: true }, "", window.location.href);
 
     const handleBrowserBack = async () => {
-      window.history.pushState(
-        { facialBackGuard: true },
-        "",
-        window.location.href,
-      );
+      window.history.pushState({ facialBackGuard: true }, "", window.location.href);
       await logout();
       router.replace(Routes.AUTH.LOGIN as any);
     };
@@ -67,48 +59,64 @@ export default function FacialManagementScreen() {
   const border = theme.border;
   const bg = isDark ? Colors.dark.background : Colors.light.background;
 
-  const environmentOptions = environments.map((e) => ({
-    value: e.id,
-    label: e.code,
-  }));
-  const instructorOptions = MOCK_INSTRUCTORS.map((i) => ({
-    value: i.id,
-    label: i.name,
-  }));
-  const fichaOptions = allFichas.map((f) => ({
-    value: f.id,
-    label: `Ficha ${f.number}`,
+  const instructorOptions = instructors.map((instructor) => ({
+    value: instructor.idInstructor,
+    label: `${instructor.firstName} ${instructor.lastName} - ${instructor.instructorType}`,
   }));
 
-  const handleSave = () => {
-    const environment = environments.find((e) => e.id === environmentId);
-    const instructor = MOCK_INSTRUCTORS.find((i) => i.id === instructorId);
-    const ficha = allFichas.find((f) => f.id === fichaId);
+  const fichaOptions = chips.map((chip) => ({
+    value: chip.idChip,
+    label: `Ficha ${chip.chipCode} - ${chip.programName}`,
+  }));
+  const selectedInstructor = instructors.find((instructor) => instructor.idInstructor === selectedInstructorId);
+  const selectedChip = chips.find((chip) => chip.idChip === selectedChipId);
+  const sessionSummary = [
+    { icon: "business-outline", label: t("facial.setup.fields.environment"), value: selectedEnvironment?.environmentName ?? "Sin seleccionar" },
+    { icon: "person-outline", label: t("facial.setup.fields.instructor"), value: selectedInstructor ? `${selectedInstructor.firstName} ${selectedInstructor.lastName}` : "Sin seleccionar" },
+    { icon: "school-outline", label: t("facial.setup.fields.ficha"), value: selectedChip ? `Ficha ${selectedChip.chipCode}` : "Sin seleccionar" },
+  ];
 
-    if (!environment || !instructor || !ficha) {
+  const canSave = !!selectedEnvironment && !!selectedInstructorId && !!selectedChipId && !saving;
+
+  const handleCreateEnvironment = async () => {
+    try {
+      await createEnvironment();
+    } catch {
+      alert(t("common.error"), t("facial.setup.validation.environmentCreateFailed"));
+    }
+  };
+
+  const handleSave = async () => {
+    if (!canSave) {
       alert(t("common.error"), t("facial.setup.validation.allRequired"));
       return;
     }
 
-    const result = saveConfig({
-      environmentId: environment.id,
-      environmentName: environment.code,
-      instructorId: instructor.id,
-      instructorName: instructor.name,
-      fichaId: ficha.id,
-      fichaNumber: ficha.number,
+    const result = await saveSession({
+      registrationMinutes: settings.registrationMinutes,
+      exitTime: settings.exitTime,
+      shutdownTime: settings.shutdownTime,
     });
 
-    if (result.success) {
-      router.replace(`${Routes.APPRENTICE.FACIAL}?autoStart=1` as any);
-    } else {
+    if (!result.success) {
       alert(t("common.error"), t(result.error));
+      return;
     }
+
+    saveConfig({
+      environmentId: result.session.idEnvironment,
+      environmentName: result.session.environmentName,
+      instructorId: result.session.idInstructorInCharge,
+      instructorName: result.session.instructorName,
+      fichaId: result.session.idChip,
+      fichaNumber: result.session.chipCode,
+    });
+
+    alert(t("common.success"), t("facial.setup.saveSuccess"));
   };
 
   return (
     <View style={[fs.safe, { backgroundColor: bg }]}>
-      {/* Header — sin flecha de retorno: esta pantalla no permite volver al menú principal */}
       <View style={fs.header}>
         <View style={{ flex: 1 }}>
           <Text style={[fs.title, { color: text }]}>{t("sidebar.facial")}</Text>
@@ -118,44 +126,117 @@ export default function FacialManagementScreen() {
         </View>
       </View>
 
-      {/* Contenido centrado */}
       <ScrollView contentContainerStyle={fs.scroll}>
-        <View style={fs.centerWrap}>
-          <View
-            style={[fs.card, { backgroundColor: cardBg, borderColor: border }]}
+        <View style={[fs.heroCard, { backgroundColor: cardBg, borderColor: border }]}>
+          <View style={[fs.heroIcon, { backgroundColor: theme.primary + "18" }]}>
+            <Ionicons name="scan-outline" size={28} color={theme.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[fs.heroTitle, { color: text }]}>Punto de reconocimiento</Text>
+            <Text style={[fs.heroSubtitle, { color: muted }]}>Prepara la jornada antes de activar el registro de asistencia.</Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => router.push(Routes.FACIAL.SETTINGS as any)}
+            style={[fs.heroAction, { borderColor: border, backgroundColor: theme.primary + "10" }]}
           >
-            <View
-              style={[fs.iconWrap, { backgroundColor: theme.primary + "18" }]}
-            >
+            <Ionicons name="options-outline" size={18} color={theme.primary} />
+            <Text style={[fs.heroActionText, { color: theme.primary }]}>{t("facial.setup.settingsButton")}</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={fs.contentGrid}>
+          <View style={[fs.summaryCard, { backgroundColor: cardBg, borderColor: border }]}>
+            <Text style={[fs.panelTitle, { color: text }]}>Configuracion actual</Text>
+            <View style={fs.timerGrid}>
+              <View style={[fs.timerTile, { backgroundColor: theme.primary + "10", borderColor: border }]}>
+                <Text style={[fs.timerValue, { color: text }]}>{settings.registrationMinutes} min</Text>
+                <Text style={[fs.timerLabel, { color: muted }]}>Registro</Text>
+              </View>
+              <View style={[fs.timerTile, { backgroundColor: theme.primary + "10", borderColor: border }]}>
+                <Text style={[fs.timerValue, { color: text }]}>{settings.exitTime}</Text>
+                <Text style={[fs.timerLabel, { color: muted }]}>Salida</Text>
+              </View>
+              <View style={[fs.timerTile, { backgroundColor: theme.primary + "10", borderColor: border }]}>
+                <Text style={[fs.timerValue, { color: text }]}>{settings.shutdownTime}</Text>
+                <Text style={[fs.timerLabel, { color: muted }]}>Apagado</Text>
+              </View>
+            </View>
+
+            <Text style={[fs.panelTitle, { color: text, marginTop: 18 }]}>Resumen de sesion</Text>
+            <View style={fs.summaryList}>
+              {sessionSummary.map((item) => (
+                <View key={item.label} style={[fs.summaryRow, { borderColor: border }]}>
+                  <View style={[fs.summaryIcon, { backgroundColor: theme.primary + "18" }]}>
+                    <Ionicons name={item.icon as any} size={17} color={theme.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[fs.summaryLabel, { color: muted }]}>{item.label}</Text>
+                    <Text style={[fs.summaryValue, { color: text }]} numberOfLines={1}>{item.value}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          <View style={[fs.card, { backgroundColor: cardBg, borderColor: border }]}>
+            <View style={[fs.iconWrap, { backgroundColor: theme.primary + "18" }]}>
               <Ionicons name="scan-outline" size={28} color={theme.primary} />
             </View>
-            <Text style={[fs.cardTitle, { color: text }]}>
-              {t("facial.setup.title")}
-            </Text>
-            <Text style={[fs.cardSubtitle, { color: muted }]}>
-              {t("facial.setup.helper")}
-            </Text>
+            <Text style={[fs.cardTitle, { color: text }]}>{t("facial.setup.title")}</Text>
+            <Text style={[fs.cardSubtitle, { color: muted }]}>{t("facial.setup.helper")}</Text>
 
-            <SelectField
+            <InputField
               label={t("facial.setup.fields.environment")}
-              value={environmentId}
-              options={environmentOptions}
-              onSelect={setEnvironmentId}
+              value={environmentQuery}
+              onChangeText={setEnvironmentQuery}
               placeholder={t("facial.setup.placeholders.environment")}
             />
+
+            {environmentQuery.trim() ? (
+              <View style={[fs.optionsBox, { borderColor: border, backgroundColor: cardBg }]}>
+                {environments.map((environment) => (
+                  <TouchableOpacity
+                    key={environment.idEnvironment}
+                    onPress={() => selectEnvironment(environment)}
+                    style={[
+                      fs.optionRow,
+                      selectedEnvironment?.idEnvironment === environment.idEnvironment && {
+                        backgroundColor: theme.primary + "18",
+                      },
+                    ]}
+                  >
+                    <Ionicons name="business-outline" size={16} color={theme.primary} />
+                    <Text style={[fs.optionText, { color: text }]}>{environment.environmentName}</Text>
+                  </TouchableOpacity>
+                ))}
+                {!exactEnvironmentMatch ? (
+                  <TouchableOpacity onPress={handleCreateEnvironment} style={fs.optionRow}>
+                    <Ionicons name="add-circle-outline" size={16} color={theme.primary} />
+                    <Text style={[fs.optionText, { color: theme.primary }]}>
+                      {t("facial.setup.createEnvironment", { name: environmentQuery.trim() })}
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+            ) : null}
+
             <SelectField
               label={t("facial.setup.fields.instructor")}
-              value={instructorId}
+              value={selectedInstructorId}
               options={instructorOptions}
-              onSelect={setInstructorId}
-              placeholder={t("facial.setup.placeholders.instructor")}
+              onSelect={setSelectedInstructorId}
+              placeholder={loading ? t("common.loading") : t("facial.setup.placeholders.instructor")}
             />
             <SelectField
               label={t("facial.setup.fields.ficha")}
-              value={fichaId}
+              value={selectedChipId}
               options={fichaOptions}
-              onSelect={setFichaId}
-              placeholder={t("facial.setup.placeholders.ficha")}
+              onSelect={setSelectedChipId}
+              placeholder={
+                selectedInstructorId
+                  ? t("facial.setup.placeholders.ficha")
+                  : t("facial.setup.placeholders.instructorFirst")
+              }
             />
 
             <AppButton
@@ -165,8 +246,9 @@ export default function FacialManagementScreen() {
               style={{ marginTop: 16 }}
             />
             <AppButton
-              title={t("common.save")}
+              title={saving ? t("common.loading") : t("common.save")}
               onPress={handleSave}
+              disabled={!canSave}
               style={{ marginTop: 12 }}
             />
           </View>
@@ -187,6 +269,41 @@ const fs = StyleSheet.create({
   },
   title: { fontSize: FontSize.xl, fontWeight: FontWeight.black },
   scroll: { flexGrow: 1, padding: 16, paddingBottom: 40 },
+  heroCard: {
+    width: "100%",
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 18,
+    marginBottom: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+  },
+  heroIcon: { width: 58, height: 58, borderRadius: 16, alignItems: "center", justifyContent: "center" },
+  heroTitle: { fontSize: FontSize.xl, fontWeight: FontWeight.black },
+  heroSubtitle: { fontSize: FontSize.sm, marginTop: 4, lineHeight: 19 },
+  heroAction: { flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 12, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 10 },
+  heroActionText: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
+  contentGrid: { width: "100%", flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 16 },
+  summaryCard: {
+    flex: 1,
+    flexBasis: 330,
+    maxWidth: 470,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 20,
+    alignSelf: "stretch",
+  },
+  panelTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.black, marginBottom: 12 },
+  timerGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  timerTile: { flex: 1, minWidth: 92, borderRadius: 14, borderWidth: 1, padding: 12 },
+  timerValue: { fontSize: FontSize.lg, fontWeight: FontWeight.black },
+  timerLabel: { fontSize: FontSize.xs, marginTop: 4 },
+  summaryList: { gap: 10 },
+  summaryRow: { flexDirection: "row", alignItems: "center", gap: 10, borderWidth: 1, borderRadius: 13, padding: 12 },
+  summaryIcon: { width: 36, height: 36, borderRadius: 11, alignItems: "center", justifyContent: "center" },
+  summaryLabel: { fontSize: FontSize.xs, marginBottom: 2 },
+  summaryValue: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
   centerWrap: {
     flex: 1,
     alignItems: "center",
@@ -195,7 +312,8 @@ const fs = StyleSheet.create({
   },
   card: {
     width: "100%",
-    maxWidth: 420,
+    maxWidth: 460,
+    flexBasis: 420,
     borderRadius: 16,
     borderWidth: 1,
     padding: 24,
@@ -220,5 +338,24 @@ const fs = StyleSheet.create({
     fontSize: FontSize.sm,
     textAlign: "center",
     marginBottom: 20,
+  },
+  optionsBox: {
+    borderWidth: 1,
+    borderRadius: 12,
+    marginTop: -6,
+    marginBottom: 14,
+    overflow: "hidden",
+  },
+  optionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  optionText: {
+    flex: 1,
+    fontSize: FontSize.base,
+    fontWeight: FontWeight.bold,
   },
 });

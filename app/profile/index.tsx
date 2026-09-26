@@ -5,6 +5,7 @@
 // ─────────────────────────────────────────────
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
+import RoleTopbar from '@/shared/components/layout/RoleTopbar';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
@@ -24,7 +25,7 @@ type ProfileResponse = {
   role?: string | null;
 };
 
-function pickValue(...values: Array<string | undefined | null>): string {
+function pickValue(...values: (string | undefined | null)[]): string {
   return values.find((value) => typeof value === 'string' && value.trim().length > 0) ?? '';
 }
 
@@ -96,12 +97,8 @@ export default function ProfileScreen() {
 
   return (
     <View style={[ps.safe, { backgroundColor: bg }]}>
+      <RoleTopbar />
       <ScrollView contentContainerStyle={ps.scroll} showsVerticalScrollIndicator={false}>
-
-        <TouchableOpacity onPress={() => router.back()} style={ps.backBtn}>
-          <Ionicons name="arrow-back" size={20} color={text} />
-          <Text style={[ps.backText, { color: text }]}>{t('common.back')}</Text>
-        </TouchableOpacity>
 
         {/* ── Encabezado con avatar ── */}
         <View style={[ps.headerCard, { backgroundColor: headerBg, borderColor: border }]}>
@@ -186,9 +183,6 @@ export default function ProfileScreen() {
 const ps = StyleSheet.create({
   safe: { flex: 1 },
   scroll: { padding: 16, paddingBottom: 40 },
-
-  backBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 20 },
-  backText: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
 
   headerCard: {
     borderRadius: 22, borderWidth: 1, alignItems: 'center',

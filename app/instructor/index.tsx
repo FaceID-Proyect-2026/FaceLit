@@ -62,6 +62,11 @@ export default function InstructorDashboard() {
         || (program ? getProgramDisplayName(program, t).toLowerCase().includes(term) : false);
     });
   }, [allPrograms, assignedFichas, fichaSearch, t]);
+  const featuredFichas = fichaSearch.trim().length > 0 ? visibleFichas : assignedFichas.slice(0, 4);
+  const primaryProgram = assignedPrograms[0];
+  const programSummary = assignedPrograms.length > 0
+    ? getProgramDisplayName(primaryProgram, t)
+    : t("dashboard.noProgram");
   const activeLearners = useMemo(() => {
     const learnerIds = new Set<string>();
     assignedFichas.forEach(ficha => {
@@ -108,16 +113,32 @@ export default function InstructorDashboard() {
             <Text style={ads.welcomeKicker}>{t("dashboard.instructorTitle")}</Text>
             <Text style={ads.welcomeTitle}>{displayName}</Text>
             <Text style={ads.welcomeSubtitle}>{t("dashboard.instructorSubtitle")}</Text>
+            <View style={ads.welcomePills}>
+              <View style={ads.welcomePill}>
+                <Ionicons name="school-outline" size={14} color={Colors.white} />
+                <Text style={ads.welcomePillText}>{assignedFichas.length} fichas</Text>
+              </View>
+              <View style={ads.welcomePill}>
+                <Ionicons name="library-outline" size={14} color={Colors.white} />
+                <Text style={ads.welcomePillText} numberOfLines={1}>{programSummary}</Text>
+              </View>
+            </View>
           </View>
-          <Ionicons name="person-circle-outline" size={62} color="rgba(255,255,255,0.28)" />
+          <View style={ads.welcomeMark}>
+            <Ionicons name="person-circle-outline" size={68} color="rgba(255,255,255,0.42)" />
+          </View>
         </LinearGradient>
 
         <View style={ads.statsGrid}>
           {stats.map(stat => (
             <View key={stat.label} style={[ads.statCard, { backgroundColor: cardBg, borderColor: border }]}>
-              <Ionicons name={stat.icon as any} size={22} color={theme.primary} />
-              <Text style={[ads.statValue, { color: text }]}>{stat.value}</Text>
-              <Text style={[ads.statLabel, { color: muted }]}>{stat.label}</Text>
+              <View style={[ads.statIconWrap, { backgroundColor: theme.primary + "18" }]}>
+                <Ionicons name={stat.icon as any} size={21} color={theme.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[ads.statValue, { color: text }]}>{stat.value}</Text>
+                <Text style={[ads.statLabel, { color: muted }]}>{stat.label}</Text>
+              </View>
             </View>
           ))}
         </View>
@@ -145,7 +166,7 @@ export default function InstructorDashboard() {
           </View>
 
           <View style={ads.fichaList}>
-            {visibleFichas.map(ficha => {
+            {featuredFichas.map(ficha => {
               const program = allPrograms.find(item => item.id === ficha.programId);
               return (
                 <TouchableOpacity
@@ -168,7 +189,7 @@ export default function InstructorDashboard() {
               <Text style={[ads.emptyScope, { color: muted }]}>{t("dashboard.noAssignedFichas")}</Text>
             )}
             {assignedFichas.length > 0 && fichaSearch.trim().length === 0 && (
-              <Text style={[ads.emptyScope, { color: muted }]}>{t("dashboard.typeToSearchFicha")}</Text>
+              <Text style={[ads.emptyScope, { color: muted }]}>Mostrando tus fichas principales. Usa el buscador para filtrar por numero, codigo o programa.</Text>
             )}
             {assignedFichas.length > 0 && fichaSearch.trim().length > 0 && visibleFichas.length === 0 && (
               <Text style={[ads.emptyScope, { color: muted }]}>{t("dashboard.noFichasForSearch")}</Text>
@@ -205,10 +226,15 @@ const ads = StyleSheet.create({
   welcomeKicker: { color: "rgba(255,255,255,0.82)", fontSize: FontSize.sm, marginBottom: 4 },
   welcomeTitle: { color: Colors.white, fontSize: FontSize["2xl"], fontWeight: FontWeight.black },
   welcomeSubtitle: { color: "rgba(255,255,255,0.88)", fontSize: FontSize.sm, marginTop: 6, lineHeight: 19 },
+  welcomePills: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 14 },
+  welcomePill: { flexDirection: "row", alignItems: "center", gap: 6, maxWidth: 240, borderRadius: 999, paddingHorizontal: 11, paddingVertical: 7, backgroundColor: "rgba(0,0,0,0.16)" },
+  welcomePillText: { color: Colors.white, fontSize: FontSize.xs, fontWeight: FontWeight.bold },
+  welcomeMark: { width: 82, height: 82, borderRadius: 24, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.12)" },
   statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginBottom: 16 },
-  statCard: { flex: 1, minWidth: 150, borderRadius: 14, borderWidth: 1, padding: 16, alignItems: "center" },
-  statValue: { fontSize: FontSize["2xl"], fontWeight: FontWeight.black, marginTop: 8 },
-  statLabel: { fontSize: FontSize.sm, marginTop: 4, textAlign: "center" },
+  statCard: { flex: 1, minWidth: 190, borderRadius: 14, borderWidth: 1, padding: 16, flexDirection: "row", alignItems: "center", gap: 12 },
+  statIconWrap: { width: 42, height: 42, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+  statValue: { fontSize: FontSize["2xl"], fontWeight: FontWeight.black },
+  statLabel: { fontSize: FontSize.sm, marginTop: 2 },
   scopeCard: { borderRadius: 16, borderWidth: 1, padding: 16, marginBottom: 20 },
   scopeHeader: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 },
   scopeIcon: { width: 46, height: 46, borderRadius: 13, alignItems: "center", justifyContent: "center" },
@@ -222,8 +248,8 @@ const ads = StyleSheet.create({
   fichaChipMeta: { fontSize: FontSize.xs, marginTop: 2 },
   emptyScope: { fontSize: FontSize.sm, textAlign: "center", paddingVertical: 14 },
   sectionTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, marginBottom: 12 },
-  quickGrid: { gap: 12, marginBottom: 24 },
-  quickCard: { flexDirection: "row", alignItems: "center", gap: 14, borderRadius: 14, borderWidth: 1, padding: 16 },
+  quickGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginBottom: 24 },
+  quickCard: { flexGrow: 1, flexBasis: 260, flexDirection: "row", alignItems: "center", gap: 14, borderRadius: 14, borderWidth: 1, padding: 16 },
   quickIconWrap: { width: 44, height: 44, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   quickLabel: { flex: 1, fontSize: FontSize.base, fontWeight: FontWeight.bold },
 });

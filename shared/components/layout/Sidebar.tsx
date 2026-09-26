@@ -9,8 +9,11 @@ import { useAuth } from "@/shared/contexts/AuthContext";
 import { useTheme } from "@/shared/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { router, usePathname } from "expo-router";
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
+    Animated,
+    Easing,
     ScrollView,
     StyleSheet,
     Text,
@@ -35,6 +38,28 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const pathname = usePathname();
+  const slideAnim = useRef(new Animated.Value(-320)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!isOpen) return;
+    slideAnim.setValue(-320);
+    opacityAnim.setValue(0);
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 260,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacityAnim, {
+        toValue: 1,
+        duration: 220,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [isOpen, opacityAnim, slideAnim]);
 
   if (!isOpen) return null;
 
@@ -193,19 +218,30 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   };
 
   return (
-    <View style={[ss.overlay, { backgroundColor: "rgba(0,0,0,0.5)" }]}>
+    <View style={ss.overlay}>
       <TouchableOpacity
         style={StyleSheet.absoluteFill}
         onPress={onClose}
         activeOpacity={1}
       />
-      <View
-        style={[ss.sidebar, { backgroundColor: bg, borderRightColor: border }]}
+      <Animated.View style={[ss.backdrop, { opacity: opacityAnim }]} pointerEvents="none" />
+      <Animated.View
+        style={[
+          ss.sidebar,
+          {
+            backgroundColor: bg,
+            borderRightColor: border,
+            transform: [{ translateX: slideAnim }],
+          },
+        ]}
       >
         {/* Header */}
         <View style={[ss.header, { borderBottomColor: border }]}>
-          <Text style={[ss.logo, { color: theme.primary }]}>FaceLit</Text>
-          <TouchableOpacity onPress={onClose} style={ss.closeBtn}>
+          <View>
+            <Text style={[ss.logo, { color: theme.primary }]}>FaceLit</Text>
+            <Text style={[ss.logoMeta, { color: muted }]}>Panel de navegacion</Text>
+          </View>
+          <TouchableOpacity onPress={onClose} style={[ss.closeBtn, { backgroundColor: activeBg }]}>
             <Ionicons name="close" size={22} color={muted} />
           </TouchableOpacity>
         </View>
@@ -230,43 +266,50 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         {/* Menu items */}
         <ScrollView style={ss.menuScroll} showsVerticalScrollIndicator={false}>
-          {menu.map((item) => (
-            <TouchableOpacity
-              key={item.route}
-              onPress={() => {
-                router.push(item.route as any);
-                onClose();
-              }}
-              style={[
-                ss.menuItem,
-                {
-                  backgroundColor: isActive(item.route)
-                    ? activeBg
-                    : "transparent",
-                },
-              ]}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name={item.icon as any}
-                size={20}
-                color={isActive(item.route) ? theme.primary : muted}
-              />
-              <Text
+          {menu.map((item, index) => {
+            const active = isActive(item.route);
+            return (
+              <TouchableOpacity
+                key={item.route}
+                onPress={() => {
+                  router.push(item.route as any);
+                  onClose();
+                }}
                 style={[
-                  ss.menuLabel,
+                  ss.menuItem,
                   {
-                    color: isActive(item.route) ? theme.primary : text,
-                    fontWeight: isActive(item.route)
-                      ? FontWeight.bold
-                      : FontWeight.medium,
+                    backgroundColor: active ? activeBg : "transparent",
+                    borderColor: active ? theme.primary + "35" : "transparent",
+                    marginTop: index === 0 ? 4 : 2,
                   },
                 ]}
+                activeOpacity={0.68}
               >
-                {item.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                {active && <View style={[ss.activeRail, { backgroundColor: theme.primary }]} />}
+                <View style={[ss.menuIconWrap, { backgroundColor: active ? theme.primary + "18" : "transparent" }]}>
+                  <Ionicons
+                    name={item.icon as any}
+                    size={21}
+                    color={active ? theme.primary : muted}
+                  />
+                </View>
+                <Text
+                  style={[
+                    ss.menuLabel,
+                    {
+                      color: active ? theme.primary : text,
+                      fontWeight: active
+                        ? FontWeight.bold
+                        : FontWeight.medium,
+                    },
+                  ]}
+                >
+                  {item.label}
+                </Text>
+                <Ionicons name="chevron-forward" size={16} color={active ? theme.primary : "transparent"} />
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
 
         {/* Logout */}
@@ -280,7 +323,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             {t("sidebar.logout")}
           </Text>
         </TouchableOpacity>
-      </View>
+      </Animated.View>
     </View>
   );
 }
@@ -295,10 +338,23 @@ const ss = StyleSheet.create({
     zIndex: 100,
     flexDirection: "row",
   },
+  backdrop: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.56)",
+  },
   sidebar: {
-    width: 280,
+    width: 292,
     height: "100%",
     borderRightWidth: 1,
+    shadowColor: "#000",
+    shadowOpacity: 0.35,
+    shadowRadius: 18,
+    shadowOffset: { width: 8, height: 0 },
+    elevation: 12,
   },
   header: {
     flexDirection: "row",
@@ -309,12 +365,13 @@ const ss = StyleSheet.create({
     borderBottomWidth: 1,
   },
   logo: { fontSize: FontSize["2xl"], fontWeight: FontWeight.black },
-  closeBtn: { padding: 4 },
+  logoMeta: { fontSize: FontSize.xs, marginTop: 2, fontWeight: FontWeight.medium },
+  closeBtn: { width: 36, height: 36, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   userSection: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    paddingHorizontal: 20,
+    paddingHorizontal: 18,
     paddingVertical: 16,
     borderBottomWidth: 1,
   },
@@ -333,18 +390,21 @@ const ss = StyleSheet.create({
   userInfo: { flex: 1 },
   userName: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
   userRole: { fontSize: FontSize.sm, marginTop: 2 },
-  menuScroll: { flex: 1, paddingVertical: 8 },
+  menuScroll: { flex: 1, paddingVertical: 12, paddingHorizontal: 10 },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    marginHorizontal: 8,
-    borderRadius: 10,
-    marginBottom: 2,
+    gap: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 11,
+    borderRadius: 14,
+    marginBottom: 6,
+    borderWidth: 1,
+    overflow: "hidden",
   },
-  menuLabel: { fontSize: FontSize.base },
+  activeRail: { position: "absolute", left: 0, top: 10, bottom: 10, width: 4, borderTopRightRadius: 4, borderBottomRightRadius: 4 },
+  menuIconWrap: { width: 38, height: 38, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+  menuLabel: { flex: 1, fontSize: FontSize.base },
   logoutBtn: {
     flexDirection: "row",
     alignItems: "center",

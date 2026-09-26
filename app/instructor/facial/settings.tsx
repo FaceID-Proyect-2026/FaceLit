@@ -20,6 +20,7 @@ import {
 import { useFacialRegistry } from '@/features/facial/useFacialRegistry';
 import { AppButton, SelectField } from '@/shared/components/ui';
 import { Colors } from '@/shared/constants/colors';
+import { Routes } from '@/shared/constants/routes';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
@@ -58,6 +59,14 @@ export default function FacialSettingsScreen() {
     .filter(slot => !exitTime || slot > exitTime)
     .map(slot => ({ value: slot, label: slot }));
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace(Routes.INSTRUCTOR.FACIAL as any);
+  };
+
   const handleSave = () => {
     const newErrors: typeof errors = {};
     if (!registrationMinutes) newErrors.registrationMinutes = t('common.required');
@@ -89,7 +98,7 @@ export default function FacialSettingsScreen() {
       {/* Header con flecha propia: regresa a la pantalla de configuración
           de sesión (facial/index), no al menú principal ni al dashboard. */}
       <View style={fs.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={handleBack}>
           <Ionicons name="arrow-back" size={22} color={text} />
         </TouchableOpacity>
         <View style={{ flex: 1, marginLeft: 8 }}>
@@ -103,6 +112,15 @@ export default function FacialSettingsScreen() {
       <ScrollView contentContainerStyle={fs.scroll}>
         <View style={fs.centerWrap}>
           <View style={[fs.card, { backgroundColor: cardBg, borderColor: border }]}>
+            <View style={fs.cardHeader}>
+              <View style={[fs.cardIcon, { backgroundColor: theme.primary + '18' }]}>
+                <Ionicons name="options-outline" size={24} color={theme.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[fs.formTitle, { color: text }]}>Ajustes de reconocimiento</Text>
+                <Text style={[fs.formSubtitle, { color: muted }]}>Configura los tiempos de registro de la jornada.</Text>
+              </View>
+            </View>
             <SelectField
               label={t('facial.settings.fields.registrationMinutes')}
               value={registrationMinutes}
@@ -154,10 +172,14 @@ const fs = StyleSheet.create({
   centerWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 420 },
   card: {
     width: '100%',
-    maxWidth: 420,
+    maxWidth: 500,
     borderRadius: 16,
     borderWidth: 1,
     padding: 24,
     alignItems: 'stretch',
   },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 },
+  cardIcon: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  formTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.black },
+  formSubtitle: { fontSize: FontSize.sm, marginTop: 4, lineHeight: 18 },
 });
