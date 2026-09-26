@@ -1,0 +1,79 @@
+// ─────────────────────────────────────────────
+//  app/apprentice/_layout.tsx
+//  Layout aprendiz con sidebar
+// ─────────────────────────────────────────────
+import Sidebar from '@/shared/components/layout/Sidebar';
+import { LanguageSelector, ThemeToggle } from '@/shared/components/ui';
+import { Colors } from '@/shared/constants/colors';
+import { FontSize, FontWeight } from '@/shared/constants/typography';
+import { useAuth } from '@/shared/contexts/AuthContext';
+import { useTheme } from '@/shared/contexts/ThemeContext';
+import { useAuthGuard } from '@/shared/hooks/useAuthGuard';
+import { useNotifications } from '@/features/notifications/useNotifications';
+import { Ionicons } from '@expo/vector-icons';
+import { Stack, router } from 'expo-router';
+import { useState } from 'react';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+export default function ApprenticeLayout() {
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { theme, isDark } = useTheme();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { canRenderContent } = useAuthGuard(isAuthenticated, '/auth/login', authLoading);
+  const { unreadCount } = useNotifications({ recipientUserId: user?.id });
+
+  if (!canRenderContent) {
+    return (
+      <SafeAreaView style={[al.safe, { backgroundColor: isDark ? Colors.dark.background : Colors.light.background }]}>
+        <View style={al.loadingContainer}><ActivityIndicator size="large" color={theme.primary} /></View>
+      </SafeAreaView>
+    );
+  }
+
+  const text = isDark ? Colors.dark.text : Colors.light.text;
+  const headerBg = isDark ? Colors.dark.surface : Colors.light.surface;
+  const border = isDark ? Colors.dark.border : Colors.light.border;
+  const bg = isDark ? Colors.dark.background : Colors.light.background;
+
+  return (
+    <SafeAreaView style={[al.safe, { backgroundColor: bg }]} edges={['top']}>
+      <View style={[al.header, { backgroundColor: headerBg, borderBottomColor: border }]}>
+        <View style={al.headerLeft}>
+          <TouchableOpacity onPress={() => setSidebarOpen(!sidebarOpen)} style={al.menuBtn}>
+            <Ionicons name={sidebarOpen ? 'close' : 'menu'} size={22} color={text} />
+          </TouchableOpacity>
+          <Text style={[al.headerTitle, { color: theme.primary }]}>FaceLit</Text>
+        </View>
+        <View style={al.headerRight}>
+          <LanguageSelector />
+          <ThemeToggle />
+          <TouchableOpacity onPress={() => router.push('/notifications' as any)} style={al.iconBtn}>
+            <Ionicons name="notifications-outline" size={20} color={text} />
+            {unreadCount > 0 && <View style={[al.notificationBadge, { backgroundColor: theme.primary }]} />}
+          </TouchableOpacity>
+        </View>
+      </View>
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="attendance" />
+        <Stack.Screen name="facial" />
+        <Stack.Screen name="transfer-request" />
+        <Stack.Screen name="join-ficha" />
+      </Stack>
+    </SafeAreaView>
+  );
+}
+
+const al = StyleSheet.create({
+  safe: { flex: 1 },
+  loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1 },
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  menuBtn: { padding: 4 },
+  headerTitle: { fontSize: FontSize.xl, fontWeight: FontWeight.black },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  iconBtn: { padding: 6 },
+  notificationBadge: { position: 'absolute', top: 4, right: 4, width: 7, height: 7, borderRadius: 4 },
+});

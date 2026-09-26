@@ -1,0 +1,446 @@
+import { api } from '@/shared/services/api';
+import type { Ficha, Instructor, Learner, Program } from './types';
+
+// ─── Tipos de respuesta del backend ──────────
+type BackendProgram = {
+  idProgram: string;
+  programName: string;
+  programCode: string;
+  state: 'ACTIVE' | 'INACTIVE';
+  deactivationReason?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  chips?: BackendChip[];
+};
+
+type BackendChip = {
+  idChip: string;
+  idProgram: string;
+  chipCode: string;
+  state: 'ACTIVE' | 'INACTIVE';
+  deactivationReason?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+};
+
+// ─── InstructorResponseDTO del backend ───────
+// El backend devuelve: idInstructor, idUser, firstName, lastName,
+// document, email, instructorType, programIds, programNames
+type BackendInstructor = {
+  idInstructor: string;
+  idUser: string;
+  firstName: string;
+  lastName: string;
+  document: string;
+  email: string;
+  instructorType: 'ESPECIFICO' | 'TRANSVERSAL';
+  status?: 'ACTIVE' | 'INACTIVE';
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  programIds: string[];
+  programNames?: string[];
+};
+
+// ─── UserChipResponseDTO del backend ─────────
+// El backend devuelve: idUserChip, idUser, idChip, chipCode,
+// firstName, lastName, document, email, state, assignmentDate
+type BackendUserChip = {
+  idUserChip: string;
+  idUser: string;
+  idChip: string;
+  chipCode?: string;
+  idProgram?: string;
+  programName?: string;
+  programCode?: string;
+  programState?: 'ACTIVE' | 'INACTIVE';
+  chipState?: 'ACTIVE' | 'INACTIVE';
+  firstName: string;
+  lastName: string;
+  document: string;
+  email: string;
+  state: 'ACTIVE' | 'INACTIVE';
+  assignmentDate: string;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+};
+
+const toLearner = (learner: BackendUserChip): Learner => ({
+  id: learner.idUser,
+  name: learner.firstName ?? '',
+  lastname: learner.lastName ?? '',
+  document: learner.document ?? '',
+  email: learner.email ?? '',
+  role: 'aprendiz',
+  status: learner.state === 'ACTIVE' ? 'active' : 'inactive',
+  validationStatus: 'validated',
+  initialPassword: null,
+  createdAt: learner.createdAt ?? learner.assignmentDate,
+  updatedAt: learner.updatedAt ?? learner.createdAt ?? learner.assignmentDate,
+  documentChangeLog: [],
+});
+
+const toInstructor = (instructor: BackendInstructor, fichas: Ficha[]): Instructor => ({
+  id: instructor.idInstructor,
+  userId: instructor.idUser,
+  name: instructor.firstName ?? '',
+  lastname: instructor.lastName ?? '',
+  document: instructor.document ?? '',
+  email: instructor.email ?? '',
+  instructorType: instructor.instructorType === 'ESPECIFICO' ? 'especifico' : 'transversal',
+  programId: instructor.programIds?.[0],
+  programIds: instructor.programIds ?? [],
+  fichaIds: fichas.filter(ficha => instructor.programIds?.includes(ficha.programId)).map(ficha => ficha.id),
+  status: instructor.status === 'INACTIVE' ? 'inactive' : 'active',
+  initialPassword: null,
+  createdAt: instructor.createdAt ?? '',
+  updatedAt: instructor.updatedAt ?? instructor.createdAt ?? '',
+});
+
+const toProgram = (program: BackendProgram): Program => ({
+  id: program.idProgram,
+  name: program.programName,
+  code: program.programCode,
+  status: program.state.toLowerCase() as Program['status'],
+  fichas: [],
+  instructorIds: [],
+  createdAt: program.createdAt ?? '',
+  updatedAt: program.updatedAt ?? program.createdAt ?? '',
+});
+
+const toFicha = (chip: BackendChip, learners: Learner[] = []): Ficha => ({
+  id: chip.idChip,
+  number: chip.chipCode,
+  status: chip.state.toLowerCase() as Ficha['status'],
+  programId: chip.idProgram,
+  code: chip.chipCode,
+  transferCode: '',
+  learners,
+  createdAt: chip.createdAt ?? '',
+  updatedAt: chip.updatedAt ?? chip.createdAt ?? '',
+});
+
+async function fetchLearnersByChips(rawChips: BackendChip[], params: Record<string, unknown>) {
+  if (rawChips.length === 0) return new Map<string, Learner[]>();
+
+  try {
+    const { data } = await api.get<BackendUserChip[]>('/api/academic/chips/apprentices', {
+      params: {
+        ...params,
+        ids: rawChips.map(chip => chip.idChip).join(','),
+      },
+    });
+
+    const learnersMap = new Map<string, Learner[]>();
+    rawChips.forEach(chip => learnersMap.set(chip.idChip, []));
+    data.forEach(item => {
+      const chipId = item.idChip;
+      learnersMap.set(chipId, [...(learnersMap.get(chipId) ?? []), toLearner(item)]);
+    });
+    return learnersMap;
+  } catch (error: any) {
+    if (error?.response?.status !== 404) throw error;
+    return fetchLearnersByChipsLegacy(rawChips, params);
+  }
+}
+
+async function fetchLearnersByChipsLegacy(rawChips: BackendChip[], params: Record<string, unknown>) {
+  const learnersMap = new Map<string, Learner[]>();
+  const concurrency = 4;
+
+  for (let i = 0; i < rawChips.length; i += concurrency) {
+    const batch = rawChips.slice(i, i + concurrency);
+    const learnersByChip = await Promise.all(
+      batch.map(async chip => {
+        const { data } = await api.get<BackendUserChip[]>(
+          `/api/academic/chips/${chip.idChip}/apprentices`,
+          { params },
+        );
+        return [chip.idChip, data.map(toLearner)] as const;
+      }),
+    );
+    learnersByChip.forEach(([chipId, learners]) => learnersMap.set(chipId, learners));
+  }
+
+  return learnersMap;
+}
+
+export async function fetchAcademicSnapshot() {
+  // Cada snapshot debe reflejar el estado posterior a una mutacion o carga CSV.
+  // El query param evita que el navegador reutilice una respuesta GET anterior.
+  const cacheBust = Date.now();
+  const freshParams = { _refresh: cacheBust };
+  const [{ data: rawPrograms }, { data: rawInstructors }] = await Promise.all([
+    api.get<BackendProgram[]>('/api/academic/programs', { params: freshParams }),
+    api.get<BackendInstructor[]>('/api/academic/instructors', { params: freshParams }),
+  ]);
+
+  const rawChips = rawPrograms.flatMap(program => program.chips ?? []);
+  const learnersMap = await fetchLearnersByChips(rawChips, freshParams);
+  const fichas = rawChips.map(chip => toFicha(chip, learnersMap.get(chip.idChip) ?? []));
+
+  const instructors: Instructor[] = rawInstructors.map(instructor => toInstructor(instructor, fichas));
+
+  const programs = rawPrograms.map(program => ({
+    ...toProgram(program),
+    fichas: fichas.filter(ficha => ficha.programId === program.idProgram).map(ficha => ficha.id),
+    instructorIds: instructors
+      .filter(instructor => rawInstructors.find(raw => raw.idInstructor === instructor.id)?.programIds?.includes(program.idProgram))
+      .map(instructor => instructor.id),
+  }));
+
+  return { programs, fichas, instructors };
+}
+
+async function fetchInstructorAcademicSnapshot() {
+  const freshParams = { _refresh: Date.now() };
+  const { data: rawInstructor } = await api.get<BackendInstructor>('/api/academic/me/instructor', {
+    params: freshParams,
+  });
+  const rawPrograms = await Promise.all(
+    (rawInstructor.programIds ?? []).map(async idProgram => {
+      const { data } = await api.get<BackendProgram>(`/api/academic/programs/${idProgram}`, { params: freshParams });
+      return data;
+    }),
+  );
+  const rawChips = rawPrograms.flatMap(program => program.chips ?? []);
+  const learnersMap = await fetchLearnersByChips(rawChips, freshParams);
+  const fichas = rawChips.map(chip => toFicha(chip, learnersMap.get(chip.idChip) ?? []));
+  const instructor = toInstructor(rawInstructor, fichas);
+  const programs = rawPrograms.map(program => ({
+    ...toProgram(program),
+    fichas: fichas.filter(ficha => ficha.programId === program.idProgram).map(ficha => ficha.id),
+    instructorIds: [instructor.id],
+  }));
+  return { programs, fichas, instructors: [instructor] };
+}
+
+async function fetchApprenticeAcademicSnapshot() {
+  try {
+    const { data } = await api.get<BackendUserChip>('/api/academic/me/chip', {
+      params: { _refresh: Date.now() },
+    });
+    if (!data.idProgram) return { programs: [], fichas: [], instructors: [] };
+    const learner = toLearner(data);
+    const ficha: Ficha = {
+      id: data.idChip,
+      number: data.chipCode ?? '',
+      status: data.chipState === 'INACTIVE' ? 'inactive' : 'active',
+      programId: data.idProgram,
+      code: data.chipCode ?? '',
+      transferCode: '',
+      learners: [learner],
+      createdAt: data.assignmentDate,
+      updatedAt: data.assignmentDate,
+    };
+    const program: Program = {
+      id: data.idProgram,
+      name: data.programName ?? data.programCode ?? '',
+      code: data.programCode ?? '',
+      status: data.programState === 'INACTIVE' ? 'inactive' : 'active',
+      fichas: [ficha.id],
+      instructorIds: [],
+      createdAt: '',
+      updatedAt: '',
+    };
+    return { programs: [program], fichas: [ficha], instructors: [] };
+  } catch (error: any) {
+    if (error?.response?.status === 400 || error?.response?.status === 404) {
+      return { programs: [], fichas: [], instructors: [] };
+    }
+    throw error;
+  }
+}
+
+export function fetchAcademicSnapshotForRole(role?: string | null) {
+  if (role === 'INSTRUCTOR') return fetchInstructorAcademicSnapshot();
+  if (role === 'APPRENTICE') return fetchApprenticeAcademicSnapshot();
+  return fetchAcademicSnapshot();
+}
+
+export async function createProgram(programName: string, programCode: string) {
+  const { data } = await api.post<BackendProgram>('/api/academic/programs', { programName, programCode });
+  return toProgram(data);
+}
+
+export async function updateProgram(id: string, programName: string, programCode: string) {
+  const { data } = await api.put<BackendProgram>(`/api/academic/programs/${id}`, { programName, programCode });
+  return toProgram(data);
+}
+
+export async function searchProgramsByName(name: string) {
+  const { data } = await api.get<BackendProgram[]>('/api/academic/programs/search', { params: { name } });
+  return data.map(toProgram);
+}
+
+export async function findProgramByCode(code: string) {
+  const { data } = await api.get<BackendProgram>(`/api/academic/programs/code/${encodeURIComponent(code)}`);
+  return toProgram(data);
+}
+
+export async function createFicha(idProgram: string, chipCode: string) {
+  const { data } = await api.post<BackendChip>(`/api/academic/programs/${idProgram}/chips`, { idProgram, chipCode });
+  return toFicha(data);
+}
+
+export async function updateFicha(id: string, idProgram: string, chipCode: string) {
+  const { data } = await api.put<BackendChip>(`/api/academic/chips/${id}`, { idProgram, chipCode });
+  return toFicha(data);
+}
+
+export async function searchFichasByCode(code: string) {
+  const { data } = await api.get<BackendChip[]>('/api/academic/chips/search', { params: { code } });
+  return data.map(chip => toFicha(chip));
+}
+
+export async function fetchChangeHistory(entityName: string, entityId: string) {
+  const { data } = await api.get('/api/academic/change-history', { params: { entityName, entityId } });
+  return data;
+}
+
+export async function setProgramLifecycle(id: string, action: 'reactivate' | 'delete') {
+  const path = action === 'reactivate'
+    ? `/api/academic/programs/${id}/reactivate`
+    : `/api/academic/programs/${id}`;
+  const { data } = action === 'reactivate'
+    ? await api.patch<BackendProgram>(path)
+    : await api.delete<BackendProgram>(path);
+  return toProgram(data);
+}
+
+export async function setFichaLifecycle(id: string, action: 'reactivate' | 'delete') {
+  const path = action === 'reactivate'
+    ? `/api/academic/chips/${id}/reactivate`
+    : `/api/academic/chips/${id}`;
+  const { data } = action === 'reactivate'
+    ? await api.patch<BackendChip>(path)
+    : await api.delete<BackendChip>(path);
+  return toFicha(data);
+}
+
+export async function transferLearner(idUser: string, idNewChip: string) {
+  const { data } = await api.post(`/api/academic/users/${idUser}/chip/transfer`, { idNewChip });
+  return data;
+}
+
+export async function uploadAcademicCsv(file: { uri: string; name: string } | Blob) {
+  const form = new FormData();
+  const fileName = file instanceof Blob ? 'carga-academica.csv' : file.name;
+  const filePayload = file instanceof Blob
+    ? file
+    : ({ uri: file.uri, name: file.name, type: 'text/csv' } as any);
+
+  // El backend no siempre usa el mismo nombre de campo en multipart.
+  // Enviamos varias claves compatibles para evitar 500 por campo perdido.
+  if (file instanceof Blob) {
+    form.append('file', filePayload as Blob, fileName);
+  } else {
+    form.append('file', filePayload as any);
+  }
+
+  // ⚠️ NO pasar Content-Type manualmente — axios lo genera con el boundary
+  //    correcto cuando detecta FormData. Sobreescribirlo rompe el multipart.
+  // La carga de CSV puede demorar más de 15s porque el backend valida filas,
+  // referencias y actualizaciones masivas.
+  const { data } = await api.post('/api/academic/csv/upload', form, {
+    timeout: 180000,
+    headers: { Accept: 'application/json' },
+  });
+  return data;
+}
+
+export async function downloadAcademicTemplate() {
+  const { data } = await api.get('/api/academic/csv/template', { responseType: 'blob' });
+  return data;
+}
+
+export async function fetchInstructors(params: {
+  document?: string;
+  name?: string;
+  type?: string;
+} = {}) {
+  const { data } = await api.get<BackendInstructor[]>('/api/academic/instructors/search', { params });
+  return data;
+}
+
+// ─── Crear instructor — datos personales ────────────────────────────────────
+// El backend crea el usuario si no existe, o reutiliza si ya existe.
+// InstructorRequestDTO acepta: document, name, lastname, email, instructorType, programIds
+export async function createInstructor(payload: {
+  document: string;
+  name: string;
+  lastname: string;
+  email: string;
+  instructorType: 'ESPECIFICO' | 'TRANSVERSAL';
+  programIds: string[];
+}) {
+  const { data } = await api.post<BackendInstructor>('/api/academic/instructors', payload);
+  return data;
+}
+
+export async function updateInstructor(id: string, payload: {
+  instructorType: 'ESPECIFICO' | 'TRANSVERSAL';
+  programIds: string[];
+}) {
+  const { data } = await api.put<BackendInstructor>(`/api/academic/instructors/${id}`, payload);
+  return data;
+}
+
+export async function deleteInstructor(id: string) {
+  return api.delete(`/api/academic/instructors/${id}`);
+}
+
+export async function reactivateInstructor(id: string) {
+  const { data } = await api.patch<BackendInstructor>(`/api/academic/instructors/${id}/reactivate`);
+  return data;
+}
+
+export async function fetchEligibleInstructors(idProgram: string) {
+  const { data } = await api.get<BackendInstructor[]>('/api/academic/instructors/eligible', {
+    params: { idProgram },
+  });
+  return data;
+}
+
+export type BackendPendingTransfer = {
+  idPendingTransfer: string;
+  idUser: string;
+  fila: number;
+  aprendiz: string;
+  fichaActual: string;
+  fichaPropuesta: string;
+  status: 'PENDING' | 'ACCEPTED' | 'CANCELLED';
+};
+
+export async function fetchPendingTransfers() {
+  const { data } = await api.get<BackendPendingTransfer[]>('/api/academic/csv/pending-transfers');
+  return data;
+}
+
+export async function acceptPendingTransfer(id: string) {
+  return api.post(`/api/academic/csv/pending-transfers/${id}/accept`);
+}
+
+export async function cancelPendingTransfer(id: string) {
+  return api.post(`/api/academic/csv/pending-transfers/${id}/cancel`);
+}
+
+// ─── Asignar aprendiz a ficha — datos personales ────────────────────────────
+// El backend crea el usuario si no existe, o reutiliza si ya existe.
+// UserChipRequestDTO acepta: document, name, lastname, email
+export async function assignApprentice(idChip: string, payload: {
+  document: string;
+  name: string;
+  lastname: string;
+  email: string;
+}) {
+  return api.post<BackendUserChip>(`/api/academic/chips/${idChip}/apprentices`, payload);
+}
+
+export async function fetchActiveChip(idUser: string) {
+  const { data } = await api.get(`/api/academic/users/${idUser}/chip`);
+  return data;
+}
+
+export async function transferApprentice(idUser: string, idNewChip: string) {
+  return api.post(`/api/academic/users/${idUser}/chip/transfer`, { idNewChip });
+}
