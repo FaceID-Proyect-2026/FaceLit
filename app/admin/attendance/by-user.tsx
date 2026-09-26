@@ -183,7 +183,7 @@ export default function AttendanceByUserScreen({ allowedFichaIds }: { allowedFic
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[s.resultName, { color: text }]}>{r.name}</Text>
-              <Text style={[s.resultDoc,  { color: muted }]}>{r.document} - Ficha {r.fichaNumber}</Text>
+              <Text style={[s.resultDoc,  { color: muted }]}>{r.document} - {t('academic.ficha')} {r.fichaNumber}</Text>
             </View>
             {selectedLearner?.learnerId === r.learnerId && (
               <Ionicons name="checkmark-circle" size={18} color={theme.primary} />
@@ -204,7 +204,7 @@ export default function AttendanceByUserScreen({ allowedFichaIds }: { allowedFic
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[s.learnerName, { color: text }]}>{selectedLearner.name}</Text>
-              <Text style={[s.learnerDoc,  { color: muted }]}>{selectedLearner.document} - Ficha {selectedLearner.fichaNumber}</Text>
+              <Text style={[s.learnerDoc,  { color: muted }]}>{selectedLearner.document} - {t('academic.ficha')} {selectedLearner.fichaNumber}</Text>
             </View>
           </View>
 
@@ -215,7 +215,7 @@ export default function AttendanceByUserScreen({ allowedFichaIds }: { allowedFic
                 label={t('reports.filters.dateFrom')}
                 value={dateFrom}
                 onChange={setByUserDateFrom}
-                placeholder="AAAA-MM-DD"
+                placeholder="YYYY-MM-DD"
                 containerStyle={s.noMargin}
               />
             </View>
@@ -228,7 +228,7 @@ export default function AttendanceByUserScreen({ allowedFichaIds }: { allowedFic
                 value={dateTo}
                 onChange={setByUserDateTo}
                 minDate={dateFrom || undefined}
-                placeholder="AAAA-MM-DD"
+                placeholder="YYYY-MM-DD"
                 containerStyle={s.noMargin}
               />
             </View>

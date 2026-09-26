@@ -10,6 +10,7 @@ type BackendProgram = {
   deactivationReason?: string | null;
   createdAt?: string | null;
   updatedAt?: string | null;
+  chips?: BackendChip[];
 };
 
 type BackendChip = {
@@ -118,36 +119,65 @@ const toFicha = (chip: BackendChip, learners: Learner[] = []): Ficha => ({
   updatedAt: chip.updatedAt ?? chip.createdAt ?? '',
 });
 
+async function fetchLearnersByChips(rawChips: BackendChip[], params: Record<string, unknown>) {
+  if (rawChips.length === 0) return new Map<string, Learner[]>();
+
+  try {
+    const { data } = await api.get<BackendUserChip[]>('/api/academic/chips/apprentices', {
+      params: {
+        ...params,
+        ids: rawChips.map(chip => chip.idChip).join(','),
+      },
+    });
+
+    const learnersMap = new Map<string, Learner[]>();
+    rawChips.forEach(chip => learnersMap.set(chip.idChip, []));
+    data.forEach(item => {
+      const chipId = item.idChip;
+      learnersMap.set(chipId, [...(learnersMap.get(chipId) ?? []), toLearner(item)]);
+    });
+    return learnersMap;
+  } catch (error: any) {
+    if (error?.response?.status !== 404) throw error;
+    return fetchLearnersByChipsLegacy(rawChips, params);
+  }
+}
+
+async function fetchLearnersByChipsLegacy(rawChips: BackendChip[], params: Record<string, unknown>) {
+  const learnersMap = new Map<string, Learner[]>();
+  const concurrency = 4;
+
+  for (let i = 0; i < rawChips.length; i += concurrency) {
+    const batch = rawChips.slice(i, i + concurrency);
+    const learnersByChip = await Promise.all(
+      batch.map(async chip => {
+        const { data } = await api.get<BackendUserChip[]>(
+          `/api/academic/chips/${chip.idChip}/apprentices`,
+          { params },
+        );
+        return [chip.idChip, data.map(toLearner)] as const;
+      }),
+    );
+    learnersByChip.forEach(([chipId, learners]) => learnersMap.set(chipId, learners));
+  }
+
+  return learnersMap;
+}
+
 export async function fetchAcademicSnapshot() {
   // Cada snapshot debe reflejar el estado posterior a una mutacion o carga CSV.
   // El query param evita que el navegador reutilice una respuesta GET anterior.
   const cacheBust = Date.now();
   const freshParams = { _refresh: cacheBust };
-  const { data: rawPrograms } = await api.get<BackendProgram[]>('/api/academic/programs', {
-    params: freshParams,
-  });
-  const fichas: Ficha[] = [];
+  const [{ data: rawPrograms }, { data: rawInstructors }] = await Promise.all([
+    api.get<BackendProgram[]>('/api/academic/programs', { params: freshParams }),
+    api.get<BackendInstructor[]>('/api/academic/instructors', { params: freshParams }),
+  ]);
 
-  for (const program of rawPrograms) {
-    const { data: rawChips } = await api.get<BackendChip[]>(
-      `/api/academic/programs/${program.idProgram}/chips`,
-      { params: freshParams },
-    );
-    for (const chip of rawChips) {
-      const { data: rawLearners } = await api.get<BackendUserChip[]>(
-        `/api/academic/chips/${chip.idChip}/apprentices`,
-        { params: freshParams },
-      );
-      // UserChipResponseDTO ya incluye firstName, lastName, document, email
-      const learners = rawLearners.map(toLearner);
-      fichas.push(toFicha(chip, learners));
-    }
-  }
+  const rawChips = rawPrograms.flatMap(program => program.chips ?? []);
+  const learnersMap = await fetchLearnersByChips(rawChips, freshParams);
+  const fichas = rawChips.map(chip => toFicha(chip, learnersMap.get(chip.idChip) ?? []));
 
-  // InstructorResponseDTO ya incluye firstName, lastName, document, email
-  const { data: rawInstructors } = await api.get<BackendInstructor[]>('/api/academic/instructors', {
-    params: freshParams,
-  });
   const instructors: Instructor[] = rawInstructors.map(instructor => toInstructor(instructor, fichas));
 
   const programs = rawPrograms.map(program => ({
@@ -172,20 +202,9 @@ async function fetchInstructorAcademicSnapshot() {
       return data;
     }),
   );
-  const fichas: Ficha[] = [];
-  for (const program of rawPrograms) {
-    const { data: rawChips } = await api.get<BackendChip[]>(
-      `/api/academic/programs/${program.idProgram}/chips`,
-      { params: freshParams },
-    );
-    for (const chip of rawChips) {
-      const { data: rawLearners } = await api.get<BackendUserChip[]>(
-        `/api/academic/chips/${chip.idChip}/apprentices`,
-        { params: freshParams },
-      );
-      fichas.push(toFicha(chip, rawLearners.map(toLearner)));
-    }
-  }
+  const rawChips = rawPrograms.flatMap(program => program.chips ?? []);
+  const learnersMap = await fetchLearnersByChips(rawChips, freshParams);
+  const fichas = rawChips.map(chip => toFicha(chip, learnersMap.get(chip.idChip) ?? []));
   const instructor = toInstructor(rawInstructor, fichas);
   const programs = rawPrograms.map(program => ({
     ...toProgram(program),

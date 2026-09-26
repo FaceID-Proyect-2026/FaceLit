@@ -59,8 +59,8 @@ export default function ProgramDetailScreen() {
       <SectionList
         sections={[
           { key: 'header', data: [] as any[] },
-          { key: 'instructors', title: `Instructores (${filteredInstructors.length}${instructorSearch ? ` de ${programInstructors.length}` : ''})`, data: filteredInstructors },
-          { key: 'fichas', title: `${t('academic.fichas')} (${filteredFichas.length}${fichaSearch ? ` de ${programFichas.length}` : ''})`, data: filteredFichas },
+          { key: 'instructors', title: `${t('academic.instructors')} (${filteredInstructors.length}${instructorSearch ? ` ${t('common.of')} ${programInstructors.length}` : ''})`, data: filteredInstructors },
+          { key: 'fichas', title: `${t('academic.fichas')} (${filteredFichas.length}${fichaSearch ? ` ${t('common.of')} ${programFichas.length}` : ''})`, data: filteredFichas },
         ]}
         keyExtractor={(item, i) => item?.id ?? String(i)}
         contentContainerStyle={pds.scroll}
@@ -76,7 +76,7 @@ export default function ProgramDetailScreen() {
                     style={[pds.searchInput, { color: text }] as any}
                     value={fichaSearch}
                     onChangeText={setFichaSearch}
-                    placeholder="Buscar por número de ficha o nombre de instructor…"
+                    placeholder={t('academic.searchFichaOrInstructor')}
                     placeholderTextColor={muted}
                     autoCorrect={false}
                   />
@@ -94,7 +94,7 @@ export default function ProgramDetailScreen() {
                     style={[pds.searchInput, { color: text }] as any}
                     value={instructorSearch}
                     onChangeText={setInstructorSearch}
-                    placeholder="Buscar instructor por nombre, documento o correo..."
+                    placeholder={t('academic.searchInstructorFull')}
                     placeholderTextColor={muted}
                     autoCorrect={false}
                   />
@@ -131,7 +131,7 @@ export default function ProgramDetailScreen() {
                 <Text style={[pds.infoValue, { color: text }]}>{programFichas.length}</Text>
               </View>
               <View style={[pds.infoRow, { borderBottomColor: border }]}>
-                <Text style={[pds.infoLabel, { color: muted }]}>Instructores</Text>
+                <Text style={[pds.infoLabel, { color: muted }]}>{t('academic.instructors')}</Text>
                 <Text style={[pds.infoValue, { color: text }]}>{programInstructors.length}</Text>
               </View>
               <View style={[pds.infoRow, { borderBottomColor: border }]}>
@@ -160,26 +160,26 @@ export default function ProgramDetailScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={[pds.cardTitle, { color: text }]}>{item.name} {item.lastname}</Text>
                   <Text style={[pds.cardMeta, { color: muted }]}>
-                    {item.instructorType === 'especifico' ? 'Específico' : 'Transversal'} · Doc: {item.document}
+                    {item.instructorType === 'especifico' ? t('academic.instructorTypeEspecificoShort') : t('academic.instructorTypeTransversalShort')} · {t('academic.instructorDocPrefix')}: {item.document}
                   </Text>
                   <Text style={[pds.cardMeta, { color: muted }]}>{item.email}</Text>
                   {item.createdAt ? (
-                    <Text style={[pds.cardMeta, { color: muted }]}>Creado: {formatDateTime(item.createdAt)}</Text>
+                    <Text style={[pds.cardMeta, { color: muted }]}>{t('academic.instructorCreatedPrefix')}: {formatDateTime(item.createdAt)}</Text>
                   ) : null}
                   {item.updatedAt ? (
-                    <Text style={[pds.cardMeta, { color: muted }]}>Ultima edicion: {formatDateTime(item.updatedAt)}</Text>
+                    <Text style={[pds.cardMeta, { color: muted }]}>{t('academic.instructorLastEditPrefix')}: {formatDateTime(item.updatedAt)}</Text>
                   ) : null}
                   {/* Contraseña inicial — el coordinador la ve para enviársela al instructor */}
                   {item.initialPassword ? (
                     <View style={[pds.pwdBadge, { backgroundColor: Colors.warning + '18', borderColor: Colors.warning + '55' }]}>
                       <Ionicons name="key-outline" size={11} color={Colors.warning} />
-                      <Text style={[pds.pwdLabel, { color: Colors.warning }]}>Contraseña inicial: </Text>
+                      <Text style={[pds.pwdLabel, { color: Colors.warning }]}>{t('academic.initialPassword')}: </Text>
                       <Text style={[pds.pwdValue, { color: Colors.warning }]} selectable>{item.initialPassword}</Text>
                     </View>
                   ) : (
                     <View style={[pds.pwdBadge, { backgroundColor: Colors.success + '14', borderColor: Colors.success + '44' }]}>
                       <Ionicons name="checkmark-circle-outline" size={11} color={Colors.success} />
-                      <Text style={[pds.pwdLabel, { color: Colors.success }]}>Contraseña propia activa</Text>
+                      <Text style={[pds.pwdLabel, { color: Colors.success }]}>{t('academic.ownPasswordActive')}</Text>
                     </View>
                   )}
                 </View>
@@ -198,11 +198,11 @@ export default function ProgramDetailScreen() {
                 <View style={[pds.iconCircle, { backgroundColor: theme.primary + '20' }]}><Ionicons name="document-text-outline" size={20} color={theme.primary} /></View>
                 <View style={{ flex: 1 }}>
                   <Text style={[pds.cardTitle, { color: text }]}>Ficha {item.number}</Text>
-                  <Text style={[pds.cardMeta, { color: muted }]}>{item.learners.length} aprendices</Text>
+                  <Text style={[pds.cardMeta, { color: muted }]}>{t('academic.learnersCount', { count: item.learners.length })}</Text>
                 </View>
               </View>
               <TouchableOpacity onPress={() => {
-                if (item.learners.length > 0) { alert(t('common.error'), 'No se puede eliminar la ficha porque tiene aprendices asociados.'); return; }
+                if (item.learners.length > 0) { alert(t('common.error'), t('academic.fichaHasLearners')); return; }
                 alert('Eliminar ficha permanentemente', 'Esta accion no se puede deshacer.', [{ text: t('common.cancel'), style: 'cancel' }, { text: 'Eliminar', style: 'destructive', onPress: async () => {
                   try { await deleteFicha(item.id); alert('Ficha eliminada', 'La ficha fue eliminada permanentemente.'); }
                   catch (error: any) { alert(t('common.error'), error?.response?.data?.message ?? 'No se pudo eliminar la ficha.'); }

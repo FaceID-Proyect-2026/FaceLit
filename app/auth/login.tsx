@@ -152,6 +152,7 @@ export default function LoginScreen() {
   const inputBg     = isDark ? Colors.dark.inputBg    : Colors.light.inputBg;
   const inputBorder = isDark ? Colors.dark.inputBorder: Colors.light.inputBorder;
   const cardBorder  = isDark ? Colors.dark.border     : Colors.light.border;
+  const forgotColor = isDark ? Colors.white            : theme.primaryDark;
 
   return (
     <>
@@ -386,10 +387,13 @@ export default function LoginScreen() {
                     onPress={handleForgotPassword}
                     disabled={transitioning}
                     activeOpacity={0.7}
-                    style={s.forgotBtn}
+                    style={[s.forgotBtn, {
+                      backgroundColor: isDark ? Colors.transparent : theme.primary + '14',
+                      borderColor: isDark ? Colors.transparent : theme.primary + '33',
+                    }]}
                   >
-                    <Ionicons name="help-circle-outline" size={15} color={Colors.white} />
-                    <Text style={[s.forgotText, { color: Colors.white }]}>
+                    <Ionicons name="help-circle-outline" size={15} color={forgotColor} />
+                    <Text style={[s.forgotText, { color: forgotColor }]}>
                       {t('login.forgotPassword')}
                     </Text>
                   </TouchableOpacity>
@@ -489,6 +493,6 @@ const s = StyleSheet.create({
   loginBtnText:     { color: Colors.white, fontSize: FontSize.lg, fontWeight: FontWeight.bold },
 
   links:     { alignItems: 'center', marginTop: 8 },
-  forgotBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 6, paddingHorizontal: 12 },
+  forgotBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1 },
   forgotText:{ fontSize: FontSize.base, fontWeight: FontWeight.bold, textDecorationLine: 'underline' },
 });

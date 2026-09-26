@@ -97,11 +97,8 @@ export default function ApprenticeFacialScreen() {
     if (!confirmed) return;
     if (isRegistered) {
       alert(
-        t("facialReg.alreadyRegisteredTitle", "Ya tienes un rostro registrado"),
-        t(
-          "facialReg.alreadyRegisteredBody",
-          "Para reemplazar tu registro facial necesitas autorización del Coordinador.",
-        ),
+        t("facialReg.alreadyRegisteredTitle"),
+        t("facialReg.alreadyRegisteredBody"),
       );
       return;
     }
@@ -119,17 +116,17 @@ export default function ApprenticeFacialScreen() {
   const qualityWarnings: { icon: string; label: string; ok: boolean }[] = [
     {
       icon: "sunny-outline",
-      label: t("facialReg.checkLight", "Iluminación"),
+      label: t("facialReg.checkLight"),
       ok: quality !== "lowLight",
     },
     {
       icon: "scan-outline",
-      label: t("facialReg.checkFace", "Rostro visible"),
+      label: t("facialReg.checkFace"),
       ok: screenState !== "idle" && screenState !== "requesting",
     },
     {
       icon: "camera-outline",
-      label: t("facialReg.checkFrontal", "Vista frontal"),
+      label: t("facialReg.checkFrontal"),
       ok: quality === "good",
     },
   ];
@@ -177,17 +174,14 @@ export default function ApprenticeFacialScreen() {
             <View style={{ flex: 1 }}>
               <Text style={[s.statusTitle, { color: text }]}>
                 {isRegistered
-                  ? t("facialReg.alreadyRegisteredTitle", "Registro completado")
-                  : t("facialReg.pendingTitle", "Registro pendiente")}
+                  ? t("facialReg.alreadyRegisteredTitle")
+                  : t("facialReg.pendingTitle")}
               </Text>
               <Text style={[s.statusDesc, { color: muted }]}>
                 {isRegistered
-                  ? t("facialReg.registeredOn", "Tu rostro fue registrado el") +
+                  ? t("facialReg.registeredOn") +
                     ` ${myRecord?.date ?? ""}`
-                  : t(
-                      "facialReg.registerFaceDesc",
-                      "Completa tu registro facial para que el sistema pueda registrar tu asistencia automáticamente.",
-                    )}
+                  : t("facialReg.registerFaceDesc")}
               </Text>
             </View>
           </View>
@@ -212,13 +206,10 @@ export default function ApprenticeFacialScreen() {
               />
             </View>
             <Text style={[s.noticeTitle, { color: text }]}>
-              {t("facialReg.identityTitle", "Verificación de identidad")}
+              {t("facialReg.identityTitle")}
             </Text>
             <Text style={[s.noticeBody, { color: text }]}>
-              {t(
-                "facialReg.identityNotice",
-                "La persona que se va a registrar es:",
-              )}
+              {t("facialReg.identityNotice")}
             </Text>
             <LinearGradient
               colors={[theme.primary, theme.primaryDark]}
@@ -246,10 +237,7 @@ export default function ApprenticeFacialScreen() {
               { icon: "glasses-outline", text: t("facialReg.instr4") },
               {
                 icon: "phone-portrait-outline",
-                text: t(
-                  "facialReg.noPhonePhoto",
-                  "No fotografíes una pantalla o foto impresa",
-                ),
+                text: t("facialReg.noPhonePhoto"),
               },
               { icon: "person-outline", text: t("facialReg.instr5") },
             ].map((item, i) => (
@@ -296,10 +284,7 @@ export default function ApprenticeFacialScreen() {
               )}
             </View>
             <Text style={[s.checkLabel, { color: text }]}>
-              {t(
-                "facialReg.confirmResponsibility",
-                "He leído el aviso y entiendo que soy responsable de este registro.",
-              )}
+              {t("facialReg.confirmResponsibility")}
             </Text>
           </TouchableOpacity>
 
@@ -319,7 +304,7 @@ export default function ApprenticeFacialScreen() {
             <Ionicons name="scan-outline" size={20} color={Colors.white} />
             <Text style={s.primaryBtnText}>
               {isRegistered
-                ? t("facialReg.alreadyRegisteredTitle", "Ya registrado")
+                ? t("facialReg.alreadyRegisteredTitle")
                 : t("facialReg.captureBtn")}
             </Text>
           </TouchableOpacity>

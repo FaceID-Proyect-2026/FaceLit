@@ -3,6 +3,7 @@
 //  Persiste la configuración del usuario en el backend,
 //  no solo en el dispositivo.
 // ─────────────────────────────────────────────
+import { Language, useLanguage } from '@/shared/contexts/I18nContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import {
     createUserConfiguration,
@@ -10,21 +11,21 @@ import {
     updateUserConfiguration,
 } from '@/shared/services/userConfigService';
 import { useCallback, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 
-const LANG_BACKEND_TO_APP: Record<string, string> = {
+const LANG_BACKEND_TO_APP: Record<string, Language> = {
   ES: 'es',
   EN: 'en',
-  PR: 'pr',
+  DE: 'de',
+  PR: 'es',
   FR: 'fr',
   FRA: 'fr',
   FRANCES: 'fr',
 };
 
-const LANG_APP_TO_BACKEND: Record<string, string> = {
+const LANG_APP_TO_BACKEND: Record<Language, string> = {
   es: 'ES',
   en: 'EN',
-  pr: 'PR',
+  de: 'DE',
   fr: 'FR',
 };
 
@@ -36,12 +37,12 @@ const DEFAULT_USER_CONFIG = {
 
 interface Draft {
   darkMode: boolean;
-  language: string;
+  language: Language;
   notificationsActive: boolean;
 }
 
 export function useUserSettings() {
-  const { i18n } = useTranslation();
+  const { language, changeLanguage } = useLanguage();
   const { isDark, setDarkMode } = useTheme();
 
   const [loading, setLoading] = useState(false);
@@ -51,7 +52,7 @@ export function useUserSettings() {
 
   const [draft, setDraftState] = useState<Draft>({
     darkMode: isDark,
-    language: i18n.language,
+    language,
     notificationsActive: true,
   });
 
@@ -62,14 +63,14 @@ export function useUserSettings() {
     const notificationsActive = config?.notificationsActive ?? DEFAULT_USER_CONFIG.notificationsActive;
 
     setDarkMode(darkMode);
-    i18n.changeLanguage(lang);
+    changeLanguage(lang);
     setDraftState({
       darkMode,
       language: lang,
       notificationsActive,
     });
     setSaved(true);
-  }, [i18n, setDarkMode]);
+  }, [changeLanguage, setDarkMode]);
 
   const loadAndApply = useCallback(async () => {
     setLoading(true);
@@ -98,11 +99,11 @@ export function useUserSettings() {
     setSaved(false);
   }, [setDarkMode]);
 
-  const setDraftLanguage = useCallback((lang: string) => {
-    i18n.changeLanguage(lang);
+  const setDraftLanguage = useCallback((lang: Language) => {
+    changeLanguage(lang);
     setDraftState((prev) => ({ ...prev, language: lang }));
     setSaved(false);
-  }, [i18n]);
+  }, [changeLanguage]);
 
   const setDraftNotifications = useCallback((active: boolean) => {
     setDraftState((prev) => ({ ...prev, notificationsActive: active }));

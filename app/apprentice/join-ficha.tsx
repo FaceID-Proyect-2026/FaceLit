@@ -89,7 +89,7 @@ export default function JoinFichaScreen() {
       'academic.transferCodeNotFound': t('academic.transferCodeNotFound'),
       'academic.fichaInactive':        t('academic.fichaInactive'),
       'academic.joinAlreadyInFicha':   t('academic.joinAlreadyInFicha'),
-      'academic.learnerNotFound':      t('academic.learnerNotFound', 'Aprendiz no encontrado. Contacta al Coordinador.'),
+      'academic.learnerNotFound':      t('academic.learnerNotFound'),
     };
     setError(msgs[errKey] ?? t('academic.transferCodeNotFound'));
   };
@@ -106,8 +106,8 @@ export default function JoinFichaScreen() {
             {t('academic.joinSuccess')} {result.fichaNumber}
           </Text>
           {result.prevFicha && (
-            <Text style={[s.successSub, { color: muted }]}>
-              Ficha anterior: {result.prevFicha}
+              <Text style={[s.successSub, { color: muted }]}> 
+              {t('academic.previousFicha')}: {result.prevFicha}
             </Text>
           )}
           <TouchableOpacity
@@ -163,7 +163,7 @@ export default function JoinFichaScreen() {
                 <View style={[s.currentFichaBox, { backgroundColor: theme.primary + '0D', borderColor: theme.primary + '33' }]}>
                   <Ionicons name="school-outline" size={14} color={theme.primary} />
                   <Text style={[s.currentFichaText, { color: theme.primary }]}>
-                    Ficha actual: {currentFicha.number}
+                    {t('academic.currentFicha')}: {currentFicha.number}
                   </Text>
                 </View>
               )}
@@ -193,7 +193,7 @@ export default function JoinFichaScreen() {
                   <Text style={[s.errorText, { color: Colors.error }]}>{error}</Text>
                 ) : (
                   <Text style={[s.hintText, { color: muted }]}>
-                    8 caracteres — letras mayúsculas y números
+                    {t('academic.transferCodeHelp')}
                   </Text>
                 )}
               </View>
@@ -215,7 +215,7 @@ export default function JoinFichaScreen() {
                     : <Ionicons name="log-in-outline" size={18} color={Colors.white} />
                   }
                   <Text style={s.submitText}>
-                    {loading ? 'Procesando...' : t('academic.joinTitle')}
+                    {loading ? t('common.loading') : t('academic.joinTitle')}
                   </Text>
                 </LinearGradient>
               </TouchableOpacity>

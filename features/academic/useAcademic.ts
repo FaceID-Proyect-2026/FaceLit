@@ -24,6 +24,7 @@ import {
   generateTransferCode,
   getFichaById,
   getFichasSnapshot,
+  getAcademicMetaSnapshot,
   getInstructorById,
   getInstructorsByFichaId,
   getInstructorsSnapshot,
@@ -42,6 +43,8 @@ import {
   registerInstructorStore,
   removeLearnerStore,
   subscribe,
+  setAcademicStoreError,
+  setAcademicStoreLoading,
   unassignInstructorFromFichaStore,
   unlinkFichaFromProgramStore,
   updateInstructorStore,
@@ -61,6 +64,7 @@ let latestRefreshRequest = 0;
 
 export async function refreshAcademicStoreFromBackend(role?: string | null) {
   const request = ++latestRefreshRequest;
+  setAcademicStoreLoading(true);
   try {
     const snapshot = await fetchAcademicSnapshotForRole(role);
     // Distintas pantallas y modales usan este hook. Si dos lecturas se cruzan,
@@ -76,6 +80,7 @@ export async function refreshAcademicStoreFromBackend(role?: string | null) {
         instructors: getInstructorsSnapshot(),
       };
     }
+    setAcademicStoreError('No se pudo sincronizar la informacion academica');
     throw error;
   }
 }
@@ -85,6 +90,7 @@ export function useAcademic() {
   const fichas      = useSyncExternalStore(subscribe, getFichasSnapshot);
   const instructors = useSyncExternalStore(subscribe, getInstructorsSnapshot);
   const orphanLearners = useSyncExternalStore(subscribe, getOrphanLearnersSnapshot);
+  const meta = useSyncExternalStore(subscribe, getAcademicMetaSnapshot);
 
   const [search, setSearch]                     = useState('');
   const [statusFilter, setStatusFilter]         = useState<ProgramStatusFilter>('all');
@@ -248,7 +254,8 @@ export function useAcademic() {
     search, setSearch,
     statusFilter, setStatusFilter,
     instructorFilter, setInstructorFilter,
-    loading: false, loadError: null,
+    loading: meta.loading,
+    loadError: meta.loadError,
 
     // Getters
     getProgram, getFicha, getInstructor,

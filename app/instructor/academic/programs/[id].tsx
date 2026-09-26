@@ -45,7 +45,7 @@ export default function InstructorProgramDetailScreen() {
   if (!program) {
     return (
       <View style={[s.safe, s.center, { backgroundColor: bg }]}>
-        <Text style={{ color: muted }}>Programa no disponible para este instructor.</Text>
+        <Text style={{ color: muted }}>{t('instructorAcademic.programUnavailable')}</Text>
       </View>
     );
   }
@@ -70,7 +70,7 @@ export default function InstructorProgramDetailScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[s.title, { color: text }]}>{getProgramDisplayName(program, t)}</Text>
-                  <Text style={[s.subtitle, { color: muted }]}>Programa asignado a tus fichas de formacion.</Text>
+                  <Text style={[s.subtitle, { color: muted }]}>{t('instructorAcademic.programSubtitle')}</Text>
                 </View>
                 <View style={[s.statusBadge, { backgroundColor: program.status === 'active' ? Colors.success + '20' : Colors.error + '20' }]}>
                   <View style={[s.statusDot, { backgroundColor: program.status === 'active' ? Colors.success : Colors.error }]} />
@@ -81,15 +81,15 @@ export default function InstructorProgramDetailScreen() {
               </View>
 
               <View style={[s.infoRow, { borderBottomColor: border }]}>
-                <Text style={[s.infoLabel, { color: muted }]}>Fichas asignadas</Text>
+                <Text style={[s.infoLabel, { color: muted }]}>{t('instructorAcademic.fichasAssigned')}</Text>
                 <Text style={[s.infoValue, { color: text }]}>{programFichas.length}</Text>
               </View>
               <View style={[s.infoRow, { borderBottomColor: border }]}>
-                <Text style={[s.infoLabel, { color: muted }]}>Creado</Text>
+                <Text style={[s.infoLabel, { color: muted }]}>{t('instructorAcademic.created')}</Text>
                 <Text style={[s.infoValue, { color: text }]}>{formatDateTime(program.createdAt)}</Text>
               </View>
               <View style={[s.infoRow, { borderBottomWidth: 0 }]}>
-                <Text style={[s.infoLabel, { color: muted }]}>Ultima edicion</Text>
+                <Text style={[s.infoLabel, { color: muted }]}>{t('instructorAcademic.lastEdited')}</Text>
                 <Text style={[s.infoValue, { color: text }]}>{formatDateTime(program.updatedAt)}</Text>
               </View>
             </View>
@@ -99,13 +99,13 @@ export default function InstructorProgramDetailScreen() {
               <TextInput
                 value={fichaSearch}
                 onChangeText={setFichaSearch}
-                placeholder="Buscar ficha"
+                placeholder={t('instructorAcademic.searchFicha')}
                 placeholderTextColor={muted}
                 style={[s.searchInput, { color: text }] as any}
               />
             </View>
 
-            <Text style={[s.sectionTitle, { color: text }]}>Fichas ({programFichas.length})</Text>
+            <Text style={[s.sectionTitle, { color: text }]}>{t('instructorAcademic.fichasTitle', { count: programFichas.length })}</Text>
           </View>
         }
         renderItem={({ item }) => (
@@ -118,15 +118,15 @@ export default function InstructorProgramDetailScreen() {
               <Ionicons name="document-text-outline" size={20} color={theme.primary} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[s.cardTitle, { color: text }]}>Ficha {item.number}</Text>
-              <Text style={[s.cardMeta, { color: muted }]}>{item.learners.length} aprendices</Text>
+              <Text style={[s.cardTitle, { color: text }]}>{t('academic.ficha')} {item.number}</Text>
+              <Text style={[s.cardMeta, { color: muted }]}>{item.learners.length} {t('instructorAcademic.learners')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={muted} />
           </TouchableOpacity>
         )}
         ListEmptyComponent={
           <View style={s.empty}>
-            <Text style={{ color: muted }}>No hay fichas asignadas para este programa.</Text>
+            <Text style={{ color: muted }}>{t('instructorAcademic.noFichas')}</Text>
           </View>
         }
       />

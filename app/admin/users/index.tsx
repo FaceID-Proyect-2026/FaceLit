@@ -9,10 +9,11 @@ import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { deleteManagedUser, getManagedUsers } from '@/shared/services/userManagementService';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+    ActivityIndicator,
     FlatList,
     ScrollView,
     StyleSheet,
@@ -61,22 +62,29 @@ export default function UsersPanel() {
 
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const loadedOnce = useRef(false);
   const [query, setQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('ALL');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
 
-  useEffect(() => {
+  const loadUsers = useCallback(() => {
     let mounted = true;
-    getManagedUsers()
+    setLoading(!loadedOnce.current);
+    getManagedUsers('', { force: !loadedOnce.current && users.length === 0 })
       .then((data) => {
-        if (mounted) setUsers(data.map(mapManagedUser));
+        if (mounted) {
+          setUsers(data.map(mapManagedUser));
+          loadedOnce.current = true;
+        }
       })
       .catch((error) => alert(t('common.error'), error?.response?.data?.message ?? 'No se pudieron cargar los usuarios.'))
       .finally(() => {
         if (mounted) setLoading(false);
       });
     return () => { mounted = false; };
-  }, []);
+  }, [alert, t, users.length]);
+
+  useFocusEffect(loadUsers);
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -348,8 +356,17 @@ export default function UsersPanel() {
         }
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Ionicons name="people-outline" size={40} color={muted} style={{ opacity: 0.5 }} />
-            <Text style={[styles.emptyText, { color: muted }]}>{t('users.empty')}</Text>
+            {loading ? (
+              <>
+                <ActivityIndicator size="large" color={theme.primary} />
+                <Text style={[styles.emptyText, { color: muted }]}>Cargando usuarios...</Text>
+              </>
+            ) : (
+              <>
+                <Ionicons name="people-outline" size={40} color={muted} style={{ opacity: 0.5 }} />
+                <Text style={[styles.emptyText, { color: muted }]}>{t('users.empty')}</Text>
+              </>
+            )}
           </View>
         }
       />

@@ -220,8 +220,9 @@ export default function AttendanceByFichaScreen({
       contentContainerStyle={s.content}
       keyboardShouldPersistTaps="handled"
     >
+      <View style={s.contentInner}>
       {/* ── Selector de programa — solo visible sin ficha activa ── */}
-      {!selectedFichaId && !directFichaOnly && (
+      {!Boolean(selectedFichaId) && !directFichaOnly && (
         <View
           style={[
             s.card,
@@ -239,7 +240,7 @@ export default function AttendanceByFichaScreen({
         </View>
       )}
 
-      {!selectedFichaId && directFichaOnly && (
+      {!Boolean(selectedFichaId) && directFichaOnly && (
         <View
           style={[
             s.card,
@@ -261,7 +262,7 @@ export default function AttendanceByFichaScreen({
       )}
 
       {/* Estado inicial — sin programa */}
-      {!selectedProgramId && !selectedFichaId && !directFichaOnly && (
+      {!Boolean(selectedProgramId) && !Boolean(selectedFichaId) && !directFichaOnly && (
         <View style={s.prompt}>
           <View
             style={[s.promptIcon, { backgroundColor: theme.primary + "15" }]}
@@ -275,7 +276,7 @@ export default function AttendanceByFichaScreen({
       )}
 
       {/* Programa sin fichas */}
-      {selectedProgramId && !selectedFichaId && fichaCards.length === 0 && (
+      {Boolean(selectedProgramId) && !Boolean(selectedFichaId) && fichaCards.length === 0 && (
         <View style={s.emptyBox}>
           <Ionicons name="document-outline" size={28} color={muted} />
           <Text style={[s.emptyText, { color: muted }]}>
@@ -285,7 +286,7 @@ export default function AttendanceByFichaScreen({
       )}
 
       {/* ── Tarjetas de fichas ── */}
-      {fichaCards.length > 0 && !selectedFichaId && !directFichaOnly && (
+      {fichaCards.length > 0 && !Boolean(selectedFichaId) && !directFichaOnly && (
         <>
           <Text style={[s.sectionLabel, { color: text }]}>
             {t("attendance.rf6.fichasToday")}
@@ -366,7 +367,7 @@ export default function AttendanceByFichaScreen({
       )}
 
       {/* ── Pantalla 2: Detalle de ficha ── */}
-      {selectedFichaId && (
+      {Boolean(selectedFichaId) && (
         <>
           {/* Breadcrumb */}
           <TouchableOpacity
@@ -400,7 +401,7 @@ export default function AttendanceByFichaScreen({
                   label={t("reports.filters.dateFrom")}
                   value={dateFrom}
                   onChange={setByFichaDateFrom}
-                  placeholder="AAAA-MM-DD"
+                  placeholder="YYYY-MM-DD"
                   containerStyle={s.noMargin}
                 />
               </View>
@@ -413,12 +414,12 @@ export default function AttendanceByFichaScreen({
                   value={dateTo}
                   onChange={setByFichaDateTo}
                   minDate={dateFrom || undefined}
-                  placeholder="AAAA-MM-DD"
+                  placeholder="YYYY-MM-DD"
                   containerStyle={s.noMargin}
                 />
               </View>
             </View>
-            {dateFrom && dateTo && dateFrom > dateTo && (
+            {Boolean(dateFrom) && Boolean(dateTo) && dateFrom > dateTo && (
               <Text style={[s.dateError, { color: Colors.error }]}>
                 {t("reports.invalidDateRange")}
               </Text>
@@ -610,7 +611,7 @@ export default function AttendanceByFichaScreen({
             </>
           )}
 
-          {(!dateFrom || !dateTo) && (
+          {(!Boolean(dateFrom) || !Boolean(dateTo)) && (
             <View style={s.emptyBox}>
               <Ionicons name="calendar-outline" size={28} color={muted} />
               <Text style={[s.emptyText, { color: muted }]}>
@@ -619,8 +620,8 @@ export default function AttendanceByFichaScreen({
             </View>
           )}
 
-          {dateFrom &&
-            dateTo &&
+          {Boolean(dateFrom) &&
+            Boolean(dateTo) &&
             dateFrom <= dateTo &&
             tableRows.length === 0 && (
               <View style={s.emptyBox}>
@@ -752,6 +753,7 @@ export default function AttendanceByFichaScreen({
           </Pressable>
         </Pressable>
       </Modal>
+      </View>
     </ScrollView>
   );
 }
@@ -760,6 +762,7 @@ export default function AttendanceByFichaScreen({
 const s = StyleSheet.create({
   root: { flex: 1 },
   content: { padding: 16, paddingBottom: 48, gap: 12 },
+  contentInner: { gap: 12 },
   card: { borderRadius: 14, borderWidth: 1, padding: 16 },
   noMargin: { marginBottom: 0 },
 

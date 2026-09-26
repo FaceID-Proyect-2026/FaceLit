@@ -4,6 +4,7 @@
 import { useUserSettings } from '@/features/profile/useUserSettings';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
+import type { Language } from '@/shared/contexts/I18nContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,10 +13,10 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 
-const LANGUAGES = [
+const LANGUAGES: { code: Language; label: string }[] = [
   { code: 'es', label: 'Español' },
   { code: 'en', label: 'English' },
-  { code: 'pr', label: 'Português' },
+  { code: 'de', label: 'Deutsch' },
   { code: 'fr', label: 'Français' },
 ];
 

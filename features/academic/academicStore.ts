@@ -21,6 +21,9 @@ type Listener = () => void;
 let programs: Program[]         = [];
 let fichas: Ficha[]             = [];
 let instructors: Instructor[]   = [];
+let loading = false;
+let loadError: string | null = null;
+let academicMetaSnapshot: { loading: boolean; loadError: string | null } = { loading, loadError };
 
 const listeners = new Set<Listener>();
 function emit() { listeners.forEach(l => l()); }
@@ -35,6 +38,22 @@ export function hydrateAcademicStore(next: {
   programs = next.programs;
   fichas = next.fichas;
   instructors = next.instructors;
+  loading = false;
+  loadError = null;
+  academicMetaSnapshot = { loading, loadError };
+  emit();
+}
+
+export function setAcademicStoreLoading(nextLoading: boolean) {
+  loading = nextLoading;
+  academicMetaSnapshot = { loading, loadError };
+  emit();
+}
+
+export function setAcademicStoreError(error: string | null) {
+  loadError = error;
+  loading = false;
+  academicMetaSnapshot = { loading, loadError };
   emit();
 }
 
@@ -43,6 +62,9 @@ export function clearAcademicStore() {
   fichas = [];
   instructors = [];
   orphanLearners = [];
+  loading = false;
+  loadError = null;
+  academicMetaSnapshot = { loading, loadError };
   emit();
 }
 
@@ -55,6 +77,7 @@ export function subscribe(listener: Listener) {
 export const getProgramsSnapshot    = () => programs;
 export const getFichasSnapshot      = () => fichas;
 export const getInstructorsSnapshot = () => instructors;
+export const getAcademicMetaSnapshot = () => academicMetaSnapshot;
 
 export const getProgramById    = (id: string) => programs.find(p => p.id === id);
 export const getFichaById      = (id: string) => fichas.find(f => f.id === id);

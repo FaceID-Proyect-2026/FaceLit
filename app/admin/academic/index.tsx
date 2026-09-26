@@ -16,6 +16,7 @@ import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+    ActivityIndicator,
     Animated,
     Easing,
     FlatList,
@@ -274,6 +275,7 @@ export default function AcademicProgramsScreen() {
   const { t } = useTranslation();
   const {
     programs, allPrograms, allFichas, allInstructors, orphanLearners, search, setSearch, statusFilter, setStatusFilter, deactivateProgram, reactivateProgram, deleteProgram, deactivateFicha, reactivateFicha, deleteFicha,
+    loading, loadError,
   } = useAcademic();
   const { alert, DialogUI } = useAppDialog();
   const { width } = useWindowDimensions();
@@ -381,8 +383,21 @@ export default function AcademicProgramsScreen() {
 
   return (
     <View style={[aps.safe, { backgroundColor: bg }]}>
+      {loading && !hasData && (
+        <View style={aps.loadingState}>
+          <ActivityIndicator size="large" color={theme.primary} />
+          <Text style={[aps.loadingText, { color: muted }]}>{t('academic.syncingAcademicInfo')}</Text>
+        </View>
+      )}
+
+      {!loading && loadError && !hasData && (
+        <View style={aps.loadingState}>
+          <Ionicons name="alert-circle-outline" size={42} color={Colors.error} />
+          <Text style={[aps.loadingText, { color: muted }]}>{loadError}</Text>
+        </View>
+      )}
       {/* ── Onboarding: primer uso sin datos ── */}
-      {!hasData && (
+      {!loading && !loadError && !hasData && (
         <ScrollView
           contentContainerStyle={{ flexGrow: 1 }}
           showsVerticalScrollIndicator={false}
@@ -403,15 +418,15 @@ export default function AcademicProgramsScreen() {
         <View style={[aps.headerButtons, isMobile && aps.headerButtonsMobile]}>
           <TouchableOpacity onPress={() => router.push('/admin/academic/instructors' as any)} style={[aps.addBtn, isMobile && aps.addBtnMobile, { backgroundColor: theme.primary + '18', borderWidth: 1.5, borderColor: theme.primary }]} activeOpacity={0.85}>
             <Ionicons name="people-outline" size={18} color={theme.primary} />
-            <Text style={[aps.addBtnText, { color: theme.primary }]}>Instructores</Text>
+            <Text style={[aps.addBtnText, { color: theme.primary }]}>{t('academic.instructors')}</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => router.push('/admin/academic/assignments' as any)} style={[aps.addBtn, isMobile && aps.addBtnMobile, { backgroundColor: theme.primary + '18', borderWidth: 1.5, borderColor: theme.primary }]} activeOpacity={0.85}>
             <Ionicons name="swap-horizontal-outline" size={18} color={theme.primary} />
-            <Text style={[aps.addBtnText, { color: theme.primary }]}>Aprendices</Text>
+            <Text style={[aps.addBtnText, { color: theme.primary }]}>{t('academic.learners')}</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => router.push('/admin/academic/csv-upload' as any)} style={[aps.addBtn, isMobile && aps.addBtnMobile, { backgroundColor: isDark ? '#1A2E1A' : '#E8F5E9', borderWidth: 1.5, borderColor: theme.primary }]} activeOpacity={0.85}>
             <Ionicons name="cloud-upload-outline" size={18} color={theme.primary} />
-            <Text style={[aps.addBtnText, { color: theme.primary }]}>{t('academic.csvV4Title').split(' ').slice(0, 2).join(' ')} CSV</Text>
+            <Text style={[aps.addBtnText, { color: theme.primary }]}>{t('academic.csvUploadShort')}</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setProgramModalOpen(true)} style={[aps.addBtn, isMobile && aps.addBtnMobile, { backgroundColor: theme.primary }]} activeOpacity={0.85}>
             <Ionicons name="add" size={20} color={Colors.white} />
@@ -561,4 +576,6 @@ const aps = StyleSheet.create({
   programOption: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 10, borderWidth: 1.2, paddingHorizontal: 12, paddingVertical: 10 },
   empty: { alignItems: 'center', paddingVertical: 60, gap: 12 },
   emptyText: { fontSize: FontSize.base },
+  loadingState: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24 },
+  loadingText: { fontSize: FontSize.sm, textAlign: 'center' },
 });

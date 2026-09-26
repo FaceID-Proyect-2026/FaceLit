@@ -40,15 +40,15 @@ function AcademicDataLoader() {
   const pathname = usePathname();
 
   useEffect(() => {
-    clearAcademicStore();
-  }, [user?.id]);
+    if (!authLoading && !user?.id) clearAcademicStore();
+  }, [authLoading, user?.id]);
 
   useEffect(() => {
     if (authLoading || !user?.id) return;
     void refreshAcademicStoreFromBackend(user.role).catch(error => {
       console.warn('No se pudo sincronizar la información académica:', error);
     });
-  }, [authLoading, pathname, user?.id]);
+  }, [authLoading, pathname, user?.id, user?.role]);
 
   useEffect(() => {
     if (authLoading || !user?.id) return;
@@ -60,7 +60,7 @@ function AcademicDataLoader() {
       }
     });
     return () => subscription.remove();
-  }, [authLoading, user?.id]);
+  }, [authLoading, user?.id, user?.role]);
 
   return null;
 }

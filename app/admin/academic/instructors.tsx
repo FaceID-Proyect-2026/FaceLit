@@ -21,6 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     ActivityIndicator,
     FlatList,
@@ -68,6 +69,7 @@ function InstructorFormModal({
   theme: any;
   isDark: boolean;
 }) {
+  const { t } = useTranslation();
   const [document,  setDocument]  = useState('');
   const [name,      setName]      = useState('');
   const [lastname,  setLastname]  = useState('');
@@ -121,11 +123,11 @@ function InstructorFormModal({
   const handleSave = async () => {
     setError('');
     const cleanedDocument = document.replace(/\D/g, '').trim();
-    if (!/^\d{6,15}$/.test(cleanedDocument))        { setError('El documento debe tener entre 6 y 15 dígitos numéricos.'); return; }
-    if (!name.trim())                                { setError('El nombre es obligatorio.'); return; }
-    if (!lastname.trim())                            { setError('El apellido es obligatorio.'); return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError('El correo electrónico no es válido.'); return; }
-    if (selected.length === 0) { setError('Selecciona al menos un programa en el que pueda dar formación.'); return; }
+    if (!/^\d{6,15}$/.test(cleanedDocument))        { setError(t('academic.instructorValidationDoc')); return; }
+    if (!name.trim())                                { setError(t('academic.instructorValidationName')); return; }
+    if (!lastname.trim())                            { setError(t('academic.instructorValidationLastName')); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError(t('academic.instructorValidationEmail')); return; }
+    if (selected.length === 0) { setError(t('academic.instructorValidationPrograms')); return; }
 
     setSaving(true);
     try {
@@ -153,8 +155,8 @@ function InstructorFormModal({
     } catch (err: any) {
       const serverMessage = err?.response?.data?.message ?? err?.response?.data?.error ?? '';
       const duplicateMessage = /document|duplicado|registrado/i.test(serverMessage)
-        ? 'Este número de documento ya está registrado.'
-        : serverMessage || 'No se pudo crear el instructor.';
+        ? t('academic.instructorDuplicateDoc')
+        : serverMessage || t('academic.instructorCreateError');
       setError(duplicateMessage);
     } finally {
       setSaving(false);
@@ -166,7 +168,7 @@ function InstructorFormModal({
       <View style={fm.overlay}>
         <View style={[fm.sheet, { backgroundColor: isDark ? Colors.dark.surface : Colors.white }]}>
           <View style={fm.header}>
-            <Text style={[fm.title, { color: text }]}>{editing ? 'Editar instructor' : 'Registrar instructor'}</Text>
+            <Text style={[fm.title, { color: text }]}>{editing ? t('academic.instructorEdit') : t('academic.instructorRegister')}</Text>
             <TouchableOpacity onPress={handleClose} style={{ padding: 4 }}>
               <Ionicons name="close" size={22} color={muted} />
             </TouchableOpacity>
@@ -176,67 +178,67 @@ function InstructorFormModal({
           {pwdResult ? (
             <View style={fm.pwdBox}>
               <Ionicons name="key-outline" size={32} color={theme.primary} style={{ marginBottom: 10 }} />
-              <Text style={[fm.pwdTitle, { color: text }]}>Instructor creado</Text>
+              <Text style={[fm.pwdTitle, { color: text }]}>{t('academic.instructorCreatedTitle')}</Text>
               <Text style={[fm.pwdSub, { color: muted }]}>
-                Comparte esta contraseña inicial con el instructor. Después de que inicie sesión, podrá cambiarla.
+                {t('academic.instructorCreatedSubtitle')}
               </Text>
               <View style={[fm.pwdCard, { borderColor: theme.primary + '55', backgroundColor: theme.primary + '0D' }]}>
                 <Text style={[fm.pwdValue, { color: theme.primary }]}>{pwdResult}</Text>
               </View>
               <Text style={[fm.pwdHint, { color: muted }]}>
-                Número de documento: <Text style={{ fontWeight: '800', color: text }}>{document}</Text>
+                {t('academic.instructorDocNumber')}: <Text style={{ fontWeight: '800', color: text }}>{document}</Text>
               </Text>
               <TouchableOpacity
                 style={[fm.pwdBtn, { backgroundColor: theme.primary }]}
                 onPress={() => { reset(); onSaved(); onClose(); }}
                 activeOpacity={0.85}
               >
-                <Text style={{ color: Colors.white, fontWeight: FontWeight.bold }}>Entendido</Text>
+                <Text style={{ color: Colors.white, fontWeight: FontWeight.bold }}>{t('academic.instructorUnderstood')}</Text>
               </TouchableOpacity>
             </View>
           ) : (
             <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 520 }}>
               {/* Documento */}
               <View style={fm.field}>
-                <Text style={[fm.label, { color: text }]}>Número de documento *</Text>
+                <Text style={[fm.label, { color: text }]}>{t('academic.instructorDocLabel')}</Text>
                 <TextInput
                   style={[fm.input, { color: text, backgroundColor: inputBg, borderColor: inpBdr }] as any}
                   value={document} onChangeText={v => { setDocument(v.replace(/\D/g, '').slice(0, 15)); setError(''); }}
-                  placeholder="6 a 15 dígitos" placeholderTextColor={muted}
+                  placeholder={t('academic.instructorDocPlaceholder')} placeholderTextColor={muted}
                   keyboardType="numeric" maxLength={15}
                 />
               </View>
               {/* Nombre */}
               <View style={fm.field}>
-                <Text style={[fm.label, { color: text }]}>Nombre *</Text>
+                <Text style={[fm.label, { color: text }]}>{t('academic.instructorNameLabel')}</Text>
                 <TextInput
                   style={[fm.input, { color: text, backgroundColor: inputBg, borderColor: inpBdr }] as any}
                   value={name} onChangeText={v => { setName(v); setError(''); }}
-                  placeholder="Ej: Laura" placeholderTextColor={muted} autoCapitalize="words"
+                  placeholder={t('academic.instructorNamePlaceholder')} placeholderTextColor={muted} autoCapitalize="words"
                 />
               </View>
               {/* Apellido */}
               <View style={fm.field}>
-                <Text style={[fm.label, { color: text }]}>Apellido *</Text>
+                <Text style={[fm.label, { color: text }]}>{t('academic.instructorLastNameLabel')}</Text>
                 <TextInput
                   style={[fm.input, { color: text, backgroundColor: inputBg, borderColor: inpBdr }] as any}
                   value={lastname} onChangeText={v => { setLastname(v); setError(''); }}
-                  placeholder="Ej: Gómez" placeholderTextColor={muted} autoCapitalize="words"
+                  placeholder={t('academic.instructorLastNamePlaceholder')} placeholderTextColor={muted} autoCapitalize="words"
                 />
               </View>
               {/* Correo */}
               <View style={fm.field}>
-                <Text style={[fm.label, { color: text }]}>Correo electrónico *</Text>
+                <Text style={[fm.label, { color: text }]}>{t('academic.instructorEmailLabel')}</Text>
                 <TextInput
                   style={[fm.input, { color: text, backgroundColor: inputBg, borderColor: inpBdr }] as any}
                   value={email} onChangeText={v => { setEmail(v); setError(''); }}
-                  placeholder="correo@ejemplo.com" placeholderTextColor={muted}
+                  placeholder={t('academic.instructorEmailPlaceholder')} placeholderTextColor={muted}
                   keyboardType="email-address" autoCapitalize="none"
                 />
               </View>
               {/* Tipo */}
               <View style={fm.field}>
-                <Text style={[fm.label, { color: text }]}>Tipo de instructor *</Text>
+                <Text style={[fm.label, { color: text }]}>{t('academic.instructorTypeLabel')}</Text>
                 <View style={fm.typeRow}>
                   {(['TRANSVERSAL', 'ESPECIFICO'] as const).map(opt => (
                     <TouchableOpacity
@@ -253,7 +255,7 @@ function InstructorFormModal({
                         size={16} color={type === opt ? theme.primary : muted}
                       />
                       <Text style={{ color: type === opt ? theme.primary : muted, fontWeight: FontWeight.bold, fontSize: FontSize.sm }}>
-                        {opt === 'TRANSVERSAL' ? 'Transversal' : 'Específico'}
+                        {opt === 'TRANSVERSAL' ? t('academic.instructorTypeTransversalShort') : t('academic.instructorTypeEspecificoShort')}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -261,19 +263,19 @@ function InstructorFormModal({
               </View>
               {/* Programas en los que puede dar formación */}
               <View style={fm.field}>
-                <Text style={[fm.label, { color: text }]}>Programas en los que puede dar formación *</Text>
+                <Text style={[fm.label, { color: text }]}>{t('academic.instructorProgramsLabel')}</Text>
                 <View style={[fm.programSearch, { backgroundColor: inputBg, borderColor: inpBdr }]}>
                   <Ionicons name="search-outline" size={16} color={muted} />
                   <TextInput
                     value={programQuery}
                     onChangeText={setProgramQuery}
-                    placeholder="Buscar por programa o código"
+                    placeholder={t('academic.instructorSearchProgramsPlaceholder')}
                     placeholderTextColor={muted}
                     style={[fm.programSearchInput, { color: text }] as any}
                   />
                 </View>
                 {programs.length === 0
-                  ? <Text style={{ color: muted, fontSize: FontSize.sm }}>No hay programas activos disponibles.</Text>
+                  ? <Text style={{ color: muted, fontSize: FontSize.sm }}>{t('academic.instructorNoActivePrograms')}</Text>
                   : filteredPrograms.map(p => {
                       const on = selected.includes(p.id);
                       return (
@@ -295,7 +297,7 @@ function InstructorFormModal({
                     })
                 }
                 {programs.length > 0 && filteredPrograms.length === 0 ? (
-                  <Text style={{ color: muted, fontSize: FontSize.sm, textAlign: 'center', paddingVertical: 8 }}>No hay programas con esa búsqueda.</Text>
+                  <Text style={{ color: muted, fontSize: FontSize.sm, textAlign: 'center', paddingVertical: 8 }}>{t('academic.instructorNoProgramsFound')}</Text>
                 ) : null}
               </View>
               {/* Error */}
@@ -313,7 +315,7 @@ function InstructorFormModal({
                     : <Ionicons name={editing ? 'save-outline' : 'person-add-outline'} size={18} color={Colors.white} />
                   }
                   <Text style={{ color: Colors.white, fontWeight: FontWeight.bold, fontSize: FontSize.base }}>
-                    {saving ? 'Guardando...' : editing ? 'Guardar cambios' : 'Crear instructor'}
+                    {saving ? t('academic.instructorSaving') : editing ? t('academic.instructorSaveChanges') : t('academic.instructorCreateBtn')}
                   </Text>
                 </LinearGradient>
               </TouchableOpacity>
@@ -353,6 +355,7 @@ const fm = StyleSheet.create({
 
 // ── Pantalla principal ────────────────────────
 export default function AcademicInstructorsScreen() {
+  const { t } = useTranslation();
   const { theme, isDark } = useTheme();
   const { programs } = useAcademic();
 
@@ -387,7 +390,7 @@ export default function AcademicInstructorsScreen() {
     if (typeFilter !== 'ALL') params.type = typeFilter;
     fetchInstructors(params)
       .then(data => setItems(data as InstructorItem[]))
-      .catch(err => setError(err?.response?.data?.message ?? 'No se pudieron cargar los instructores.'))
+      .catch(err => setError(err?.response?.data?.message ?? t('academic.instructorLoadError')))
       .finally(() => setLoading(false));
   };
 
@@ -418,7 +421,7 @@ export default function AcademicInstructorsScreen() {
       await deleteInstructorApi(item.idInstructor);
       await refreshAfterLifecycleChange();
     } catch (err: any) {
-      setError(err?.message ?? err?.response?.data?.message ?? `No se pudo desactivar a ${fullName}.`);
+      setError(err?.message ?? err?.response?.data?.message ?? t('academic.instructorDeactivateError', { name: fullName }));
     }
   };
 
@@ -427,7 +430,7 @@ export default function AcademicInstructorsScreen() {
       await reactivateInstructor(item.idInstructor);
       await refreshAfterLifecycleChange();
     } catch (err: any) {
-      setError(err?.message ?? err?.response?.data?.message ?? `No se pudo activar a ${fullName}.`);
+      setError(err?.message ?? err?.response?.data?.message ?? t('academic.instructorActivateError', { name: fullName }));
     }
   };
 
@@ -436,7 +439,7 @@ export default function AcademicInstructorsScreen() {
       await deleteInstructorApi(item.idInstructor);
       await refreshAfterLifecycleChange();
     } catch (err: any) {
-      setError(err?.message ?? err?.response?.data?.message ?? `No se pudo eliminar a ${fullName}.`);
+      setError(err?.message ?? err?.response?.data?.message ?? t('academic.instructorDeleteError', { name: fullName }));
     }
   };
 
@@ -448,8 +451,8 @@ export default function AcademicInstructorsScreen() {
           <Ionicons name="arrow-back" size={20} color={text} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={[s.title, { color: text }]}>Instructores</Text>
-          <Text style={[s.subtitle, { color: muted }]}>Gestiona instructores específicos y transversales</Text>
+          <Text style={[s.title, { color: text }]}>{t('academic.instructors')}</Text>
+          <Text style={[s.subtitle, { color: muted }]}>{t('academic.instructorScreenSubtitle')}</Text>
         </View>
         <TouchableOpacity
           onPress={openCreateModal}
@@ -457,7 +460,7 @@ export default function AcademicInstructorsScreen() {
           activeOpacity={0.85}
         >
           <Ionicons name="person-add-outline" size={18} color={Colors.white} />
-          <Text style={s.addBtnText}>Nuevo</Text>
+          <Text style={s.addBtnText}>{t('academic.instructorNewBtn')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -468,7 +471,7 @@ export default function AcademicInstructorsScreen() {
           <TextInput
             value={search}
             onChangeText={setSearch}
-            placeholder="Buscar por nombre o documento"
+            placeholder={t('academic.instructorSearchPlaceholder')}
             placeholderTextColor={muted}
             style={[s.searchInput, { color: text }] as any}
             keyboardType="default"
@@ -491,7 +494,7 @@ export default function AcademicInstructorsScreen() {
               activeOpacity={0.7}
             >
               <Text style={[s.typeChipText, { color: typeFilter === opt ? theme.primary : muted }]}>
-                {opt === 'ALL' ? 'Todos' : opt === 'TRANSVERSAL' ? 'Transversal' : 'Específico'}
+                {opt === 'ALL' ? t('academic.instructorFilterAll') : opt === 'TRANSVERSAL' ? t('academic.instructorFilterTransversal') : t('academic.instructorFilterEspecifico')}
               </Text>
             </TouchableOpacity>
           ))}
@@ -516,12 +519,12 @@ export default function AcademicInstructorsScreen() {
               <View style={s.empty}>
                 <Ionicons name="people-outline" size={52} color={muted} />
                 <Text style={[s.emptyText, { color: muted }]}>
-                  {search ? 'Sin resultados para ese documento.' : 'No hay instructores registrados.'}
+                  {search ? t('academic.instructorNoResultsDoc') : t('academic.instructorEmpty')}
                 </Text>
               </View>
             }
             renderItem={({ item }) => {
-              const fullName = `${item.firstName ?? ''} ${item.lastName ?? ''}`.trim() || '(sin nombre)';
+              const fullName = `${item.firstName ?? ''} ${item.lastName ?? ''}`.trim() || t('academic.instructorNoName');
               const isEsp = item.instructorType === 'ESPECIFICO';
               const isInactive = item.status === 'INACTIVE';
               return (
@@ -534,7 +537,7 @@ export default function AcademicInstructorsScreen() {
                     <View style={{ flex: 1, gap: 2 }}>
                       <Text style={[s.cardName, { color: text }]}>{fullName}</Text>
                       {item.document
-                        ? <Text style={[s.cardDoc,  { color: muted }]}>Doc: {item.document}</Text>
+                        ? <Text style={[s.cardDoc,  { color: muted }]}>{t('academic.instructorDocPrefix')}: {item.document}</Text>
                         : null
                       }
                       {item.email
@@ -542,17 +545,17 @@ export default function AcademicInstructorsScreen() {
                         : null
                       }
                       {item.createdAt ? (
-                        <Text style={[s.cardEmail, { color: muted }]}>Creado: {formatDateTime(item.createdAt)}</Text>
+                        <Text style={[s.cardEmail, { color: muted }]}>{t('academic.instructorCreatedPrefix')}: {formatDateTime(item.createdAt)}</Text>
                       ) : null}
                       {item.updatedAt ? (
-                        <Text style={[s.cardEmail, { color: muted }]}>Ultima edicion: {formatDateTime(item.updatedAt)}</Text>
+                        <Text style={[s.cardEmail, { color: muted }]}>{t('academic.instructorLastEditPrefix')}: {formatDateTime(item.updatedAt)}</Text>
                       ) : null}
                     </View>
                     <View style={[s.typeBadge, {
                       backgroundColor: isInactive ? Colors.error + '15' : isEsp ? theme.primary + '20' : Colors.info + '20',
                     }]}>
                       <Text style={[s.typeBadgeText, { color: isInactive ? Colors.error : isEsp ? theme.primary : Colors.info }]}>
-                        {isInactive ? 'Inactivo' : isEsp ? 'Especifico' : 'Transversal'}
+                        {isInactive ? t('academic.instructorStatusInactive') : isEsp ? t('academic.instructorTypeEspecificoShort') : t('academic.instructorTypeTransversalShort')}
                       </Text>
                     </View>
                   </View>
@@ -575,7 +578,7 @@ export default function AcademicInstructorsScreen() {
                       activeOpacity={0.7}
                     >
                       <Ionicons name="create-outline" size={14} color={theme.primary} />
-                      <Text style={[s.actionBtnText, { color: theme.primary }]}>Editar</Text>
+                      <Text style={[s.actionBtnText, { color: theme.primary }]}>{t('academic.instructorActionEdit')}</Text>
                     </TouchableOpacity>
                     {isInactive ? (
                       <>
@@ -585,7 +588,7 @@ export default function AcademicInstructorsScreen() {
                           activeOpacity={0.7}
                         >
                           <Ionicons name="checkmark-circle-outline" size={14} color={theme.primary} />
-                          <Text style={[s.actionBtnText, { color: theme.primary }]}>Activar</Text>
+                          <Text style={[s.actionBtnText, { color: theme.primary }]}>{t('academic.instructorActionActivate')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                           onPress={() => handleDeleteInstructor(item, fullName)}
@@ -593,7 +596,7 @@ export default function AcademicInstructorsScreen() {
                           activeOpacity={0.7}
                         >
                           <Ionicons name="trash-outline" size={14} color={Colors.error} />
-                          <Text style={[s.actionBtnText, { color: Colors.error }]}>Eliminar</Text>
+                          <Text style={[s.actionBtnText, { color: Colors.error }]}>{t('academic.instructorActionDelete')}</Text>
                         </TouchableOpacity>
                       </>
                     ) : (
@@ -603,7 +606,7 @@ export default function AcademicInstructorsScreen() {
                         activeOpacity={0.7}
                       >
                         <Ionicons name="ban-outline" size={14} color={Colors.error} />
-                        <Text style={[s.actionBtnText, { color: Colors.error }]}>Desactivar</Text>
+                        <Text style={[s.actionBtnText, { color: Colors.error }]}>{t('academic.instructorActionDeactivate')}</Text>
                       </TouchableOpacity>
                     )}
                   </View>

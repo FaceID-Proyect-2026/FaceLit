@@ -124,7 +124,7 @@ function RequestCard({
   onReject: () => void;
   text: string; muted: string; cardBg: string; border: string; theme: any;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   return (
     <View style={[rc.card, { backgroundColor: cardBg, borderColor: border }]}>
       {/* Header: nombre + badge */}
@@ -154,18 +154,18 @@ function RequestCard({
 
       {/* Fechas */}
       <Text style={[rc.meta, { color: muted }]}>
-        Solicitado: {new Date(item.requestedAt).toLocaleString()}
+        {t('academic.transferRequestedDate')}: {new Date(item.requestedAt).toLocaleString(i18n.language)}
       </Text>
       {item.decidedAt && (
         <Text style={[rc.meta, { color: muted }]}>
-          Decidido: {new Date(item.decidedAt).toLocaleString()}
-          {item.decidedBy ? ` · por ${item.decidedBy}` : ''}
+          {t('academic.transferDecidedDate')}: {new Date(item.decidedAt).toLocaleString(i18n.language)}
+          {item.decidedBy ? ` · ${t('academic.transferDecidedBy')} ${item.decidedBy}` : ''}
         </Text>
       )}
       {item.status === 'rejected' && item.reason && (
         <View style={[rc.reasonBox, { backgroundColor: Colors.error + '0D', borderColor: Colors.error + '25' }]}>
           <Ionicons name="information-circle-outline" size={14} color={Colors.error} />
-          <Text style={[rc.reasonText, { color: muted }]}>Motivo: {item.reason}</Text>
+          <Text style={[rc.reasonText, { color: muted }]}>{t('academic.transferReason')}: {item.reason}</Text>
         </View>
       )}
 
@@ -178,7 +178,7 @@ function RequestCard({
             activeOpacity={0.8}
           >
             <Ionicons name="close-circle-outline" size={16} color={Colors.error} />
-            <Text style={[rc.btnText, { color: Colors.error }]}>Rechazar</Text>
+            <Text style={[rc.btnText, { color: Colors.error }]}>{t('academic.transferReject')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={onApprove}
@@ -186,7 +186,7 @@ function RequestCard({
             activeOpacity={0.8}
           >
             <Ionicons name="checkmark-circle-outline" size={16} color={Colors.success} />
-            <Text style={[rc.btnText, { color: Colors.success }]}>Aprobar</Text>
+            <Text style={[rc.btnText, { color: Colors.success }]}>{t('academic.transferApprove')}</Text>
           </TouchableOpacity>
         </View>
       )}
