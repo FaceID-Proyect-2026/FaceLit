@@ -14,7 +14,7 @@ import {
   recordPrivacyAcceptance,
 } from '@/features/auth/privacyAcceptanceStore';
 import { useAuth } from '@/shared/contexts/AuthContext';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 // 6 a 15 dígitos — RF-1 V4 §1 y requisitos del negocio académico
@@ -52,15 +52,6 @@ export function useLoginForm() {
   const submittingRef = useRef(false);
 
   // RF-1.1 V3: ocultar checkbox si ya hay aceptación previa para ese documento
-  useEffect(() => {
-    const accepted = hasAcceptedPrivacy(form.document.trim());
-    setAlreadyAccepted(accepted);
-    if (accepted && !form.accepted) {
-      setForm(prev => ({ ...prev, accepted: true }));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.document]);
-
   const setField = <K extends keyof LoginForm>(key: K, value: LoginForm[K]) => {
     setForm(prev => ({ ...prev, [key]: value }));
     // Limpiar el error del campo que se está editando
@@ -72,6 +63,10 @@ export function useLoginForm() {
     // strip todo lo que no sea dígito (guiones, puntos, espacios del copy-paste)
     const cleaned = raw.replace(/\D/g, '');
     setField('document', cleaned);
+    if (alreadyAccepted && !hasAcceptedPrivacy(cleaned)) {
+      setAlreadyAccepted(false);
+      setForm(prev => ({ ...prev, accepted: false }));
+    }
 
     // El campo conserva solo dígitos, pero informa al usuario si intentó
     // escribir o pegar caracteres no permitidos.
@@ -81,6 +76,15 @@ export function useLoginForm() {
         document: t('login.errors.invalidDocument'),
       }));
     }
+  };
+
+  const refreshPrivacyAcceptance = (document = form.document) => {
+    const accepted = hasAcceptedPrivacy(document.trim());
+    setAlreadyAccepted(accepted);
+    if (accepted) {
+      setForm(prev => ({ ...prev, accepted: true }));
+    }
+    return accepted;
   };
 
   const validate = (): LoginErrors => {
@@ -109,7 +113,8 @@ export function useLoginForm() {
     }
 
     // ── Política de privacidad (RF-1 V4 §3) ─────
-    if (!form.accepted) {
+    const privacyAlreadyAccepted = doc ? hasAcceptedPrivacy(doc) : false;
+    if (!form.accepted && !privacyAlreadyAccepted) {
       e.policy = t('login.errors.policyRequired');
     }
 
@@ -122,6 +127,7 @@ export function useLoginForm() {
 
     const nextErrors = validate();
     setErrors(nextErrors);
+    if (form.document.trim()) refreshPrivacyAcceptance(form.document);
     if (nextErrors.document || nextErrors.password || nextErrors.policy) return;
 
     submittingRef.current = true;
@@ -171,6 +177,7 @@ export function useLoginForm() {
     alreadyAccepted,
     setField,
     setDocumentField,
+    refreshPrivacyAcceptance,
     handleSubmit,
   };
 }

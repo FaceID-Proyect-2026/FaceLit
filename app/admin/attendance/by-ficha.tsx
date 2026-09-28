@@ -38,10 +38,11 @@ import {
     type ExportOptions,
 } from "@/shared/utils/export";
 import { Ionicons } from "@expo/vector-icons";
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 import {
     Modal,
+    Platform,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -80,6 +81,8 @@ export default function AttendanceByFichaScreen({
     learnerName: string;
   } | null>(null);
   const [exporting, setExporting] = useState(false);
+  const dateGridRef = useRef<ScrollView>(null);
+  const dateGridX = useRef(0);
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -168,6 +171,23 @@ export default function AttendanceByFichaScreen({
       : "—";
 
   // ── Exportación ───────────────────────────────
+  const handleDateGridScroll = (event: any) => {
+    dateGridX.current = event.nativeEvent.contentOffset.x;
+  };
+  const handleDateGridWheel = (event: any) => {
+    if (Platform.OS !== "web") return;
+    const nativeEvent = event?.nativeEvent ?? event;
+    const delta = Math.abs(nativeEvent.deltaX) > Math.abs(nativeEvent.deltaY)
+      ? nativeEvent.deltaX
+      : nativeEvent.deltaY;
+    if (!delta) return;
+    nativeEvent.preventDefault?.();
+    const nextX = Math.max(0, dateGridX.current + delta);
+    dateGridX.current = nextX;
+    dateGridRef.current?.scrollTo({ x: nextX, animated: false });
+  };
+  const dateGridWheelProps = Platform.OS === "web" ? ({ onWheel: handleDateGridWheel } as any) : {};
+
   const handleExport = async (format: "excel" | "csv") => {
     if (!tableRows.length || !selectedFicha || !selectedProgram) return;
     setExporting(true);
@@ -221,6 +241,19 @@ export default function AttendanceByFichaScreen({
       keyboardShouldPersistTaps="handled"
     >
       <View style={s.contentInner}>
+      {!Boolean(selectedFichaId) && !directFichaOnly && (
+        <View style={[s.guideCard, { backgroundColor: cardBg, borderColor: border }]}>
+          <View style={[s.guideIcon, { backgroundColor: theme.primary + "18" }]}>
+            <Ionicons name="map-outline" size={22} color={theme.primary} />
+          </View>
+          <View style={s.guideCopy}>
+            <Text style={[s.guideTitle, { color: text }]}>Consulta por programa y ficha</Text>
+            <Text style={[s.guideText, { color: muted }]}>
+              Selecciona un programa de formación para ver sus fichas asociadas. Luego entra a una ficha para revisar la asistencia de sus aprendices por rango de fechas.
+            </Text>
+          </View>
+        </View>
+      )}
       {/* ── Selector de programa — solo visible sin ficha activa ── */}
       {!Boolean(selectedFichaId) && !directFichaOnly && (
         <View
@@ -428,6 +461,115 @@ export default function AttendanceByFichaScreen({
 
           {/* ── Tabla ── */}
           {tableRows.length > 0 && dates.length > 0 && (
+            <View style={[s.tableShell, { borderColor: border, backgroundColor: cardBg }]}>
+              <View style={s.fixedLearners}>
+                <View style={[s.cellName, s.thCell, { backgroundColor: theme.primary + "20", borderColor: border }]}>
+                  <Text style={[s.thText, { color: theme.primary }]}>{t("attendance.rf6.learner")}</Text>
+                </View>
+                {tableRows.map((row, rIdx) => (
+                  <View
+                    key={row.learnerId}
+                    style={[
+                      s.cellName,
+                      {
+                        borderColor: border,
+                        backgroundColor: rIdx % 2 === 0 ? cardBg : theme.primary + "08",
+                      },
+                    ]}
+                  >
+                    <Text style={[s.cellNameText, { color: text }]} numberOfLines={1}>{row.learnerName}</Text>
+                    <Text style={[s.cellDocText, { color: muted }]} numberOfLines={1}>{row.learnerDocument}</Text>
+                  </View>
+                ))}
+              </View>
+              <ScrollView
+                ref={dateGridRef}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={s.dateGridScroll}
+                onScroll={handleDateGridScroll}
+                scrollEventThrottle={16}
+                {...dateGridWheelProps}
+              >
+                <View>
+                  <View style={s.tableHeaderRow}>
+                    {dates.map((d) => (
+                      <View key={d} style={[s.cellDay, s.thCell, { backgroundColor: theme.primary + "20", borderColor: border }]}>
+                        <Text style={[s.thText, { color: theme.primary }]}>{fmtDate(d)}</Text>
+                      </View>
+                    ))}
+                  </View>
+                  {tableRows.map((row, rIdx) => (
+                    <View key={row.learnerId} style={[s.tableRow, { backgroundColor: rIdx % 2 === 0 ? cardBg : theme.primary + "08" }]}>
+                      {row.days.map((cell, dIdx) => {
+                        const isAbsent = cell.status === "absent";
+                        const isLate = cell.status === "late";
+                        const isClickable = isAbsent || isLate;
+                        return (
+                          <TouchableOpacity
+                            key={dIdx}
+                            disabled={!isClickable}
+                            onPress={() => isClickable && setCellDetail({ cell, learnerName: row.learnerName })}
+                            style={[
+                              s.cellDay,
+                              { borderColor: border },
+                              isAbsent && { backgroundColor: CELL_ABSENT, borderColor: BORDER_ABSENT },
+                              isLate && { backgroundColor: CELL_LATE, borderColor: BORDER_LATE },
+                            ]}
+                            accessibilityRole={isClickable ? "button" : "none"}
+                          >
+                            {isAbsent && <Ionicons name="close-circle" size={16} color={Colors.error} />}
+                            {isLate && <Ionicons name="time" size={16} color={Colors.warning} />}
+                            {cell.status === "punctual" && <View style={[s.punctualDot, { backgroundColor: Colors.success + "60" }]} />}
+                            {!cell.status && <Text style={[s.cellEmpty, { color: muted }]}>-</Text>}
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  ))}
+                </View>
+              </ScrollView>
+            </View>
+          )}
+          {tableRows.length > 0 && dates.length > 0 && (
+            <Text style={[s.tableHint, { color: muted }]}>
+              Desplaza las fechas con la rueda o el panel táctil; la columna de aprendices queda fija para no perder la referencia.
+            </Text>
+          )}
+          {tableRows.length > 0 && dates.length > 0 && (
+            <>
+              <View style={s.legend}>
+                {[
+                  { color: Colors.error, label: t("attendance.statuses.absent") },
+                  { color: Colors.warning, label: t("attendance.statuses.late") },
+                  { color: Colors.success, label: t("attendance.statuses.punctual") },
+                ].map((item) => (
+                  <View key={item.label} style={s.legendItem}>
+                    <View style={[s.legendDot, { backgroundColor: item.color }]} />
+                    <Text style={[s.legendText, { color: muted }]}>{item.label}</Text>
+                  </View>
+                ))}
+              </View>
+              <View style={s.exportRow}>
+                <AppButton
+                  title={exporting ? t("common.loading") : t("attendance.rf6.exportExcel")}
+                  onPress={() => handleExport("excel")}
+                  disabled={exporting}
+                  fullWidth={false}
+                  style={s.exportBtn}
+                />
+                <AppButton
+                  title={exporting ? t("common.loading") : t("attendance.rf6.exportCsv")}
+                  onPress={() => handleExport("csv")}
+                  disabled={exporting}
+                  variant="outline"
+                  fullWidth={false}
+                  style={s.exportBtn}
+                />
+              </View>
+            </>
+          )}
+          {false && tableRows.length > 0 && dates.length > 0 && (
             <>
               <ScrollView
                 horizontal
@@ -765,6 +907,24 @@ const s = StyleSheet.create({
   contentInner: { gap: 12 },
   card: { borderRadius: 14, borderWidth: 1, padding: 16 },
   noMargin: { marginBottom: 0 },
+  guideCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+  },
+  guideIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  guideCopy: { flex: 1, gap: 4 },
+  guideTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.black },
+  guideText: { fontSize: FontSize.sm, lineHeight: 20 },
 
   prompt: { alignItems: "center", paddingVertical: 60, gap: 12 },
   promptIcon: {
@@ -787,9 +947,10 @@ const s = StyleSheet.create({
 
   cardsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
   fichaCard: {
-    flexBasis: 160,
+    flexBasis: 230,
     flexGrow: 1,
-    borderRadius: 14,
+    maxWidth: 360,
+    borderRadius: 16,
     borderWidth: 1,
     overflow: "hidden",
   },
@@ -797,7 +958,8 @@ const s = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    padding: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
   },
   fichaNumber: { fontSize: FontSize.base, fontWeight: FontWeight.black },
   fichaMetrics: {
@@ -851,6 +1013,19 @@ const s = StyleSheet.create({
   dateError: { fontSize: FontSize.xs, marginTop: 4 },
 
   tableScroll: { marginHorizontal: -16 },
+  tableShell: {
+    flexDirection: "row",
+    borderWidth: 1,
+    borderRadius: 16,
+    overflow: "hidden",
+    marginTop: 4,
+  },
+  fixedLearners: {
+    width: 190,
+    zIndex: 2,
+  },
+  dateGridScroll: { flex: 1 },
+  tableHint: { fontSize: FontSize.xs, lineHeight: 18, marginTop: -2 },
   tableHeaderRow: { flexDirection: "row" },
   tableRow: { flexDirection: "row" },
   thCell: {
@@ -865,7 +1040,7 @@ const s = StyleSheet.create({
     textAlign: "center",
   },
   cellName: {
-    width: 140,
+    width: 190,
     borderWidth: 0.5,
     padding: 8,
     justifyContent: "center",
