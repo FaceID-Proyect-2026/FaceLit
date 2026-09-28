@@ -20,6 +20,7 @@
     continue: "Continuar",
     success: "Listo",
     close: "Cerrar",
+    change: "Cambiar",
   },
   theme: {
     toggle: "Tema",
@@ -913,6 +914,8 @@
     assignInfoNote: "Si el aprendiz no tiene cuenta, el sistema la crea automáticamente y genera una contraseña inicial vinculada a su número de documento.",
     assignNoProgram: "Sin programa",
     assignError: "No se pudo asignar el aprendiz.",
+    assignValidationEmptyLearner: "Por favor ingresa los datos del aprendiz antes de asignarlo.",
+    assignValidationDocRequired: "El número de documento es obligatorio.",
     assignValidationDoc: "El documento debe tener entre 6 y 15 dígitos.",
     assignValidationName: "El nombre es obligatorio.",
     assignValidationLastName: "El apellido es obligatorio.",

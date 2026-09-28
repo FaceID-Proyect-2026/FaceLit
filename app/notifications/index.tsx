@@ -64,7 +64,7 @@ export default function NotificationsScreen() {
   const [expandedId,     setExpandedId]     = useState<string | null>(null);
 
   const isApprentice = user?.role === 'APPRENTICE';
-  const { notifications, unreadCount, markRead, markAllRead } = useNotifications({
+  const { notifications, unreadCount, markRead } = useNotifications({
     statusFilter,
     categoryFilter,
     recipientUserId: isApprentice ? user?.id : undefined,
@@ -276,17 +276,6 @@ export default function NotificationsScreen() {
             </View>
           )}
         </View>
-        {unreadCount > 0 && (
-          <TouchableOpacity
-            onPress={markAllRead}
-            style={[ns.markAllBtn, { backgroundColor: theme.primary + '20' }]}
-            accessibilityRole="button"
-          >
-            <Text style={{ color: theme.primary, fontWeight: '700', fontSize: 12 }}>
-              {t('notifications.markAllRead')}
-            </Text>
-          </TouchableOpacity>
-        )}
       </View>
 
       {/* Filtros de estado */}
@@ -382,7 +371,6 @@ const ns = StyleSheet.create({
   title:  { fontSize: FontSize.xl, fontWeight: FontWeight.black },
   badge:  { borderRadius: 10, minWidth: 20, height: 20, paddingHorizontal: 5, alignItems: 'center', justifyContent: 'center' },
   badgeText: { color: '#fff', fontSize: 11, fontWeight: '800' },
-  markAllBtn: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
 
   // ── Fix: altura fija que NUNCA se encoge (flexShrink:0), sin importar
   // cuánto contenido tenga la lista de abajo ──

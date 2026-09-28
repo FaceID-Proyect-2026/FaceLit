@@ -139,40 +139,59 @@ export default function AttendanceByUserScreen({ allowedFichaIds }: { allowedFic
   return (
     <ScrollView
       style={[s.root, { backgroundColor: bg }]}
+      contentContainerStyle={s.content}
       keyboardShouldPersistTaps="handled"
     >
-      <View style={s.content}>
-
       {/* Buscador */}
       <View style={[s.card, { backgroundColor: cardBg, borderColor: border }]}>
         <Text style={[s.searchLabel, { color: muted }]}>{t('attendance.rf6.searchLearner')}</Text>
-        <View style={[s.searchRow, { backgroundColor: inputBg, borderColor: border }]}>
-          <Ionicons name="search-outline" size={17} color={muted} />
-          <TextInput
-            style={[s.searchInput, { color: text }] as any}
-            value={query}
-            onChangeText={setByUserQuery}
-            placeholder={t('attendance.rf6.searchPlaceholder')}
-            placeholderTextColor={isDark ? '#5A7258' : '#AAAAAA'}
-          />
-          {query.length > 0 && (
-            <TouchableOpacity onPress={() => setByUserQuery('')}>
-              <Ionicons name="close-circle" size={17} color={muted} />
-            </TouchableOpacity>
-          )}
-        </View>
 
-        {query.trim().length >= 2 && searchResults.length === 0 && (
+        {selectedLearner ? (
+          <View style={[s.selectedSummary, { backgroundColor: theme.primary + '10', borderColor: theme.primary + '45' }]}>
+            <View style={[s.resultAvatar, { backgroundColor: theme.primary + '20' }]}>
+              <Text style={[s.resultAvatarText, { color: theme.primary }]}>
+                {selectedLearner.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()}
+              </Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[s.resultName, { color: text }]}>{selectedLearner.name}</Text>
+              <Text style={[s.resultDoc, { color: muted }]}>{selectedLearner.document} - {t('academic.ficha')} {selectedLearner.fichaNumber}</Text>
+            </View>
+            <TouchableOpacity
+              style={[s.selectedChangeBtn, { borderColor: theme.primary + '60' }]}
+              onPress={() => setByUserQuery('')}
+              accessibilityRole="button"
+            >
+              <Ionicons name="swap-horizontal-outline" size={16} color={theme.primary} />
+              <Text style={[s.selectedChangeText, { color: theme.primary }]}>{t('common.change')}</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={[s.searchRow, { backgroundColor: inputBg, borderColor: border }]}>
+            <Ionicons name="search-outline" size={17} color={muted} />
+            <TextInput
+              style={[s.searchInput, { color: text }] as any}
+              value={query}
+              onChangeText={setByUserQuery}
+              placeholder={t('attendance.rf6.searchPlaceholder')}
+              placeholderTextColor={isDark ? '#5A7258' : '#AAAAAA'}
+            />
+            {query.length > 0 && (
+              <TouchableOpacity onPress={() => setByUserQuery('')}>
+                <Ionicons name="close-circle" size={17} color={muted} />
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
+        {!selectedLearner && query.trim().length >= 2 && searchResults.length === 0 && (
           <Text style={[s.noResults, { color: muted }]}>{t('attendance.rf6.noLearnerFound')}</Text>
         )}
 
-        {searchResults.map(r => (
+        {!selectedLearner && searchResults.map(r => (
           <TouchableOpacity
             key={r.learnerId}
-            style={[
-              s.resultItem, { borderColor: border },
-              selectedLearner?.learnerId === r.learnerId && { backgroundColor: theme.primary + '15', borderColor: theme.primary + '60' },
-            ]}
+            style={[s.resultItem, { borderColor: border }]}
             onPress={() => setByUserLearner(r)}
             accessibilityRole="button"
           >
@@ -185,9 +204,6 @@ export default function AttendanceByUserScreen({ allowedFichaIds }: { allowedFic
               <Text style={[s.resultName, { color: text }]}>{r.name}</Text>
               <Text style={[s.resultDoc,  { color: muted }]}>{r.document} - {t('academic.ficha')} {r.fichaNumber}</Text>
             </View>
-            {selectedLearner?.learnerId === r.learnerId && (
-              <Ionicons name="checkmark-circle" size={18} color={theme.primary} />
-            )}
           </TouchableOpacity>
         ))}
       </View>
@@ -384,7 +400,6 @@ export default function AttendanceByUserScreen({ allowedFichaIds }: { allowedFic
           </Pressable>
         </Pressable>
       </Modal>
-      </View>
     </ScrollView>
   );
 }
@@ -400,6 +415,9 @@ const s = StyleSheet.create({
   searchRow:        { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 12, borderWidth: 1, paddingHorizontal: 14, height: 44 },
   searchInput:      { flex: 1, fontSize: FontSize.sm, outlineStyle: 'none' } as any,
   noResults:        { fontSize: FontSize.sm, textAlign: 'center', paddingVertical: 8 },
+  selectedSummary:  { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 12, borderWidth: 1, padding: 10 },
+  selectedChangeBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, borderWidth: 1, paddingHorizontal: 10, height: 34 },
+  selectedChangeText: { fontSize: FontSize.xs, fontWeight: FontWeight.black },
   resultItem:       { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 10, borderWidth: 1, padding: 10 },
   resultAvatar:     { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   resultAvatarText: { fontWeight: FontWeight.black, fontSize: FontSize.sm },
@@ -414,7 +432,7 @@ const s = StyleSheet.create({
 
   rangeLabel:    { fontSize: FontSize.sm },
   rangeRow:      { flexDirection: 'row', alignItems: 'flex-start', gap: 8, flexWrap: 'wrap' },
-  dateFieldWrap: { flex: 1, minWidth: 130 },
+  dateFieldWrap: { flex: 1, minWidth: 150 },
   dateSepWrap:   { paddingTop: 34, alignItems: 'center' },
   dateSep:       { fontSize: FontSize.lg },
   dateError:     { fontSize: FontSize.xs, color: Colors.error },
@@ -423,9 +441,9 @@ const s = StyleSheet.create({
   tableInner:     { paddingHorizontal: 16 },
   tableHeaderRow: { flexDirection: 'row' },
   tableRow:       { flexDirection: 'row' },
-  thCell:         { justifyContent: 'center', alignItems: 'center', borderWidth: 0.5, padding: 8 },
+  thCell:         { height: 64, justifyContent: 'center', alignItems: 'center', borderWidth: 0.5, padding: 8 },
   thText:         { fontSize: FontSize.xs, fontWeight: FontWeight.black, textAlign: 'center' },
-  cell:           { width: 56, height: 56, borderWidth: 0.5, alignItems: 'center', justifyContent: 'center' },
+  cell:           { width: 56, height: 64, borderWidth: 0.5, alignItems: 'center', justifyContent: 'center' },
   dot:            { width: 10, height: 10, borderRadius: 5 },
   emptyCell:      { fontSize: FontSize.xs },
 

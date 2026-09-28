@@ -15,6 +15,7 @@
     continue: "Continuer",
     success: "Terminé",
     close: "Fermer",
+    change: "Changer",
   },
   theme: { toggle: "Thème", light: "Clair", dark: "Sombre" },
   landing: {

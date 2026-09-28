@@ -90,6 +90,8 @@ export default function AcademicAssignmentsScreen() {
   };
 
   const validate = (): string | null => {
+    if (!document.trim() && !name.trim() && !lastname.trim() && !email.trim()) return t('academic.assignValidationEmptyLearner');
+    if (!document.trim())                                        return t('academic.assignValidationDocRequired');
     if (!/^\d{6,15}$/.test(document.trim()))                    return t('academic.assignValidationDoc');
     if (!name.trim())                                            return t('academic.assignValidationName');
     if (!lastname.trim())                                        return t('academic.assignValidationLastName');
@@ -113,7 +115,7 @@ export default function AcademicAssignmentsScreen() {
       });
       const data = (resp as any)?.data ?? resp;
       const pwd  = (data as any)?.initialPassword ?? (data as any)?.password ?? null;
-      await refreshAcademicStoreFromBackend();
+      refreshAcademicStoreFromBackend().catch(() => undefined);
       setResult({
         success:         true,
         apprenticeName:  `${name.trim()} ${lastname.trim()}`,
@@ -223,11 +225,11 @@ export default function AcademicAssignmentsScreen() {
               <TextInput
                 style={[s.input, { color: text }] as any}
                 value={document}
-                onChangeText={v => { setDocument(v.replace(/\D/g, '').slice(0, 10)); setError(''); }}
+                onChangeText={v => { setDocument(v.replace(/\D/g, '').slice(0, 15)); setError(''); }}
                 placeholder={t('academic.assignDocPlaceholder')}
                 placeholderTextColor={muted}
                 keyboardType="numeric"
-                maxLength={10}
+                maxLength={15}
               />
               {document.length === 10 && (
                 <Ionicons name="checkmark-circle" size={16} color={Colors.success} />

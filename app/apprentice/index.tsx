@@ -89,9 +89,11 @@ export default function ApprenticeDashboard() {
   ];
 
   // ── Nombre para el saludo ──────────────────
-  const displayName = user?.firstName
-    ? user.firstName
-    : (user?.email?.split('@')[0] ?? '');
+  const displayName = [user?.firstName, user?.lastName]
+    .filter(Boolean)
+    .join(' ')
+    || (myLearner?.name ?? '')
+    || (user?.email?.split('@')[0] ?? '');
 
   return (
     <View style={[s.safe, { backgroundColor: bg }]}>

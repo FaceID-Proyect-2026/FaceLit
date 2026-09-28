@@ -144,7 +144,7 @@ function InstructorFormModal({
         : await createInstructor(payload);
       // El backend puede devolver initialPassword en la respuesta
       const pwd = (result as any)?.initialPassword ?? (result as any)?.password ?? null;
-      await refreshAcademicStoreFromBackend();
+      refreshAcademicStoreFromBackend().catch(() => undefined);
       if (!editing && pwd) {
         setPwdResult(pwd);
       } else {

@@ -11,12 +11,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
 
 export default function FacialManagementScreen() {
   const { logout } = useAuth();
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
+  const { width } = useWindowDimensions();
   const { settings, saveConfig } = useFacialRegistry();
   const { alert, DialogUI } = useAppDialog();
   const {
@@ -39,7 +40,7 @@ export default function FacialManagementScreen() {
   } = useEnvironmentSession();
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || !window.history?.pushState) return;
 
     window.history.pushState({ facialBackGuard: true }, "", window.location.href);
 
@@ -58,6 +59,7 @@ export default function FacialManagementScreen() {
   const cardBg = theme.surface;
   const border = theme.border;
   const bg = isDark ? Colors.dark.background : Colors.light.background;
+  const isCompact = width < 700;
 
   const instructorOptions = instructors.map((instructor) => ({
     value: instructor.idInstructor,
@@ -126,8 +128,8 @@ export default function FacialManagementScreen() {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={fs.scroll}>
-        <View style={[fs.heroCard, { backgroundColor: cardBg, borderColor: border }]}>
+      <ScrollView contentContainerStyle={[fs.scroll, isCompact && fs.scrollCompact]} showsHorizontalScrollIndicator={false}>
+        <View style={[fs.heroCard, isCompact && fs.heroCardCompact, { backgroundColor: cardBg, borderColor: border }]}>
           <View style={[fs.heroIcon, { backgroundColor: theme.primary + "18" }]}>
             <Ionicons name="scan-outline" size={28} color={theme.primary} />
           </View>
@@ -144,8 +146,8 @@ export default function FacialManagementScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={fs.contentGrid}>
-          <View style={[fs.summaryCard, { backgroundColor: cardBg, borderColor: border }]}>
+        <View style={[fs.contentGrid, isCompact && fs.contentGridCompact]}>
+          <View style={[fs.summaryCard, isCompact && fs.summaryCardCompact, { backgroundColor: cardBg, borderColor: border }]}>
             <Text style={[fs.panelTitle, { color: text }]}>Configuracion actual</Text>
             <View style={fs.timerGrid}>
               <View style={[fs.timerTile, { backgroundColor: theme.primary + "10", borderColor: border }]}>
@@ -178,7 +180,7 @@ export default function FacialManagementScreen() {
             </View>
           </View>
 
-          <View style={[fs.card, { backgroundColor: cardBg, borderColor: border }]}>
+          <View style={[fs.card, isCompact && fs.cardCompact, { backgroundColor: cardBg, borderColor: border }]}>
             <View style={[fs.iconWrap, { backgroundColor: theme.primary + "18" }]}>
               <Ionicons name="scan-outline" size={28} color={theme.primary} />
             </View>
@@ -269,6 +271,7 @@ const fs = StyleSheet.create({
   },
   title: { fontSize: FontSize.xl, fontWeight: FontWeight.black },
   scroll: { flexGrow: 1, padding: 16, paddingBottom: 40 },
+  scrollCompact: { paddingHorizontal: 14, paddingBottom: 28 },
   heroCard: {
     width: "100%",
     borderRadius: 18,
@@ -279,12 +282,18 @@ const fs = StyleSheet.create({
     alignItems: "center",
     gap: 14,
   },
+  heroCardCompact: {
+    padding: 14,
+    alignItems: "flex-start",
+    flexWrap: "wrap",
+  },
   heroIcon: { width: 58, height: 58, borderRadius: 16, alignItems: "center", justifyContent: "center" },
   heroTitle: { fontSize: FontSize.xl, fontWeight: FontWeight.black },
   heroSubtitle: { fontSize: FontSize.sm, marginTop: 4, lineHeight: 19 },
   heroAction: { flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 12, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 10 },
   heroActionText: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
   contentGrid: { width: "100%", flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 16 },
+  contentGridCompact: { flexDirection: "column", flexWrap: "nowrap", alignItems: "stretch", justifyContent: "flex-start" },
   summaryCard: {
     flex: 1,
     flexBasis: 330,
@@ -293,6 +302,12 @@ const fs = StyleSheet.create({
     borderWidth: 1,
     padding: 20,
     alignSelf: "stretch",
+  },
+  summaryCardCompact: {
+    width: "100%",
+    maxWidth: undefined,
+    flexBasis: "auto",
+    padding: 14,
   },
   panelTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.black, marginBottom: 12 },
   timerGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
@@ -318,6 +333,11 @@ const fs = StyleSheet.create({
     borderWidth: 1,
     padding: 24,
     alignItems: "stretch",
+  },
+  cardCompact: {
+    maxWidth: undefined,
+    flexBasis: "auto",
+    padding: 16,
   },
   iconWrap: {
     width: 52,

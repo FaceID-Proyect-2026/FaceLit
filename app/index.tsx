@@ -98,7 +98,6 @@ const CLOSING_ICONS = ['trending-up-outline', 'shield-outline', 'book-outline'] 
 
 const TECHNOLOGIES: TechItem[] = [
   { icon: 'scan-outline',           label: 'tech.label1' },
-  { icon: 'color-palette-outline',  label: 'tech.label2' },
   { icon: 'phone-portrait-outline', label: 'tech.label3' },
   { icon: 'layers-outline',         label: 'tech.label4' },
   { icon: 'server-outline',         label: 'tech.label5' },

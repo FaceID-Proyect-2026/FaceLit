@@ -418,23 +418,23 @@ export default function AcademicProgramsScreen() {
         <View style={[aps.headerButtons, isMobile && aps.headerButtonsMobile]}>
           <TouchableOpacity onPress={() => router.push('/admin/academic/instructors' as any)} style={[aps.addBtn, isMobile && aps.addBtnMobile, { backgroundColor: theme.primary + '18', borderWidth: 1.5, borderColor: theme.primary }]} activeOpacity={0.85}>
             <Ionicons name="people-outline" size={18} color={theme.primary} />
-            <Text style={[aps.addBtnText, { color: theme.primary }]}>{t('academic.instructors')}</Text>
+          <Text style={[aps.addBtnText, { color: theme.primary }]} numberOfLines={1}>{t('academic.instructors')}</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => router.push('/admin/academic/assignments' as any)} style={[aps.addBtn, isMobile && aps.addBtnMobile, { backgroundColor: theme.primary + '18', borderWidth: 1.5, borderColor: theme.primary }]} activeOpacity={0.85}>
             <Ionicons name="swap-horizontal-outline" size={18} color={theme.primary} />
-            <Text style={[aps.addBtnText, { color: theme.primary }]}>{t('academic.learners')}</Text>
+            <Text style={[aps.addBtnText, { color: theme.primary }]} numberOfLines={1}>{t('academic.learners')}</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => router.push('/admin/academic/csv-upload' as any)} style={[aps.addBtn, isMobile && aps.addBtnMobile, { backgroundColor: isDark ? '#1A2E1A' : '#E8F5E9', borderWidth: 1.5, borderColor: theme.primary }]} activeOpacity={0.85}>
             <Ionicons name="cloud-upload-outline" size={18} color={theme.primary} />
-            <Text style={[aps.addBtnText, { color: theme.primary }]}>{t('academic.csvUploadShort')}</Text>
+            <Text style={[aps.addBtnText, { color: theme.primary }]} numberOfLines={1}>{t('academic.csvUploadShort')}</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setProgramModalOpen(true)} style={[aps.addBtn, isMobile && aps.addBtnMobile, { backgroundColor: theme.primary }]} activeOpacity={0.85}>
             <Ionicons name="add" size={20} color={Colors.white} />
-            <Text style={aps.addBtnText}>{t('academic.programRegister')}</Text>
+            <Text style={aps.addBtnText} numberOfLines={1}>{t('academic.programRegister')}</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setFichaModalOpen(true)} style={[aps.addBtn, isMobile && aps.addBtnMobile, { backgroundColor: theme.primary }]} activeOpacity={0.85}>
             <Ionicons name="add" size={20} color={Colors.white} />
-            <Text style={aps.addBtnText}>{t('academic.fichaRegister')}</Text>
+            <Text style={aps.addBtnText} numberOfLines={1}>{t('academic.fichaRegister')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -534,13 +534,13 @@ const aps = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
   headerMobile: { flexDirection: 'column', alignItems: 'stretch', gap: 12 },
   headerButtons: { flexDirection: 'row', gap: 8 },
-  headerButtonsMobile: { flexDirection: 'column', alignSelf: 'stretch' },
+  headerButtonsMobile: { flexDirection: 'row', flexWrap: 'wrap', alignSelf: 'stretch', gap: 8 },
   title: { fontSize: FontSize['2xl'], fontWeight: FontWeight.black, marginBottom: 6 },
   headingCopy: { flex: 1 },
   subtitle: { fontSize: FontSize.sm, lineHeight: 19 },
   addBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12 },
-  addBtnMobile: { justifyContent: 'center', paddingVertical: 13, alignSelf: 'stretch' },
-  addBtnText: { color: Colors.white, fontSize: FontSize.md, fontWeight: FontWeight.bold },
+  addBtnMobile: { justifyContent: 'center', paddingVertical: 11, flexBasis: '48%', flexGrow: 1, minWidth: 140 },
+  addBtnText: { color: Colors.white, fontSize: FontSize.md, fontWeight: FontWeight.bold, flexShrink: 1 },
   searchWrap: { flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 16, marginVertical: 10, height: 44, borderRadius: 12, borderWidth: 1, paddingHorizontal: 14 },
   searchInput: { flex: 1, fontSize: FontSize.md, outlineStyle: 'none' } as any,
   tabRow: { flexDirection: 'row', gap: 8, marginHorizontal: 16, marginTop: 4, marginBottom: 8, flexWrap: 'wrap' },

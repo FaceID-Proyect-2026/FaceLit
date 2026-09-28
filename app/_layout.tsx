@@ -18,16 +18,21 @@ const { ThemeProvider, useTheme } = require("@/shared/contexts/ThemeContext") as
   useTheme: () => { theme: { background: string; statusBar: "light" | "dark" } };
 };
 import i18n from "@/shared/i18n/index";
-import { Stack, usePathname } from "expo-router";
+import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { I18nextProvider } from "react-i18next";
 import React from "react";
-import { AppState, StyleSheet, View } from "react-native";
+import { AppState, LogBox, StyleSheet, View } from "react-native";
 
 const { I18nProvider } = require("@/shared/contexts/I18nContext") as {
   I18nProvider: React.ComponentType<React.PropsWithChildren>;
 };
+
+LogBox.ignoreLogs([
+  "DateTimePicker: onChange is deprecated",
+  "Cannot connect to Expo CLI",
+]);
 
 // ── Carga y aplica las preferencias guardadas del usuario
 //    (tema, idioma, notificaciones) apenas hay sesión activa ──
@@ -51,7 +56,6 @@ function UserSettingsLoader() {
 
 function AcademicDataLoader() {
   const { user, loading: authLoading } = useAuth();
-  const pathname = usePathname();
 
   useEffect(() => {
     if (!authLoading && !user?.id) clearAcademicStore();
@@ -62,7 +66,7 @@ function AcademicDataLoader() {
     void refreshAcademicStoreFromBackend(user.role).catch(error => {
       console.warn('No se pudo sincronizar la información académica:', error);
     });
-  }, [authLoading, pathname, user?.id, user?.role]);
+  }, [authLoading, user?.id, user?.role]);
 
   useEffect(() => {
     if (authLoading || !user?.id) return;
