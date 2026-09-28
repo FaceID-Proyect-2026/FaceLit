@@ -229,16 +229,16 @@ function LanguageSelectorMobile({ style }: LanguageSelectorProps) {
           }]}>
             {LANGUAGES.map((lang) => {
               const isActive = language === lang;
-              const FlagComponent = LANGUAGE_FLAGS[lang];
               return (
                 <TouchableOpacity
                   key={lang}
                   onPress={() => { changeLanguage(lang); setOpen(false); }}
                   style={[s.option, isActive && { backgroundColor: isDark ? '#404040' : '#E5E7EB' }]}
                 >
-                  <View style={{ display: 'flex', alignItems: 'center', marginRight: 12 }}>
-                    {/* @ts-ignore */}
-                    <FlagComponent />
+                  <View style={[s.circle, { backgroundColor: isActive ? Colors.secondary : theme.primaryFaint }]}>
+                    <Text style={[s.circleText, { color: isActive ? Colors.white : theme.primary }]}>
+                      {LANGUAGE_LABELS[lang]}
+                    </Text>
                   </View>
                   <Text style={[s.optionText, {
                     color:      isActive ? (isDark ? '#FFFFFF' : '#0F172A') : theme.text,

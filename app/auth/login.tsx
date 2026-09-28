@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ─────────────────────────────────────────────
 //  app/auth/login.tsx — diseño mejorado + animación olvidé contraseña
 // ─────────────────────────────────────────────
@@ -13,33 +14,32 @@ import { router, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-    ActivityIndicator,
-    Animated,
-    Dimensions,
-    Easing,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Animated,
+  Dimensions,
+  Easing,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const { width, height } = Dimensions.get('window');
-const CARD_MAX = 560;
+const { width } = Dimensions.get('window');
 const isWide = width >= 768;
 
 // ── Overlay de transición animada ─────────────
 function TransitionOverlay({ visible, onDone }: { visible: boolean; onDone: () => void }) {
   const { t } = useTranslation();
-  const opacity  = useRef(new Animated.Value(0)).current;
-  const scale    = useRef(new Animated.Value(0)).current;
-  const ripple1  = useRef(new Animated.Value(0)).current;
-  const ripple2  = useRef(new Animated.Value(0)).current;
-  const ripple3  = useRef(new Animated.Value(0)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+  const scale = useRef(new Animated.Value(0)).current;
+  const ripple1 = useRef(new Animated.Value(0)).current;
+  const ripple2 = useRef(new Animated.Value(0)).current;
+  const ripple3 = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (!visible) return;
@@ -48,13 +48,13 @@ function TransitionOverlay({ visible, onDone }: { visible: boolean; onDone: () =
       // Fase 1: aparece el fondo y las ondas
       Animated.parallel([
         Animated.timing(opacity, { toValue: 1, duration: 280, useNativeDriver: true }),
-        Animated.timing(ripple1, { toValue: 1, duration: 500, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+        Animated.timing(ripple1, { toValue: 1, duration: 500, easing: Easing.out(Easing.quad), useNativeDriver: false }),
       ]),
       Animated.parallel([
-        Animated.timing(ripple2, { toValue: 1, duration: 500, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-        Animated.timing(scale,   { toValue: 1, duration: 350, easing: Easing.out(Easing.back(1.5)), useNativeDriver: true }),
+        Animated.timing(ripple2, { toValue: 1, duration: 500, easing: Easing.out(Easing.quad), useNativeDriver: false }),
+        Animated.timing(scale, { toValue: 1, duration: 350, easing: Easing.out(Easing.back(1.5)), useNativeDriver: true }),
       ]),
-      Animated.timing(ripple3, { toValue: 1, duration: 400, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+      Animated.timing(ripple3, { toValue: 1, duration: 400, easing: Easing.out(Easing.quad), useNativeDriver: false }),
       // Fase 2: sostenido brevemente y luego navega
       Animated.delay(150),
     ]).start(() => onDone());
@@ -65,9 +65,9 @@ function TransitionOverlay({ visible, onDone }: { visible: boolean; onDone: () =
   const r1Size = ripple1.interpolate({ inputRange: [0, 1], outputRange: [0, width * 3.5] });
   const r2Size = ripple2.interpolate({ inputRange: [0, 1], outputRange: [0, width * 2.8] });
   const r3Size = ripple3.interpolate({ inputRange: [0, 1], outputRange: [0, width * 2.0] });
-  const r1Op  = ripple1.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.5, 0.25, 0] });
-  const r2Op  = ripple2.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.45, 0.2, 0] });
-  const r3Op  = ripple3.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.6, 0.35, 0.1] });
+  const r1Op = ripple1.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.5, 0.25, 0] });
+  const r2Op = ripple2.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.45, 0.2, 0] });
+  const r3Op = ripple3.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.6, 0.35, 0.1] });
   const iconScale = scale.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] });
 
   return (
@@ -115,24 +115,12 @@ export default function LoginScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const routerInstance = useRouter();
-  const { form, errors, loading, alreadyAccepted, setField, setDocumentField, handleSubmit } = useLoginForm();
+  const { form, errors, loading, alreadyAccepted, setField, setDocumentField, refreshPrivacyAcceptance, handleSubmit } = useLoginForm();
 
   const [showPassword, setShowPassword] = useState(false);
-  const [focused, setFocused]           = useState<string | null>(null);
-  const [showPrivacy, setShowPrivacy]   = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
   const passwordRef = useRef<TextInput>(null);
-
-  // Animaciones de entrada de la tarjeta
-  const cardAnim  = useRef(new Animated.Value(0)).current;
-  const cardSlide = useRef(new Animated.Value(30)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(cardAnim,  { toValue: 1, duration: 520, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-      Animated.timing(cardSlide, { toValue: 0, duration: 520, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-    ]).start();
-  }, []);
 
   const handleForgotPassword = () => {
     if (transitioning) return;
@@ -144,15 +132,14 @@ export default function LoginScreen() {
     // Pequeño delay para resetear el estado después de navegar
     setTimeout(() => setTransitioning(false), 800);
   };
-
   // ── Colores locales ───────────────────────────
-  const text        = isDark ? Colors.dark.text       : Colors.light.text;
-  const muted       = isDark ? Colors.dark.textMuted  : Colors.light.textMuted;
-  const cardBg      = isDark ? Colors.dark.surface    : Colors.white;
-  const inputBg     = isDark ? Colors.dark.inputBg    : Colors.light.inputBg;
-  const inputBorder = isDark ? Colors.dark.inputBorder: Colors.light.inputBorder;
-  const cardBorder  = isDark ? Colors.dark.border     : Colors.light.border;
-  const forgotColor = isDark ? Colors.white            : theme.primaryDark;
+  const text = isDark ? Colors.dark.text : Colors.light.text;
+  const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
+  const cardBg = isDark ? Colors.dark.surface : Colors.white;
+  const inputBg = isDark ? Colors.dark.inputBg : Colors.light.inputBg;
+  const inputBorder = isDark ? Colors.dark.inputBorder : Colors.light.inputBorder;
+  const cardBorder = isDark ? Colors.dark.border : Colors.light.border;
+  const forgotColor = isDark ? Colors.white : theme.primaryDark;
 
   return (
     <>
@@ -164,29 +151,32 @@ export default function LoginScreen() {
         style={s.gradient}
       >
         {/* Arcos decorativos */}
-        <View style={[s.arcTop,    { backgroundColor: isDark ? 'rgba(101,179,97,0.08)' : 'rgba(20,70,28,0.18)' }]} />
-        <View style={[s.arcBottom, { backgroundColor: isDark ? 'rgba(101,179,97,0.22)' : 'rgba(101,179,97,0.28)' }]} />
+        <View pointerEvents="none" style={[s.arcTop, { backgroundColor: isDark ? 'rgba(101,179,97,0.08)' : 'rgba(20,70,28,0.18)' }]} />
+        <View pointerEvents="none" style={[s.arcBottom, { backgroundColor: isDark ? 'rgba(101,179,97,0.22)' : 'rgba(101,179,97,0.28)' }]} />
 
         {/* Círculos decorativos adicionales */}
-        <View style={[s.deco1, { backgroundColor: isDark ? 'rgba(101,179,97,0.05)' : 'rgba(101,179,97,0.12)' }]} />
-        <View style={[s.deco2, { backgroundColor: isDark ? 'rgba(101,179,97,0.04)' : 'rgba(101,179,97,0.08)' }]} />
+        <View pointerEvents="none" style={[s.deco1, { backgroundColor: isDark ? 'rgba(101,179,97,0.05)' : 'rgba(101,179,97,0.12)' }]} />
+        <View pointerEvents="none" style={[s.deco2, { backgroundColor: isDark ? 'rgba(101,179,97,0.04)' : 'rgba(101,179,97,0.08)' }]} />
 
         <SafeAreaView style={s.safe}>
           <KeyboardAvoidingView
             style={s.kav}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            enabled={Platform.OS === 'ios'}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            enabled={Platform.OS !== 'web'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 12 : 0}
           >
             <ScrollView
+              style={s.scrollView}
               contentContainerStyle={s.scroll}
-              keyboardShouldPersistTaps="always"
-              keyboardDismissMode="none"
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'none'}
+              automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+              removeClippedSubviews={false}
               showsVerticalScrollIndicator={false}
             >
-              <Animated.View style={[
+              <View style={[
                 s.card,
                 { backgroundColor: cardBg, borderColor: cardBorder },
-                { opacity: cardAnim, transform: [{ translateY: cardSlide }] },
               ]}>
 
                 {/* Volver */}
@@ -207,7 +197,7 @@ export default function LoginScreen() {
                 </View>
 
                 {/* Título */}
-                <Text style={[s.title,    { color: text  }]}>{t('login.title')}</Text>
+                <Text style={[s.title, { color: text }]}>{t('login.title')}</Text>
                 <Text style={[s.subtitle, { color: muted }]}>{t('login.subtitle')}</Text>
 
                 {/* Separador decorativo */}
@@ -218,56 +208,42 @@ export default function LoginScreen() {
                   <Text style={[s.label, { color: text }]}>{t('login.document')}</Text>
                   <View style={[s.inputWrap, {
                     backgroundColor: inputBg,
-                    borderColor: errors.document
-                      ? Colors.error
-                      : focused === 'document'
-                        ? theme.borderStrong
-                        : inputBorder,
-                    shadowColor: focused === 'document' ? theme.borderStrong : 'transparent',
-                    shadowOpacity: 0.3,
-                    shadowRadius: 4,
-                    elevation: focused === 'document' ? 2 : 0,
+                    borderColor: errors.document ? Colors.error : inputBorder,
                   }]}>
-                    <Ionicons name="card-outline" size={18} color={focused === 'document' ? theme.text : muted} />
+                    <Ionicons name="card-outline" size={18} color={muted} />
                     <TextInput
                       style={[s.input, { color: text }] as any}
                       value={form.document}
                       onChangeText={setDocumentField}
                       placeholder={t('login.documentPlaceholder')}
                       placeholderTextColor={isDark ? '#5A7258' : '#AAAAAA'}
-                      keyboardType="number-pad"
-                      inputMode="numeric"
+                      keyboardType={Platform.OS === 'web' ? 'default' : 'number-pad'}
+                      inputMode={Platform.OS === 'web' ? 'numeric' : undefined}
                       autoCorrect={false}
                       autoCapitalize="none"
-                      autoComplete="username"
-                      textContentType="username"
+                      autoComplete="off"
+                      importantForAutofill="no"
+                      textContentType="none"
                       returnKeyType="next"
                       blurOnSubmit={false}
                       maxLength={15}
-                      onFocus={() => setFocused('document')}
-                      onBlur={() => setFocused(null)}
+                      showSoftInputOnFocus
+                      onEndEditing={() => refreshPrivacyAcceptance(form.document)}
                       onSubmitEditing={() => passwordRef.current?.focus()}
                     />
                   </View>
                   {errors.document ? <Text style={s.errorText}>{errors.document}</Text> : null}
                 </View>
 
+
                 {/* ── Contraseña ── */}
                 <View style={s.fieldGroup}>
                   <Text style={[s.label, { color: text }]}>{t('login.password')}</Text>
                   <View style={[s.inputWrap, {
                     backgroundColor: inputBg,
-                    borderColor: errors.password
-                      ? Colors.error
-                      : focused === 'password'
-                        ? theme.borderStrong
-                        : inputBorder,
-                    shadowColor: focused === 'password' ? theme.borderStrong : 'transparent',
-                    shadowOpacity: 0.3,
-                    shadowRadius: 4,
-                    elevation: focused === 'password' ? 2 : 0,
+                    borderColor: errors.password ? Colors.error : inputBorder,
                   }]}>
-                    <Ionicons name="lock-closed-outline" size={18} color={focused === 'password' ? theme.text : muted} />
+                    <Ionicons name="lock-closed-outline" size={18} color={muted} />
                     <TextInput
                       ref={passwordRef}
                       style={[s.input, { color: text }] as any}
@@ -282,8 +258,6 @@ export default function LoginScreen() {
                       textContentType="password"
                       returnKeyType="done"
                       blurOnSubmit={false}
-                      onFocus={() => setFocused('password')}
-                      onBlur={() => setFocused(null)}
                       onSubmitEditing={handleSubmit}
                     />
                     <TouchableOpacity
@@ -358,13 +332,13 @@ export default function LoginScreen() {
                 ) : null}
 
                 {/* ── Botón iniciar sesión ── */}
+                {/* ── Botón iniciar sesión ── */}
                 <TouchableOpacity
                   onPress={handleSubmit}
                   style={[s.loginBtn, loading && s.loginBtnDisabled]}
                   activeOpacity={0.85}
                   disabled={loading}
                 >
-                  <PrivacyNoticeModal visible={showPrivacy} onClose={() => setShowPrivacy(false)} />
                   <LinearGradient
                     colors={['#72C96D', '#65B361', '#4FA14B']}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
@@ -380,6 +354,8 @@ export default function LoginScreen() {
                     </Text>
                   </LinearGradient>
                 </TouchableOpacity>
+
+                <PrivacyNoticeModal visible={showPrivacy} onClose={() => setShowPrivacy(false)} />
 
                 {/* ── ¿Olvidaste tu contraseña? ── */}
                 <View style={s.links}>
@@ -399,7 +375,7 @@ export default function LoginScreen() {
                   </TouchableOpacity>
                 </View>
 
-              </Animated.View>
+              </View>
             </ScrollView>
           </KeyboardAvoidingView>
         </SafeAreaView>
@@ -414,13 +390,13 @@ export default function LoginScreen() {
 // ── Estilos ───────────────────────────────────
 const s = StyleSheet.create({
   gradient: { flex: 1 },
-  safe:     { flex: 1 },
-  kav:      { flex: 1 },
+  safe: { flex: 1 },
+  kav: { flex: 1 },
 
-  arcTop:    { position: 'absolute', width: 300, height: 420, right: -120, top: -90,    borderRadius: 200 },
-  arcBottom: { position: 'absolute', width: 420, height: 220, left:  -120, bottom: -30, borderRadius: 180 },
-  deco1:     { position: 'absolute', width: 160, height: 160, left:   -60, top:   '35%', borderRadius: 80 },
-  deco2:     { position: 'absolute', width: 100, height: 100, right:  -30, bottom: '30%', borderRadius: 50 },
+  arcTop: { position: 'absolute', width: 300, height: 420, right: -120, top: -90, borderRadius: 200 },
+  arcBottom: { position: 'absolute', width: 420, height: 220, left: -120, bottom: -30, borderRadius: 180 },
+  deco1: { position: 'absolute', width: 160, height: 160, left: -60, top: '35%', borderRadius: 80 },
+  deco2: { position: 'absolute', width: 100, height: 100, right: -30, bottom: '30%', borderRadius: 50 },
 
   scroll: {
     flexGrow: 1,
@@ -429,6 +405,7 @@ const s = StyleSheet.create({
     paddingVertical: 40,
     paddingHorizontal: 16,
   },
+  scrollView: { flex: 1 },
 
   card: {
     width: '100%',
@@ -454,45 +431,44 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  logoWrap:   { alignItems: 'center', marginBottom: 14 },
+  logoWrap: { alignItems: 'center', marginBottom: 14 },
   logoCircle: {
     width: 80, height: 80, borderRadius: 40,
     borderWidth: 1.5,
     alignItems: 'center', justifyContent: 'center',
   },
 
-  title:    { fontSize: FontSize['3xl'], fontWeight: FontWeight.black, textAlign: 'center', marginBottom: 4 },
-  subtitle: { fontSize: FontSize.md,    textAlign: 'center', lineHeight: 20, marginBottom: 16 },
+  title: { fontSize: FontSize['3xl'], fontWeight: FontWeight.black, textAlign: 'center', marginBottom: 4 },
+  subtitle: { fontSize: FontSize.md, textAlign: 'center', lineHeight: 20, marginBottom: 16 },
 
   divider: { height: 1.5, borderRadius: 2, marginBottom: 22 },
 
   fieldGroup: { marginBottom: 16 },
-  label:      { fontSize: FontSize.md, fontWeight: FontWeight.bold, marginBottom: 6 },
+  label: { fontSize: FontSize.md, fontWeight: FontWeight.bold, marginBottom: 6 },
   inputWrap: {
     height: 52, borderWidth: 1.5, borderRadius: 14,
     paddingHorizontal: 14, flexDirection: 'row',
     alignItems: 'center', gap: 10,
   },
-  input:    { flex: 1, fontSize: FontSize.lg, outlineStyle: 'none' } as any,
-  eyeBtn:   { padding: 4 },
-  errorText:{ color: Colors.error, fontSize: FontSize.xs, marginTop: 3 },
-
-  policyCard:    { borderRadius: 14, borderWidth: 1, padding: 14, marginTop: 4, marginBottom: 4 },
-  policyRow:     { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  checkbox:      { width: 20, height: 20, borderWidth: 1.5, borderRadius: 4, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  policyTextWrap:{ flex: 1 },
-  policyText:    { fontSize: FontSize.md, lineHeight: 22 },
-  policyLink:    { fontSize: FontSize.md, fontWeight: FontWeight.bold, textDecorationLine: 'underline', lineHeight: 22 },
+  input: { flex: 1, fontSize: FontSize.lg, outlineStyle: 'none' } as any,
+  eyeBtn: { padding: 4 },
+  errorText: { color: Colors.error, fontSize: FontSize.xs, marginTop: 3 },
+  policyCard: { borderRadius: 14, borderWidth: 1, padding: 14, marginTop: 4, marginBottom: 4 },
+  policyRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  checkbox: { width: 20, height: 20, borderWidth: 1.5, borderRadius: 4, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  policyTextWrap: { flex: 1 },
+  policyText: { fontSize: FontSize.md, lineHeight: 22 },
+  policyLink: { fontSize: FontSize.md, fontWeight: FontWeight.bold, textDecorationLine: 'underline', lineHeight: 22 },
 
   blockedBanner: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, borderRadius: 12, borderWidth: 1, padding: 12, marginBottom: 4 },
-  blockedText:   { flex: 1, fontSize: FontSize.sm, lineHeight: 20, fontWeight: FontWeight.bold },
+  blockedText: { flex: 1, fontSize: FontSize.sm, lineHeight: 20, fontWeight: FontWeight.bold },
 
-  loginBtn:         { width: '100%', maxWidth: 340, alignSelf: 'center', borderRadius: 16, overflow: 'hidden', marginTop: 22, marginBottom: 12 },
+  loginBtn: { width: '100%', maxWidth: 340, alignSelf: 'center', borderRadius: 16, overflow: 'hidden', marginTop: 22, marginBottom: 12 },
   loginBtnDisabled: { opacity: 0.7 },
   loginBtnGradient: { paddingVertical: 15, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 },
-  loginBtnText:     { color: Colors.white, fontSize: FontSize.lg, fontWeight: FontWeight.bold },
+  loginBtnText: { color: Colors.white, fontSize: FontSize.lg, fontWeight: FontWeight.bold },
 
-  links:     { alignItems: 'center', marginTop: 8 },
+  links: { alignItems: 'center', marginTop: 8 },
   forgotBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1 },
-  forgotText:{ fontSize: FontSize.base, fontWeight: FontWeight.bold, textDecorationLine: 'underline' },
+  forgotText: { fontSize: FontSize.base, fontWeight: FontWeight.bold, textDecorationLine: 'underline' },
 });

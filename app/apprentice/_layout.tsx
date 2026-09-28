@@ -55,7 +55,7 @@ export default function ApprenticeLayout() {
         </View>
       </View>
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}>
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' }, animation: 'slide_from_right', animationDuration: 240 }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="attendance" />
         <Stack.Screen name="facial" />

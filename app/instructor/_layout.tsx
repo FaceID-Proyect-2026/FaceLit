@@ -12,7 +12,6 @@ import { useAuthGuard } from "@/shared/hooks/useAuthGuard";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, router, usePathname } from "expo-router";
 import { useState } from "react";
-import { useTranslation } from "react-i18next";
 import {
     ActivityIndicator,
     StyleSheet,
@@ -25,7 +24,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function AdminLayout() {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const { theme, isDark } = useTheme();
-  const { t } = useTranslation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { canRenderContent } = useAuthGuard(isAuthenticated, '/auth/login', authLoading);
   const pathname = usePathname();
@@ -112,6 +110,8 @@ export default function AdminLayout() {
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: "transparent" },
+          animation: "slide_from_right",
+          animationDuration: 240,
         }}
       >
         <Stack.Screen name="index" />
@@ -123,6 +123,7 @@ export default function AdminLayout() {
           options={{
             presentation: "modal",
             animation: "slide_from_bottom",
+            animationDuration: 260,
             contentStyle: { backgroundColor: "transparent" },
           }}
         />
@@ -134,6 +135,7 @@ export default function AdminLayout() {
           options={{
             presentation: "modal",
             animation: "slide_from_bottom",
+            animationDuration: 260,
             contentStyle: { backgroundColor: "transparent" },
           }}
         />
@@ -143,6 +145,7 @@ export default function AdminLayout() {
           options={{
             presentation: "modal",
             animation: "slide_from_bottom",
+            animationDuration: 260,
             contentStyle: { backgroundColor: "transparent" },
           }}
         />

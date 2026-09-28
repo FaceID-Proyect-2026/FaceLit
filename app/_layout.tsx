@@ -5,15 +5,29 @@
 import { useUserSettings } from "@/features/profile/useUserSettings";
 import { refreshAcademicStoreFromBackend } from "@/features/academic/useAcademic";
 import { clearAcademicStore } from "@/features/academic/academicStore";
-import { AuthProvider, useAuth } from "@/shared/contexts/AuthContext";
-import { I18nProvider } from "@/shared/contexts/I18nContext";
-import { ThemeProvider, useTheme } from "@/shared/contexts/ThemeContext";
+const { AuthProvider, useAuth } = require("@/shared/contexts/AuthContext") as {
+  AuthProvider: React.ComponentType<React.PropsWithChildren>;
+  useAuth: () => {
+    isAuthenticated: boolean;
+    loading: boolean;
+    user?: { id?: string; role: string } | null;
+  };
+};
+const { ThemeProvider, useTheme } = require("@/shared/contexts/ThemeContext") as {
+  ThemeProvider: React.ComponentType<React.PropsWithChildren>;
+  useTheme: () => { theme: { background: string; statusBar: "light" | "dark" } };
+};
 import i18n from "@/shared/i18n/index";
 import { Stack, usePathname } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { I18nextProvider } from "react-i18next";
+import React from "react";
 import { AppState, StyleSheet, View } from "react-native";
+
+const { I18nProvider } = require("@/shared/contexts/I18nContext") as {
+  I18nProvider: React.ComponentType<React.PropsWithChildren>;
+};
 
 // ── Carga y aplica las preferencias guardadas del usuario
 //    (tema, idioma, notificaciones) apenas hay sesión activa ──
@@ -30,7 +44,7 @@ function UserSettingsLoader() {
     if (!isAuthenticated) {
       setApplied(false); // permite recargar la próxima vez que inicie sesión
     }
-  }, [authLoading, isAuthenticated, applied]);
+  }, [authLoading, isAuthenticated, applied, loadAndApply]);
 
   return null;
 }
@@ -68,68 +82,46 @@ function AcademicDataLoader() {
 function RootLayoutInner() {
   const { theme } = useTheme();
 
-  return (
-    <View style={[s.root, { backgroundColor: theme.background }]}>
-      <StatusBar style={theme.statusBar} />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: "transparent" },
-          animation: "slide_from_right",
-        }}
-      >
-        <Stack.Screen name="index" options={{ animation: "fade" }} />
-        {/* Auth — RF-1: solo login y recuperación de contraseña */}
-        <Stack.Screen
-          name="auth/login"
-          options={{
-            // Deslizamiento hacia arriba al entrar, más profundidad visual
-            animation: "slide_from_bottom",
-            animationDuration: 380,
-          }}
-        />
-        <Stack.Screen
-          name="auth/password-recovery"
-          options={{ animation: "slide_from_right" }}
-        />
-        <Stack.Screen
-          name="auth/verify-identity"
-          options={{ animation: "slide_from_right" }}
-        />
-        <Stack.Screen
-          name="auth/new-password"
-          options={{ animation: "slide_from_right" }}
-        />
-        {/* Dashboards por rol */}
-        <Stack.Screen name="admin" options={{ animation: "fade" }} />
-        <Stack.Screen name="instructor" options={{ animation: "fade" }} />
-        <Stack.Screen name="apprentice" options={{ animation: "fade" }} />
-        <Stack.Screen
-          name="notifications/index"
-          options={{ animation: "slide_from_right" }}
-        />
-        <Stack.Screen
-          name="profile/index"
-          options={{ animation: "slide_from_right" }}
-        />
-      </Stack>
-    </View>
+  const screens = [
+    React.createElement(Stack.Screen, { key: "index", name: "index" }),
+    React.createElement(Stack.Screen, { key: "login", name: "auth/login", options: { animation: "slide_from_bottom" } }),
+    React.createElement(Stack.Screen, { key: "recovery", name: "auth/password-recovery", options: { animation: "slide_from_right" } }),
+    React.createElement(Stack.Screen, { key: "verify", name: "auth/verify-identity", options: { animation: "slide_from_right" } }),
+    React.createElement(Stack.Screen, { key: "new-password", name: "auth/new-password", options: { animation: "slide_from_right" } }),
+    React.createElement(Stack.Screen, { key: "admin", name: "admin" }),
+    React.createElement(Stack.Screen, { key: "instructor", name: "instructor" }),
+    React.createElement(Stack.Screen, { key: "apprentice", name: "apprentice" }),
+    React.createElement(Stack.Screen, { key: "notifications", name: "notifications/index", options: { animation: "slide_from_right" } }),
+    React.createElement(Stack.Screen, { key: "profile", name: "profile/index", options: { animation: "slide_from_right" } }),
+    React.createElement(Stack.Screen, { key: "settings", name: "profile/settings", options: { animation: "slide_from_right" } }),
+  ];
+  return React.createElement(
+    View,
+    { style: [s.root, { backgroundColor: theme.background }] },
+    React.createElement(StatusBar, { style: theme.statusBar }),
+    React.createElement(Stack, { screenOptions: { headerShown: false, contentStyle: { backgroundColor: "transparent" }, animation: "slide_from_right" } }, screens),
   );
 }
 
 export default function RootLayout() {
-  return (
-    <I18nextProvider i18n={i18n}>
-      <ThemeProvider>
-        <I18nProvider>
-          <AuthProvider>
-            <UserSettingsLoader />
-            <AcademicDataLoader />
-            <RootLayoutInner />
-          </AuthProvider>
-        </I18nProvider>
-      </ThemeProvider>
-    </I18nextProvider>
+  return React.createElement(
+    I18nextProvider,
+    { i18n },
+    React.createElement(
+      ThemeProvider,
+      null,
+      React.createElement(
+        I18nProvider,
+        null,
+        React.createElement(
+          AuthProvider,
+          null,
+          React.createElement(UserSettingsLoader),
+          React.createElement(AcademicDataLoader),
+          React.createElement(RootLayoutInner),
+        ),
+      ),
+    ),
   );
 }
 

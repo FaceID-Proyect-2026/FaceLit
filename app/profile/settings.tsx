@@ -3,7 +3,9 @@
 // ─────────────────────────────────────────────
 import { useUserSettings } from '@/features/profile/useUserSettings';
 import { Colors } from '@/shared/constants/colors';
+import { Routes } from '@/shared/constants/routes';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
+import { useAuth, type UserRole } from '@/shared/contexts/AuthContext';
 import type { Language } from '@/shared/contexts/I18nContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
@@ -20,7 +22,51 @@ const LANGUAGES: { code: Language; label: string }[] = [
   { code: 'fr', label: 'Français' },
 ];
 
+function getAccessRights(role?: UserRole | null) {
+  if (role === 'INSTRUCTOR') {
+    return {
+      label: 'Instructor',
+      summary: 'Puede consultar y gestionar la asistencia solo de las fichas que tiene asignadas.',
+      rights: [
+        'Consultar sus propios datos registrados.',
+        'Visualizar asistencias de sus fichas asignadas.',
+        'Consultar solo fichas y aprendices autorizados.',
+        'Registrar o gestionar asistencia de las fichas correspondientes.',
+      ],
+      restriction: 'No puede modificar directamente datos personales de usuarios.',
+    };
+  }
+
+  if (role === 'APPRENTICE') {
+    return {
+      label: 'Aprendiz',
+      summary: 'Puede consultar su informacion personal, academica y sus propias asistencias.',
+      rights: [
+        'Consultar sus propios datos registrados.',
+        'Visualizar sus propias asistencias.',
+        'Consultar solo la informacion academica que le corresponda.',
+        'Solicitar al Coordinador la correccion o actualizacion de sus datos.',
+      ],
+      restriction: 'No puede modificar directamente sus datos personales registrados.',
+    };
+  }
+
+  return {
+    label: role === 'COORDINATOR_REGISTER' ? 'Coordinador de registro' : 'Coordinador',
+    summary: 'Puede gestionar usuarios, roles, fichas y datos administrativos segun sus permisos.',
+    rights: [
+      'Consultar informacion de usuarios para gestion administrativa.',
+      'Crear, actualizar, activar o desactivar usuarios.',
+      'Actualizar o corregir datos personales de usuarios.',
+      'Gestionar aprendices, instructores y fichas.',
+      'Asignar roles y gestionar relaciones Instructor-Ficha.',
+    ],
+    restriction: 'Las modificaciones relevantes deben quedar registradas para trazabilidad.',
+  };
+}
+
 export default function SettingsScreen() {
+  const { user } = useAuth();
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const { alert, DialogUI } = useAppDialog();
@@ -41,6 +87,7 @@ export default function SettingsScreen() {
   const bg = isDark ? Colors.dark.background : Colors.light.background;
 
   const currentLangLabel = LANGUAGES.find(l => l.code === draft.language)?.label ?? 'Español';
+  const accessRights = getAccessRights(user?.role);
 
   useEffect(() => {
     loadAndApply();
@@ -55,11 +102,19 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace(Routes.PROFILE.VIEW as any);
+  };
+
   return (
     <View style={[ss.safe, { backgroundColor: bg }]}>
       <ScrollView contentContainerStyle={ss.scroll} showsVerticalScrollIndicator={false}>
 
-        <TouchableOpacity onPress={() => router.back()} style={ss.backBtn}>
+        <TouchableOpacity onPress={handleBack} style={ss.backBtn}>
           <Ionicons name="arrow-back" size={20} color={text} />
           <Text style={[ss.backText, { color: text }]}>{t('common.back')}</Text>
         </TouchableOpacity>
@@ -173,6 +228,39 @@ export default function SettingsScreen() {
         </View>
 
         {/* ── Botón Guardar ── */}
+        <View style={ss.sectionHeader}>
+          <View style={[ss.sectionIconWrap, { backgroundColor: theme.primary + '18' }]}>
+            <Ionicons name="shield-checkmark-outline" size={14} color={theme.primary} />
+          </View>
+          <Text style={[ss.sectionTitle, { color: text }]}>Derechos de acceso</Text>
+        </View>
+
+        <View style={[ss.accessCard, { backgroundColor: cardBg, borderColor: border }]}>
+          <View style={ss.accessHeader}>
+            <View style={[ss.accessIconWrap, { backgroundColor: theme.primary + '18' }]}>
+              <Ionicons name="key-outline" size={20} color={theme.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[ss.accessTitle, { color: text }]}>{accessRights.label}</Text>
+              <Text style={[ss.accessSummary, { color: muted }]}>{accessRights.summary}</Text>
+            </View>
+          </View>
+
+          <View style={ss.accessList}>
+            {accessRights.rights.map((right) => (
+              <View key={right} style={ss.accessItem}>
+                <Ionicons name="checkmark-circle-outline" size={17} color={theme.primary} />
+                <Text style={[ss.accessText, { color: text }]}>{right}</Text>
+              </View>
+            ))}
+          </View>
+
+          <View style={[ss.restrictionBox, { backgroundColor: theme.primary + '10', borderColor: theme.primary + '30' }]}>
+            <Ionicons name="lock-closed-outline" size={17} color={theme.primary} />
+            <Text style={[ss.restrictionText, { color: muted }]}>{accessRights.restriction}</Text>
+          </View>
+        </View>
+
         <TouchableOpacity
           onPress={handleSave}
           disabled={saved || saving}
@@ -247,6 +335,16 @@ const ss = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingVertical: 11, paddingHorizontal: 12, borderRadius: 10, marginVertical: 1, marginRight: 8,
   },
+  accessCard: { borderRadius: 18, borderWidth: 1, padding: 16, marginBottom: 20 },
+  accessHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 },
+  accessIconWrap: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  accessTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.black },
+  accessSummary: { fontSize: FontSize.sm, marginTop: 3, lineHeight: 18 },
+  accessList: { gap: 10 },
+  accessItem: { flexDirection: 'row', alignItems: 'flex-start', gap: 9 },
+  accessText: { flex: 1, fontSize: FontSize.sm, lineHeight: 19, fontWeight: '600' },
+  restrictionBox: { flexDirection: 'row', alignItems: 'flex-start', gap: 9, borderWidth: 1, borderRadius: 14, padding: 12, marginTop: 14 },
+  restrictionText: { flex: 1, fontSize: FontSize.sm, lineHeight: 18, fontWeight: '600' },
 
   saveBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,

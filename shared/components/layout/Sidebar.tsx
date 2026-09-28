@@ -9,8 +9,11 @@ import { useAuth } from "@/shared/contexts/AuthContext";
 import { useTheme } from "@/shared/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { router, usePathname } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+    Animated,
+    Easing,
     ScrollView,
     StyleSheet,
     Text,
@@ -35,8 +38,32 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const pathname = usePathname();
+  const progress = useRef(new Animated.Value(0)).current;
+  const [mounted, setMounted] = useState(isOpen);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (isOpen) {
+      setMounted(true);
+      Animated.timing(progress, {
+        toValue: 1,
+        duration: 320,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }).start();
+      return;
+    }
+
+    Animated.timing(progress, {
+      toValue: 0,
+      duration: 240,
+      easing: Easing.in(Easing.cubic),
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished) setMounted(false);
+    });
+  }, [isOpen, progress]);
+
+  if (!mounted) return null;
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -175,6 +202,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
     return pathname.startsWith(route.split("[")[0]);
   };
+  const sidebarX = progress.interpolate({ inputRange: [0, 1], outputRange: [-332, 0] });
+  const sidebarScale = progress.interpolate({ inputRange: [0, 1], outputRange: [0.98, 1] });
+  const backdropOpacity = progress.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
 
   // ✅ FIX: iniciales con respaldo si no hay firstName/lastName
   const getInitials = () => {
@@ -193,19 +223,32 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   };
 
   return (
-    <View style={[ss.overlay, { backgroundColor: "rgba(0,0,0,0.5)" }]}>
+    <View style={ss.overlay}>
       <TouchableOpacity
         style={StyleSheet.absoluteFill}
         onPress={onClose}
         activeOpacity={1}
       />
-      <View
-        style={[ss.sidebar, { backgroundColor: bg, borderRightColor: border }]}
+      <Animated.View style={[ss.backdrop, { opacity: backdropOpacity }]} pointerEvents="none" />
+      <Animated.View
+        style={[
+          ss.sidebar,
+          {
+            backgroundColor: bg,
+            borderRightColor: border,
+            transform: [{ translateX: sidebarX }, { scale: sidebarScale }],
+          },
+        ]}
       >
+        <View style={[ss.glowTop, { backgroundColor: theme.primary + "18" }]} />
+        <View style={[ss.glowBottom, { backgroundColor: theme.primary + "10" }]} />
         {/* Header */}
         <View style={[ss.header, { borderBottomColor: border }]}>
-          <Text style={[ss.logo, { color: theme.primary }]}>FaceLit</Text>
-          <TouchableOpacity onPress={onClose} style={ss.closeBtn}>
+          <View>
+            <Text style={[ss.logo, { color: theme.primary }]}>FaceLit</Text>
+            <Text style={[ss.logoMeta, { color: muted }]}>Panel de navegacion</Text>
+          </View>
+          <TouchableOpacity onPress={onClose} style={[ss.closeBtn, { backgroundColor: activeBg }]}>
             <Ionicons name="close" size={22} color={muted} />
           </TouchableOpacity>
         </View>
@@ -230,43 +273,62 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         {/* Menu items */}
         <ScrollView style={ss.menuScroll} showsVerticalScrollIndicator={false}>
-          {menu.map((item) => (
-            <TouchableOpacity
-              key={item.route}
-              onPress={() => {
-                router.push(item.route as any);
-                onClose();
-              }}
-              style={[
-                ss.menuItem,
-                {
-                  backgroundColor: isActive(item.route)
-                    ? activeBg
-                    : "transparent",
-                },
-              ]}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name={item.icon as any}
-                size={20}
-                color={isActive(item.route) ? theme.primary : muted}
-              />
-              <Text
-                style={[
-                  ss.menuLabel,
-                  {
-                    color: isActive(item.route) ? theme.primary : text,
-                    fontWeight: isActive(item.route)
-                      ? FontWeight.bold
-                      : FontWeight.medium,
-                  },
-                ]}
+          {menu.map((item, index) => {
+            const active = isActive(item.route);
+            const itemOpacity = progress.interpolate({
+              inputRange: [0, Math.min(0.85, 0.22 + index * 0.08), 1],
+              outputRange: [0, 0, 1],
+            });
+            const itemX = progress.interpolate({
+              inputRange: [0, 1],
+              outputRange: [-18 - index * 2, 0],
+            });
+            return (
+              <Animated.View
+                key={item.route}
+                style={{ opacity: itemOpacity, transform: [{ translateX: itemX }] }}
               >
-                {item.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <TouchableOpacity
+                  onPress={() => {
+                    router.push(item.route as any);
+                    onClose();
+                  }}
+                  style={[
+                    ss.menuItem,
+                    {
+                      backgroundColor: active ? activeBg : "transparent",
+                      borderColor: active ? theme.primary + "45" : "transparent",
+                      marginTop: index === 0 ? 4 : 2,
+                    },
+                  ]}
+                  activeOpacity={0.72}
+                >
+                  {active && <View style={[ss.activeRail, { backgroundColor: theme.primary }]} />}
+                  <View style={[ss.menuIconWrap, { backgroundColor: active ? theme.primary + "20" : theme.primary + "0D" }]}>
+                    <Ionicons
+                      name={item.icon as any}
+                      size={21}
+                      color={active ? theme.primary : muted}
+                    />
+                  </View>
+                  <Text
+                    style={[
+                      ss.menuLabel,
+                      {
+                        color: active ? theme.primary : text,
+                        fontWeight: active
+                          ? FontWeight.bold
+                          : FontWeight.medium,
+                      },
+                    ]}
+                  >
+                    {item.label}
+                  </Text>
+                  <Ionicons name="chevron-forward" size={16} color={active ? theme.primary : muted} style={{ opacity: active ? 1 : 0.35 }} />
+                </TouchableOpacity>
+              </Animated.View>
+            );
+          })}
         </ScrollView>
 
         {/* Logout */}
@@ -280,7 +342,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             {t("sidebar.logout")}
           </Text>
         </TouchableOpacity>
-      </View>
+      </Animated.View>
     </View>
   );
 }
@@ -295,11 +357,27 @@ const ss = StyleSheet.create({
     zIndex: 100,
     flexDirection: "row",
   },
+  backdrop: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.56)",
+  },
   sidebar: {
-    width: 280,
+    width: 304,
     height: "100%",
     borderRightWidth: 1,
+    shadowColor: "#000",
+    shadowOpacity: 0.35,
+    shadowRadius: 18,
+    shadowOffset: { width: 8, height: 0 },
+    elevation: 12,
+    overflow: "hidden",
   },
+  glowTop: { position: "absolute", width: 160, height: 160, borderRadius: 80, right: -58, top: -40 },
+  glowBottom: { position: "absolute", width: 220, height: 220, borderRadius: 110, left: -90, bottom: 72 },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -309,12 +387,13 @@ const ss = StyleSheet.create({
     borderBottomWidth: 1,
   },
   logo: { fontSize: FontSize["2xl"], fontWeight: FontWeight.black },
-  closeBtn: { padding: 4 },
+  logoMeta: { fontSize: FontSize.xs, marginTop: 2, fontWeight: FontWeight.medium },
+  closeBtn: { width: 36, height: 36, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   userSection: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    paddingHorizontal: 20,
+    paddingHorizontal: 18,
     paddingVertical: 16,
     borderBottomWidth: 1,
   },
@@ -333,18 +412,21 @@ const ss = StyleSheet.create({
   userInfo: { flex: 1 },
   userName: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
   userRole: { fontSize: FontSize.sm, marginTop: 2 },
-  menuScroll: { flex: 1, paddingVertical: 8 },
+  menuScroll: { flex: 1, paddingVertical: 12, paddingHorizontal: 10 },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    paddingHorizontal: 20,
+    gap: 10,
+    paddingHorizontal: 14,
     paddingVertical: 12,
-    marginHorizontal: 8,
-    borderRadius: 10,
-    marginBottom: 2,
+    borderRadius: 14,
+    marginBottom: 7,
+    borderWidth: 1,
+    overflow: "hidden",
   },
-  menuLabel: { fontSize: FontSize.base },
+  activeRail: { position: "absolute", left: 0, top: 9, bottom: 9, width: 4, borderTopRightRadius: 4, borderBottomRightRadius: 4 },
+  menuIconWrap: { width: 38, height: 38, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+  menuLabel: { flex: 1, fontSize: FontSize.base },
   logoutBtn: {
     flexDirection: "row",
     alignItems: "center",

@@ -14,6 +14,7 @@
 import { resolveFacialRequest } from '@/features/notifications/notificationsStore';
 import type { Notification, NotificationCategory } from '@/features/notifications/types';
 import { useNotifications, type StatusFilter } from '@/features/notifications/useNotifications';
+import RoleTopbar from '@/shared/components/layout/RoleTopbar';
 import AppButton from '@/shared/components/ui/AppButton';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
@@ -264,11 +265,9 @@ export default function NotificationsScreen() {
   // ── Render principal ──────────────────────
   return (
     <SafeAreaView style={[ns.root, { backgroundColor: bg }]} edges={['top', 'left', 'right']}>
+      <RoleTopbar />
       {/* Cabecera */}
       <View style={[ns.header, { borderBottomColor: border }]}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={8} accessibilityRole="button">
-          <Ionicons name="arrow-back" size={22} color={text} />
-        </TouchableOpacity>
         <View style={ns.headerTitle}>
           <Text style={[ns.title, { color: text }]}>{t('notifications.title')}</Text>
           {unreadCount > 0 && (
@@ -378,8 +377,8 @@ const ns = StyleSheet.create({
   // el contenido empuje/encoja a los hermanos de arriba (los filtros).
   root:   { flex: 1, minHeight: 0 },
 
-  header: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 40, paddingBottom: 28, borderBottomWidth: 1 },
-  headerTitle: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, marginLeft: 12 },
+  header: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 18, paddingBottom: 22, borderBottomWidth: 1 },
+  headerTitle: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
   title:  { fontSize: FontSize.xl, fontWeight: FontWeight.black },
   badge:  { borderRadius: 10, minWidth: 20, height: 20, paddingHorizontal: 5, alignItems: 'center', justifyContent: 'center' },
   badgeText: { color: '#fff', fontSize: 11, fontWeight: '800' },
