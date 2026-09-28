@@ -462,8 +462,8 @@ export default function FichaDetailScreen() {
               {availableTransferFichas.length === 0 && <Text style={[fds.transferEmpty, { color: muted }]}>{t('academic.noOtherActiveFicha')}</Text>}
             </ScrollView>
             <View style={fds.transferModalActions}>
-              <TouchableOpacity onPress={() => setTransferLearnerId(null)} style={[fds.transferModalButton, { borderColor: border }]}><Text style={{ color: text, fontWeight: '700' }}>{t('common.cancel')}</Text></TouchableOpacity>
-              <TouchableOpacity disabled={!destinationFichaId || transferBusy} onPress={() => alert(t('academic.confirmTransferTitle'), t('academic.confirmTransferMessage', { name: transferLearnerData?.name, from: ficha.number, to: availableTransferFichas.find(target => target.id === destinationFichaId)?.number }), [{ text: t('common.cancel'), style: 'cancel' }, { text: t('academic.confirmTransferAction'), onPress: async () => { if (!transferLearnerData) return; setTransferBusy(true); try { await transferLearner(transferLearnerData.id, destinationFichaId); setTransferLearnerId(null); alert(t('academic.transferSuccessTitle'), t('academic.transferSuccessMessage')); } catch (error: any) { alert(t('common.error'), error?.response?.data?.message ?? t('academic.transferError')); } finally { setTransferBusy(false); } } }])} style={[fds.transferModalButton, { backgroundColor: destinationFichaId ? theme.primary : muted, borderColor: 'transparent', opacity: transferBusy ? 0.7 : 1 }]}><Text style={{ color: Colors.white, fontWeight: '700' }}>{transferBusy ? t('academic.transferring') : t('common.continue')}</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => setTransferLearnerId(null)} style={[fds.transferModalButton, { borderColor: border }]}><Text style={[fds.transferModalButtonText, { color: text }]} numberOfLines={1}>{t('common.cancel')}</Text></TouchableOpacity>
+              <TouchableOpacity disabled={!destinationFichaId || transferBusy} onPress={() => alert(t('academic.confirmTransferTitle'), t('academic.confirmTransferMessage', { name: transferLearnerData?.name, from: ficha.number, to: availableTransferFichas.find(target => target.id === destinationFichaId)?.number }), [{ text: t('common.cancel'), style: 'cancel' }, { text: t('academic.confirmTransferAction'), onPress: async () => { if (!transferLearnerData) return; setTransferBusy(true); try { await transferLearner(transferLearnerData.id, destinationFichaId); setTransferLearnerId(null); alert(t('academic.transferSuccessTitle'), t('academic.transferSuccessMessage')); } catch (error: any) { alert(t('common.error'), error?.response?.data?.message ?? t('academic.transferError')); } finally { setTransferBusy(false); } } }])} style={[fds.transferModalButton, { backgroundColor: destinationFichaId ? theme.primary : muted, borderColor: 'transparent', opacity: transferBusy ? 0.7 : 1 }]}><Text style={[fds.transferModalButtonText, { color: Colors.white }]} numberOfLines={1}>{transferBusy ? t('academic.transferring') : t('common.continue')}</Text></TouchableOpacity>
             </View>
           </View>
         </View>
@@ -506,8 +506,9 @@ const fds = StyleSheet.create({
   transferOptionTitle: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
   transferOptionMeta: { fontSize: FontSize.xs, marginTop: 2 },
   transferEmpty: { textAlign: 'center', paddingVertical: 24, lineHeight: 20 },
-  transferModalActions: { flexDirection: 'row', gap: 10, marginTop: 18 },
-  transferModalButton: { flex: 1, borderWidth: 1, borderRadius: 12, paddingVertical: 13, alignItems: 'center' },
+  transferModalActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 18 },
+  transferModalButton: { flex: 1, minWidth: 130, borderWidth: 1, borderRadius: 12, paddingVertical: 13, paddingHorizontal: 8, alignItems: 'center' },
+  transferModalButtonText: { fontWeight: '700', textAlign: 'center' },
   scroll: { padding: 16, paddingBottom: 40 },
 
   backBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 12 },

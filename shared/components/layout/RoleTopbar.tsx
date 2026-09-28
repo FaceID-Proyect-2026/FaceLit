@@ -7,12 +7,14 @@ import { useAuth } from "@/shared/contexts/AuthContext";
 import { useTheme } from "@/shared/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useState } from "react";
+import { memo, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-export default function RoleTopbar() {
+function RoleTopbar() {
   const { user } = useAuth();
   const { theme, isDark } = useTheme();
+  const insets = useSafeAreaInsets();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { unreadCount } = useNotifications({ recipientUserId: user?.role === "APPRENTICE" ? user?.id : undefined });
 
@@ -22,7 +24,7 @@ export default function RoleTopbar() {
 
   return (
     <>
-      <View style={[s.header, { backgroundColor: headerBg, borderBottomColor: border }]}>
+      <View style={[s.header, { backgroundColor: headerBg, borderBottomColor: border, paddingTop: Math.max(insets.top, 10) + 8 }]}>
         <View style={s.headerLeft}>
           <TouchableOpacity onPress={() => setSidebarOpen(value => !value)} style={s.menuBtn} activeOpacity={0.75}>
             <Ionicons name={sidebarOpen ? "close" : "menu"} size={22} color={text} />
@@ -47,13 +49,15 @@ export default function RoleTopbar() {
   );
 }
 
+export default memo(RoleTopbar);
+
 const s = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingBottom: 12,
     borderBottomWidth: 1,
     position: "relative",
     zIndex: 20,

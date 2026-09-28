@@ -128,7 +128,6 @@ export default function AdminLayout() {
           }}
         />
         <Stack.Screen name="environments/[id]" />
-        <Stack.Screen name="environments/assign" />
         <Stack.Screen name="academic/index" />
         <Stack.Screen
           name="academic/programs/register"
@@ -150,7 +149,6 @@ export default function AdminLayout() {
           }}
         />
         <Stack.Screen name="academic/fichas/[id]" />
-        <Stack.Screen name="academic/fichas/[id]/learners" />
         <Stack.Screen name="schedules/index" />
         <Stack.Screen name="schedules/register" />
         <Stack.Screen name="schedules/[id]" />
@@ -163,8 +161,6 @@ export default function AdminLayout() {
         <Stack.Screen name="reports/calendar" />
         <Stack.Screen name="reports/my-performance" />
         <Stack.Screen name="reports/excuses-review" />
-        <Stack.Screen name="profile/index" />
-        <Stack.Screen name="profile/settings" />
       </Stack>
     </SafeAreaView>
   );

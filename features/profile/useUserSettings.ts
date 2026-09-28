@@ -62,15 +62,15 @@ export function useUserSettings() {
     const darkMode = Boolean(config?.darkMode ?? DEFAULT_USER_CONFIG.darkMode);
     const notificationsActive = config?.notificationsActive ?? DEFAULT_USER_CONFIG.notificationsActive;
 
-    setDarkMode(darkMode);
-    changeLanguage(lang);
+    if (isDark !== darkMode) setDarkMode(darkMode);
+    if (language !== lang) changeLanguage(lang);
     setDraftState({
       darkMode,
       language: lang,
       notificationsActive,
     });
     setSaved(true);
-  }, [changeLanguage, setDarkMode]);
+  }, [changeLanguage, isDark, language, setDarkMode]);
 
   const loadAndApply = useCallback(async () => {
     setLoading(true);

@@ -143,12 +143,22 @@ export function useAcademic() {
   // ── Acciones — Programas ──────────────────
   const addProgram = useCallback(async (name: string, code: string) => {
     const program = await createProgramApi(name, code);
-    await refreshAcademic();
+    hydrateAcademicStore({
+      programs: [...getProgramsSnapshot(), program],
+      fichas: getFichasSnapshot(),
+      instructors: getInstructorsSnapshot(),
+    });
+    refreshAcademic().catch(() => undefined);
     return program;
   }, [refreshAcademic]);
   const updateProgram = useCallback(async (id: string, name: string, code: string) => {
     const program = await updateProgramApi(id, name, code);
-    await refreshAcademic();
+    hydrateAcademicStore({
+      programs: getProgramsSnapshot().map(item => item.id === id ? { ...item, ...program, fichas: item.fichas, instructorIds: item.instructorIds } : item),
+      fichas: getFichasSnapshot(),
+      instructors: getInstructorsSnapshot(),
+    });
+    refreshAcademic().catch(() => undefined);
     return program;
   }, [refreshAcademic]);
   const deactivateProgram = useCallback(async (id: string) => {
@@ -170,12 +180,31 @@ export function useAcademic() {
   // ── Acciones — Fichas ─────────────────────
   const addFicha = useCallback(async (number: string, programId: string) => {
     const ficha = await createFichaApi(programId, number);
-    await refreshAcademic();
+    hydrateAcademicStore({
+      programs: getProgramsSnapshot().map(program =>
+        program.id === programId && !program.fichas.includes(ficha.id)
+          ? { ...program, fichas: [...program.fichas, ficha.id], updatedAt: ficha.updatedAt }
+          : program,
+      ),
+      fichas: [...getFichasSnapshot(), ficha],
+      instructors: getInstructorsSnapshot(),
+    });
+    refreshAcademic().catch(() => undefined);
     return ficha;
   }, [refreshAcademic]);
   const updateFicha = useCallback(async (id: string, data: Partial<Ficha>) => {
     const ficha = await updateFichaApi(id, data.programId ?? '', data.number ?? '');
-    await refreshAcademic();
+    hydrateAcademicStore({
+      programs: getProgramsSnapshot().map(program => ({
+        ...program,
+        fichas: program.id === ficha.programId
+          ? Array.from(new Set([...program.fichas, ficha.id]))
+          : program.fichas.filter(fichaId => fichaId !== ficha.id),
+      })),
+      fichas: getFichasSnapshot().map(item => item.id === id ? { ...item, ...ficha, learners: item.learners, transferCode: item.transferCode } : item),
+      instructors: getInstructorsSnapshot(),
+    });
+    refreshAcademic().catch(() => undefined);
     return { success: true, ficha };
   }, [refreshAcademic]);
   const deleteFicha = useCallback(async (id: string) => {
@@ -212,7 +241,7 @@ export function useAcademic() {
   const moveLearnerToOrphanPool = useCallback((fichaId: string, learnerId: string) => moveLearnerToOrphanPoolStore(fichaId, learnerId), []);
   const transferLearner = useCallback(async (learnerId: string, destinationFichaId: string) => {
     await transferLearnerApi(learnerId, destinationFichaId);
-    await refreshAcademic();
+    refreshAcademic().catch(() => undefined);
     return { success: true };
   }, [refreshAcademic]);
   const deleteOrphanLearner = useCallback((learnerId: string) => deleteOrphanLearnerStore(learnerId), []);

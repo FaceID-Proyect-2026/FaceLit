@@ -11,6 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, usePathname } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
     Animated,
     Easing,
@@ -37,6 +38,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { user, logout } = useAuth();
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const pathname = usePathname();
   const progress = useRef(new Animated.Value(0)).current;
   const [mounted, setMounted] = useState(isOpen);
@@ -243,7 +245,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         <View style={[ss.glowTop, { backgroundColor: theme.primary + "18" }]} />
         <View style={[ss.glowBottom, { backgroundColor: theme.primary + "10" }]} />
         {/* Header */}
-        <View style={[ss.header, { borderBottomColor: border }]}>
+        <View style={[ss.header, { borderBottomColor: border, paddingTop: Math.max(insets.top + 14, 28) }]}>
           <View>
             <Text style={[ss.logo, { color: theme.primary }]}>FaceLit</Text>
             <Text style={[ss.logoMeta, { color: muted }]}>Panel de navegacion</Text>
@@ -354,7 +356,8 @@ const ss = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    zIndex: 100,
+    zIndex: 9999,
+    elevation: 9999,
     flexDirection: "row",
   },
   backdrop: {

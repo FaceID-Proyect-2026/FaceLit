@@ -82,8 +82,13 @@ export default function DateField({
           style={[s.inputWrap, { backgroundColor: theme.inputBg, borderColor }]}
         >
           <Ionicons name="calendar-outline" size={18} color={theme.textMuted} />
-          <Text style={[s.inputText, { color: value ? theme.inputText : theme.inputPlaceholder }]}>
-            {value ? formatDateDisplay(value) : (placeholder || 'AAAA-MM-DD')}
+          <Text
+            style={[s.inputText, { color: value ? theme.inputText : theme.inputPlaceholder }]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.82}
+          >
+            {value ? formatDateDisplay(value) : 'DD/MM/AAAA'}
           </Text>
         </TouchableOpacity>
       )}
@@ -107,22 +112,25 @@ export default function DateField({
 }
 
 const s = StyleSheet.create({
-  wrapper: { marginBottom: 14 },
+  wrapper: { marginBottom: 14, minWidth: 0 },
   label: {
-    fontSize: FontSize.base,
+    fontSize: FontSize.sm,
     fontWeight: FontWeight.bold,
     marginBottom: 6,
   },
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 48,
+    height: 46,
     borderWidth: 1.2,
     borderRadius: 12,
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
+    minWidth: 0,
   },
   inputText: {
-    fontSize: FontSize.lg,
+    flex: 1,
+    fontSize: FontSize.base,
+    fontWeight: FontWeight.bold,
     marginLeft: 8,
   },
   error: {

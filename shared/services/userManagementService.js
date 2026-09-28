@@ -64,9 +64,9 @@ export const updateManagedUser = async (id, payload) => {
 };
 
 export const deleteManagedUser = async (id) => {
-  const { data } = await api.delete(`/api/admin/users/${id}`);
+  const response = await api.delete(`/api/admin/users/${id}`);
   clearUsersCache();
-  return data;
+  return response.data;
 };
 
 // PUT /api/admin/users/{userId}/role — solo ADMINISTRATOR

@@ -81,6 +81,7 @@ export default function AttendanceByFichaScreen({
     learnerName: string;
   } | null>(null);
   const [exporting, setExporting] = useState(false);
+  const dateHeaderRef = useRef<ScrollView>(null);
   const dateGridRef = useRef<ScrollView>(null);
   const dateGridX = useRef(0);
 
@@ -173,6 +174,7 @@ export default function AttendanceByFichaScreen({
   // ── Exportación ───────────────────────────────
   const handleDateGridScroll = (event: any) => {
     dateGridX.current = event.nativeEvent.contentOffset.x;
+    dateHeaderRef.current?.scrollTo({ x: dateGridX.current, animated: false });
   };
   const handleDateGridWheel = (event: any) => {
     if (Platform.OS !== "web") return;
@@ -462,36 +464,17 @@ export default function AttendanceByFichaScreen({
           {/* ── Tabla ── */}
           {tableRows.length > 0 && dates.length > 0 && (
             <View style={[s.tableShell, { borderColor: border, backgroundColor: cardBg }]}>
-              <View style={s.fixedLearners}>
+              <View style={s.tableHeaderPinned}>
                 <View style={[s.cellName, s.thCell, { backgroundColor: theme.primary + "20", borderColor: border }]}>
                   <Text style={[s.thText, { color: theme.primary }]}>{t("attendance.rf6.learner")}</Text>
                 </View>
-                {tableRows.map((row, rIdx) => (
-                  <View
-                    key={row.learnerId}
-                    style={[
-                      s.cellName,
-                      {
-                        borderColor: border,
-                        backgroundColor: rIdx % 2 === 0 ? cardBg : theme.primary + "08",
-                      },
-                    ]}
-                  >
-                    <Text style={[s.cellNameText, { color: text }]} numberOfLines={1}>{row.learnerName}</Text>
-                    <Text style={[s.cellDocText, { color: muted }]} numberOfLines={1}>{row.learnerDocument}</Text>
-                  </View>
-                ))}
-              </View>
-              <ScrollView
-                ref={dateGridRef}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={s.dateGridScroll}
-                onScroll={handleDateGridScroll}
-                scrollEventThrottle={16}
-                {...dateGridWheelProps}
-              >
-                <View>
+                <ScrollView
+                  ref={dateHeaderRef}
+                  horizontal
+                  scrollEnabled={false}
+                  showsHorizontalScrollIndicator={false}
+                  style={s.dateGridScroll}
+                >
                   <View style={s.tableHeaderRow}>
                     {dates.map((d) => (
                       <View key={d} style={[s.cellDay, s.thCell, { backgroundColor: theme.primary + "20", borderColor: border }]}>
@@ -499,34 +482,67 @@ export default function AttendanceByFichaScreen({
                       </View>
                     ))}
                   </View>
-                  {tableRows.map((row, rIdx) => (
-                    <View key={row.learnerId} style={[s.tableRow, { backgroundColor: rIdx % 2 === 0 ? cardBg : theme.primary + "08" }]}>
-                      {row.days.map((cell, dIdx) => {
-                        const isAbsent = cell.status === "absent";
-                        const isLate = cell.status === "late";
-                        const isClickable = isAbsent || isLate;
-                        return (
-                          <TouchableOpacity
-                            key={dIdx}
-                            disabled={!isClickable}
-                            onPress={() => isClickable && setCellDetail({ cell, learnerName: row.learnerName })}
-                            style={[
-                              s.cellDay,
-                              { borderColor: border },
-                              isAbsent && { backgroundColor: CELL_ABSENT, borderColor: BORDER_ABSENT },
-                              isLate && { backgroundColor: CELL_LATE, borderColor: BORDER_LATE },
-                            ]}
-                            accessibilityRole={isClickable ? "button" : "none"}
-                          >
-                            {isAbsent && <Ionicons name="close-circle" size={16} color={Colors.error} />}
-                            {isLate && <Ionicons name="time" size={16} color={Colors.warning} />}
-                            {cell.status === "punctual" && <View style={[s.punctualDot, { backgroundColor: Colors.success + "60" }]} />}
-                            {!cell.status && <Text style={[s.cellEmpty, { color: muted }]}>-</Text>}
-                          </TouchableOpacity>
-                        );
-                      })}
+                </ScrollView>
+              </View>
+              <ScrollView style={s.tableBodyScroll} nestedScrollEnabled showsVerticalScrollIndicator>
+                <View style={s.tableBodyRow}>
+                  <View style={s.fixedLearners}>
+                    {tableRows.map((row, rIdx) => (
+                      <View
+                        key={row.learnerId}
+                        style={[
+                          s.cellName,
+                          {
+                            borderColor: border,
+                            backgroundColor: rIdx % 2 === 0 ? cardBg : theme.primary + "08",
+                          },
+                        ]}
+                      >
+                        <Text style={[s.cellNameText, { color: text }]} numberOfLines={1}>{row.learnerName}</Text>
+                        <Text style={[s.cellDocText, { color: muted }]} numberOfLines={1}>{row.learnerDocument}</Text>
+                      </View>
+                    ))}
+                  </View>
+                  <ScrollView
+                    ref={dateGridRef}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={s.dateGridScroll}
+                    onScroll={handleDateGridScroll}
+                    scrollEventThrottle={16}
+                    {...dateGridWheelProps}
+                  >
+                    <View>
+                      {tableRows.map((row, rIdx) => (
+                        <View key={row.learnerId} style={[s.tableRow, { backgroundColor: rIdx % 2 === 0 ? cardBg : theme.primary + "08" }]}>
+                          {row.days.map((cell, dIdx) => {
+                            const isAbsent = cell.status === "absent";
+                            const isLate = cell.status === "late";
+                            const isClickable = isAbsent || isLate;
+                            return (
+                              <TouchableOpacity
+                                key={dIdx}
+                                disabled={!isClickable}
+                                onPress={() => isClickable && setCellDetail({ cell, learnerName: row.learnerName })}
+                                style={[
+                                  s.cellDay,
+                                  { borderColor: border },
+                                  isAbsent && { backgroundColor: CELL_ABSENT, borderColor: BORDER_ABSENT },
+                                  isLate && { backgroundColor: CELL_LATE, borderColor: BORDER_LATE },
+                                ]}
+                                accessibilityRole={isClickable ? "button" : "none"}
+                              >
+                                {isAbsent && <Ionicons name="close-circle" size={16} color={Colors.error} />}
+                                {isLate && <Ionicons name="time" size={16} color={Colors.warning} />}
+                                {cell.status === "punctual" && <View style={[s.punctualDot, { backgroundColor: Colors.success + "60" }]} />}
+                                {!cell.status && <Text style={[s.cellEmpty, { color: muted }]}>-</Text>}
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+                      ))}
                     </View>
-                  ))}
+                  </ScrollView>
                 </View>
               </ScrollView>
             </View>
@@ -1007,18 +1023,29 @@ const s = StyleSheet.create({
     gap: 8,
     flexWrap: "wrap",
   },
-  dateFieldWrap: { flex: 1, minWidth: 130 },
+  dateFieldWrap: { flex: 1, minWidth: 150 },
   dateSepWrap: { paddingTop: 34, alignItems: "center" },
   dateSep: { fontSize: FontSize.lg },
   dateError: { fontSize: FontSize.xs, marginTop: 4 },
 
   tableScroll: { marginHorizontal: -16 },
   tableShell: {
-    flexDirection: "row",
     borderWidth: 1,
     borderRadius: 16,
     overflow: "hidden",
     marginTop: 4,
+    maxHeight: 560,
+  },
+  tableHeaderPinned: {
+    flexDirection: "row",
+    flexShrink: 0,
+    zIndex: 3,
+  },
+  tableBodyScroll: {
+    maxHeight: 496,
+  },
+  tableBodyRow: {
+    flexDirection: "row",
   },
   fixedLearners: {
     width: 190,
@@ -1029,6 +1056,7 @@ const s = StyleSheet.create({
   tableHeaderRow: { flexDirection: "row" },
   tableRow: { flexDirection: "row" },
   thCell: {
+    height: 64,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 0.5,
@@ -1041,6 +1069,7 @@ const s = StyleSheet.create({
   },
   cellName: {
     width: 190,
+    height: 64,
     borderWidth: 0.5,
     padding: 8,
     justifyContent: "center",
@@ -1049,7 +1078,7 @@ const s = StyleSheet.create({
   cellDocText: { fontSize: 10 },
   cellDay: {
     width: 52,
-    height: 52,
+    height: 64,
     borderWidth: 0.5,
     alignItems: "center",
     justifyContent: "center",

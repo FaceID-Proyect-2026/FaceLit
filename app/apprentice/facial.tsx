@@ -10,6 +10,7 @@ import ShutterButton from "@/features/auth/components/ShutterButton";
 import WebCamera from "@/features/auth/components/WebCamera";
 import { useFacialRegistration } from "@/features/auth/hooks/useFacialRegistration";
 import { getFacialRecordsSnapshot } from "@/features/facial/facialStore";
+import { pushNotification } from "@/features/notifications/notificationsStore";
 import { Colors } from "@/shared/constants/colors";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { useAuth } from "@/shared/contexts/AuthContext";
@@ -42,6 +43,7 @@ export default function ApprenticeFacialScreen() {
   const { alert, DialogUI } = useAppDialog();
   const [step, setStep] = useState<Step>("confirm");
   const [confirmed, setConfirmed] = useState(false);
+  const [resetRequested, setResetRequested] = useState(false);
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -104,6 +106,26 @@ export default function ApprenticeFacialScreen() {
     }
     setStep("camera");
     handleOpenCamera();
+  }
+
+  function handleRequestFacialReset() {
+    if (!user?.id || resetRequested) return;
+
+    pushNotification(
+      "facial_reregister_request",
+      "Solicitud de restablecimiento facial",
+      `${fullName || "Un aprendiz"} solicita restablecer su registro facial.`,
+      {
+        requestId: `facial-reset-${user.id}-${Date.now()}`,
+        facialUserId: user.id,
+        learnerName: fullName,
+      },
+    );
+    setResetRequested(true);
+    alert(
+      "Solicitud enviada",
+      "Tu solicitud fue enviada al coordinador. Cuando sea aprobada podrás registrar tu rostro nuevamente.",
+    );
   }
 
   // ── Al cerrar modal de éxito ───────────────────
@@ -220,6 +242,30 @@ export default function ApprenticeFacialScreen() {
               <Text style={s.nameBadgeText}>{fullName}</Text>
             </LinearGradient>
           </View>
+
+          {isRegistered && (
+            <TouchableOpacity
+              onPress={handleRequestFacialReset}
+              disabled={resetRequested}
+              style={[
+                s.resetRequestBtn,
+                {
+                  borderColor: resetRequested ? Colors.success : theme.primary,
+                  backgroundColor: resetRequested ? Colors.success + "12" : theme.primary + "10",
+                },
+              ]}
+              activeOpacity={0.85}
+            >
+              <Ionicons
+                name={resetRequested ? "checkmark-circle-outline" : "refresh-circle-outline"}
+                size={20}
+                color={resetRequested ? Colors.success : theme.primary}
+              />
+              <Text style={[s.resetRequestText, { color: resetRequested ? Colors.success : theme.primary }]}>
+                {resetRequested ? "Solicitud enviada" : "Restablecer registro facial"}
+              </Text>
+            </TouchableOpacity>
+          )}
 
           {/* Instrucciones */}
           <View
@@ -449,11 +495,12 @@ export default function ApprenticeFacialScreen() {
               // require condicional: evita que CameraView sea null en web
               const { CameraView: NativeCameraView } = require("expo-camera");
               return (
-                <NativeCameraView
-                  ref={cameraRef}
-                  style={{ flex: 1 }}
-                  facing="front"
-                >
+                <View style={{ flex: 1 }}>
+                  <NativeCameraView
+                    ref={cameraRef}
+                    style={StyleSheet.absoluteFill}
+                    facing="front"
+                  />
                   <FaceGuideOverlay
                     primaryColor={theme.primary}
                     isPositioning={isPositioning}
@@ -462,7 +509,7 @@ export default function ApprenticeFacialScreen() {
                     onConfirm={handleConfirmCamera}
                     onCancel={handleCancelAndReturn}
                   />
-                </NativeCameraView>
+                </View>
               );
             })()
           )}
@@ -602,6 +649,23 @@ const s = StyleSheet.create({
     color: Colors.white,
     fontSize: FontSize.lg,
     fontWeight: FontWeight.black,
+    textAlign: "center",
+  },
+  resetRequestBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    borderRadius: 12,
+    borderWidth: 1.4,
+    paddingVertical: 13,
+    paddingHorizontal: 18,
+    marginBottom: 16,
+  },
+  resetRequestText: {
+    fontSize: FontSize.base,
+    fontWeight: FontWeight.black,
+    textAlign: "center",
   },
   warningText: { fontSize: FontSize.sm, textAlign: "center", lineHeight: 18 },
 

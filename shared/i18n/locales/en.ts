@@ -20,6 +20,7 @@
     continue: "Continue",
     success: "Done",
     close: "Close",
+    change: "Change",
   },
   theme: {
     toggle: "Theme",

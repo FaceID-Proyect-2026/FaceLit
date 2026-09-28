@@ -70,7 +70,7 @@ export default function UsersPanel() {
   const loadUsers = useCallback(() => {
     let mounted = true;
     setLoading(!loadedOnce.current);
-    getManagedUsers('', { force: !loadedOnce.current && users.length === 0 })
+    getManagedUsers('', { force: !loadedOnce.current })
       .then((data) => {
         if (mounted) {
           setUsers(data.map(mapManagedUser));
@@ -82,7 +82,7 @@ export default function UsersPanel() {
         if (mounted) setLoading(false);
       });
     return () => { mounted = false; };
-  }, [alert, t, users.length]);
+  }, [alert, t]);
 
   useFocusEffect(loadUsers);
 
@@ -95,6 +95,7 @@ export default function UsersPanel() {
   const softBlue = theme.infoSoft;
   const softAmber = theme.warningSoft;
   const softRed = theme.dangerSoft;
+  const canManageDeletion = user?.role === 'COORDINATOR';
 
   if (user?.role !== 'COORDINATOR' && user?.role !== 'ADMINISTRATOR') {
     router.replace('/admin' as any);
@@ -117,20 +118,26 @@ export default function UsersPanel() {
   const removeUser = (id: string) => {
     const target = users.find((u) => u.id === id);
     if (!target) return;
+    const isActive = target.status === 'active';
     alert(
-      t('users.panel.deleteTitle'),
-      t('users.panel.deleteConfirm', { name: `${target.name} ${target.lastname}` }),
+      isActive ? t('users.deactivateUser') : t('users.panel.deleteTitle'),
+      isActive
+        ? t('users.deactivateConfirm', { name: `${target.name} ${target.lastname}` })
+        : t('users.panel.deleteConfirm', { name: `${target.name} ${target.lastname}` }),
       [
         { text: t('common.cancel'), style: 'cancel' },
         {
-          text: t('users.delete'),
+          text: isActive ? t('users.panel.deactivate') : t('users.delete'),
           style: 'destructive',
           onPress: async () => {
             try {
               await deleteManagedUser(id);
-              setUsers((prev) => prev.filter((u) => u.id !== id));
+              setUsers((prev) => isActive
+                ? prev.map((u) => u.id === id ? { ...u, status: 'inactive' } : u)
+                : prev.filter((u) => u.id !== id),
+              );
             } catch (error: any) {
-              alert(t('common.error'), error?.response?.data?.message ?? 'No se pudo eliminar el usuario.');
+              alert(t('common.error'), error?.response?.data?.message ?? 'No se pudo actualizar el usuario.');
             }
           },
         },
@@ -208,18 +215,20 @@ export default function UsersPanel() {
           )}
         </View>
 
-        <View style={styles.actions}>
-          <TouchableOpacity
-            onPress={(e) => {
-              e.stopPropagation?.();
-              removeUser(item.id);
-            }}
-            style={[styles.iconBtn, { backgroundColor: softRed }]}
-            accessibilityLabel={t('users.delete')}
-          >
-            <Ionicons name="trash-outline" size={17} color={Colors.error} />
-          </TouchableOpacity>
-        </View>
+        {canManageDeletion && (
+          <View style={styles.actions}>
+            <TouchableOpacity
+              onPress={(e) => {
+                e.stopPropagation?.();
+                removeUser(item.id);
+              }}
+              style={[styles.iconBtn, { backgroundColor: softRed }]}
+              accessibilityLabel={isActive ? t('users.panel.deactivate') : t('users.delete')}
+            >
+              <Ionicons name={isActive ? 'ban-outline' : 'trash-outline'} size={17} color={Colors.error} />
+            </TouchableOpacity>
+          </View>
+        )}
       </TouchableOpacity>
     );
   };

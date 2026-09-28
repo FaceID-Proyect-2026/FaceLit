@@ -14,6 +14,7 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const LANGUAGES: { code: Language; label: string }[] = [
   { code: 'es', label: 'Español' },
@@ -68,6 +69,7 @@ function getAccessRights(role?: UserRole | null) {
 export default function SettingsScreen() {
   const { user } = useAuth();
   const { theme, isDark } = useTheme();
+  const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const { alert, DialogUI } = useAppDialog();
   const {
@@ -112,7 +114,7 @@ export default function SettingsScreen() {
 
   return (
     <View style={[ss.safe, { backgroundColor: bg }]}>
-      <ScrollView contentContainerStyle={ss.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[ss.scroll, { paddingTop: Math.max(insets.top, 14) + 14 }]} showsVerticalScrollIndicator={false}>
 
         <TouchableOpacity onPress={handleBack} style={ss.backBtn}>
           <Ionicons name="arrow-back" size={20} color={text} />

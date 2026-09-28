@@ -12,7 +12,6 @@
 import { registerFacialCapture } from '@/features/facial/facialStore';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { router } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Platform } from 'react-native';
@@ -185,10 +184,9 @@ export function useFacialRegistration() {
     setSuccessModalVisible(true);
   }, [screenState, photoUri, quality, t, user]);
 
-  // Al cerrar el modal, recién ahí se navega al login.
+  // Al cerrar el modal se queda en el flujo actual; la pantalla decide qué mostrar después.
   const handleCloseSuccessModal = useCallback(() => {
     setSuccessModalVisible(false);
-    router.replace('/auth/login');
   }, []);
 
   return {

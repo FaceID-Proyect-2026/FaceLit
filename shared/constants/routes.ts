@@ -19,8 +19,8 @@ export const Routes = {
   // Admin Dashboard
   ADMIN: {
     DASHBOARD: "/admin",
-    PROFILE: "/admin/profile",
-    SETTINGS: "/admin/profile/settings",
+    PROFILE: "/profile",
+    SETTINGS: "/profile/settings",
     USERS: "/admin/users",
   },
 
@@ -46,7 +46,7 @@ export const Routes = {
     TRANSFER_REQUEST: "/apprentice/transfer-request",
     JOIN_FICHA: "/apprentice/join-ficha",
     COORDINATOR_REQUESTS: "/admin/transfer-requests",
-    LEARNERS_BY_FICHA: "/admin/academic/fichas/[id]/learners",
+    LEARNERS_BY_FICHA: "/admin/academic/fichas/[id]",
   },
 
   // Módulo 4: Gestión de Horarios
