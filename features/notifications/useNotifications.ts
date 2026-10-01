@@ -2,9 +2,10 @@
 //  features/notifications/useNotifications.ts
 //  RF-8.2 — Hook reactivo de notificaciones
 // ─────────────────────────────────────────────
-import { useMemo, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import {
   getNotificationsSnapshot,
+  loadNotifications,
   markAllNotificationsRead,
   markNotificationRead,
   pushNotification,
@@ -22,6 +23,14 @@ export function useNotifications(opts?: {
   recipientUserId?: string;
 }) {
   const all = useSyncExternalStore(subscribeNotifications, getNotificationsSnapshot);
+
+  useEffect(() => {
+    loadNotifications();
+    const timer = setInterval(() => {
+      loadNotifications();
+    }, 15000);
+    return () => clearInterval(timer);
+  }, []);
 
   const filtered = useMemo(() => {
     let list = opts?.recipientUserId

@@ -20,11 +20,18 @@ import {
   NotificationMeta,
   NotificationType,
 } from './types';
+import {
+  fetchNotifications,
+  markAllNotificationsReadRemote,
+  markNotificationReadRemote,
+  resolveFacialNotificationRemote,
+} from '@/shared/services/notificationService';
 
 type Listener = () => void;
 
 let notifications: Notification[] = [...MOCK_NOTIFICATIONS_RF8];
 const listeners = new Set<Listener>();
+let loadedRemote = false;
 
 function emit() { listeners.forEach(l => l()); }
 
@@ -37,12 +44,24 @@ export function getNotificationsSnapshot(): Notification[] {
   return notifications;
 }
 
+export async function loadNotifications(): Promise<void> {
+  try {
+    notifications = await fetchNotifications();
+    loadedRemote = true;
+    emit();
+  } catch {
+    loadedRemote = false;
+  }
+}
+
 // ── Derivar categoría desde tipo ─────────────
 function categoryFromType(type: NotificationType): Notification['category'] {
   if (type.startsWith('csv_'))            return 'csv';
   if (type === 'learner_transferred')     return 'transfer';
   if (type.startsWith('attendance_'))     return 'attendance';
   if (type.startsWith('academic_'))       return 'academic';
+  if (type.startsWith('instructor_'))     return 'academic';
+  if (type.startsWith('apprentice_'))     return 'transfer';
   if (type.startsWith('security_'))       return 'security';
   if (type.startsWith('facial_'))         return 'facial';
   return 'academic';
@@ -88,11 +107,27 @@ export function pushNotification(
 export function markNotificationRead(id: string): void {
   notifications = notifications.map(n => n.id === id ? { ...n, read: true } : n);
   emit();
+  if (loadedRemote) {
+    markNotificationReadRemote(id)
+      .then(remote => {
+        notifications = notifications.map(n => n.id === id ? remote : n);
+        emit();
+      })
+      .catch(() => undefined);
+  }
 }
 
 export function markAllNotificationsRead(): void {
   notifications = notifications.map(n => ({ ...n, read: true }));
   emit();
+  if (loadedRemote) {
+    markAllNotificationsReadRemote()
+      .then(remote => {
+        notifications = remote;
+        emit();
+      })
+      .catch(() => undefined);
+  }
 }
 
 // ── RF-8.4 — Resolver solicitud de re-registro ──
@@ -117,6 +152,9 @@ export function resolveFacialRequest(
       : n,
   );
   emit();
+  if (loadedRemote) {
+    resolveFacialNotificationRemote(notificationId, decision).catch(() => undefined);
+  }
 }
 
 // ── RF-8.3 — Marcar correo como enviado ──────

@@ -11,6 +11,7 @@ import {
   setFichaLifecycle,
   setProgramLifecycle,
   transferLearner as transferLearnerApi,
+  updateApprentice as updateApprenticeApi,
   updateFicha as updateFichaApi,
   updateProgram as updateProgramApi,
 } from './academicApi';
@@ -233,9 +234,18 @@ export function useAcademic() {
   const deactivateLearner   = useCallback((fichaId: string, learnerId: string) => deactivateLearnerStore(fichaId, learnerId), []);
   const reactivateLearner   = useCallback((fichaId: string, learnerId: string) => reactivateLearnerStore(fichaId, learnerId), []);
   const updateLearnerInfo   = useCallback(
-    (fichaId: string, learnerId: string, data: { name?: string; lastname?: string; email?: string; document?: string }) =>
-      updateLearnerInfoStore(fichaId, learnerId, data),
-    [],
+    async (fichaId: string, learnerId: string, data: { name?: string; lastname?: string; email?: string; document?: string }) => {
+      const learner = await updateApprenticeApi(learnerId, {
+        name: data.name ?? '',
+        lastname: data.lastname ?? '',
+        email: data.email ?? '',
+        document: data.document ?? '',
+      });
+      updateLearnerInfoStore(fichaId, learnerId, learner);
+      refreshAcademic().catch(() => undefined);
+      return { success: true };
+    },
+    [refreshAcademic],
   );
   const markValidation      = useCallback((learnerId: string, status: ValidationStatus) => markLearnerValidation(learnerId, status), []);
   const moveLearnerToOrphanPool = useCallback((fichaId: string, learnerId: string) => moveLearnerToOrphanPoolStore(fichaId, learnerId), []);

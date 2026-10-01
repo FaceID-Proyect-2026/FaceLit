@@ -3,6 +3,7 @@
 //  Layout principal admin con sidebar y header
 // ─────────────────────────────────────────────
 import Sidebar from '@/shared/components/layout/Sidebar';
+import { useNotifications } from '@/features/notifications/useNotifications';
 import { LanguageSelector, ThemeToggle } from '@/shared/components/ui';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
@@ -20,6 +21,7 @@ export default function AdminLayout() {
   const { theme, isDark } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { canRenderContent } = useAuthGuard(isAuthenticated, '/auth/login', authLoading);
+  const { unreadCount } = useNotifications();
 
   if (!canRenderContent) {
     return (
@@ -54,6 +56,11 @@ export default function AdminLayout() {
             style={sal.iconBtn}
           >
             <Ionicons name="notifications-outline" size={20} color={text} />
+            {unreadCount > 0 && (
+              <View style={[sal.notificationBadge, { backgroundColor: theme.primary }]}>
+                <Text style={sal.notificationBadgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -145,4 +152,16 @@ const sal = StyleSheet.create({
   headerTitle: { fontSize: FontSize.xl, fontWeight: FontWeight.black },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   iconBtn: { padding: 6 },
+  notificationBadge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  notificationBadgeText: { color: Colors.white, fontSize: 9, fontWeight: '900' },
 });

@@ -49,12 +49,7 @@ export function getFichasForInstructor(
   instructor: Instructor | null,
 ) {
   if (!instructor) return [];
-  if (instructor.fichaIds.length > 0) {
-    return fichas.filter(ficha => instructor.fichaIds.includes(ficha.id));
-  }
-
-  const programIds = getInstructorProgramIds(instructor);
-  return fichas.filter(ficha => programIds.includes(ficha.programId));
+  return fichas.filter(ficha => instructor.fichaIds.includes(ficha.id));
 }
 
 export function getProgramForFicha(programs: Program[], ficha?: Ficha | null) {

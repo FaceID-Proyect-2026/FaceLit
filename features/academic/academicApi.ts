@@ -25,7 +25,7 @@ type BackendChip = {
 
 // ─── InstructorResponseDTO del backend ───────
 // El backend devuelve: idInstructor, idUser, firstName, lastName,
-// document, email, instructorType, programIds, programNames
+// document, email, instructorType, programIds, programNames, chipIds
 type BackendInstructor = {
   idInstructor: string;
   idUser: string;
@@ -39,6 +39,8 @@ type BackendInstructor = {
   updatedAt?: string | null;
   programIds: string[];
   programNames?: string[];
+  chipIds?: string[];
+  fichaIds?: string[];
 };
 
 // ─── UserChipResponseDTO del backend ─────────
@@ -89,7 +91,9 @@ const toInstructor = (instructor: BackendInstructor, fichas: Ficha[]): Instructo
   instructorType: instructor.instructorType === 'ESPECIFICO' ? 'especifico' : 'transversal',
   programId: instructor.programIds?.[0],
   programIds: instructor.programIds ?? [],
-  fichaIds: fichas.filter(ficha => instructor.programIds?.includes(ficha.programId)).map(ficha => ficha.id),
+  fichaIds: (instructor.chipIds ?? instructor.fichaIds ?? []).filter(id =>
+    fichas.some(ficha => ficha.id === id),
+  ),
   status: instructor.status === 'INACTIVE' ? 'inactive' : 'active',
   initialPassword: null,
   createdAt: instructor.createdAt ?? '',
@@ -196,16 +200,20 @@ async function fetchInstructorAcademicSnapshot() {
   const { data: rawInstructor } = await api.get<BackendInstructor>('/api/academic/me/instructor', {
     params: freshParams,
   });
+  const assignedChipIds = new Set(rawInstructor.chipIds ?? rawInstructor.fichaIds ?? []);
   const rawPrograms = await Promise.all(
     (rawInstructor.programIds ?? []).map(async idProgram => {
       const { data } = await api.get<BackendProgram>(`/api/academic/programs/${idProgram}`, { params: freshParams });
       return data;
     }),
   );
-  const rawChips = rawPrograms.flatMap(program => program.chips ?? []);
+  const programChips = rawPrograms.flatMap(program => program.chips ?? []);
+  const rawChips = assignedChipIds.size > 0
+    ? programChips.filter(chip => assignedChipIds.has(chip.idChip))
+    : programChips;
   const learnersMap = await fetchLearnersByChips(rawChips, freshParams);
   const fichas = rawChips.map(chip => toFicha(chip, learnersMap.get(chip.idChip) ?? []));
-  const instructor = toInstructor(rawInstructor, fichas);
+  const instructor = toInstructor({ ...rawInstructor, chipIds: rawChips.map(chip => chip.idChip) }, fichas);
   const programs = rawPrograms.map(program => ({
     ...toProgram(program),
     fichas: fichas.filter(ficha => ficha.programId === program.idProgram).map(ficha => ficha.id),
@@ -434,6 +442,16 @@ export async function assignApprentice(idChip: string, payload: {
   email: string;
 }) {
   return api.post<BackendUserChip>(`/api/academic/chips/${idChip}/apprentices`, payload);
+}
+
+export async function updateApprentice(idUser: string, payload: {
+  document: string;
+  name: string;
+  lastname: string;
+  email: string;
+}) {
+  const { data } = await api.put<BackendUserChip>(`/api/academic/users/${idUser}/apprentice`, payload);
+  return toLearner(data);
 }
 
 export async function fetchActiveChip(idUser: string) {
