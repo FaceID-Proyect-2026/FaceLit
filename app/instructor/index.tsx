@@ -49,9 +49,10 @@ export default function InstructorDashboard() {
     [allFichas, currentInstructor],
   );
   const assignedPrograms = useMemo(() => {
-    const ids = new Set(assignedFichas.map(ficha => ficha.programId));
+    const explicitIds = currentInstructor?.programIds ?? [];
+    const ids = new Set(explicitIds.length > 0 ? explicitIds : assignedFichas.map(ficha => ficha.programId));
     return allPrograms.filter(program => ids.has(program.id));
-  }, [allPrograms, assignedFichas]);
+  }, [allPrograms, assignedFichas, currentInstructor]);
   const visibleFichas = useMemo(() => {
     const term = fichaSearch.trim().toLowerCase();
     if (term.length === 0) return [];
@@ -63,9 +64,8 @@ export default function InstructorDashboard() {
     });
   }, [allPrograms, assignedFichas, fichaSearch, t]);
   const featuredFichas = fichaSearch.trim().length > 0 ? visibleFichas : assignedFichas.slice(0, 4);
-  const primaryProgram = assignedPrograms[0];
   const programSummary = assignedPrograms.length > 0
-    ? getProgramDisplayName(primaryProgram, t)
+    ? assignedPrograms.map(program => getProgramDisplayName(program, t)).join(" · ")
     : t("dashboard.noProgram");
   const activeLearners = useMemo(() => {
     const learnerIds = new Set<string>();

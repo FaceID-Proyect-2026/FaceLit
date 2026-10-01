@@ -11,7 +11,6 @@
 //    muestran botones Aceptar / Rechazar inline
 //  • Badge de no leídas en la cabecera
 // ─────────────────────────────────────────────
-import { resolveFacialRequest } from '@/features/notifications/notificationsStore';
 import type { Notification, NotificationCategory } from '@/features/notifications/types';
 import { useNotifications, type StatusFilter } from '@/features/notifications/useNotifications';
 import RoleTopbar from '@/shared/components/layout/RoleTopbar';
@@ -64,7 +63,7 @@ export default function NotificationsScreen() {
   const [expandedId,     setExpandedId]     = useState<string | null>(null);
 
   const isApprentice = user?.role === 'APPRENTICE';
-  const { notifications, unreadCount, markRead } = useNotifications({
+  const { notifications, unreadCount, markRead, resolveFacial } = useNotifications({
     statusFilter,
     categoryFilter,
     recipientUserId: isApprentice ? user?.id : undefined,
@@ -84,7 +83,7 @@ export default function NotificationsScreen() {
   };
 
   const handleFacialDecision = (notifId: string, decision: 'accepted' | 'rejected') => {
-    resolveFacialRequest(notifId, decision, user?.document ?? 'coordinator');
+    resolveFacial(notifId, decision, user?.document ?? 'coordinator');
     setExpandedId(null);
   };
 

@@ -11,6 +11,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+    ActivityIndicator,
     FlatList,
     Modal,
     Platform,
@@ -32,7 +33,7 @@ interface EditLearnerModalProps {
   initialEmail: string;
   initialDocument: string;
   onClose: () => void;
-  onSave: (data: { name: string; lastname: string; email: string; document: string }) => { success: boolean; error?: string };
+  onSave: (data: { name: string; lastname: string; email: string; document: string }) => Promise<{ success: boolean; error?: string }>;
 }
 
 function EditLearnerModal({
@@ -47,6 +48,7 @@ function EditLearnerModal({
   const [email, setEmail]       = useState(initialEmail);
   const [document, setDoc]      = useState(initialDocument);
   const [error, setError]       = useState('');
+  const [saving, setSaving]     = useState(false);
 
   useEffect(() => {
     if (visible) {
@@ -55,6 +57,7 @@ function EditLearnerModal({
       setEmail(initialEmail);
       setDoc(initialDocument);
       setError('');
+      setSaving(false);
     }
   }, [visible, initialName, initialLastname, initialEmail, initialDocument]);
 

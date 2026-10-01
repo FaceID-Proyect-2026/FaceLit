@@ -154,7 +154,9 @@ function InstructorFormModal({
       }
     } catch (err: any) {
       const serverMessage = err?.response?.data?.message ?? err?.response?.data?.error ?? '';
-      const duplicateMessage = /document|duplicado|registrado/i.test(serverMessage)
+      const duplicateMessage = /correo|email/i.test(serverMessage)
+        ? serverMessage
+        : /document/i.test(serverMessage)
         ? t('academic.instructorDuplicateDoc')
         : serverMessage || t('academic.instructorCreateError');
       setError(duplicateMessage);

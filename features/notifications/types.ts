@@ -44,6 +44,9 @@ export type NotificationType =
   | 'attendance_substitute'     // 12 — sesión por suplencia
   // Gestión académica (RF-3.2)
   | 'academic_delete_blocked'   // 13 — intento de eliminación bloqueado
+  | 'instructor_profile_updated'
+  | 'instructor_assignment_updated'
+  | 'apprentice_transfer_applied'
   // Seguridad (RF-1)
   | 'security_multiple_failures'// 14 — múltiples intentos fallidos (App + Correo)
   | 'security_account_locked'   // 15 — cuenta bloqueada (App + Correo)
@@ -65,6 +68,9 @@ export const NOTIFICATION_CHANNELS: Record<NotificationType, NotificationChannel
   attendance_wrong_env:       'app+email',
   attendance_substitute:      'app',
   academic_delete_blocked:    'app',
+  instructor_profile_updated: 'app',
+  instructor_assignment_updated: 'app',
+  apprentice_transfer_applied: 'app',
   security_multiple_failures: 'app+email',
   security_account_locked:    'app+email',
   facial_reregister_request:  'app',

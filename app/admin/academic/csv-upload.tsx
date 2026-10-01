@@ -4,6 +4,7 @@
 // ─────────────────────────────────────────────
 import { downloadAcademicTemplate, uploadAcademicCsv } from '@/features/academic/academicApi';
 import { parseAcademicCsvV4 } from '@/features/academic/csvImport';
+import { loadNotifications } from '@/features/notifications/notificationsStore';
 import { CsvImportSummaryV4, CsvRowResult } from '@/features/academic/types';
 import { refreshAcademicStoreFromBackend } from '@/features/academic/useAcademic';
 import { Colors } from '@/shared/constants/colors';
@@ -253,6 +254,7 @@ export default function CsvUploadScreen() {
         generatedPasswords: getPasswordRows(backendResult, csvRows),
       });
       await refreshAcademicStoreFromBackend();
+      await loadNotifications();
     } catch (error: any) {
       // Log completo para depuración — ver exactamente qué devuelve el backend
       console.error('[CSV Upload] Error al procesar el archivo:', {
