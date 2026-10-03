@@ -25,7 +25,7 @@
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE"
       ],
-      "package": "com.anonymous.facelitmobile",
+      "package": "com.facelit.app",
       "softwareKeyboardLayoutMode": "pan"
     },
     "web": {
@@ -63,6 +63,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "dd5f99fc-db55-4945-93e9-45c8ead9db76"
+      }
     }
   }
 }
