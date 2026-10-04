@@ -249,7 +249,7 @@ export default function AttendanceByUserScreen({ allowedFichaIds }: { allowedFic
               />
             </View>
           </View>
-          {dateFrom && dateTo && dateFrom > dateTo && (
+          {dateFrom.length > 0 && dateTo.length > 0 && dateFrom > dateTo && (
             <Text style={[s.dateError, { color: Colors.error }]}>{t('reports.invalidDateRange')}</Text>
           )}
         </View>
@@ -340,7 +340,7 @@ export default function AttendanceByUserScreen({ allowedFichaIds }: { allowedFic
       )}
 
       {/* Rango sin registros */}
-      {selectedLearner && dateFrom && dateTo && dateFrom <= dateTo && cells.length > 0 && cells.every(c => !c.status) && (
+      {selectedLearner && dateFrom.length > 0 && dateTo.length > 0 && dateFrom <= dateTo && cells.length > 0 && cells.every(c => !c.status) && (
         <View style={s.emptyBox}>
           <Ionicons name="document-text-outline" size={28} color={muted} />
           <Text style={[s.emptyText, { color: muted }]}>{t('attendance.rf6.noRecordsRange')}</Text>
@@ -475,4 +475,3 @@ const s = StyleSheet.create({
   detailLabelText: { fontSize: FontSize.sm },
   detailValue:  { fontSize: FontSize.sm, fontWeight: FontWeight.bold, flex: 1, textAlign: 'right' },
 });
-

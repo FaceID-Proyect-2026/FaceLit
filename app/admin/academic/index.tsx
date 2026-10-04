@@ -164,6 +164,7 @@ const ob = StyleSheet.create({
 });
 
 function OnboardingModern({ isDark, theme }: { isDark: boolean; theme: any }) {
+  const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const compact = width < 760;
   const fade = useRef(new Animated.Value(0)).current;
@@ -186,9 +187,9 @@ function OnboardingModern({ isDark, theme }: { isDark: boolean; theme: any }) {
   }, []);
 
   const steps = [
-    ['document-text-outline', 'Descarga la plantilla', 'Obtén un archivo de ejemplo con la estructura correcta y todos los campos necesarios.'],
-    ['create-outline', 'Completa tus datos', 'Ábrelo en Excel y agrega los programas, fichas, aprendices e instructores de tu centro.'],
-    ['cloud-upload-outline', 'Sube y valida', 'FaceLit procesa la información y te muestra claramente qué se creó o necesita corrección.'],
+    { icon: 'document-text-outline', title: t('academic.onboardingStepTemplate'), description: t('academic.onboardingStepTemplateDescription') },
+    { icon: 'create-outline', title: t('academic.onboardingStepFill'), description: t('academic.onboardingStepFillDescription') },
+    { icon: 'cloud-upload-outline', title: t('academic.onboardingStepUpload'), description: t('academic.onboardingStepUploadDescription') },
   ];
 
   return (
@@ -199,13 +200,13 @@ function OnboardingModern({ isDark, theme }: { isDark: boolean; theme: any }) {
           <View style={modern.heroCopy}>
             <View style={[modern.eyebrow, { backgroundColor: soft, borderColor: border }]}>
               <Ionicons name={'sparkles-outline'} size={15} color={theme.primary} />
-              <Text style={[modern.eyebrowText, { color: theme.primary }]}>CONFIGURACIÓN INICIAL</Text>
+              <Text style={[modern.eyebrowText, { color: theme.primary }]}>{t('academic.onboardingEyebrow')}</Text>
             </View>
-            <Text style={[modern.title, { color: text }]}>Tu gestión académica, lista en minutos</Text>
-            <Text style={[modern.subtitle, { color: muted }]}>Importa programas, fichas, aprendices e instructores en un solo archivo. Te acompañamos paso a paso para que todo quede organizado.</Text>
+            <Text style={[modern.title, { color: text }]}>{t('academic.onboardingTitle')}</Text>
+            <Text style={[modern.subtitle, { color: muted }]}>{t('academic.onboardingDescription')}</Text>
             <View style={modern.benefits}>
-              {['Carga masiva de archivos de 31 KB', 'Validación antes de guardar', 'Resumen claro de resultados'].map(item => (
-                <View key={item} style={modern.benefit}><Ionicons name={'checkmark-circle'} size={18} color={theme.primary} /><Text style={[modern.benefitText, { color: text }]}>{item}</Text></View>
+              {['academic.onboardingBenefitUpload', 'academic.onboardingBenefitValidation', 'academic.onboardingBenefitSummary'].map(key => (
+                <View key={key} style={modern.benefit}><Ionicons name={'checkmark-circle'} size={18} color={theme.primary} /><Text style={[modern.benefitText, { color: text }]}>{t(key)}</Text></View>
               ))}
             </View>
           </View>
@@ -214,27 +215,27 @@ function OnboardingModern({ isDark, theme }: { isDark: boolean; theme: any }) {
             <View style={[modern.fileBadge, { backgroundColor: theme.primary }]}><Ionicons name={'document-text'} size={20} color={Colors.white} /><Text style={modern.fileBadgeText}>CSV</Text></View>
           </Animated.View>
         </View>
-        <Text style={[modern.kicker, { color: theme.primary }]}>CÓMO FUNCIONA</Text>
-        <Text style={[modern.sectionTitle, { color: text }]}>Tres pasos, sin complicaciones</Text>
+        <Text style={[modern.kicker, { color: theme.primary }]}>{t('academic.onboardingHowItWorks')}</Text>
+        <Text style={[modern.sectionTitle, { color: text }]}>{t('academic.onboardingStepsTitle')}</Text>
         <View style={[modern.steps, compact && modern.stepsCompact]}>
           {steps.map((step, index) => (
-            <View key={step[1]} style={[modern.stepCard, { backgroundColor: isDark ? '#0B1711' : '#FFFFFF', borderColor: border }]}>
+            <View key={step.title} style={[modern.stepCard, { backgroundColor: isDark ? '#0B1711' : '#FFFFFF', borderColor: border }]}>
               <Text style={[modern.stepNumber, { color: theme.primary + '55' }]}>0{index + 1}</Text>
-              <View style={[modern.stepIcon, { backgroundColor: soft, borderColor: border }]}><Ionicons name={step[0] as any} size={24} color={theme.primary} /></View>
-              <Text style={[modern.stepTitle, { color: text }]}>{step[1]}</Text>
-              <Text style={[modern.stepDesc, { color: muted }]}>{step[2]}</Text>
+              <View style={[modern.stepIcon, { backgroundColor: soft, borderColor: border }]}><Ionicons name={step.icon as any} size={24} color={theme.primary} /></View>
+              <Text style={[modern.stepTitle, { color: text }]}>{step.title}</Text>
+              <Text style={[modern.stepDesc, { color: muted }]}>{step.description}</Text>
             </View>
           ))}
         </View>
         <View style={[modern.action, { backgroundColor: isDark ? '#0A1A11' : '#F1FAF2', borderColor: border }]}>
-          <View style={modern.actionCopy}><Text style={[modern.actionTitle, { color: text }]}>¿Listo para comenzar?</Text><Text style={[modern.actionDesc, { color: muted }]}>Descarga la plantilla, complétala y deja que FaceLit haga el resto.</Text></View>
+          <View style={modern.actionCopy}><Text style={[modern.actionTitle, { color: text }]}>{t('academic.onboardingActionTitle')}</Text><Text style={[modern.actionDesc, { color: muted }]}>{t('academic.onboardingActionDescription')}</Text></View>
           <TouchableOpacity onPress={() => router.push('/admin/academic/csv-upload' as any)} activeOpacity={0.85} style={modern.buttonWrap}>
             <LinearGradient colors={['#72C96D', '#55AD52', '#3D8F43']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={modern.button}>
-              <Ionicons name={'cloud-upload-outline'} size={21} color={Colors.white} /><Text style={modern.buttonText}>Cargar información por CSV</Text><Ionicons name={'arrow-forward'} size={19} color={Colors.white} />
+              <Ionicons name={'cloud-upload-outline'} size={21} color={Colors.white} /><Text style={modern.buttonText}>{t('academic.csvUploadShort')}</Text><Ionicons name={'arrow-forward'} size={19} color={Colors.white} />
             </LinearGradient>
           </TouchableOpacity>
         </View>
-        <View style={modern.hint}><Ionicons name={'information-circle-outline'} size={17} color={muted} /><Text style={{ color: muted, fontSize: FontSize.xs }}>También puedes registrar programas y fichas manualmente desde los botones superiores.</Text></View>
+        <View style={modern.hint}><Ionicons name={'information-circle-outline'} size={17} color={muted} /><Text style={{ color: muted, fontSize: FontSize.xs }}>{t('academic.onboardingManualHint')}</Text></View>
       </LinearGradient>
     </Animated.View>
   );
@@ -550,7 +551,7 @@ const aps = StyleSheet.create({
   filterChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, borderWidth: 1.2 },
   filterChipText: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
   list: { padding: 16, gap: 12 },
-  card: { borderRadius: 14, borderWidth: 1, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
+  card: { borderRadius: 14, borderWidth: 1, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 10, elevation: 4 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   typeBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   typeText: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },

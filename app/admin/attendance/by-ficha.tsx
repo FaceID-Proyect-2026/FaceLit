@@ -65,7 +65,7 @@ export default function AttendanceByFichaScreen({
 }) {
   const { isDark, theme } = useTheme();
   const { t, i18n } = useTranslation();
-  const { programs, allFichas } = useAcademic();
+  const { programs, allFichas, allInstructors } = useAcademic();
   const { getFichaCardsForProgram, getFichaTable } = useAttendanceRF6();
 
   // ── Estado persistido desde el store ─────────
@@ -81,9 +81,9 @@ export default function AttendanceByFichaScreen({
     learnerName: string;
   } | null>(null);
   const [exporting, setExporting] = useState(false);
-  const dateHeaderRef = useRef<ScrollView>(null);
-  const dateGridRef = useRef<ScrollView>(null);
-  const dateGridX = useRef(0);
+  const learnerHeaderRef = useRef<ScrollView>(null);
+  const learnerGridRef = useRef<ScrollView>(null);
+  const learnerGridX = useRef(0);
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -131,6 +131,12 @@ export default function AttendanceByFichaScreen({
     () => visibleFichas.find((f) => f.id === selectedFichaId),
     [visibleFichas, selectedFichaId],
   );
+  const responsibleInstructors = useMemo(
+    () => allInstructors.filter(instructor =>
+      instructor.status === "active" && instructor.fichaIds.includes(selectedFichaId ?? ""),
+    ),
+    [allInstructors, selectedFichaId],
+  );
   const selectedProgram = useMemo(
     () => programs.find((p) => p.id === selectedProgramId),
     [programs, selectedProgramId],
@@ -172,11 +178,11 @@ export default function AttendanceByFichaScreen({
       : "—";
 
   // ── Exportación ───────────────────────────────
-  const handleDateGridScroll = (event: any) => {
-    dateGridX.current = event.nativeEvent.contentOffset.x;
-    dateHeaderRef.current?.scrollTo({ x: dateGridX.current, animated: false });
+  const handleLearnerGridScroll = (event: any) => {
+    learnerGridX.current = event.nativeEvent.contentOffset.x;
+    learnerHeaderRef.current?.scrollTo({ x: learnerGridX.current, animated: false });
   };
-  const handleDateGridWheel = (event: any) => {
+  const handleLearnerGridWheel = (event: any) => {
     if (Platform.OS !== "web") return;
     const nativeEvent = event?.nativeEvent ?? event;
     const delta = Math.abs(nativeEvent.deltaX) > Math.abs(nativeEvent.deltaY)
@@ -184,11 +190,11 @@ export default function AttendanceByFichaScreen({
       : nativeEvent.deltaY;
     if (!delta) return;
     nativeEvent.preventDefault?.();
-    const nextX = Math.max(0, dateGridX.current + delta);
-    dateGridX.current = nextX;
-    dateGridRef.current?.scrollTo({ x: nextX, animated: false });
+    const nextX = Math.max(0, learnerGridX.current + delta);
+    learnerGridX.current = nextX;
+    learnerGridRef.current?.scrollTo({ x: nextX, animated: false });
   };
-  const dateGridWheelProps = Platform.OS === "web" ? ({ onWheel: handleDateGridWheel } as any) : {};
+  const learnerGridWheelProps = Platform.OS === "web" ? ({ onWheel: handleLearnerGridWheel } as any) : {};
 
   const handleExport = async (format: "excel" | "csv") => {
     if (!tableRows.length || !selectedFicha || !selectedProgram) return;
@@ -249,9 +255,9 @@ export default function AttendanceByFichaScreen({
             <Ionicons name="map-outline" size={22} color={theme.primary} />
           </View>
           <View style={s.guideCopy}>
-            <Text style={[s.guideTitle, { color: text }]}>Consulta por programa y ficha</Text>
+            <Text style={[s.guideTitle, { color: text }]}>{t("attendance.programFichaGuideTitle")}</Text>
             <Text style={[s.guideText, { color: muted }]}>
-              Selecciona un programa de formación para ver sus fichas asociadas. Luego entra a una ficha para revisar la asistencia de sus aprendices por rango de fechas.
+              {t("attendance.programFichaGuideDescription")}
             </Text>
           </View>
         </View>
@@ -423,6 +429,20 @@ export default function AttendanceByFichaScreen({
             </Text>
           </TouchableOpacity>
 
+          {Boolean(selectedFichaId) && (
+            <View style={[s.responsibleRow, { backgroundColor: cardBg, borderColor: border }]}>
+              <Ionicons name="person-circle-outline" size={18} color={theme.primary} />
+              <Text style={[s.responsibleLabel, { color: muted }]}>
+                {t("attendance.rf6.responsibleInstructor")}:
+              </Text>
+              <Text style={[s.responsibleName, { color: text }]} numberOfLines={2}>
+                {responsibleInstructors.length
+                  ? responsibleInstructors.map(instructor => `${instructor.name} ${instructor.lastname}`.trim()).join(", ")
+                  : "—"}
+              </Text>
+            </View>
+          )}
+
           {/* Selectores de fecha con DateField */}
           <View
             style={[s.card, { backgroundColor: cardBg, borderColor: border }]}
@@ -465,20 +485,21 @@ export default function AttendanceByFichaScreen({
           {tableRows.length > 0 && dates.length > 0 && (
             <View style={[s.tableShell, { borderColor: border, backgroundColor: cardBg }]}>
               <View style={s.tableHeaderPinned}>
-                <View style={[s.cellName, s.thCell, { backgroundColor: theme.primary + "20", borderColor: border }]}>
-                  <Text style={[s.thText, { color: theme.primary }]}>{t("attendance.rf6.learner")}</Text>
+                <View style={[s.dateRowLabel, s.transposedHeaderCell, { backgroundColor: theme.primary + "20", borderColor: border }]}>
+                  <Text style={[s.thText, { color: theme.primary }]}>{t("reports.table.date")}</Text>
                 </View>
                 <ScrollView
-                  ref={dateHeaderRef}
+                  ref={learnerHeaderRef}
                   horizontal
                   scrollEnabled={false}
                   showsHorizontalScrollIndicator={false}
-                  style={s.dateGridScroll}
+                  style={s.learnerGridScroll}
                 >
                   <View style={s.tableHeaderRow}>
-                    {dates.map((d) => (
-                      <View key={d} style={[s.cellDay, s.thCell, { backgroundColor: theme.primary + "20", borderColor: border }]}>
-                        <Text style={[s.thText, { color: theme.primary }]}>{fmtDate(d)}</Text>
+                    {tableRows.map((row) => (
+                      <View key={row.learnerId} style={[s.learnerHeaderCell, s.transposedHeaderCell, { backgroundColor: theme.primary + "20", borderColor: border }]}>
+                        <Text style={[s.thText, { color: theme.primary }]} numberOfLines={2}>{row.learnerName}</Text>
+                        <Text style={[s.cellDocText, { color: muted }]} numberOfLines={1}>{row.learnerDocument}</Text>
                       </View>
                     ))}
                   </View>
@@ -486,46 +507,47 @@ export default function AttendanceByFichaScreen({
               </View>
               <ScrollView style={s.tableBodyScroll} nestedScrollEnabled showsVerticalScrollIndicator>
                 <View style={s.tableBodyRow}>
-                  <View style={s.fixedLearners}>
-                    {tableRows.map((row, rIdx) => (
+                  <View style={s.fixedDates}>
+                    {dates.map((date, dateIdx) => (
                       <View
-                        key={row.learnerId}
+                        key={date}
                         style={[
-                          s.cellName,
+                          s.dateRowLabel,
                           {
                             borderColor: border,
-                            backgroundColor: rIdx % 2 === 0 ? cardBg : theme.primary + "08",
+                            backgroundColor: dateIdx % 2 === 0 ? cardBg : theme.primary + "08",
                           },
                         ]}
                       >
-                        <Text style={[s.cellNameText, { color: text }]} numberOfLines={1}>{row.learnerName}</Text>
-                        <Text style={[s.cellDocText, { color: muted }]} numberOfLines={1}>{row.learnerDocument}</Text>
+                        <Text style={[s.cellNameText, { color: text }]}>{fmtDateLong(date)}</Text>
                       </View>
                     ))}
                   </View>
                   <ScrollView
-                    ref={dateGridRef}
+                    ref={learnerGridRef}
                     horizontal
                     showsHorizontalScrollIndicator={false}
-                    style={s.dateGridScroll}
-                    onScroll={handleDateGridScroll}
+                    style={s.learnerGridScroll}
+                    onScroll={handleLearnerGridScroll}
                     scrollEventThrottle={16}
-                    {...dateGridWheelProps}
+                    {...learnerGridWheelProps}
                   >
                     <View>
-                      {tableRows.map((row, rIdx) => (
-                        <View key={row.learnerId} style={[s.tableRow, { backgroundColor: rIdx % 2 === 0 ? cardBg : theme.primary + "08" }]}>
-                          {row.days.map((cell, dIdx) => {
+                      {dates.map((date, dateIdx) => (
+                        <View key={date} style={[s.tableRow, { backgroundColor: dateIdx % 2 === 0 ? cardBg : theme.primary + "08" }]}>
+                          {tableRows.map((row) => {
+                            const cell = row.days[dateIdx];
+                            if (!cell) return null;
                             const isAbsent = cell.status === "absent";
                             const isLate = cell.status === "late";
                             const isClickable = isAbsent || isLate;
                             return (
                               <TouchableOpacity
-                                key={dIdx}
+                                key={row.learnerId}
                                 disabled={!isClickable}
                                 onPress={() => isClickable && setCellDetail({ cell, learnerName: row.learnerName })}
                                 style={[
-                                  s.cellDay,
+                                  s.learnerAttendanceCell,
                                   { borderColor: border },
                                   isAbsent && { backgroundColor: CELL_ABSENT, borderColor: BORDER_ABSENT },
                                   isLate && { backgroundColor: CELL_LATE, borderColor: BORDER_LATE },
@@ -549,7 +571,7 @@ export default function AttendanceByFichaScreen({
           )}
           {tableRows.length > 0 && dates.length > 0 && (
             <Text style={[s.tableHint, { color: muted }]}>
-              Desplaza las fechas con la rueda o el panel táctil; la columna de aprendices queda fija para no perder la referencia.
+              Desplaza horizontalmente para consultar los aprendices y verticalmente para recorrer las fechas.
             </Text>
           )}
           {tableRows.length > 0 && dates.length > 0 && (
@@ -1016,6 +1038,9 @@ const s = StyleSheet.create({
   backProgram: { fontSize: FontSize.xs, flex: 1 },
   backFicha: { fontSize: FontSize.sm, fontWeight: FontWeight.black },
 
+  responsibleRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 7, borderWidth: 1, borderRadius: 12, padding: 11 },
+  responsibleLabel: { fontSize: FontSize.sm },
+  responsibleName: { flexShrink: 1, fontSize: FontSize.sm, fontWeight: FontWeight.bold },
   rangeLabel: { fontSize: FontSize.sm, marginBottom: 10 },
   rangeRow: {
     flexDirection: "row",
@@ -1051,7 +1076,12 @@ const s = StyleSheet.create({
     width: 190,
     zIndex: 2,
   },
+  fixedDates: {
+    width: 140,
+    zIndex: 2,
+  },
   dateGridScroll: { flex: 1 },
+  learnerGridScroll: { flex: 1 },
   tableHint: { fontSize: FontSize.xs, lineHeight: 18, marginTop: -2 },
   tableHeaderRow: { flexDirection: "row" },
   tableRow: { flexDirection: "row" },
@@ -1067,6 +1097,10 @@ const s = StyleSheet.create({
     fontWeight: FontWeight.black,
     textAlign: "center",
   },
+  transposedHeaderCell: { height: 76, justifyContent: "center", alignItems: "center", borderWidth: 0.5, padding: 8 },
+  dateRowLabel: { width: 140, height: 60, borderWidth: 0.5, paddingHorizontal: 10, justifyContent: "center" },
+  learnerHeaderCell: { width: 180 },
+  learnerAttendanceCell: { width: 180, height: 60, borderWidth: 0.5, alignItems: "center", justifyContent: "center" },
   cellName: {
     width: 190,
     height: 64,
