@@ -9,12 +9,9 @@
 //  · Prevención de doble submit (RNF-1.12)
 //  · Política de privacidad: una sola vez por documento (RF-1.1 V3)
 // ─────────────────────────────────────────────
-import {
-  hasAcceptedPrivacy,
-  recordPrivacyAcceptance,
-} from '@/features/auth/privacyAcceptanceStore';
 import { useAuth } from '@/shared/contexts/AuthContext';
-import { useRef, useState } from 'react';
+import { getPrivacyAcceptanceStatus } from '@/shared/services/authService';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 // 6 a 15 dígitos — RF-1 V4 §1 y requisitos del negocio académico
@@ -47,6 +44,8 @@ export function useLoginForm() {
   const [errors, setErrors]   = useState<LoginErrors>(initialErrors);
   const [loading, setLoading] = useState(false);
   const [alreadyAccepted, setAlreadyAccepted] = useState(false);
+  const [privacyStatusKnown, setPrivacyStatusKnown] = useState(false);
+  const privacyRequestRef = useRef(0);
 
   // Prevención de doble submit — RF-1 V4 §7
   const submittingRef = useRef(false);
@@ -62,11 +61,13 @@ export function useLoginForm() {
   const setDocumentField = (raw: string) => {
     // strip todo lo que no sea dígito (guiones, puntos, espacios del copy-paste)
     const cleaned = raw.replace(/\D/g, '');
-    setField('document', cleaned);
-    if (alreadyAccepted && !hasAcceptedPrivacy(cleaned)) {
+    if (cleaned !== form.document) {
+      privacyRequestRef.current += 1;
+      setPrivacyStatusKnown(false);
       setAlreadyAccepted(false);
       setForm(prev => ({ ...prev, accepted: false }));
     }
+    setField('document', cleaned);
 
     // El campo conserva solo dígitos, pero informa al usuario si intentó
     // escribir o pegar caracteres no permitidos.
@@ -78,16 +79,37 @@ export function useLoginForm() {
     }
   };
 
-  const refreshPrivacyAcceptance = (document = form.document) => {
-    const accepted = hasAcceptedPrivacy(document.trim());
-    setAlreadyAccepted(accepted);
-    if (accepted) {
-      setForm(prev => ({ ...prev, accepted: true }));
-    }
-    return accepted;
-  };
+  useEffect(() => {
+    const document = form.document.trim();
+    const requestId = ++privacyRequestRef.current;
+    setPrivacyStatusKnown(false);
+    setAlreadyAccepted(false);
+    setForm(prev => ({ ...prev, accepted: false }));
 
-  const validate = (): LoginErrors => {
+    if (!DOCUMENT_REGEX.test(document)) return undefined;
+
+    const timeout = setTimeout(async () => {
+      try {
+        const accepted = await getPrivacyAcceptanceStatus(document);
+        if (requestId !== privacyRequestRef.current) return;
+        setAlreadyAccepted(accepted);
+        setPrivacyStatusKnown(true);
+        setForm(prev => ({ ...prev, accepted }));
+      } catch {
+        if (requestId !== privacyRequestRef.current) return;
+        setAlreadyAccepted(false);
+        setPrivacyStatusKnown(true);
+        setErrors(prev => ({
+          ...prev,
+          general: t('login.errors.networkError'),
+        }));
+      }
+    }, 250);
+
+    return () => clearTimeout(timeout);
+  }, [form.document, t]);
+
+  const validate = (privacyAcceptedPreviously = alreadyAccepted): LoginErrors => {
     const e = { ...initialErrors };
     const doc = form.document.trim();
 
@@ -113,8 +135,7 @@ export function useLoginForm() {
     }
 
     // ── Política de privacidad (RF-1 V4 §3) ─────
-    const privacyAlreadyAccepted = doc ? hasAcceptedPrivacy(doc) : false;
-    if (!form.accepted && !privacyAlreadyAccepted) {
+    if (!form.accepted && !privacyAcceptedPreviously) {
       e.policy = t('login.errors.policyRequired');
     }
 
@@ -125,19 +146,34 @@ export function useLoginForm() {
     // Prevención de doble submit
     if (submittingRef.current) return;
 
-    const nextErrors = validate();
-    setErrors(nextErrors);
-    if (form.document.trim()) refreshPrivacyAcceptance(form.document);
-    if (nextErrors.document || nextErrors.password || nextErrors.policy) return;
-
     submittingRef.current = true;
     setLoading(true);
 
     try {
-      const result = await login(form.document.trim(), form.password);
+      let acceptedPreviously = alreadyAccepted;
+      const document = form.document.trim();
+      if (DOCUMENT_REGEX.test(document) && !privacyStatusKnown) {
+        try {
+          acceptedPreviously = await getPrivacyAcceptanceStatus(document);
+          setAlreadyAccepted(acceptedPreviously);
+          setPrivacyStatusKnown(true);
+          setForm(prev => ({ ...prev, accepted: acceptedPreviously }));
+        } catch {
+          setErrors(prev => ({
+            ...prev,
+            general: t('login.errors.networkError'),
+          }));
+          return;
+        }
+      }
+
+      const nextErrors = validate(acceptedPreviously);
+      setErrors(nextErrors);
+      if (nextErrors.document || nextErrors.password || nextErrors.policy) return;
+
+      const result = await login(document, form.password, form.accepted || acceptedPreviously);
 
       if (result.success) {
-        recordPrivacyAcceptance(form.document.trim());
         return;
       }
 
@@ -175,9 +211,9 @@ export function useLoginForm() {
     errors,
     loading,
     alreadyAccepted,
+    privacyStatusKnown,
     setField,
     setDocumentField,
-    refreshPrivacyAcceptance,
     handleSubmit,
   };
 }

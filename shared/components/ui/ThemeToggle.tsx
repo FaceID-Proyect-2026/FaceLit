@@ -4,7 +4,10 @@
 // ─────────────────────────────────────────────
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
+import { useAuth } from '@/shared/contexts/AuthContext';
+import { useLanguage } from '@/shared/contexts/I18nContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
+import { persistUserConfigurationPreferences } from '@/shared/services/userConfigService';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, TouchableOpacity, ViewStyle } from 'react-native';
@@ -15,12 +18,24 @@ interface ThemeToggleProps {
 
 export default function ThemeToggle({ style }: ThemeToggleProps) {
   const { isDark, toggleTheme } = useTheme();
+  const { language } = useLanguage();
+  const { isAuthenticated } = useAuth();
   const { t } = useTranslation();
   const controlColor = isDark ? Colors.white : Colors.primaryDark;
 
+  const handleToggle = () => {
+    const nextDarkMode = !isDark;
+    toggleTheme();
+    if (isAuthenticated) {
+      void persistUserConfigurationPreferences(language, nextDarkMode).catch(error => {
+        console.warn('[Settings] No se pudo guardar el tema seleccionado:', error);
+      });
+    }
+  };
+
   return (
     <TouchableOpacity
-      onPress={toggleTheme}
+      onPress={handleToggle}
       activeOpacity={0.75}
       style={[
         s.btn,

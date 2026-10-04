@@ -3,13 +3,21 @@ import { removeToken, saveToken } from './tokenStorage';
 
 // El backend (LoginRequestDTO) espera numberDocument + password.
 // Respuesta (LoginResponseDTO): { token, role, permissions, userId }
-export const login = async (numberDocument, password) => {
+export const login = async (numberDocument, password, privacyAccepted = false) => {
   const { data } = await api.post('/api/auth/login', {
     numberDocument,
     password,
+    privacyAccepted,
   });
   await saveToken(data.token);
   return data;
+};
+
+export const getPrivacyAcceptanceStatus = async (numberDocument) => {
+  const { data } = await api.post('/api/auth/privacy-acceptance-status', {
+    numberDocument,
+  });
+  return data === true;
 };
 
 // POST /api/auth/change-password — requiere sesión activa (JWT)
@@ -53,4 +61,3 @@ export const getMyProfile = async () => {
 };
 
 export const logout = () => removeToken();
-

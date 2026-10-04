@@ -70,11 +70,18 @@ export default function ProfileScreen() {
   const document = pickValue(profile.documentNumber, user.document);
   const email = pickValue(profile.email, user.email);
   const role = pickValue(profile.role, String(user.role ?? ''));
+  const roleKey = role.toUpperCase() === 'APRENDIZ'
+    ? 'APPRENTICE'
+    : role.toUpperCase() === 'COORDINADOR'
+      ? 'COORDINATOR'
+      : role.toUpperCase();
   const firstNameInitial = displayName ? displayName.charAt(0).toUpperCase() : (email ? email.charAt(0).toUpperCase() : '?');
   const lastNameInitial = displayLastName ? displayLastName.charAt(0).toUpperCase() : '';
-  const roleLabel = role ? role.charAt(0).toUpperCase() + role.slice(1).toLowerCase() : '';
+  const roleLabel = role
+    ? t(`users.roles.${roleKey}`, { defaultValue: role.charAt(0).toUpperCase() + role.slice(1).toLowerCase() })
+    : '';
   const avatarText = `${firstNameInitial}${lastNameInitial}`.trim() || (email.charAt(0).toUpperCase() || '?');
-  const userName = `${displayName} ${displayLastName}`.trim() || email || 'Usuario';
+  const userName = `${displayName} ${displayLastName}`.trim() || email || t('profile.unknownUser');
 
   const handleLogout = () => {
     alert(
@@ -188,6 +195,7 @@ const ps = StyleSheet.create({
     borderRadius: 22, borderWidth: 1, alignItems: 'center',
     paddingVertical: 32, paddingHorizontal: 20, marginBottom: 24,
     overflow: 'hidden',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.14, shadowRadius: 12, elevation: 5,
   },
   headerDecoTop: {
     position: 'absolute', top: -60, right: -60,
@@ -210,7 +218,7 @@ const ps = StyleSheet.create({
   sectionIconWrap: { width: 26, height: 26, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   sectionTitle: { fontSize: FontSize.md, fontWeight: FontWeight.black },
 
-  card: { borderRadius: 18, borderWidth: 1, padding: 6, marginBottom: 24 },
+  card: { borderRadius: 18, borderWidth: 1, padding: 6, marginBottom: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 10, elevation: 4 },
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 10 },
   infoIconWrap: { width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   infoLabel: { fontSize: 12, marginBottom: 2, fontWeight: '500' },
@@ -219,6 +227,7 @@ const ps = StyleSheet.create({
   actionBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     borderWidth: 1, borderRadius: 16, paddingVertical: 14, paddingHorizontal: 14,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 3,
   },
   actionLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   actionIconWrap: { width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
