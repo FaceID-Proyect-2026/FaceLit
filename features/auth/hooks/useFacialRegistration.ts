@@ -11,6 +11,11 @@
 // ─────────────────────────────────────────────
 import { registerFacialCapture } from '@/features/facial/facialStore';
 import { useAuth } from '@/shared/contexts/AuthContext';
+import {
+  getFacialEmbeddingErrorMessage,
+  registerFacialEmbeddingFromImage,
+} from '@/shared/services/facialEmbeddingService';
+import { imageUriToDataUri } from '@/shared/utils/imageToBase64';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -38,6 +43,13 @@ export function getAverageBrightness(canvas: HTMLCanvasElement): number {
   return total / pixelCount;
 }
 
+function buildPhotoReference(photoUri: string, isWeb: boolean): string {
+  if (photoUri.startsWith('data:')) {
+    return `capture://${isWeb ? 'web' : 'native'}-facial-registration-${Date.now()}.jpg`;
+  }
+  return photoUri.length > 500 ? photoUri.slice(0, 500) : photoUri;
+}
+
 export function useFacialRegistration() {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -46,6 +58,7 @@ export function useFacialRegistration() {
   const [screenState, setScreenState]                 = useState<ScreenState>('idle');
   const [photoUri, setPhotoUri]                       = useState<string | null>(null);
   const [isTaking, setIsTaking]                       = useState(false);
+  const [isRegistering, setIsRegistering]             = useState(false);
   const [quality, setQuality]                         = useState<CaptureQuality>('checking');
   const [successModalVisible, setSuccessModalVisible] = useState(false);
 
@@ -53,7 +66,7 @@ export function useFacialRegistration() {
   const positioningTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isWeb            = Platform.OS === 'web';
   const isPositioning    = screenState === 'positioning';
-  const canFinish         = screenState === 'captured' && quality === 'good';
+  const canFinish         = screenState === 'captured' && quality === 'good' && !isRegistering;
 
   useEffect(() => {
     return () => {
@@ -153,12 +166,12 @@ export function useFacialRegistration() {
   }, [startPositioningSimulation]);
 
   // ── Finalizar ──────────────────────────────────
-  const handleFinish = useCallback(() => {
+  const handleFinish = useCallback(async () => {
     if (!photoUri) {
       alert(t('facial.validation.noFace'));
       return;
     }
-    if (screenState !== 'captured' || quality !== 'good') return;
+    if (screenState !== 'captured' || quality !== 'good' || isRegistering) return;
 
     // Mapea los roles del backend (MAYÚSCULAS) al formato que espera el facialStore
     const ROLE_MAP: Record<string, string> = {
@@ -176,13 +189,40 @@ export function useFacialRegistration() {
         }
       : undefined;
 
-    const result = registerFacialCapture(facialUser, photoUri);
-    if (!result.success) {
-      alert(t(result.error));
+    if (!facialUser) {
+      alert(t('facial.validation.userNotFound'));
       return;
     }
-    setSuccessModalVisible(true);
-  }, [screenState, photoUri, quality, t, user]);
+
+    setIsRegistering(true);
+    try {
+      const imageBase64 = await imageUriToDataUri(photoUri);
+      await registerFacialEmbeddingFromImage({
+        userId: facialUser.id,
+        imageBase64,
+        photoReference: buildPhotoReference(photoUri, isWeb),
+        replaceExisting: false,
+        createdBy: 'mobile-app',
+      });
+
+      const result = registerFacialCapture(facialUser, photoUri);
+      if (!result.success) {
+        alert(t(result.error));
+        return;
+      }
+      setSuccessModalVisible(true);
+    } catch (error: any) {
+      const message = getFacialEmbeddingErrorMessage(error);
+      console.warn('[FacialRegistration] Error registering embedding', {
+        status: error?.response?.status,
+        data: error?.response?.data,
+        message: error?.message,
+      });
+      alert(message);
+    } finally {
+      setIsRegistering(false);
+    }
+  }, [screenState, photoUri, quality, isRegistering, isWeb, t, user]);
 
   // Al cerrar el modal se queda en el flujo actual; la pantalla decide qué mostrar después.
   const handleCloseSuccessModal = useCallback(() => {
@@ -194,6 +234,7 @@ export function useFacialRegistration() {
     screenState,
     photoUri,
     isTaking,
+    isRegistering,
     quality,
     successModalVisible,
     isWeb,

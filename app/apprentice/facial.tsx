@@ -65,6 +65,7 @@ export default function ApprenticeFacialScreen() {
     screenState,
     photoUri,
     isTaking,
+    isRegistering,
     quality,
     successModalVisible,
     isWeb,
@@ -462,7 +463,9 @@ export default function ApprenticeFacialScreen() {
                     size={18}
                     color={Colors.white}
                   />
-                  <Text style={s.primaryBtnText}>{t("facialReg.finish")}</Text>
+                  <Text style={s.primaryBtnText}>
+                    {isRegistering ? "Registrando..." : t("facialReg.finish")}
+                  </Text>
                 </TouchableOpacity>
               </View>
               {quality === "lowLight" && (
