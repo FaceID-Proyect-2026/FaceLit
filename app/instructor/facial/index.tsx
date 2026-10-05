@@ -78,7 +78,7 @@ export default function FacialManagementScreen() {
     { icon: "school-outline", label: t("facial.setup.fields.ficha"), value: selectedChip ? `${t("facial.setup.fields.ficha")} ${selectedChip.chipCode}` : t("facial.setup.unselected") },
   ];
 
-  const canSave = !!selectedEnvironment && !!selectedInstructorId && !!selectedChipId && !saving;
+  const canSave = !!selectedEnvironment && !!selectedInstructor && !!selectedChip && !saving;
 
   const handleCreateEnvironment = async () => {
     try {
@@ -100,21 +100,32 @@ export default function FacialManagementScreen() {
       shutdownTime: settings.shutdownTime,
     });
 
-    if (!result.success) {
-      alert(t("common.error"), t(result.error));
-      return;
-    }
+    const sessionConfig = result.success
+      ? {
+          environmentId: result.session.idEnvironment,
+          environmentName: result.session.environmentName,
+          instructorId: result.session.idInstructorInCharge,
+          instructorName: result.session.instructorName,
+          fichaId: result.session.idChip,
+          fichaNumber: result.session.chipCode,
+        }
+      : {
+          environmentId: selectedEnvironment.idEnvironment,
+          environmentName: selectedEnvironment.environmentName,
+          instructorId: selectedInstructor.idInstructor,
+          instructorName: `${selectedInstructor.firstName} ${selectedInstructor.lastName}`.trim(),
+          fichaId: selectedChip.idChip,
+          fichaNumber: selectedChip.chipCode,
+        };
 
-    saveConfig({
-      environmentId: result.session.idEnvironment,
-      environmentName: result.session.environmentName,
-      instructorId: result.session.idInstructorInCharge,
-      instructorName: result.session.instructorName,
-      fichaId: result.session.idChip,
-      fichaNumber: result.session.chipCode,
-    });
+    saveConfig(sessionConfig);
 
-    alert(t("common.success"), t("facial.setup.saveSuccess"));
+    alert(t("common.success"), t("facial.setup.saveSuccess"), [
+      {
+        text: t("common.ok"),
+        onPress: () => router.replace(Routes.INSTRUCTOR.FACIAL_CAMERA as any),
+      },
+    ]);
   };
 
   return (
