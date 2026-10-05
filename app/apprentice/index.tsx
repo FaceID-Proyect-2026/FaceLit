@@ -6,8 +6,7 @@
 import { useAcademic } from '@/features/academic/useAcademic';
 import { findCurrentLearner, getProgramForFicha } from '@/features/academic/currentAcademic';
 import { getProgramDisplayName } from '@/features/academic/types';
-import { ATTENDANCE_EVENTS } from '@/features/attendance/types';
-import { MOCK_NOTIFICATIONS_RF8 } from '@/features/notifications/types';
+import { useRemoteUnreadCount } from '@/features/notifications/useNotifications';
 import { Colors } from '@/shared/constants/colors';
 import { Routes } from '@/shared/constants/routes';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
@@ -25,31 +24,22 @@ export default function ApprenticeDashboard() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const { allFichas, allPrograms } = useAcademic();
+  const remoteUnreadCount = useRemoteUnreadCount(user?.id);
 
   const text    = isDark ? Colors.dark.text       : Colors.light.text;
   const muted   = isDark ? Colors.dark.textMuted  : Colors.light.textMuted;
   const cardBg  = theme.surface;
   const border  = theme.border;
   const bg      = isDark ? Colors.dark.background : Colors.light.background;
-
-  // ── Estadísticas propias del aprendiz ──────
-  const myEvents   = ATTENDANCE_EVENTS.filter(e => e.userId === user?.id);
-  const totalSessions  = myEvents.length;
-  const punctualCount  = myEvents.filter(e => e.status === 'punctual').length;
-  const lateCount      = myEvents.filter(e => e.status === 'late').length;
-  const absentCount    = myEvents.filter(e => e.status === 'absent').length;
-  const attendancePct  = totalSessions > 0
-    ? Math.round(((punctualCount + lateCount) / totalSessions) * 100)
-    : 0;
+  const cardShadow = isDark
+    ? '0px 10px 24px rgba(0, 0, 0, 0.58)'
+    : '0px 10px 24px rgba(24, 54, 32, 0.30)';
 
   // ── Ficha del aprendiz ─────────────────────
   const learnerAcademic = useMemo(() => findCurrentLearner(allFichas, user), [allFichas, user]);
   const myFicha = learnerAcademic?.ficha ?? null;
   const myLearner = learnerAcademic?.learner ?? null;
   const myProgram = useMemo(() => getProgramForFicha(allPrograms, myFicha), [allPrograms, myFicha]);
-
-  // ── Notificaciones no leídas ───────────────
-  const unreadNotifications = MOCK_NOTIFICATIONS_RF8.filter(n => !n.read).length;
 
   // ── Accesos directos ───────────────────────
   interface QuickAction {
@@ -78,7 +68,7 @@ export default function ApprenticeDashboard() {
       label: t('sidebar.notifications'),
       route: Routes.NOTIFICATIONS.CENTER,
       color: theme.warning,
-      badge: unreadNotifications > 0 ? unreadNotifications : undefined,
+      badge: remoteUnreadCount > 0 ? remoteUnreadCount : undefined,
     },
     {
       icon:  'person-outline',
@@ -101,26 +91,40 @@ export default function ApprenticeDashboard() {
 
         {/* ── Banner de bienvenida ─────────────── */}
         <LinearGradient
-          colors={['#65B361', '#4A9146']}
+          colors={['#174A2A', '#26713A', '#4A9B4A']}
           start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={s.banner}
+          end={{ x: 1, y: 1 }}
+          style={[s.banner, { boxShadow: '0px 12px 28px rgba(18, 48, 27, 0.34)' }]}
         >
+          <View style={s.bannerGlow} />
           <View style={s.bannerLeft}>
-            <Text style={s.bannerGreeting}>{t('dashboard.welcome')},</Text>
+            <View style={s.bannerEyebrow}>
+              <View style={s.bannerEyebrowDot} />
+              <Text style={s.bannerGreeting}>{t('dashboard.welcome')}</Text>
+            </View>
             <Text style={s.bannerName}>{displayName}!</Text>
             <View style={s.rolePill}>
               <Ionicons name="school-outline" size={12} color={Colors.white} />
               <Text style={s.rolePillText}>{t('users.roles.APPRENTICE')}</Text>
             </View>
-            <Text style={s.fichaTag}>
-              {myFicha ? `${t('dashboard.apprenticeFicha')} ${myFicha.number} - ${myProgram ? getProgramDisplayName(myProgram, t) : t('dashboard.apprenticeNoProgram')}` : t('dashboard.apprenticeNoFichaAssigned')}
-            </Text>
+            <View style={s.fichaPill}>
+              <Ionicons name="book-outline" size={14} color="rgba(255,255,255,0.9)" />
+              <Text style={s.fichaTag} numberOfLines={1}>
+                {myFicha ? `${t('dashboard.apprenticeFicha')} ${myFicha.number}  ·  ${myProgram ? getProgramDisplayName(myProgram, t) : t('dashboard.apprenticeNoProgram')}` : t('dashboard.apprenticeNoFichaAssigned')}
+              </Text>
+            </View>
           </View>
-          <Ionicons name="person-circle-outline" size={64} color="rgba(255,255,255,0.25)" />
+          <View style={s.avatarWrap}>
+            <View style={s.avatarRing}>
+              <Ionicons name="person" size={42} color="rgba(255,255,255,0.88)" />
+            </View>
+            <View style={s.avatarBadge}>
+              <Ionicons name="sparkles" size={14} color="#174A2A" />
+            </View>
+          </View>
         </LinearGradient>
 
-        <View style={[s.academicCard, { backgroundColor: cardBg, borderColor: border }]}>
+        <View style={[s.academicCard, { backgroundColor: cardBg, borderColor: border, boxShadow: cardShadow }]}>
           <View style={s.academicHeader}>
             <View style={[s.academicIcon, { backgroundColor: theme.primary + '18' }]}>
               <Ionicons name="school-outline" size={24} color={theme.primary} />
@@ -148,30 +152,6 @@ export default function ApprenticeDashboard() {
           </View>
         </View>
 
-        {/* ── Tarjetas de estadísticas ─────────── */}
-        <View style={s.statsRow}>
-          <View style={[s.statCard, { backgroundColor: cardBg, borderColor: border }]}>
-            <Ionicons name="checkmark-circle" size={22} color={Colors.success} />
-            <Text style={[s.statValue, { color: text }]}>{punctualCount}</Text>
-            <Text style={[s.statLabel, { color: muted }]}>{t('apprentice.attendance.punctual')}</Text>
-          </View>
-          <View style={[s.statCard, { backgroundColor: cardBg, borderColor: border }]}>
-            <Ionicons name="time" size={22} color={Colors.warning} />
-            <Text style={[s.statValue, { color: text }]}>{lateCount}</Text>
-            <Text style={[s.statLabel, { color: muted }]}>{t('apprentice.attendance.late')}</Text>
-          </View>
-          <View style={[s.statCard, { backgroundColor: cardBg, borderColor: border }]}>
-            <Ionicons name="close-circle" size={22} color={Colors.error} />
-            <Text style={[s.statValue, { color: text }]}>{absentCount}</Text>
-            <Text style={[s.statLabel, { color: muted }]}>{t('apprentice.attendance.absent')}</Text>
-          </View>
-          <View style={[s.statCard, s.statCardWide, { backgroundColor: cardBg, borderColor: border }]}>
-            <Ionicons name="bar-chart-outline" size={22} color={theme.primary} />
-            <Text style={[s.statValue, { color: text }]}>{attendancePct}%</Text>
-            <Text style={[s.statLabel, { color: muted }]}>{t('dashboard.attendanceRate')}</Text>
-          </View>
-        </View>
-
         {/* ── Accesos directos ─────────────────── */}
         <Text style={[s.sectionTitle, { color: text }]}>{t('dashboard.quickActions')}</Text>
         <View style={s.actionsGrid}>
@@ -179,7 +159,7 @@ export default function ApprenticeDashboard() {
             <TouchableOpacity
               key={action.route}
               onPress={() => router.push(action.route as any)}
-              style={[s.actionCard, { backgroundColor: cardBg, borderColor: border }]}
+              style={[s.actionCard, { backgroundColor: cardBg, borderColor: border, boxShadow: cardShadow }]}
               activeOpacity={0.8}
             >
               {/* Badge de notificaciones no leídas */}
@@ -200,7 +180,7 @@ export default function ApprenticeDashboard() {
         <Text style={[s.sectionTitle, { color: text }]}>{t('sidebar.facialRecognition')}</Text>
         <TouchableOpacity
           onPress={() => router.push(Routes.APPRENTICE.FACIAL as any)}
-          style={[s.facialBanner, { backgroundColor: cardBg, borderColor: border }]}
+          style={[s.facialBanner, { backgroundColor: cardBg, borderColor: border, boxShadow: cardShadow }]}
           activeOpacity={0.85}
         >
           <View style={[s.facialIconWrap, { backgroundColor: theme.primary + '20' }]}>
@@ -228,16 +208,32 @@ const s = StyleSheet.create({
 
   // Banner
   banner: {
+    position: 'relative',
+    overflow: 'hidden',
     borderRadius: 18,
-    padding: 22,
+    padding: 24,
+    minHeight: 176,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.16)',
   },
-  bannerLeft:     { flex: 1 },
-  bannerGreeting: { color: 'rgba(255,255,255,0.85)', fontSize: FontSize.base },
-  bannerName:     { color: Colors.white, fontSize: FontSize['2xl'], fontWeight: FontWeight.black, marginTop: 2 },
+  bannerGlow: {
+    position: 'absolute',
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    right: -54,
+    top: -112,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+  },
+  bannerLeft: { flex: 1, minWidth: 0, zIndex: 1 },
+  bannerEyebrow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 5 },
+  bannerEyebrowDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#A7F3A0' },
+  bannerGreeting: { color: 'rgba(255,255,255,0.78)', fontSize: FontSize.sm, fontWeight: FontWeight.bold, letterSpacing: 0.4 },
+  bannerName: { color: Colors.white, fontSize: FontSize['2xl'], fontWeight: FontWeight.black, marginTop: 2 },
   rolePill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -247,19 +243,65 @@ const s = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 10,
     paddingVertical: 3,
-    marginTop: 8,
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.16)',
   },
   rolePillText: { color: Colors.white, fontSize: FontSize.xs, fontWeight: FontWeight.bold },
+  fichaPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 7,
+    maxWidth: '100%',
+    marginTop: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 10,
+    backgroundColor: 'rgba(0,0,0,0.16)',
+  },
   fichaTag: {
-    color: 'rgba(255,255,255,0.75)',
-    fontSize: FontSize.sm,
-    marginTop: 6,
+    color: 'rgba(255,255,255,0.88)',
+    fontSize: FontSize.xs,
+    flexShrink: 1,
+  },
+  avatarWrap: {
+    width: 92,
+    height: 92,
+    marginLeft: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1,
+  },
+  avatarRing: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.13)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.32)',
+  },
+  avatarBadge: {
+    position: 'absolute',
+    right: 4,
+    bottom: 4,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#A7F3A0',
+    borderWidth: 2,
+    borderColor: '#26713A',
   },
   academicCard: {
     borderRadius: 16,
     borderWidth: 1,
     padding: 16,
     marginBottom: 18,
+    elevation: 8,
   },
   academicHeader: {
     flexDirection: 'row',
@@ -280,26 +322,6 @@ const s = StyleSheet.create({
   academicItem: { flex: 1, minWidth: 140 },
   academicLabel: { fontSize: FontSize.xs, marginBottom: 3 },
   academicValue: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
-
-  // Stats
-  statsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 24,
-  },
-  statCard: {
-    flex: 1,
-    minWidth: 80,
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 14,
-    alignItems: 'center',
-    gap: 4,
-  },
-  statCardWide: { minWidth: 120 },
-  statValue: { fontSize: FontSize.xl, fontWeight: FontWeight.black },
-  statLabel: { fontSize: FontSize.xs, textAlign: 'center', lineHeight: 14 },
 
   // Section title
   sectionTitle: {
@@ -324,6 +346,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     position: 'relative',
+    elevation: 7,
   },
   actionIcon: {
     width: 52,
@@ -363,6 +386,7 @@ const s = StyleSheet.create({
     borderWidth: 1,
     padding: 18,
     marginBottom: 8,
+    elevation: 7,
   },
   facialIconWrap: {
     width: 56,

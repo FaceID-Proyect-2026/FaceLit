@@ -26,7 +26,6 @@ import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -213,12 +212,7 @@ export default function ApprenticeAttendanceScreen() {
 
       {/* Header */}
       <View style={[s.header, { borderBottomColor: border }]}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Ionicons name="arrow-back" size={22} color={text} />
-        </TouchableOpacity>
+        <View style={{ width: 22 }} />
         <Text style={[s.headerTitle, { color: text }]}>
           {t('sidebar.myAttendance')}
         </Text>
