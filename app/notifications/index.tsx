@@ -55,7 +55,7 @@ const APPRENTICE_CATEGORIES: (NotificationCategory | 'all')[] = [
 
 export default function NotificationsScreen() {
   const { isDark, theme } = useTheme();
-  const { t }              = useTranslation();
+  const { t, i18n }         = useTranslation();
   const { user }           = useAuth();
 
   const [statusFilter,   setStatusFilter]   = useState<StatusFilter>('all');
@@ -75,6 +75,59 @@ export default function NotificationsScreen() {
   const border  = theme.border;
   const bg      = isDark ? Colors.dark.background : Colors.light.background;
   const inputBg = theme.inputBg;
+
+  const formatLocalizedDate = (value: string) => {
+    const parsed = new Date(`${value}T12:00:00`);
+    return Number.isNaN(parsed.getTime())
+      ? value
+      : new Intl.DateTimeFormat(i18n.resolvedLanguage ?? i18n.language, { dateStyle: 'medium' }).format(parsed);
+  };
+
+  const getLocalizedText = (notif: Notification) => {
+    const meta = notif.meta ?? {};
+    const date = meta.date
+      ? formatLocalizedDate(meta.date)
+      : t('notifications.values.unavailable');
+    const entityType = meta.entityType;
+    const entityKey = entityType === 'program' || entityType === 'ficha'
+      || entityType === 'learner' || entityType === 'instructor'
+      ? `notifications.entities.${entityType}`
+      : 'notifications.entities.item';
+    const values = {
+      learnerName: meta.learnerName || t('notifications.values.learner'),
+      document: meta.learnerDocument || meta.accountDocument || t('notifications.values.unavailable'),
+      fromFicha: meta.fromFichaNumber || t('notifications.values.unavailable'),
+      toFicha: meta.toFichaNumber || t('notifications.values.unavailable'),
+      ficha: meta.fichaNumber || meta.toFichaNumber || t('notifications.values.unavailable'),
+      date,
+      delayMinutes: meta.delayMinutes ?? t('notifications.values.unavailable'),
+      environment: meta.environmentName || t('notifications.values.unavailable'),
+      instructorName: meta.instructorName || t('notifications.values.instructor'),
+      failedCount: meta.failedCount ?? t('notifications.values.unavailable'),
+      lockMinutes: meta.lockMinutes ?? t('notifications.values.unavailable'),
+      entity: t(entityKey),
+      email: notif.message.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0]
+        ?? t('notifications.values.unavailable'),
+    };
+    const summary = notif.type === 'csv_upload_done' ? meta.csvSummary : undefined;
+    const legacyReferenceEmail = notif.type === 'csv_ref_error'
+      && /ya está registrado en otro usuario/i.test(notif.message);
+
+    return {
+      title: t(`notifications.templates.${notif.type}.title`),
+      message: t(
+        summary ? 'notifications.templates.csv_upload_done.summaryMessage'
+          : legacyReferenceEmail ? 'notifications.templates.csv_ref_error.emailMessage'
+          : `notifications.templates.${notif.type}.message`,
+        summary ? {
+          created: summary.created,
+          updated: summary.updated,
+          blocked: summary.blocked,
+          errors: summary.errors,
+        } : values,
+      ),
+    };
+  };
 
   // ── Handlers ──────────────────────────────
   const handlePress = (notif: Notification) => {
@@ -101,14 +154,14 @@ export default function NotificationsScreen() {
     if (m.toFichaNumber)    rows.push(['arrow-forward-circle-outline', t('notifications.detail.toFicha'), m.toFichaNumber]);
     if (m.fichaNumber && !m.fromFichaNumber)
                             rows.push(['school-outline',       t('notifications.detail.ficha'),     m.fichaNumber]);
-    if (m.date)             rows.push(['calendar-outline',     t('attendance.fields.date'),         m.date]);
+    if (m.date)             rows.push(['calendar-outline',     t('attendance.fields.date'),         formatLocalizedDate(m.date)]);
     if (m.entryTime)        rows.push(['log-in-outline',       t('attendance.fields.entryTime'),    m.entryTime]);
     if (m.delayMinutes && m.delayMinutes > 0)
-                            rows.push(['timer-outline',        t('attendance.fields.delay'),        `${m.delayMinutes} min`]);
+                            rows.push(['timer-outline',        t('attendance.fields.delay'),        `${m.delayMinutes} ${t('notifications.units.minutes')}`]);
     if (m.environmentName)  rows.push(['business-outline',     t('attendance.fields.environment'),  m.environmentName]);
     if (m.instructorName)   rows.push(['person-circle-outline',t('attendance.fields.instructor'),   m.instructorName]);
     if (m.failedCount)      rows.push(['alert-circle-outline', t('notifications.detail.failedCount'), `${m.failedCount}`]);
-    if (m.lockMinutes)      rows.push(['time-outline',         t('notifications.detail.lockMinutes'), `${m.lockMinutes} min`]);
+    if (m.lockMinutes)      rows.push(['time-outline',         t('notifications.detail.lockMinutes'), `${m.lockMinutes} ${t('notifications.units.minutes')}`]);
     if (m.csvSummary) {
       const s = m.csvSummary;
       rows.push(['add-circle-outline',   t('notifications.detail.created'), `${s.created}`]);
@@ -116,7 +169,13 @@ export default function NotificationsScreen() {
       rows.push(['alert-circle-outline', t('notifications.detail.blocked'), `${s.blocked}`]);
       rows.push(['close-circle-outline', t('notifications.detail.errors'),  `${s.errors}`]);
     }
-    if (m.entityType) rows.push(['information-circle-outline', t('notifications.detail.entityType'), m.entityType]);
+    if (m.entityType) {
+      const entityTypeKey = m.entityType === 'program' || m.entityType === 'ficha'
+        || m.entityType === 'learner' || m.entityType === 'instructor'
+        ? `notifications.entities.${m.entityType}`
+        : 'notifications.entities.item';
+      rows.push(['information-circle-outline', t('notifications.detail.entityType'), t(entityTypeKey)]);
+    }
 
     // Canal y correo
     const channelLabel = notif.channel === 'app+email'
@@ -194,6 +253,7 @@ export default function NotificationsScreen() {
   // ── Render de una tarjeta ─────────────────
   const renderItem = ({ item }: { item: Notification }) => {
     const cfg      = CAT_CONFIG[item.category];
+    const localized = getLocalizedText(item);
     const isUnread = !item.read;
     const expanded = expandedId === item.id;
     const isEmail  = item.channel === 'app+email';
@@ -225,7 +285,7 @@ export default function NotificationsScreen() {
                   style={[ns.cardTitle, { color: text, fontWeight: isUnread ? FontWeight.black : FontWeight.medium }]}
                   numberOfLines={expanded ? undefined : 1}
                 >
-                  {item.title}
+                  {localized.title}
                 </Text>
                 <View style={ns.badges}>
                   {isEmail && (
@@ -242,10 +302,10 @@ export default function NotificationsScreen() {
                 </View>
               </View>
               <Text style={[ns.cardMsg, { color: muted }]} numberOfLines={expanded ? undefined : 2}>
-                {item.message}
+                {localized.message}
               </Text>
               <View style={ns.cardFooter}>
-                <Text style={[ns.cardDate, { color: muted }]}>{item.date} · {item.time}</Text>
+                <Text style={[ns.cardDate, { color: muted }]}>{formatLocalizedDate(item.date)} · {item.time}</Text>
                 <View style={[ns.catChip, { backgroundColor: cfg.color + '15', borderColor: cfg.color + '30' }]}>
                   <Ionicons name={cfg.icon} size={10} color={cfg.color} />
                   <Text style={[ns.catChipText, { color: cfg.color }]} numberOfLines={1}>{t(cfg.labelKey)}</Text>

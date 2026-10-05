@@ -52,6 +52,7 @@ export type NotificationType =
   | 'security_account_locked'   // 15 — cuenta bloqueada (App + Correo)
   // Reconocimiento facial (RF-8.4)
   | 'facial_reregister_request' // RF-8.4 — solicitud de re-registro
+  | 'facial_session_substitution' // Aviso legado de sustitución en reconocimiento facial
 
 /** Canal por tipo — según columna "Canal" del catálogo RF-8 */
 export const NOTIFICATION_CHANNELS: Record<NotificationType, NotificationChannel> = {
@@ -74,6 +75,7 @@ export const NOTIFICATION_CHANNELS: Record<NotificationType, NotificationChannel
   security_multiple_failures: 'app+email',
   security_account_locked:    'app+email',
   facial_reregister_request:  'app',
+  facial_session_substitution: 'app',
 };
 
 /** Metadatos específicos por tipo de notificación */

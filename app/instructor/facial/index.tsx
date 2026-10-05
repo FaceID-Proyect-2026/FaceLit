@@ -68,14 +68,14 @@ export default function FacialManagementScreen() {
 
   const fichaOptions = chips.map((chip) => ({
     value: chip.idChip,
-    label: `Ficha ${chip.chipCode} - ${chip.programName}`,
+    label: `${t("facial.setup.fields.ficha")} ${chip.chipCode} - ${chip.programName}`,
   }));
   const selectedInstructor = instructors.find((instructor) => instructor.idInstructor === selectedInstructorId);
   const selectedChip = chips.find((chip) => chip.idChip === selectedChipId);
   const sessionSummary = [
-    { icon: "business-outline", label: t("facial.setup.fields.environment"), value: selectedEnvironment?.environmentName ?? "Sin seleccionar" },
-    { icon: "person-outline", label: t("facial.setup.fields.instructor"), value: selectedInstructor ? `${selectedInstructor.firstName} ${selectedInstructor.lastName}` : "Sin seleccionar" },
-    { icon: "school-outline", label: t("facial.setup.fields.ficha"), value: selectedChip ? `Ficha ${selectedChip.chipCode}` : "Sin seleccionar" },
+    { icon: "business-outline", label: t("facial.setup.fields.environment"), value: selectedEnvironment?.environmentName ?? t("facial.setup.unselected") },
+    { icon: "person-outline", label: t("facial.setup.fields.instructor"), value: selectedInstructor ? `${selectedInstructor.firstName} ${selectedInstructor.lastName}` : t("facial.setup.unselected") },
+    { icon: "school-outline", label: t("facial.setup.fields.ficha"), value: selectedChip ? `${t("facial.setup.fields.ficha")} ${selectedChip.chipCode}` : t("facial.setup.unselected") },
   ];
 
   const canSave = !!selectedEnvironment && !!selectedInstructorId && !!selectedChipId && !saving;
