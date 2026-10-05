@@ -28,7 +28,24 @@ const getExpoHost = () => {
 const resolveLocalUrl = (configuredUrl, fallbackUrl) => {
   const targetUrl = configuredUrl || fallbackUrl;
 
-  if (Platform.OS === 'web') return targetUrl;
+  if (Platform.OS === 'web') {
+    const browserHost = globalThis?.location?.hostname;
+    if (
+      (browserHost === 'localhost' || browserHost === '127.0.0.1') &&
+      /localhost/.test(targetUrl)
+    ) {
+      return targetUrl.replace(/localhost/g, '127.0.0.1');
+    }
+    if (
+      browserHost &&
+      browserHost !== 'localhost' &&
+      browserHost !== '127.0.0.1' &&
+      /localhost|127\.0\.0\.1/.test(targetUrl)
+    ) {
+      return targetUrl.replace(/localhost|127\.0\.0\.1/, browserHost);
+    }
+    return targetUrl;
+  }
   if (!targetUrl) return fallbackUrl;
   if (!/localhost|127\.0\.0\.1/.test(targetUrl)) return targetUrl;
 

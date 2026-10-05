@@ -10,6 +10,13 @@ export interface FacialEmbeddingFromImagePayload {
   createdBy?: string;
 }
 
+export interface FacialEmbeddingUpdateFromImagePayload {
+  userId: string;
+  imageBase64: string;
+  photoReference?: string | null;
+  updatedBy?: string;
+}
+
 export interface FacialEmbeddingResponse {
   id: string;
   user_id: string;
@@ -47,6 +54,12 @@ export function getFacialEmbeddingErrorMessage(error: any): string {
   const status = error?.response?.status;
   const detail = formatApiDetail(error?.response?.data?.detail);
   if (detail) return status ? `Error ${status}: ${detail}` : detail;
+  if (error?.code === 'ERR_NETWORK' || error?.message === 'Network Error') {
+    return `No fue posible conectar con el servicio facial (${EMBEDDING_API_URL}). Verifica que el microservicio de embeddings esté encendido y que el puerto 8090 sea accesible.`;
+  }
+  if (error?.code === 'ECONNABORTED') {
+    return 'El registro facial tardó demasiado. Intenta nuevamente con buena conexión y el servicio facial encendido.';
+  }
   if (error?.message) return error.message;
   return 'No fue posible registrar el embedding facial.';
 }
@@ -62,6 +75,21 @@ export async function registerFacialEmbeddingFromImage(
       photo_reference: payload.photoReference ?? null,
       replace_existing: payload.replaceExisting ?? false,
       created_by: payload.createdBy ?? 'mobile-app',
+    },
+  );
+
+  return response.data;
+}
+
+export async function updateFacialEmbeddingFromImage(
+  payload: FacialEmbeddingUpdateFromImagePayload,
+): Promise<FacialEmbeddingResponse> {
+  const response = await facialEmbeddingApi.patch<FacialEmbeddingResponse>(
+    `/api/v1/facial-embeddings/users/${payload.userId}`,
+    {
+      image_base64: payload.imageBase64,
+      photo_reference: payload.photoReference ?? null,
+      updated_by: payload.updatedBy ?? 'mobile-app',
     },
   );
 
