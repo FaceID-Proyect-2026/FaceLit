@@ -50,7 +50,7 @@ export async function loadNotifications(): Promise<void> {
     loadedRemote = true;
     emit();
   } catch {
-    loadedRemote = false;
+    // Keep the last successful remote snapshot when a later refresh fails.
   }
 }
 
@@ -168,4 +168,11 @@ export function markEmailSent(id: string): void {
 // ── Unread count (para badge en sidebar/campana) ──
 export function getUnreadCount(): number {
   return notifications.filter(n => !n.read).length;
+}
+
+export function getRemoteUnreadCount(recipientUserId?: string): number {
+  if (!loadedRemote || !recipientUserId) return 0;
+  return notifications.filter(
+    notification => notification.recipientUserId === recipientUserId && !notification.read,
+  ).length;
 }

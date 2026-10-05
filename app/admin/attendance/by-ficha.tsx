@@ -571,7 +571,7 @@ export default function AttendanceByFichaScreen({
           )}
           {tableRows.length > 0 && dates.length > 0 && (
             <Text style={[s.tableHint, { color: muted }]}>
-              Desplaza horizontalmente para consultar los aprendices y verticalmente para recorrer las fechas.
+              {t("attendance.rf6.tableHint")}
             </Text>
           )}
           {tableRows.length > 0 && dates.length > 0 && (

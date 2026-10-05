@@ -597,6 +597,8 @@
     role: "Rol",
     totalUsers: "Usuarios totales",
     activeFichas: "Fichas activas",
+    fichasCount: "{{count}} fichas",
+    showingFeaturedFichas: "Mostrando tus fichas principales. Usa el buscador para filtrar por número, código o programa.",
     environments: "Ambientes",
     programs: "Programas registrados",
     quickActions: "Acciones rápidas",
@@ -1572,6 +1574,7 @@
         loadFailed: "No se pudo cargar la información de la sesión.",
         saveFailed: "No se pudo guardar la sesión.",
       },
+      unselected: "Sin seleccionar",
       saveSuccess: "Configuración de reconocimiento facial guardada.",
     },
     settings: {
@@ -1654,6 +1657,7 @@
       document: "Documento",
       responsibleInstructor: "Instructor responsable",
       ficha: "Ficha",
+      tableHint: "Desplázate horizontalmente para consultar los aprendices y verticalmente para recorrer las fechas.",
       statusCol: "Estado",
       absent: "Ausentes",
       absentCount: "ausentes",
@@ -1889,6 +1893,105 @@
       transfer: "Traslados",
       academic: "Gestión Académica",
       security: "Seguridad",
+    },
+    entities: {
+      program: "el programa",
+      ficha: "la ficha",
+      learner: "el aprendiz",
+      instructor: "el instructor",
+      item: "el elemento",
+    },
+    values: {
+      learner: "Un aprendiz",
+      instructor: "Un instructor",
+      unavailable: "No disponible",
+    },
+    units: {
+      minutes: "min",
+    },
+    templates: {
+      csv_upload_done: {
+        title: "Carga de CSV finalizada",
+        message: "La importación del archivo CSV finalizó correctamente.",
+        summaryMessage: "Carga finalizada: {{created}} creados, {{updated}} actualizados, {{blocked}} pendientes de confirmación y {{errors}} errores.",
+      },
+      csv_inconsistency: {
+        title: "Inconsistencia pendiente de revisión",
+        message: "El registro presenta una inconsistencia. Revisa y confirma el cambio manualmente.",
+      },
+      csv_transfer_applied: {
+        title: "Cambio de ficha aplicado",
+        message: "El aprendiz {{learnerName}} ({{document}}) fue trasladado de la ficha {{fromFicha}} a la ficha {{toFicha}}.",
+      },
+      csv_transfer_rejected: {
+        title: "Cambio de ficha cancelado",
+        message: "No se aplicó el cambio de ficha del aprendiz {{learnerName}} ({{document}}). El registro no fue modificado.",
+      },
+      csv_ref_error: {
+        title: "Fila con error de referencia",
+        message: "La importación contiene una referencia que no se pudo resolver. Verifica las fichas y los datos asociados en el archivo.",
+        emailMessage: "El correo {{email}} ya está registrado en otro usuario. Corrige el correo o usa el documento correcto.",
+      },
+      learner_transferred: {
+        title: "Traslado completado por código",
+        message: "{{learnerName}} ({{document}}) quedó activo en la ficha {{toFicha}}; su ficha anterior era {{fromFicha}}.",
+      },
+      attendance_absent: {
+        title: "Inasistencia registrada",
+        message: "{{learnerName}} ({{document}}) no se presentó a la sesión de la ficha {{ficha}} el {{date}}.",
+      },
+      attendance_late: {
+        title: "Retraso registrado",
+        message: "{{learnerName}} ({{document}}) llegó {{delayMinutes}} minutos tarde a la sesión de la ficha {{ficha}} el {{date}}.",
+      },
+      attendance_early_exit: {
+        title: "Salida anticipada registrada",
+        message: "{{learnerName}} ({{document}}) registró su salida antes de la hora esperada en la ficha {{ficha}} el {{date}}.",
+      },
+      attendance_no_exit: {
+        title: "Salida no registrada",
+        message: "{{learnerName}} ({{document}}) no registró su salida de la sesión de la ficha {{ficha}} el {{date}}.",
+      },
+      attendance_wrong_env: {
+        title: "Registro en sesión no correspondiente",
+        message: "{{learnerName}} ({{document}}) se identificó en {{environment}}, un ambiente que no corresponde a su ficha {{ficha}}.",
+      },
+      attendance_substitute: {
+        title: "Sesión abierta por suplencia",
+        message: "{{instructorName}} abrió como suplente la sesión del {{date}} para la ficha {{ficha}}.",
+      },
+      academic_delete_blocked: {
+        title: "Intento de eliminación bloqueado",
+        message: "No se pudo eliminar {{entity}} porque tiene registros relacionados activos.",
+      },
+      instructor_profile_updated: {
+        title: "Perfil de instructor actualizado",
+        message: "Se actualizó la información del perfil de un instructor.",
+      },
+      instructor_assignment_updated: {
+        title: "Asignación de instructor actualizada",
+        message: "Se actualizó la asignación académica de un instructor.",
+      },
+      apprentice_transfer_applied: {
+        title: "Traslado de aprendiz aplicado",
+        message: "Se actualizó la ficha asignada al aprendiz {{learnerName}} ({{document}}).",
+      },
+      security_multiple_failures: {
+        title: "Múltiples intentos fallidos de sesión",
+        message: "La cuenta con documento {{document}} acumuló {{failedCount}} intentos fallidos consecutivos de inicio de sesión.",
+      },
+      security_account_locked: {
+        title: "Cuenta bloqueada por intentos fallidos",
+        message: "La cuenta con documento {{document}} quedó bloqueada durante {{lockMinutes}} minutos tras superar el límite de intentos fallidos.",
+      },
+      facial_reregister_request: {
+        title: "Solicitud de re-registro facial",
+        message: "{{learnerName}} solicita volver a registrar su rostro.",
+      },
+      facial_session_substitution: {
+        title: "Sustitución en sesión de reconocimiento facial",
+        message: "Se registró una sustitución para una sesión de reconocimiento facial.",
+      },
     },
     detail: {
       learner: "Aprendiz",
