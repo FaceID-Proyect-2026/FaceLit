@@ -1483,6 +1483,8 @@
           "L’heure d’arrêt doit être postérieure à l’heure de sortie.",
       },
       saveSuccess: "Paramètres de reconnaissance faciale enregistrés.",
+      saveError:
+        "Impossible d’enregistrer les paramètres de reconnaissance faciale.",
     },
     stats: {
       registered: "Enregistrés",

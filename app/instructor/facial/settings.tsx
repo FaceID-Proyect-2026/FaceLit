@@ -23,7 +23,7 @@ import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -39,6 +39,12 @@ export default function FacialSettingsScreen() {
   const [shutdownTime, setShutdownTime] = useState(initial.shutdownTime);
   const [errors, setErrors] = useState<{ registrationMinutes?: string; exitTime?: string; shutdownTime?: string }>({});
 
+  useEffect(() => {
+    setRegistrationMinutes(String(initial.registrationMinutes));
+    setExitTime(initial.exitTime);
+    setShutdownTime(initial.shutdownTime);
+  }, [initial.exitTime, initial.registrationMinutes, initial.shutdownTime]);
+
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
   const cardBg = theme.surface;
@@ -51,14 +57,10 @@ export default function FacialSettingsScreen() {
   }));
 
   const handleBack = () => {
-    if (router.canGoBack()) {
-      router.back();
-      return;
-    }
     router.replace(Routes.INSTRUCTOR.FACIAL as any);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const newErrors: typeof errors = {};
     if (!registrationMinutes) newErrors.registrationMinutes = t('common.required');
     if (!exitTime) newErrors.exitTime = t('common.required');
@@ -71,7 +73,7 @@ export default function FacialSettingsScreen() {
     }
     setErrors({});
 
-    const result = saveSettings({
+    const result = await saveSettings({
       registrationMinutes: Number(registrationMinutes),
       exitTime,
       shutdownTime,

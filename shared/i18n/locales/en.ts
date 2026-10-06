@@ -1523,6 +1523,7 @@
         shutdownAfterExit: "Shutdown time must be after exit time.",
       },
       saveSuccess: "Facial recognition settings saved.",
+      saveError: "Facial recognition settings could not be saved.",
     },
     stats: {
       registered: "Registered users",

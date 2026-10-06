@@ -1,9 +1,10 @@
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 import {
     getFacialConfigSnapshot,
     getFacialEventsSnapshot,
     getFacialRecordsSnapshot,
     getFacialSettingsSnapshot,
+    hydrateFacialSettings,
     registerFacialCapture,
     registerFacialEvent,
     saveFacialConfig,
@@ -13,6 +14,10 @@ import {
 import { FacialConfig, FacialSettings, FacialUser } from "./types";
 
 export function useFacialRegistry() {
+  useEffect(() => {
+    hydrateFacialSettings();
+  }, []);
+
   const records = useSyncExternalStore(
     subscribeFacial,
     getFacialRecordsSnapshot,

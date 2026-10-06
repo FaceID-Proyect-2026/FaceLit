@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { pushNotification } from "../notifications/notificationsStore";
 import {
     DEFAULT_FACIAL_SETTINGS,
@@ -20,8 +21,48 @@ let events: FacialEvent[] = [];
 let config: FacialConfig | undefined;
 let settings: FacialSettings = DEFAULT_FACIAL_SETTINGS;
 const listeners = new Set<Listener>();
+const FACIAL_SETTINGS_STORAGE_KEY = "facial:instructor:settings";
+let settingsHydrated = false;
+let settingsHydrationPromise: Promise<void> | null = null;
 
 const emit = () => listeners.forEach((listener) => listener());
+
+const isValidSettings = (value: unknown): value is FacialSettings => {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<FacialSettings>;
+  return (
+    typeof candidate.registrationMinutes === "number" &&
+    Number.isFinite(candidate.registrationMinutes) &&
+    typeof candidate.exitTime === "string" &&
+    candidate.exitTime.length > 0 &&
+    typeof candidate.shutdownTime === "string" &&
+    candidate.shutdownTime.length > 0
+  );
+};
+
+export function hydrateFacialSettings() {
+  if (settingsHydrated) return Promise.resolve();
+  if (settingsHydrationPromise) return settingsHydrationPromise;
+
+  settingsHydrationPromise = AsyncStorage.getItem(FACIAL_SETTINGS_STORAGE_KEY)
+    .then((storedSettings) => {
+      if (!storedSettings) return;
+      const parsed = JSON.parse(storedSettings);
+      if (isValidSettings(parsed)) {
+        settings = parsed;
+        emit();
+      }
+    })
+    .catch((error) => {
+      console.warn("[FacialSettings] No se pudo cargar la configuracion guardada:", error);
+    })
+    .finally(() => {
+      settingsHydrated = true;
+      settingsHydrationPromise = null;
+    });
+
+  return settingsHydrationPromise;
+}
 
 export function subscribeFacial(listener: Listener) {
   listeners.add(listener);
@@ -51,10 +92,18 @@ export function saveFacialConfig(nextConfig: FacialConfig): FacialSaveResult {
 
 export function saveFacialSettings(
   nextSettings: FacialSettings,
-): FacialSaveResult {
+): Promise<FacialSaveResult> {
   settings = nextSettings;
   emit();
-  return { success: true as const };
+  return AsyncStorage.setItem(
+    FACIAL_SETTINGS_STORAGE_KEY,
+    JSON.stringify(nextSettings),
+  )
+    .then(() => ({ success: true as const }))
+    .catch((error) => {
+      console.warn("[FacialSettings] No se pudo guardar la configuracion:", error);
+      return { success: false as const, error: "facial.settings.saveError" };
+    });
 }
 
 export function registerFacialCapture(

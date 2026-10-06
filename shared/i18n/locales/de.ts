@@ -1426,6 +1426,8 @@ const de = {
           "Die Abschaltzeit muss nach der Austrittszeit liegen.",
       },
       saveSuccess: "Einstellungen zur Gesichtserkennung gespeichert.",
+      saveError:
+        "Einstellungen zur Gesichtserkennung konnten nicht gespeichert werden.",
     },
     stats: {
       registered: "Registriert",

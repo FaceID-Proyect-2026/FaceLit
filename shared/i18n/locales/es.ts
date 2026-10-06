@@ -1596,6 +1596,7 @@
           "La hora de apagado debe ser posterior a la hora de salida.",
       },
       saveSuccess: "Ajustes de reconocimiento facial guardados.",
+      saveError: "No se pudieron guardar los ajustes de reconocimiento facial.",
     },
     stats: {
       registered: "Usuarios registrados",
