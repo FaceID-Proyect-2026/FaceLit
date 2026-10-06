@@ -364,6 +364,7 @@ const de = {
     lowLight: "Bild zu dunkel. Beleuchtung verbessern.",
     captureSuccess: "Gute Aufnahme!",
     retake: "Wiederholen",
+    registering: "Wird registriert...",
     finish: "Registrierung abschließen",
     successTitle: "Gesichtsregistrierung abgeschlossen",
     successMessage: "Gesicht erfolgreich registriert.",
@@ -1814,6 +1815,10 @@ const de = {
       security_account_locked: {
         title: "Konto nach Fehlversuchen gesperrt",
         message: "Das Konto mit Dokument {{document}} wurde nach Überschreitung der Fehlversuchsgrenze für {{lockMinutes}} Minuten gesperrt.",
+      },
+      user_account_created: {
+        title: "Benutzerkonto erstellt",
+        message: "Das Benutzerkonto wurde erfolgreich erstellt.",
       },
       facial_reregister_request: {
         title: "Anfrage zur erneuten Gesichtserfassung",
