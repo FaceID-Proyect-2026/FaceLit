@@ -49,6 +49,7 @@ interface FacialRegistrationOptions {
   replaceExisting?: boolean;
   createdBy?: string;
   allowLocalFallback?: boolean;
+  requireResponsibilityConfirmation?: boolean;
 }
 
 function buildPhotoReference(photoUri: string, isWeb: boolean): string {
@@ -64,6 +65,7 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
     replaceExisting = false,
     createdBy = 'mobile-app',
     allowLocalFallback = false,
+    requireResponsibilityConfirmation = true,
   } = options;
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -99,12 +101,20 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
   // ── Abrir cámara — para en confirmationRequired antes de posicionar ──
   const handleOpenCamera = useCallback(async () => {
     if (isWeb) {
-      setScreenState('confirmationRequired');
+      if (requireResponsibilityConfirmation) {
+        setScreenState('confirmationRequired');
+      } else {
+        startPositioningSimulation();
+      }
       return;
     }
 
     if (permission?.granted) {
-      setScreenState('confirmationRequired');
+      if (requireResponsibilityConfirmation) {
+        setScreenState('confirmationRequired');
+      } else {
+        startPositioningSimulation();
+      }
       return;
     }
 
@@ -116,12 +126,16 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
     setScreenState('requesting');
     const result = await requestPermission();
     if (result.granted) {
-      setScreenState('confirmationRequired');
+      if (requireResponsibilityConfirmation) {
+        setScreenState('confirmationRequired');
+      } else {
+        startPositioningSimulation();
+      }
     } else {
       setScreenState('idle');
       alert(t('facialReg.permissionDenied'));
     }
-  }, [isWeb, permission, requestPermission, t]);
+  }, [isWeb, permission, requestPermission, requireResponsibilityConfirmation, startPositioningSimulation, t]);
 
   // ── Aceptar confirmación → inicia posicionamiento ──
   const handleConfirmCamera = useCallback(() => {
