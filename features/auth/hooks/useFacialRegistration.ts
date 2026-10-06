@@ -10,6 +10,7 @@
 //  navegación resultante.
 // ─────────────────────────────────────────────
 import { registerFacialCapture } from '@/features/facial/facialStore';
+import { FacialUser } from '@/features/facial/types';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import {
   getFacialEmbeddingErrorMessage,
@@ -43,6 +44,13 @@ export function getAverageBrightness(canvas: HTMLCanvasElement): number {
   return total / pixelCount;
 }
 
+interface FacialRegistrationOptions {
+  targetUser?: FacialUser;
+  replaceExisting?: boolean;
+  createdBy?: string;
+  allowLocalFallback?: boolean;
+}
+
 function buildPhotoReference(photoUri: string, isWeb: boolean): string {
   if (photoUri.startsWith('data:')) {
     return `capture://${isWeb ? 'web' : 'native'}-facial-registration-${Date.now()}.jpg`;
@@ -50,7 +58,13 @@ function buildPhotoReference(photoUri: string, isWeb: boolean): string {
   return photoUri.length > 500 ? photoUri.slice(0, 500) : photoUri;
 }
 
-export function useFacialRegistration() {
+export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
+  const {
+    targetUser,
+    replaceExisting = false,
+    createdBy = 'mobile-app',
+    allowLocalFallback = false,
+  } = options;
   const { t } = useTranslation();
   const { user } = useAuth();
   const [permission, requestPermission] = useCameraPermissions();
@@ -181,13 +195,13 @@ export function useFacialRegistration() {
       APPRENTICE:    'aprendiz',
     };
 
-    const facialUser = user
+    const facialUser = targetUser ?? (user
       ? {
           id:   user.id,
           name: `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim(),
           role: (ROLE_MAP[user.role] ?? 'aprendiz') as import('@/features/facial/types').FacialRole,
         }
-      : undefined;
+      : undefined);
 
     if (!facialUser) {
       alert(t('facial.validation.userNotFound'));
@@ -201,11 +215,11 @@ export function useFacialRegistration() {
         userId: facialUser.id,
         imageBase64,
         photoReference: buildPhotoReference(photoUri, isWeb),
-        replaceExisting: false,
-        createdBy: 'mobile-app',
+        replaceExisting,
+        createdBy,
       });
 
-      const result = registerFacialCapture(facialUser, photoUri);
+      const result = registerFacialCapture(facialUser, photoUri, true, replaceExisting);
       if (!result.success) {
         alert(t(result.error));
         return;
@@ -218,11 +232,20 @@ export function useFacialRegistration() {
         data: error?.response?.data,
         message: error?.message,
       });
+      if (allowLocalFallback) {
+        const result = registerFacialCapture(facialUser, photoUri, true, replaceExisting);
+        if (!result.success) {
+          alert(t(result.error));
+          return;
+        }
+        setSuccessModalVisible(true);
+        return;
+      }
       alert(message);
     } finally {
       setIsRegistering(false);
     }
-  }, [screenState, photoUri, quality, isRegistering, isWeb, t, user]);
+  }, [screenState, photoUri, quality, isRegistering, isWeb, t, user, targetUser, replaceExisting, createdBy, allowLocalFallback]);
 
   // Al cerrar el modal se queda en el flujo actual; la pantalla decide qué mostrar después.
   const handleCloseSuccessModal = useCallback(() => {

@@ -94,31 +94,22 @@ export default function FacialManagementScreen() {
       return;
     }
 
-    const result = await saveSession({
+    const sessionConfig = {
+      environmentId: selectedEnvironment.idEnvironment,
+      environmentName: selectedEnvironment.environmentName,
+      instructorId: selectedInstructor.idInstructor,
+      instructorName: `${selectedInstructor.firstName} ${selectedInstructor.lastName}`.trim(),
+      fichaId: selectedChip.idChip,
+      fichaNumber: selectedChip.chipCode,
+    };
+
+    saveConfig(sessionConfig);
+
+    void saveSession({
       registrationMinutes: settings.registrationMinutes,
       exitTime: settings.exitTime,
       shutdownTime: settings.shutdownTime,
     });
-
-    const sessionConfig = result.success
-      ? {
-          environmentId: result.session.idEnvironment,
-          environmentName: result.session.environmentName,
-          instructorId: result.session.idInstructorInCharge,
-          instructorName: result.session.instructorName,
-          fichaId: result.session.idChip,
-          fichaNumber: result.session.chipCode,
-        }
-      : {
-          environmentId: selectedEnvironment.idEnvironment,
-          environmentName: selectedEnvironment.environmentName,
-          instructorId: selectedInstructor.idInstructor,
-          instructorName: `${selectedInstructor.firstName} ${selectedInstructor.lastName}`.trim(),
-          fichaId: selectedChip.idChip,
-          fichaNumber: selectedChip.chipCode,
-        };
-
-    saveConfig(sessionConfig);
 
     alert(t("common.success"), t("facial.setup.saveSuccess"), [
       {

@@ -61,6 +61,7 @@ export function registerFacialCapture(
   user: FacialUser | undefined,
   captureUri: string | null,
   trainingSucceeded = true,
+  replaceExisting = false,
 ): RegistrationResult {
   if (!user) return { success: false, error: "facial.validation.userNotFound" };
   if (!VALID_FACIAL_ROLES.includes(user.role))
@@ -69,6 +70,7 @@ export function registerFacialCapture(
   if (!trainingSucceeded)
     return { success: false, error: "facial.validation.trainingFailed" };
   if (
+    !replaceExisting &&
     records.some(
       (record) => record.userId === user.id && record.status === "registered",
     )

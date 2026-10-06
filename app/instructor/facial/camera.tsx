@@ -2,13 +2,16 @@
 //  app/instructor/facial/camera.tsx
 //  Cámara de Reconocimiento Facial — Instructor
 //
-//  Reutiliza la experiencia de cámara del aprendiz, pero entra directo al
-//  reconocimiento facial después de guardar la configuración de la sesión.
+//  Abre una sesión para registrar rostros de varios aprendices de la ficha
+//  configurada por el instructor.
 // ─────────────────────────────────────────────
 import FaceGuideOverlay from "@/features/auth/components/FaceGuideOverlay";
 import ShutterButton from "@/features/auth/components/ShutterButton";
 import WebCamera from "@/features/auth/components/WebCamera";
 import { useFacialRegistration } from "@/features/auth/hooks/useFacialRegistration";
+import { refreshAcademicStoreFromBackend, useAcademic } from "@/features/academic/useAcademic";
+import { useFacialRegistry } from "@/features/facial/useFacialRegistry";
+import { InputField } from "@/shared/components/ui";
 import { Colors } from "@/shared/constants/colors";
 import { Routes } from "@/shared/constants/routes";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
@@ -16,22 +19,64 @@ import { useTheme } from "@/shared/contexts/ThemeContext";
 import { useAppDialog } from "@/shared/hooks/useAppDialog";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-
-type Step = "camera" | "done";
 
 export default function InstructorFacialCameraScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const { DialogUI } = useAppDialog();
-  const [step, setStep] = useState<Step>("camera");
+  const { allFichas } = useAcademic();
+  const { config, records } = useFacialRegistry();
+  const [learnerDocument, setLearnerDocument] = useState("");
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
   const cardBg = theme.surface;
-  const bg = isDark ? Colors.dark.background : Colors.light.background;
+
+  const sessionFicha = useMemo(() => {
+    if (!config) return null;
+    return allFichas.find((ficha) =>
+      ficha.id === config.fichaId || String(ficha.number) === String(config.fichaNumber),
+    ) ?? null;
+  }, [allFichas, config]);
+
+  const learners = useMemo(
+    () => sessionFicha?.learners.filter((learner) => learner.status === "active") ?? [],
+    [sessionFicha],
+  );
+
+  const normalizedDocument = learnerDocument.replace(/\D/g, "");
+  const selectedLearner = learners.find((learner) => learner.document === normalizedDocument);
+  const documentBelongsToOtherFicha =
+    normalizedDocument.length >= 6 &&
+    !selectedLearner &&
+    allFichas.some((ficha) =>
+      ficha.id !== sessionFicha?.id &&
+      ficha.learners.some((learner) => learner.status === "active" && learner.document === normalizedDocument),
+    );
+  const documentError = normalizedDocument.length >= 6 && !selectedLearner
+    ? documentBelongsToOtherFicha
+      ? "Este aprendiz pertenece a otra ficha."
+      : "Este documento no pertenece a la ficha de esta sesión."
+    : undefined;
+  const selectedFacialUser = selectedLearner
+    ? {
+        id: selectedLearner.id,
+        name: `${selectedLearner.name} ${selectedLearner.lastname}`.trim(),
+        role: "aprendiz" as const,
+        fichaId: sessionFicha?.id,
+        fichaNumber: sessionFicha?.number,
+      }
+    : undefined;
+
+  const sessionRegisteredCount = records.filter((record) =>
+    learners.some((learner) => learner.id === record.userId && record.status === "registered"),
+  ).length;
+  const selectedLearnerRegistered = selectedLearner
+    ? records.some((record) => record.userId === selectedLearner.id && record.status === "registered")
+    : false;
 
   const {
     screenState,
@@ -53,9 +98,15 @@ export default function InstructorFacialCameraScreen() {
     handleRetake,
     handleFinish,
     handleCloseSuccessModal,
-  } = useFacialRegistration();
+  } = useFacialRegistration({
+    targetUser: selectedFacialUser,
+    replaceExisting: true,
+    createdBy: "instructor-session",
+    allowLocalFallback: true,
+  });
 
   useEffect(() => {
+    refreshAcademicStoreFromBackend().catch(() => undefined);
     handleOpenCamera();
   }, [handleOpenCamera]);
 
@@ -84,28 +135,8 @@ export default function InstructorFacialCameraScreen() {
 
   function handleSuccess() {
     handleCloseSuccessModal();
-    setStep("done");
-  }
-
-  if (step === "done") {
-    return (
-      <View style={[s.doneSafe, { backgroundColor: bg }]}>
-        <Ionicons name="checkmark-circle" size={80} color={Colors.success} />
-        <Text style={[s.successTitle, { color: text, marginTop: 20 }]}>
-          {t("facialReg.successTitle")}
-        </Text>
-        <Text style={[{ color: muted, textAlign: "center", marginTop: 8 }]}>
-          {t("facialReg.successMessage")}
-        </Text>
-        <TouchableOpacity
-          onPress={() => router.replace(Routes.INSTRUCTOR.FACIAL as any)}
-          style={[s.primaryBtn, { marginTop: 32, backgroundColor: theme.primary }]}
-        >
-          <Ionicons name="arrow-back-outline" size={18} color={Colors.white} />
-          <Text style={s.primaryBtnText}>{t("common.back")}</Text>
-        </TouchableOpacity>
-      </View>
-    );
+    setLearnerDocument("");
+    handleRetake();
   }
 
   return (
@@ -152,6 +183,40 @@ export default function InstructorFacialCameraScreen() {
         ))}
       </View>
 
+      <View style={[s.sessionPanel, { backgroundColor: cardBg, borderColor: theme.border }]}>
+        <View style={s.sessionHeader}>
+          <View style={{ flex: 1 }}>
+            <Text style={[s.sessionTitle, { color: text }]}>Registro de aprendices</Text>
+            <Text style={[s.sessionSubtitle, { color: muted }]}>
+              {sessionFicha
+                ? `Ficha ${sessionFicha.number} - solo se aceptan aprendices activos de esta ficha.`
+                : "No hay una ficha configurada para esta sesión."}
+            </Text>
+          </View>
+          <View style={[s.countBadge, { backgroundColor: theme.primary + "18" }]}>
+            <Text style={[s.countText, { color: theme.primary }]}>{sessionRegisteredCount}</Text>
+          </View>
+        </View>
+        <InputField
+          label="Documento del aprendiz"
+          value={learnerDocument}
+          onChangeText={(value) => setLearnerDocument(value.replace(/\D/g, "").slice(0, 15))}
+          placeholder={learners.length > 0 ? "Digita el documento" : "Sin aprendices activos"}
+          keyboardType="number-pad"
+          icon="card-outline"
+          error={documentError}
+        />
+        {selectedLearner ? (
+          <View style={[s.learnerBadge, { backgroundColor: Colors.success + "15", borderColor: Colors.success }]}>
+            <Ionicons name="checkmark-circle-outline" size={16} color={Colors.success} />
+            <Text style={[s.learnerBadgeText, { color: Colors.success }]}>
+              {selectedLearner.name} {selectedLearner.lastname}
+              {selectedLearnerRegistered ? " - registro existente, se actualizará" : ""}
+            </Text>
+          </View>
+        ) : null}
+      </View>
+
       <View style={s.cameraWrap}>
         {photoUri ? (
           <View style={s.previewWrap}>
@@ -163,21 +228,24 @@ export default function InstructorFacialCameraScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleFinish}
-                disabled={!canFinish}
+                disabled={!canFinish || !selectedLearner}
                 style={[
                   s.primaryBtn,
                   {
-                    backgroundColor: canFinish ? theme.primary : muted + "60",
+                    backgroundColor: canFinish && selectedLearner ? theme.primary : muted + "60",
                     flex: 1,
                   },
                 ]}
               >
                 <Ionicons name="checkmark-circle-outline" size={18} color={Colors.white} />
                 <Text style={s.primaryBtnText}>
-                  {isRegistering ? "Registrando..." : t("facialReg.finish")}
+                  {isRegistering ? "Registrando..." : "Guardar aprendiz"}
                 </Text>
               </TouchableOpacity>
             </View>
+            {!selectedLearner && (
+              <Text style={s.selectLearnerText}>Digita un documento válido de la ficha para guardar esta captura.</Text>
+            )}
             {quality === "lowLight" && (
               <Text style={s.lowLightText}>{t("facialReg.lowLight")}</Text>
             )}
@@ -235,10 +303,10 @@ export default function InstructorFacialCameraScreen() {
           <View style={[s.successModal, { backgroundColor: cardBg }]}>
             <Ionicons name="checkmark-circle" size={60} color={Colors.success} />
             <Text style={[s.successTitle, { color: text }]}>
-              {t("facialReg.successTitle")}
+              Aprendiz registrado
             </Text>
             <Text style={[{ color: muted, textAlign: "center", marginTop: 8 }]}>
-              {t("facialReg.successMessage")}
+              La captura se guardó correctamente. Puedes continuar con otro aprendiz.
             </Text>
             <TouchableOpacity
               onPress={handleSuccess}
@@ -255,12 +323,6 @@ export default function InstructorFacialCameraScreen() {
 
 const s = StyleSheet.create({
   safe: { flex: 1 },
-  doneSafe: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 32,
-  },
   camHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -289,6 +351,54 @@ const s = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
+  sessionPanel: {
+    borderWidth: 1,
+    borderRadius: 14,
+    marginHorizontal: 16,
+    marginBottom: 10,
+    padding: 12,
+  },
+  sessionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 8,
+  },
+  sessionTitle: {
+    fontSize: FontSize.base,
+    fontWeight: FontWeight.black,
+  },
+  sessionSubtitle: {
+    fontSize: FontSize.xs,
+    marginTop: 2,
+    lineHeight: 16,
+  },
+  countBadge: {
+    minWidth: 34,
+    height: 30,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 8,
+  },
+  countText: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.black,
+  },
+  learnerBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  learnerBadgeText: {
+    flex: 1,
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.bold,
+  },
   cameraWrap: { flex: 1 },
   previewWrap: {
     flex: 1,
@@ -312,9 +422,16 @@ const s = StyleSheet.create({
     paddingHorizontal: 24,
     marginTop: 12,
   },
+  selectLearnerText: {
+    color: Colors.warning,
+    textAlign: "center",
+    paddingHorizontal: 24,
+    marginTop: 12,
+    fontWeight: "700",
+  },
   shutterWrap: { alignItems: "center", paddingBottom: 40, paddingTop: 20 },
   successOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: "rgba(0,0,0,0.7)",
     alignItems: "center",
     justifyContent: "center",
