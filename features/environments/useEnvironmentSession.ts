@@ -15,7 +15,7 @@ export function useEnvironmentSession() {
   const [environments, setEnvironments] = useState<EnvironmentOption[]>([]);
   const [selectedEnvironment, setSelectedEnvironment] = useState<EnvironmentOption | null>(null);
   const [instructors, setInstructors] = useState<SessionInstructor[]>([]);
-  const [selectedInstructorId, setSelectedInstructorId] = useState('');
+  const [selectedInstructorId, setSelectedInstructorIdState] = useState('');
   const [chips, setChips] = useState<SessionChip[]>([]);
   const [selectedChipId, setSelectedChipId] = useState('');
   const [loading, setLoading] = useState(false);
@@ -74,6 +74,12 @@ export function useEnvironmentSession() {
         ? current
         : null,
     );
+  }, []);
+
+  const setSelectedInstructorId = useCallback((id: string) => {
+    setSelectedInstructorIdState(id);
+    setSelectedChipId('');
+    setChips([]);
   }, []);
 
   const createEnvironment = useCallback(async () => {

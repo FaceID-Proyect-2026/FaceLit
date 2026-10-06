@@ -9,7 +9,7 @@ import { useTheme } from "@/shared/contexts/ThemeContext";
 import { useAppDialog } from "@/shared/hooks/useAppDialog";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
 
@@ -18,7 +18,7 @@ export default function FacialManagementScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
-  const { settings, saveConfig } = useFacialRegistry();
+  const { config, settings, saveConfig } = useFacialRegistry();
   const { alert, DialogUI } = useAppDialog();
   const {
     environmentQuery,
@@ -38,6 +38,7 @@ export default function FacialManagementScreen() {
     saving,
     saveSession,
   } = useEnvironmentSession();
+  const restoredConfigRef = useRef(false);
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.history?.pushState) return;
@@ -53,6 +54,33 @@ export default function FacialManagementScreen() {
     window.addEventListener("popstate", handleBrowserBack);
     return () => window.removeEventListener("popstate", handleBrowserBack);
   }, [logout]);
+
+  useEffect(() => {
+    if (restoredConfigRef.current || !config) return;
+    if (selectedEnvironment || selectedInstructorId || selectedChipId) return;
+
+    selectEnvironment({
+      idEnvironment: config.environmentId,
+      environmentName: config.environmentName,
+    });
+    setSelectedInstructorId(config.instructorId);
+    restoredConfigRef.current = true;
+  }, [
+    config,
+    selectEnvironment,
+    selectedChipId,
+    selectedEnvironment,
+    selectedInstructorId,
+    setSelectedInstructorId,
+  ]);
+
+  useEffect(() => {
+    if (!config || !restoredConfigRef.current || selectedChipId) return;
+    if (selectedInstructorId !== config.instructorId) return;
+    if (!chips.some((chip) => chip.idChip === config.fichaId)) return;
+
+    setSelectedChipId(config.fichaId);
+  }, [chips, config, selectedChipId, selectedInstructorId, setSelectedChipId]);
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -80,6 +108,19 @@ export default function FacialManagementScreen() {
 
   const canSave = !!selectedEnvironment && !!selectedInstructor && !!selectedChip && !saving;
 
+  useEffect(() => {
+    if (!selectedEnvironment || !selectedInstructor || !selectedChip) return;
+
+    void saveConfig({
+      environmentId: selectedEnvironment.idEnvironment,
+      environmentName: selectedEnvironment.environmentName,
+      instructorId: selectedInstructor.idInstructor,
+      instructorName: `${selectedInstructor.firstName} ${selectedInstructor.lastName}`.trim(),
+      fichaId: selectedChip.idChip,
+      fichaNumber: selectedChip.chipCode,
+    });
+  }, [saveConfig, selectedChip, selectedEnvironment, selectedInstructor]);
+
   const handleCreateEnvironment = async () => {
     try {
       await createEnvironment();
@@ -103,7 +144,7 @@ export default function FacialManagementScreen() {
       fichaNumber: selectedChip.chipCode,
     };
 
-    saveConfig(sessionConfig);
+    void saveConfig(sessionConfig);
 
     void saveSession({
       registrationMinutes: settings.registrationMinutes,

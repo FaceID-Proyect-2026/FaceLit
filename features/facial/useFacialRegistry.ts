@@ -4,6 +4,7 @@ import {
     getFacialEventsSnapshot,
     getFacialRecordsSnapshot,
     getFacialSettingsSnapshot,
+    hydrateFacialConfig,
     hydrateFacialSettings,
     registerFacialCapture,
     registerFacialEvent,
@@ -15,6 +16,7 @@ import { FacialConfig, FacialSettings, FacialUser } from "./types";
 
 export function useFacialRegistry() {
   useEffect(() => {
+    hydrateFacialConfig();
     hydrateFacialSettings();
   }, []);
 

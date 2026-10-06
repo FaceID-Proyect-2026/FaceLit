@@ -21,11 +21,33 @@ let events: FacialEvent[] = [];
 let config: FacialConfig | undefined;
 let settings: FacialSettings = DEFAULT_FACIAL_SETTINGS;
 const listeners = new Set<Listener>();
+const FACIAL_CONFIG_STORAGE_KEY = "facial:instructor:config";
 const FACIAL_SETTINGS_STORAGE_KEY = "facial:instructor:settings";
+let configHydrated = false;
+let configHydrationPromise: Promise<void> | null = null;
 let settingsHydrated = false;
 let settingsHydrationPromise: Promise<void> | null = null;
 
 const emit = () => listeners.forEach((listener) => listener());
+
+const isValidConfig = (value: unknown): value is FacialConfig => {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<FacialConfig>;
+  return (
+    typeof candidate.environmentId === "string" &&
+    candidate.environmentId.length > 0 &&
+    typeof candidate.environmentName === "string" &&
+    candidate.environmentName.length > 0 &&
+    typeof candidate.instructorId === "string" &&
+    candidate.instructorId.length > 0 &&
+    typeof candidate.instructorName === "string" &&
+    candidate.instructorName.length > 0 &&
+    typeof candidate.fichaId === "string" &&
+    candidate.fichaId.length > 0 &&
+    (typeof candidate.fichaNumber === "string" ||
+      typeof candidate.fichaNumber === "number")
+  );
+};
 
 const isValidSettings = (value: unknown): value is FacialSettings => {
   if (!value || typeof value !== "object") return false;
@@ -39,6 +61,30 @@ const isValidSettings = (value: unknown): value is FacialSettings => {
     candidate.shutdownTime.length > 0
   );
 };
+
+export function hydrateFacialConfig() {
+  if (configHydrated) return Promise.resolve();
+  if (configHydrationPromise) return configHydrationPromise;
+
+  configHydrationPromise = AsyncStorage.getItem(FACIAL_CONFIG_STORAGE_KEY)
+    .then((storedConfig) => {
+      if (!storedConfig) return;
+      const parsed = JSON.parse(storedConfig);
+      if (isValidConfig(parsed)) {
+        config = parsed;
+        emit();
+      }
+    })
+    .catch((error) => {
+      console.warn("[FacialConfig] No se pudo cargar la configuracion guardada:", error);
+    })
+    .finally(() => {
+      configHydrated = true;
+      configHydrationPromise = null;
+    });
+
+  return configHydrationPromise;
+}
 
 export function hydrateFacialSettings() {
   if (settingsHydrated) return Promise.resolve();
@@ -84,10 +130,18 @@ export function getFacialSettingsSnapshot() {
 
 type FacialSaveResult = { success: true } | { success: false; error: string };
 
-export function saveFacialConfig(nextConfig: FacialConfig): FacialSaveResult {
+export function saveFacialConfig(nextConfig: FacialConfig): Promise<FacialSaveResult> {
   config = nextConfig;
   emit();
-  return { success: true as const };
+  return AsyncStorage.setItem(
+    FACIAL_CONFIG_STORAGE_KEY,
+    JSON.stringify(nextConfig),
+  )
+    .then(() => ({ success: true as const }))
+    .catch((error) => {
+      console.warn("[FacialConfig] No se pudo guardar la configuracion:", error);
+      return { success: false as const, error: "facial.setup.validation.saveFailed" };
+    });
 }
 
 export function saveFacialSettings(
