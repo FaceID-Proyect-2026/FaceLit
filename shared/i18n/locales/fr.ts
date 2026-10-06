@@ -373,6 +373,7 @@
     lowLight: "Trop sombre. Améliorez l'éclairage.",
     captureSuccess: "Bonne capture!",
     retake: "Refaire",
+    registering: "Enregistrement en cours...",
     finish: "Terminer",
     successTitle: "Enregistrement facial terminé",
     successMessage: "Visage enregistré correctement.",
@@ -1866,6 +1867,10 @@
       security_account_locked: {
         title: "Compte bloqué après plusieurs échecs",
         message: "Le compte associé au document {{document}} a été bloqué pendant {{lockMinutes}} minutes après avoir dépassé la limite d’échecs.",
+      },
+      user_account_created: {
+        title: "Compte utilisateur créé",
+        message: "Le compte utilisateur a été créé avec succès.",
       },
       facial_reregister_request: {
         title: "Demande de réinscription faciale",

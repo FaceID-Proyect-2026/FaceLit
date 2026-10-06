@@ -426,6 +426,7 @@
       "La imagen está muy oscura. Mejora la iluminación e intenta de nuevo.",
     captureSuccess: "¡Buena captura! El rostro se ve claro.",
     retake: "Volver a tomar",
+    registering: "Registrando...",
     finish: "Finalizar registro",
     successTitle: "Registro facial completado",
     successMessage: "Rostro registrado correctamente.",
@@ -1983,6 +1984,10 @@
       security_account_locked: {
         title: "Cuenta bloqueada por intentos fallidos",
         message: "La cuenta con documento {{document}} quedó bloqueada durante {{lockMinutes}} minutos tras superar el límite de intentos fallidos.",
+      },
+      user_account_created: {
+        title: "Cuenta de usuario creada",
+        message: "La cuenta de usuario se creó correctamente.",
       },
       facial_reregister_request: {
         title: "Solicitud de re-registro facial",

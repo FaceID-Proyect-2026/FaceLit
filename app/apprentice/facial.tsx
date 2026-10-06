@@ -459,7 +459,7 @@ export default function ApprenticeFacialScreen() {
                     color={Colors.white}
                   />
                   <Text style={s.primaryBtnText}>
-                    {isRegistering ? "Registrando..." : t("facialReg.finish")}
+                    {isRegistering ? t("facialReg.registering") : t("facialReg.finish")}
                   </Text>
                 </TouchableOpacity>
               </View>

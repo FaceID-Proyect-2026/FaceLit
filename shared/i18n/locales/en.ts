@@ -419,6 +419,7 @@
     lowLight: "The image is too dark. Improve the lighting and try again.",
     captureSuccess: "Great capture! The face is clearly visible.",
     retake: "Retake photo",
+    registering: "Registering...",
     finish: "Finish registration",
     successTitle: "Facial registration completed",
     successMessage: "Face registered successfully.",
@@ -1903,6 +1904,10 @@
       security_account_locked: {
         title: "Account locked after failed attempts",
         message: "The account with document {{document}} was locked for {{lockMinutes}} minutes after exceeding the failed-attempt limit.",
+      },
+      user_account_created: {
+        title: "User account created",
+        message: "A user account was created successfully.",
       },
       facial_reregister_request: {
         title: "Facial re-registration request",
