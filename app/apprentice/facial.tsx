@@ -12,6 +12,7 @@ import { useFacialRegistration } from "@/features/auth/hooks/useFacialRegistrati
 import { getFacialRecordsSnapshot } from "@/features/facial/facialStore";
 import { pushNotification } from "@/features/notifications/notificationsStore";
 import { Colors } from "@/shared/constants/colors";
+import { Routes } from "@/shared/constants/routes";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { useAuth } from "@/shared/contexts/AuthContext";
 import { useTheme } from "@/shared/contexts/ThemeContext";
@@ -613,7 +614,7 @@ export default function ApprenticeFacialScreen() {
         {t("facialReg.successMessage")}
       </Text>
       <TouchableOpacity
-        onPress={() => router.back()}
+        onPress={() => router.replace(Routes.APPRENTICE.DASHBOARD as any)}
         style={[
           s.primaryBtn,
           { marginTop: 32, backgroundColor: theme.primary },
