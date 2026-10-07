@@ -81,7 +81,7 @@ export default function InstructorFacialCameraScreen() {
       sessionClosedRef.current = true;
       handleCancelCamera();
       setActiveSession(undefined);
-      router.replace(Routes.INSTRUCTOR.FACIAL as any);
+      router.replace(Routes.INSTRUCTOR.DASHBOARD as any);
     };
 
     const remainingMs = shutdownAt.getTime() - Date.now();
