@@ -72,7 +72,7 @@ export function getFacialEmbeddingErrorMessage(error: any): string {
     return backendMessage;
   }
   const detail = formatApiDetail(error?.response?.data?.detail);
-  if (detail) return status ? `Error ${status}: ${detail}` : detail;
+  if (detail) return detail;
   if (error?.code === 'ERR_NETWORK' || error?.message === 'Network Error') {
     return `No fue posible conectar con el servicio facial (${EMBEDDING_API_URL}). Verifica que el microservicio de embeddings esté encendido y que el puerto 8090 sea accesible.`;
   }

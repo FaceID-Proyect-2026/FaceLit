@@ -68,6 +68,8 @@ export default function ApprenticeFacialScreen() {
     isRegistering,
     quality,
     successModalVisible,
+    errorModalVisible,
+    errorModalMessage,
     isWeb,
     isPositioning,
     canFinish,
@@ -81,6 +83,7 @@ export default function ApprenticeFacialScreen() {
     handleRetake,
     handleFinish,
     handleCloseSuccessModal,
+    handleCloseErrorModal,
   } = useFacialRegistration();
 
   useEffect(() => {
@@ -544,6 +547,35 @@ export default function ApprenticeFacialScreen() {
               </Text>
               <TouchableOpacity
                 onPress={handleSuccess}
+                style={[
+                  s.primaryBtn,
+                  { marginTop: 24, backgroundColor: theme.primary },
+                ]}
+              >
+                <Text style={s.primaryBtnText}>{t("common.ok")}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {errorModalVisible && (
+          <View style={s.successOverlay}>
+            <View style={[s.successModal, { backgroundColor: cardBg }]}>
+              <Ionicons
+                name="alert-circle"
+                size={60}
+                color={Colors.error}
+              />
+              <Text style={[s.successTitle, { color: text }]}>
+                No se pudo registrar
+              </Text>
+              <Text
+                style={[{ color: muted, textAlign: "center", marginTop: 8 }]}
+              >
+                {errorModalMessage}
+              </Text>
+              <TouchableOpacity
+                onPress={handleCloseErrorModal}
                 style={[
                   s.primaryBtn,
                   { marginTop: 24, backgroundColor: theme.primary },

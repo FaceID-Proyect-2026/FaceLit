@@ -77,6 +77,7 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
   const [isRegistering, setIsRegistering]             = useState(false);
   const [quality, setQuality]                         = useState<CaptureQuality>('checking');
   const [successModalVisible, setSuccessModalVisible] = useState(false);
+  const [errorModalMessage, setErrorModalMessage]     = useState<string | null>(null);
 
   const cameraRef        = useRef<CameraView>(null);
   const positioningTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -196,7 +197,7 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
   // ── Finalizar ──────────────────────────────────
   const handleFinish = useCallback(async () => {
     if (!photoUri) {
-      alert(t('facial.validation.noFace'));
+      setErrorModalMessage(t('facial.validation.noFace'));
       return;
     }
     if (screenState !== 'captured' || quality !== 'good' || isRegistering) return;
@@ -218,7 +219,7 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
       : undefined);
 
     if (!facialUser) {
-      alert(t('facial.validation.userNotFound'));
+      setErrorModalMessage(t('facial.validation.userNotFound'));
       return;
     }
 
@@ -255,7 +256,7 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
         setSuccessModalVisible(true);
         return;
       }
-      alert(message);
+      setErrorModalMessage(message);
     } finally {
       setIsRegistering(false);
     }
@@ -266,6 +267,10 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
     setSuccessModalVisible(false);
   }, []);
 
+  const handleCloseErrorModal = useCallback(() => {
+    setErrorModalMessage(null);
+  }, []);
+
   return {
     // estado
     screenState,
@@ -274,6 +279,8 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
     isRegistering,
     quality,
     successModalVisible,
+    errorModalVisible: Boolean(errorModalMessage),
+    errorModalMessage,
     isWeb,
     isPositioning,
     canFinish,
@@ -289,5 +296,6 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
     handleRetake,
     handleFinish,
     handleCloseSuccessModal,
+    handleCloseErrorModal,
   };
 }
