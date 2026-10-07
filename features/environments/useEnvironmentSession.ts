@@ -120,8 +120,11 @@ export function useEnvironmentSession() {
         shutdownTime: timeToTodayIso(settings.shutdownTime, entryTime),
       });
       return { success: true as const, session };
-    } catch {
-      return { success: false as const, error: 'facial.setup.validation.saveFailed' };
+    } catch (error: any) {
+      return {
+        success: false as const,
+        error: error?.response?.data?.message ?? 'facial.setup.validation.saveFailed',
+      };
     } finally {
       setSaving(false);
     }

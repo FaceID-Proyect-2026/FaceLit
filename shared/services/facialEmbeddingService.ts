@@ -67,6 +67,10 @@ function formatApiDetail(detail: unknown): string | null {
 
 export function getFacialEmbeddingErrorMessage(error: any): string {
   const status = error?.response?.status;
+  const backendMessage = error?.response?.data?.message;
+  if (typeof backendMessage === 'string' && backendMessage.trim()) {
+    return backendMessage;
+  }
   const detail = formatApiDetail(error?.response?.data?.detail);
   if (detail) return status ? `Error ${status}: ${detail}` : detail;
   if (error?.code === 'ERR_NETWORK' || error?.message === 'Network Error') {
