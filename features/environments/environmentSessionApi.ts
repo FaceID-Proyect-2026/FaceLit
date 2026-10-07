@@ -57,8 +57,8 @@ export interface RecordEnvironmentResponse {
   sessionStart: string;
   entryTime: string;
   registrationMinutes: number;
-  exitTime?: string;
-  shutdownTime?: string;
+  exitTime: string;
+  shutdownTime: string;
   active: boolean;
 }
 
@@ -93,8 +93,8 @@ export async function createEnvironmentSession(payload: {
   idChip: string;
   entryTime: string;
   registrationMinutes: number;
-  exitTime?: string;
-  shutdownTime?: string;
+  exitTime: string;
+  shutdownTime: string;
 }) {
   const { data } = await api.post<RecordEnvironmentResponse>('/api/environment/sessions', {
     ...payload,

@@ -101,8 +101,8 @@ export function useEnvironmentSession() {
 
   const saveSession = useCallback(async (settings: {
     registrationMinutes: number;
-    exitTime?: string;
-    shutdownTime?: string;
+    exitTime: string;
+    shutdownTime: string;
   }) => {
     if (!selectedEnvironment || !selectedInstructorId || !selectedChipId) {
       return { success: false as const, error: 'facial.setup.validation.allRequired' };
@@ -116,8 +116,8 @@ export function useEnvironmentSession() {
         idChip: selectedChipId,
         entryTime: entryTime.toISOString(),
         registrationMinutes: settings.registrationMinutes,
-        exitTime: settings.exitTime ? timeToTodayIso(settings.exitTime, entryTime) : undefined,
-        shutdownTime: settings.shutdownTime ? timeToTodayIso(settings.shutdownTime, entryTime) : undefined,
+        exitTime: timeToTodayIso(settings.exitTime, entryTime),
+        shutdownTime: timeToTodayIso(settings.shutdownTime, entryTime),
       });
       return { success: true as const, session };
     } catch {
