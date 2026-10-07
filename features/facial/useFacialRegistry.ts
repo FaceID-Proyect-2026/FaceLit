@@ -4,15 +4,17 @@ import {
     getFacialEventsSnapshot,
     getFacialRecordsSnapshot,
     getFacialSettingsSnapshot,
+    getActiveFacialSessionSnapshot,
     hydrateFacialConfig,
     hydrateFacialSettings,
     registerFacialCapture,
     registerFacialEvent,
     saveFacialConfig,
     saveFacialSettings,
+    setActiveFacialSession,
     subscribeFacial,
 } from "./facialStore";
-import { FacialConfig, FacialSettings, FacialUser } from "./types";
+import { FacialConfig, FacialSession, FacialSettings, FacialUser } from "./types";
 
 export function useFacialRegistry() {
   useEffect(() => {
@@ -30,11 +32,16 @@ export function useFacialRegistry() {
     subscribeFacial,
     getFacialSettingsSnapshot,
   );
+  const activeSession = useSyncExternalStore(
+    subscribeFacial,
+    getActiveFacialSessionSnapshot,
+  );
   return {
     records,
     events,
     config,
     settings,
+    activeSession,
     registerCapture: useCallback(
       (
         user: FacialUser | undefined,
@@ -50,6 +57,10 @@ export function useFacialRegistry() {
     ),
     saveSettings: useCallback(
       (nextSettings: FacialSettings) => saveFacialSettings(nextSettings),
+      [],
+    ),
+    setActiveSession: useCallback(
+      (session: FacialSession | undefined) => setActiveFacialSession(session),
       [],
     ),
   };

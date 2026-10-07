@@ -18,7 +18,7 @@ export default function FacialManagementScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
-  const { config, settings, saveConfig } = useFacialRegistry();
+  const { config, settings, saveConfig, setActiveSession } = useFacialRegistry();
   const { alert, DialogUI } = useAppDialog();
   const {
     environmentQuery,
@@ -146,11 +146,18 @@ export default function FacialManagementScreen() {
 
     void saveConfig(sessionConfig);
 
-    void saveSession({
+    const result = await saveSession({
       registrationMinutes: settings.registrationMinutes,
       exitTime: settings.exitTime,
       shutdownTime: settings.shutdownTime,
     });
+
+    if (!result.success) {
+      alert(t("common.error"), t(result.error));
+      return;
+    }
+
+    setActiveSession(result.session);
 
     alert(t("common.success"), t("facial.setup.saveSuccess"), [
       {

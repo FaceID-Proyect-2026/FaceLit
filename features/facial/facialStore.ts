@@ -5,6 +5,7 @@ import {
     FacialConfig,
     FacialEvent,
     FacialRecord,
+    FacialSession,
     FacialSettings,
     FacialUser,
     MOCK_FACIAL_RECORDS,
@@ -20,6 +21,7 @@ let records: FacialRecord[] = MOCK_FACIAL_RECORDS;
 let events: FacialEvent[] = [];
 let config: FacialConfig | undefined;
 let settings: FacialSettings = DEFAULT_FACIAL_SETTINGS;
+let activeSession: FacialSession | undefined;
 const listeners = new Set<Listener>();
 const FACIAL_CONFIG_STORAGE_KEY = "facial:instructor:config";
 const FACIAL_SETTINGS_STORAGE_KEY = "facial:instructor:settings";
@@ -127,6 +129,9 @@ export function getFacialConfigSnapshot() {
 export function getFacialSettingsSnapshot() {
   return settings;
 }
+export function getActiveFacialSessionSnapshot() {
+  return activeSession;
+}
 
 type FacialSaveResult = { success: true } | { success: false; error: string };
 
@@ -158,6 +163,11 @@ export function saveFacialSettings(
       console.warn("[FacialSettings] No se pudo guardar la configuracion:", error);
       return { success: false as const, error: "facial.settings.saveError" };
     });
+}
+
+export function setActiveFacialSession(session: FacialSession | undefined) {
+  activeSession = session;
+  emit();
 }
 
 export function registerFacialCapture(

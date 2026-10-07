@@ -33,6 +33,18 @@ export interface FacialSettings {
   shutdownTime: string;
 }
 
+export interface FacialSession {
+  idRecordEnvironment: string;
+  idEnvironment: string;
+  environmentName: string;
+  idDevice: string;
+  deviceCode: string;
+  idChip: string;
+  chipCode: string;
+  shutdownTime: string;
+  active: boolean;
+}
+
 // Estructura lista para el módulo de asistencias. El reconocimiento no crea
 // asistencia por sí mismo: entrega un evento completo para que el proceso de
 // validación de asistencia decida cómo registrarlo.

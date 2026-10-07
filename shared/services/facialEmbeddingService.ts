@@ -28,6 +28,21 @@ export interface FacialEmbeddingResponse {
   registered_at: string;
 }
 
+export interface FacialSessionVerificationPayload {
+  recordEnvironmentId: string;
+  imageBase64: string;
+  threshold?: number;
+}
+
+export interface FacialSessionVerificationResponse {
+  match: boolean;
+  id_apprentice?: string | null;
+  similarity?: number | null;
+  threshold: number;
+  model_name: string;
+  reason: string;
+}
+
 const facialEmbeddingApi = axios.create({
   baseURL: EMBEDDING_API_URL,
   timeout: 180000,
@@ -90,6 +105,21 @@ export async function updateFacialEmbeddingFromImage(
       image_base64: payload.imageBase64,
       photo_reference: payload.photoReference ?? null,
       updated_by: payload.updatedBy ?? 'mobile-app',
+    },
+  );
+
+  return response.data;
+}
+
+export async function verifyFacialSessionFromImage(
+  payload: FacialSessionVerificationPayload,
+): Promise<FacialSessionVerificationResponse> {
+  const response = await facialEmbeddingApi.post<FacialSessionVerificationResponse>(
+    '/api/v1/facial-embeddings/verify-session',
+    {
+      record_environment_id: payload.recordEnvironmentId,
+      image_base64: payload.imageBase64,
+      threshold: payload.threshold,
     },
   );
 

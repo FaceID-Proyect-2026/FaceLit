@@ -8,7 +8,8 @@
 import FaceGuideOverlay from "@/features/auth/components/FaceGuideOverlay";
 import ShutterButton from "@/features/auth/components/ShutterButton";
 import WebCamera from "@/features/auth/components/WebCamera";
-import { useFacialRegistration } from "@/features/auth/hooks/useFacialRegistration";
+import { useFacialRegistry } from "@/features/facial/useFacialRegistry";
+import { useSessionAttendanceCapture } from "@/features/facial/useSessionAttendanceCapture";
 import { Colors } from "@/shared/constants/colors";
 import { Routes } from "@/shared/constants/routes";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
@@ -16,7 +17,7 @@ import { useTheme } from "@/shared/contexts/ThemeContext";
 import { useAppDialog } from "@/shared/hooks/useAppDialog";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
@@ -24,6 +25,8 @@ export default function InstructorFacialCameraScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const { DialogUI } = useAppDialog();
+  const { activeSession, settings, setActiveSession } = useFacialRegistry();
+  const sessionClosedRef = useRef(false);
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -49,16 +52,47 @@ export default function InstructorFacialCameraScreen() {
     handleRetake,
     handleFinish,
     handleCloseSuccessModal,
-  } = useFacialRegistration({
-    replaceExisting: true,
-    createdBy: "instructor-session",
-    allowLocalFallback: true,
-    requireResponsibilityConfirmation: false,
-  });
+  } = useSessionAttendanceCapture({ session: activeSession });
 
   useEffect(() => {
     handleOpenCamera();
   }, [handleOpenCamera]);
+
+  useEffect(() => {
+    const shutdownAt = (() => {
+      if (activeSession?.shutdownTime) {
+        const sessionDate = new Date(activeSession.shutdownTime);
+        return Number.isNaN(sessionDate.getTime()) ? null : sessionDate;
+      }
+
+      if (!settings.shutdownTime) return null;
+      const [hours, minutes] = settings.shutdownTime.split(":").map(Number);
+      if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return null;
+
+      const fallbackDate = new Date();
+      fallbackDate.setHours(hours, minutes || 0, 0, 0);
+      return fallbackDate;
+    })();
+
+    if (!shutdownAt || sessionClosedRef.current) return;
+
+    const closeSession = () => {
+      if (sessionClosedRef.current) return;
+      sessionClosedRef.current = true;
+      handleCancelCamera();
+      setActiveSession(undefined);
+      router.replace(Routes.INSTRUCTOR.FACIAL as any);
+    };
+
+    const remainingMs = shutdownAt.getTime() - Date.now();
+    if (remainingMs <= 0) {
+      closeSession();
+      return;
+    }
+
+    const timer = setTimeout(closeSession, remainingMs);
+    return () => clearTimeout(timer);
+  }, [activeSession, handleCancelCamera, setActiveSession, settings.shutdownTime]);
 
   const qualityWarnings: { icon: string; label: string; ok: boolean }[] = [
     {
@@ -80,6 +114,7 @@ export default function InstructorFacialCameraScreen() {
 
   function handleCancelAndReturn() {
     handleCancelCamera();
+    setActiveSession(undefined);
     router.replace(Routes.INSTRUCTOR.FACIAL as any);
   }
 
@@ -154,7 +189,7 @@ export default function InstructorFacialCameraScreen() {
               >
                 <Ionicons name="checkmark-circle-outline" size={18} color={Colors.white} />
                 <Text style={s.primaryBtnText}>
-                  {isRegistering ? "Registrando..." : "Guardar registro"}
+                  {isRegistering ? "Registrando asistencia..." : "Registrar asistencia"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -215,10 +250,10 @@ export default function InstructorFacialCameraScreen() {
           <View style={[s.successModal, { backgroundColor: cardBg }]}>
             <Ionicons name="checkmark-circle" size={60} color={Colors.success} />
             <Text style={[s.successTitle, { color: text }]}>
-              Registro guardado
+              Asistencia registrada
             </Text>
             <Text style={[{ color: muted, textAlign: "center", marginTop: 8 }]}>
-              La captura se guardó correctamente.
+              El rostro coincide con un aprendiz de la ficha y el evento quedó guardado.
             </Text>
             <TouchableOpacity
               onPress={handleSuccess}
