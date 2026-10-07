@@ -39,6 +39,8 @@ export default function InstructorFacialCameraScreen() {
     isRegistering,
     quality,
     successModalVisible,
+    errorModalVisible,
+    errorModalMessage,
     isWeb,
     isPositioning,
     canFinish,
@@ -52,6 +54,7 @@ export default function InstructorFacialCameraScreen() {
     handleRetake,
     handleFinish,
     handleCloseSuccessModal,
+    handleCloseErrorModal,
   } = useSessionAttendanceCapture({ session: activeSession });
 
   useEffect(() => {
@@ -257,6 +260,26 @@ export default function InstructorFacialCameraScreen() {
             </Text>
             <TouchableOpacity
               onPress={handleSuccess}
+              style={[s.primaryBtn, { marginTop: 24, backgroundColor: theme.primary }]}
+            >
+              <Text style={s.primaryBtnText}>{t("common.ok")}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {errorModalVisible && (
+        <View style={s.successOverlay}>
+          <View style={[s.successModal, { backgroundColor: cardBg }]}>
+            <Ionicons name="alert-circle" size={60} color={Colors.error} />
+            <Text style={[s.successTitle, { color: text }]}>
+              No se pudo registrar
+            </Text>
+            <Text style={[{ color: muted, textAlign: "center", marginTop: 8 }]}>
+              {errorModalMessage}
+            </Text>
+            <TouchableOpacity
+              onPress={handleCloseErrorModal}
               style={[s.primaryBtn, { marginTop: 24, backgroundColor: theme.primary }]}
             >
               <Text style={s.primaryBtnText}>{t("common.ok")}</Text>

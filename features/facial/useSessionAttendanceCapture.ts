@@ -23,6 +23,7 @@ export function useSessionAttendanceCapture({ session }: UseSessionAttendanceCap
   const [isRegistering, setIsRegistering] = useState(false);
   const [quality, setQuality] = useState<CaptureQuality>('checking');
   const [successModalVisible, setSuccessModalVisible] = useState(false);
+  const [errorModalMessage, setErrorModalMessage] = useState<string | null>(null);
 
   const cameraRef = useRef<CameraView>(null);
   const positioningTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -119,11 +120,11 @@ export function useSessionAttendanceCapture({ session }: UseSessionAttendanceCap
 
   const handleFinish = useCallback(async () => {
     if (!session) {
-      alert('No hay una sesión activa para registrar asistencia.');
+      setErrorModalMessage('No hay una sesión activa para registrar asistencia.');
       return;
     }
     if (!photoUri) {
-      alert(t('facial.validation.noFace'));
+      setErrorModalMessage(t('facial.validation.noFace'));
       return;
     }
     if (screenState !== 'captured' || quality !== 'good' || isRegistering) return;
@@ -140,7 +141,7 @@ export function useSessionAttendanceCapture({ session }: UseSessionAttendanceCap
 
       setSuccessModalVisible(true);
     } catch (error: any) {
-      alert(getFacialEmbeddingErrorMessage(error));
+      setErrorModalMessage(getFacialEmbeddingErrorMessage(error));
     } finally {
       setIsRegistering(false);
     }
@@ -150,6 +151,10 @@ export function useSessionAttendanceCapture({ session }: UseSessionAttendanceCap
     setSuccessModalVisible(false);
   }, []);
 
+  const handleCloseErrorModal = useCallback(() => {
+    setErrorModalMessage(null);
+  }, []);
+
   return {
     screenState,
     photoUri,
@@ -157,6 +162,8 @@ export function useSessionAttendanceCapture({ session }: UseSessionAttendanceCap
     isRegistering,
     quality,
     successModalVisible,
+    errorModalVisible: Boolean(errorModalMessage),
+    errorModalMessage,
     isWeb,
     isPositioning,
     canFinish,
@@ -170,5 +177,6 @@ export function useSessionAttendanceCapture({ session }: UseSessionAttendanceCap
     handleRetake,
     handleFinish,
     handleCloseSuccessModal,
+    handleCloseErrorModal,
   };
 }
