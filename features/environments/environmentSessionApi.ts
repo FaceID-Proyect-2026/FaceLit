@@ -55,6 +55,7 @@ export interface RecordEnvironmentResponse {
   instructorInChargeName?: string | null;
   instructorName: string;
   sessionStart: string;
+  entryTime: string;
   registrationMinutes: number;
   exitTime?: string;
   shutdownTime?: string;
@@ -90,6 +91,7 @@ export async function createEnvironmentSession(payload: {
   deviceCode?: string;
   idInstructorInCharge: string;
   idChip: string;
+  entryTime: string;
   registrationMinutes: number;
   exitTime?: string;
   shutdownTime?: string;

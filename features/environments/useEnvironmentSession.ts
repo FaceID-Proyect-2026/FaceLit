@@ -10,6 +10,13 @@ import {
   SessionInstructor,
 } from './environmentSessionApi';
 
+function timeToTodayIso(time: string, baseDate = new Date()) {
+  const [hours, minutes] = time.split(':').map(Number);
+  const date = new Date(baseDate);
+  date.setHours(hours, minutes || 0, 0, 0);
+  return date.toISOString();
+}
+
 export function useEnvironmentSession() {
   const [environmentQuery, setEnvironmentQueryState] = useState('');
   const [environments, setEnvironments] = useState<EnvironmentOption[]>([]);
@@ -102,13 +109,15 @@ export function useEnvironmentSession() {
     }
     setSaving(true);
     try {
+      const entryTime = new Date();
       const session = await createEnvironmentSession({
         idEnvironment: selectedEnvironment.idEnvironment,
         idInstructorInCharge: selectedInstructorId,
         idChip: selectedChipId,
+        entryTime: entryTime.toISOString(),
         registrationMinutes: settings.registrationMinutes,
-        exitTime: settings.exitTime,
-        shutdownTime: settings.shutdownTime,
+        exitTime: settings.exitTime ? timeToTodayIso(settings.exitTime, entryTime) : undefined,
+        shutdownTime: settings.shutdownTime ? timeToTodayIso(settings.shutdownTime, entryTime) : undefined,
       });
       return { success: true as const, session };
     } catch {
