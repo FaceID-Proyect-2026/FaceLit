@@ -17,6 +17,7 @@ import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { useAuth } from "@/shared/contexts/AuthContext";
 import { useTheme } from "@/shared/contexts/ThemeContext";
 import { useAppDialog } from "@/shared/hooks/useAppDialog";
+import { fetchMyFacialEnrollmentStatus } from "@/shared/services/facialEnrollmentService";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
@@ -45,6 +46,10 @@ export default function ApprenticeFacialScreen() {
   const [step, setStep] = useState<Step>("confirm");
   const [confirmed, setConfirmed] = useState(false);
   const [resetRequested, setResetRequested] = useState(false);
+  const [serverRegistered, setServerRegistered] = useState<boolean | null>(null);
+  const [serverRegistrationDate, setServerRegistrationDate] = useState<string | null>(null);
+  const [loadingRegistrationStatus, setLoadingRegistrationStatus] = useState(false);
+  const [registrationStatusError, setRegistrationStatusError] = useState<string | null>(null);
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -60,7 +65,42 @@ export default function ApprenticeFacialScreen() {
   // Estado del registro facial actual
   const records = getFacialRecordsSnapshot();
   const myRecord = records.find((r) => r.userId === user?.id);
-  const isRegistered = myRecord?.status === "registered";
+  const isRegistered = serverRegistered ?? myRecord?.status === "registered";
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadRegistrationStatus() {
+      if (!user?.id) {
+        setServerRegistered(null);
+        setServerRegistrationDate(null);
+        return;
+      }
+      setLoadingRegistrationStatus(true);
+      setRegistrationStatusError(null);
+      try {
+        const status = await fetchMyFacialEnrollmentStatus();
+        if (!cancelled) {
+          setServerRegistered(status.registered);
+          setServerRegistrationDate(status.registrationDate ?? null);
+        }
+      } catch (error) {
+        console.warn("[ApprenticeFacial] No se pudo consultar el estado facial:", error);
+        if (!cancelled) {
+          setServerRegistered(null);
+          setServerRegistrationDate(null);
+          setRegistrationStatusError("No fue posible verificar si ya tienes rostro registrado.");
+        }
+      } finally {
+        if (!cancelled) setLoadingRegistrationStatus(false);
+      }
+    }
+
+    loadRegistrationStatus();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   const {
     screenState,
@@ -87,11 +127,13 @@ export default function ApprenticeFacialScreen() {
     handleCloseErrorModal,
   } = useFacialRegistration();
 
+  const canStartRegistration = !loadingRegistrationStatus && !registrationStatusError && serverRegistered === false;
+
   useEffect(() => {
-    if (autoStart !== "1" || isRegistered) return;
+    if (autoStart !== "1" || !canStartRegistration) return;
     setStep("camera");
     handleOpenCamera();
-  }, [autoStart, handleOpenCamera, isRegistered]);
+  }, [autoStart, canStartRegistration, handleOpenCamera]);
 
   // ── Cancelar desde la cámara → limpia estado y vuelve al paso confirm ──
   function handleCancelAndReturn() {
@@ -102,6 +144,7 @@ export default function ApprenticeFacialScreen() {
   // ── Confirmación de identidad (RF-5.1) ────────
   function handleConfirmAndProceed() {
     if (!confirmed) return;
+    if (loadingRegistrationStatus || registrationStatusError || serverRegistered === null) return;
     if (isRegistered) {
       alert(
         t("facialReg.alreadyRegisteredTitle"),
@@ -136,8 +179,16 @@ export default function ApprenticeFacialScreen() {
   // ── Al cerrar modal de éxito ───────────────────
   function handleSuccess() {
     handleCloseSuccessModal();
+    setServerRegistered(true);
+    setServerRegistrationDate(new Date().toISOString());
     setStep("done");
   }
+
+  const formatRegistrationDate = (value?: string | null) => {
+    if (!value) return "";
+    return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(value));
+  };
+  const registeredDateLabel = formatRegistrationDate(serverRegistrationDate) || myRecord?.date || "";
 
   // ── Validaciones de calidad como chips ────────
   const qualityWarnings: { icon: string; label: string; ok: boolean }[] = [
@@ -197,12 +248,16 @@ export default function ApprenticeFacialScreen() {
               <Text style={[s.statusTitle, { color: text }]}>
                 {isRegistered
                   ? t("facialReg.alreadyRegisteredTitle")
-                  : t("facialReg.pendingTitle")}
+                  : loadingRegistrationStatus
+                    ? t("common.loading")
+                    : t("facialReg.pendingTitle")}
               </Text>
               <Text style={[s.statusDesc, { color: muted }]}>
                 {isRegistered
                   ? t("facialReg.registeredOn") +
-                    ` ${myRecord?.date ?? ""}`
+                    ` ${registeredDateLabel}`
+                  : registrationStatusError
+                    ? registrationStatusError
                   : t("facialReg.registerFaceDesc")}
               </Text>
             </View>
@@ -337,12 +392,12 @@ export default function ApprenticeFacialScreen() {
           {/* Botón continuar */}
           <TouchableOpacity
             onPress={handleConfirmAndProceed}
-            disabled={!confirmed || isRegistered}
+            disabled={!confirmed || isRegistered || loadingRegistrationStatus || !!registrationStatusError || serverRegistered === null}
             style={[
               s.primaryBtn,
               {
                 backgroundColor:
-                  !confirmed || isRegistered ? muted + "40" : theme.primary,
+                  !confirmed || isRegistered || loadingRegistrationStatus ? muted + "40" : theme.primary,
               },
             ]}
             activeOpacity={0.85}
@@ -351,7 +406,9 @@ export default function ApprenticeFacialScreen() {
             <Text style={s.primaryBtnText}>
               {isRegistered
                 ? t("facialReg.alreadyRegisteredTitle")
-                : t("facialReg.captureBtn")}
+                : loadingRegistrationStatus
+                  ? t("common.loading")
+                  : t("facialReg.captureBtn")}
             </Text>
           </TouchableOpacity>
         </ScrollView>
