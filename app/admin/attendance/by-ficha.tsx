@@ -20,7 +20,6 @@ import {
     subscribeAttendanceUI,
 } from "@/features/attendance/attendanceUIStore";
 import {
-    dateRange,
     useAttendanceRF6,
     type DayCell,
     type FichaDaySummary,
@@ -32,13 +31,14 @@ import DateField from "@/shared/components/ui/DateField";
 import { Colors } from "@/shared/constants/colors";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { useTheme } from "@/shared/contexts/ThemeContext";
+import { fetchAttendanceMatrix } from "@/shared/services/facialAttendanceService";
 import {
     exportReport,
     type ExportData,
     type ExportOptions,
 } from "@/shared/utils/export";
 import { Ionicons } from "@expo/vector-icons";
-import { useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 import {
     Modal,
@@ -66,7 +66,7 @@ export default function AttendanceByFichaScreen({
   const { isDark, theme } = useTheme();
   const { t, i18n } = useTranslation();
   const { programs, allFichas, allInstructors } = useAcademic();
-  const { getFichaCardsForProgram, getFichaTable } = useAttendanceRF6();
+  const { getFichaCardsForProgram } = useAttendanceRF6();
 
   // ── Estado persistido desde el store ─────────
   const ui = useSyncExternalStore(
@@ -80,6 +80,10 @@ export default function AttendanceByFichaScreen({
     cell: DayCell;
     learnerName: string;
   } | null>(null);
+  const [realTableRows, setRealTableRows] = useState<FichaTableRow[]>([]);
+  const [realDates, setRealDates] = useState<string[]>([]);
+  const [loadingMatrix, setLoadingMatrix] = useState(false);
+  const [matrixError, setMatrixError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const learnerHeaderRef = useRef<ScrollView>(null);
   const learnerGridRef = useRef<ScrollView>(null);
@@ -142,21 +146,61 @@ export default function AttendanceByFichaScreen({
     [programs, selectedProgramId],
   );
 
-  const tableRows: FichaTableRow[] = useMemo(
-    () =>
-      selectedFichaId && dateFrom && dateTo && dateFrom <= dateTo
-        ? getFichaTable(selectedFichaId, dateFrom, dateTo)
-        : [],
-    [selectedFichaId, dateFrom, dateTo, getFichaTable],
-  );
+  useEffect(() => {
+    let cancelled = false;
 
-  const dates: string[] = useMemo(
-    () =>
-      dateFrom && dateTo && dateFrom <= dateTo
-        ? dateRange(dateFrom, dateTo)
-        : [],
-    [dateFrom, dateTo],
-  );
+    async function loadMatrix() {
+      if (!selectedFichaId || !dateFrom || !dateTo || dateFrom > dateTo) {
+        setRealTableRows([]);
+        setRealDates([]);
+        setMatrixError(null);
+        return;
+      }
+
+      setLoadingMatrix(true);
+      setMatrixError(null);
+      try {
+        const matrix = await fetchAttendanceMatrix({
+          idChip: selectedFichaId,
+          dateFrom,
+          dateTo,
+        });
+        if (cancelled) return;
+
+        setRealDates(matrix.sessions.map((session) => session.date));
+        setRealTableRows(matrix.learners.map((learner) => ({
+          learnerId: learner.learnerId,
+          learnerName: learner.learnerName,
+          learnerDocument: learner.learnerDocument,
+          days: learner.days.map((day) => ({
+            date: day.date,
+            status: day.status,
+            entryTime: day.entryTime,
+            delayMinutes: day.delayMinutes,
+            environmentName: day.environmentName,
+            instructorName: day.instructorName,
+            fichaNumber: day.fichaNumber,
+            programName: day.programName,
+          })),
+        })));
+      } catch (error: any) {
+        if (cancelled) return;
+        setRealTableRows([]);
+        setRealDates([]);
+        setMatrixError(error?.response?.data?.message ?? "No fue posible cargar la asistencia registrada.");
+      } finally {
+        if (!cancelled) setLoadingMatrix(false);
+      }
+    }
+
+    loadMatrix();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedFichaId, dateFrom, dateTo]);
+
+  const tableRows: FichaTableRow[] = realTableRows;
+  const dates: string[] = realDates;
 
   // ── Formato ───────────────────────────────────
   const fmtDate = (d: string) =>
@@ -482,7 +526,25 @@ export default function AttendanceByFichaScreen({
           </View>
 
           {/* ── Tabla ── */}
-          {tableRows.length > 0 && dates.length > 0 && (
+          {loadingMatrix && (
+            <View style={s.emptyBox}>
+              <Ionicons name="sync-outline" size={28} color={muted} />
+              <Text style={[s.emptyText, { color: muted }]}>
+                {t("common.loading")}
+              </Text>
+            </View>
+          )}
+
+          {matrixError && !loadingMatrix && (
+            <View style={s.emptyBox}>
+              <Ionicons name="alert-circle-outline" size={28} color={Colors.error} />
+              <Text style={[s.emptyText, { color: Colors.error }]}>
+                {matrixError}
+              </Text>
+            </View>
+          )}
+
+          {!loadingMatrix && !matrixError && tableRows.length > 0 && dates.length > 0 && (
             <View style={[s.tableShell, { borderColor: border, backgroundColor: cardBg }]}>
               <View style={s.tableHeaderPinned}>
                 <View style={[s.dateRowLabel, s.transposedHeaderCell, { backgroundColor: theme.primary + "20", borderColor: border }]}>
@@ -803,6 +865,8 @@ export default function AttendanceByFichaScreen({
           {Boolean(dateFrom) &&
             Boolean(dateTo) &&
             dateFrom <= dateTo &&
+            !loadingMatrix &&
+            !matrixError &&
             tableRows.length === 0 && (
               <View style={s.emptyBox}>
                 <Ionicons

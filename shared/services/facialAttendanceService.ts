@@ -30,6 +30,42 @@ export interface FacialEventResponse {
   origin: 'PC' | 'MOBILE';
 }
 
+export interface AttendanceMatrixSession {
+  idRecordEnvironment: string;
+  date: string;
+  environmentName: string;
+  instructorName: string;
+}
+
+export interface AttendanceMatrixDay {
+  idRecordEnvironment: string;
+  date: string;
+  status: 'punctual' | 'late' | 'absent';
+  entryTime: string;
+  delayMinutes: number;
+  environmentName: string;
+  instructorName: string;
+  fichaNumber: string;
+  programName: string;
+}
+
+export interface AttendanceMatrixLearner {
+  learnerId: string;
+  apprenticeId: string;
+  learnerName: string;
+  learnerDocument: string;
+  days: AttendanceMatrixDay[];
+}
+
+export interface AttendanceMatrixResponse {
+  idChip: string;
+  chipCode?: string | null;
+  idProgram?: string | null;
+  programName?: string | null;
+  sessions: AttendanceMatrixSession[];
+  learners: AttendanceMatrixLearner[];
+}
+
 export async function registerFacialAttendanceEvent(
   payload: FacialEventPayload,
 ): Promise<FacialEventResponse> {
@@ -54,6 +90,18 @@ export async function registerFacialAttendanceFromImage(
     idDevice: payload.idDevice,
     imageBase64: payload.imageBase64,
     origin: payload.origin,
+  });
+
+  return data;
+}
+
+export async function fetchAttendanceMatrix(params: {
+  idChip: string;
+  dateFrom: string;
+  dateTo: string;
+}): Promise<AttendanceMatrixResponse> {
+  const { data } = await api.get<AttendanceMatrixResponse>('/api/facial/events/attendance-matrix', {
+    params,
   });
 
   return data;
