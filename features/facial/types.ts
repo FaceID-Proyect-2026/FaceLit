@@ -27,6 +27,13 @@ export interface FacialConfig {
   fichaNumber: string | number;
 }
 
+export interface FacialSectionDraft {
+  environmentId?: string;
+  environmentName?: string;
+  instructorId?: string;
+  fichaId?: string;
+}
+
 export interface FacialSettings {
   registrationMinutes: number;
   exitTime: string;
