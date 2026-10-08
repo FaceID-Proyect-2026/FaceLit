@@ -28,6 +28,7 @@ export interface FacialEventResponse {
   attendanceStatus: 'PUNCTUAL' | 'LATE' | 'ABSENT';
   matchScore?: number | null;
   origin: 'PC' | 'MOBILE';
+  excuse?: boolean | null;
 }
 
 export interface AttendanceMatrixSession {
@@ -38,6 +39,7 @@ export interface AttendanceMatrixSession {
 }
 
 export interface AttendanceMatrixDay {
+  idFacialEvent?: string | null;
   idRecordEnvironment: string;
   date: string;
   status: 'punctual' | 'late' | 'absent';
@@ -48,6 +50,7 @@ export interface AttendanceMatrixDay {
   fichaNumber: string;
   programName: string;
   exitRegistered: boolean;
+  excuse?: boolean | null;
 }
 
 export interface AttendanceMatrixLearner {
@@ -104,6 +107,16 @@ export async function fetchAttendanceMatrix(params: {
   const { data } = await api.get<AttendanceMatrixResponse>('/api/facial/events/attendance-matrix', {
     params,
   });
+
+  return data;
+}
+
+export async function updateFacialEventExcuse(payload: {
+  idRecordEnvironment: string;
+  idApprentice: string;
+  excuse: boolean;
+}): Promise<FacialEventResponse> {
+  const { data } = await api.patch<FacialEventResponse>('/api/facial/events/excuse', payload);
 
   return data;
 }

@@ -104,6 +104,9 @@ export default function AttendanceByUserScreen({ allowedFichaIds }: { allowedFic
 
         const learner = matrix.learners.find(item => item.learnerId === selectedLearner.learnerId);
         setRealCells((learner?.days ?? []).map(day => ({
+          idFacialEvent: day.idFacialEvent ?? null,
+          idRecordEnvironment: day.idRecordEnvironment,
+          apprenticeId: learner?.apprenticeId,
           date: day.date,
           status: day.status,
           entryTime: day.entryTime,
@@ -113,6 +116,7 @@ export default function AttendanceByUserScreen({ allowedFichaIds }: { allowedFic
           fichaNumber: day.fichaNumber,
           programName: day.programName,
           exitRegistered: day.exitRegistered,
+          excuse: day.excuse ?? null,
         })));
       } catch (error: any) {
         if (cancelled) return;
@@ -140,14 +144,31 @@ export default function AttendanceByUserScreen({ allowedFichaIds }: { allowedFic
     v ? new Intl.DateTimeFormat(i18n.language, { hour: 'numeric', minute: '2-digit', hour12: true })
           .format(new Date(`1970-01-01T${v}:00`)) : '-';
 
+  const getStatusLabel = (cell: DayCell) => {
+    if (cell.status === 'punctual') return t('attendance.statuses.punctual');
+    if (cell.status === 'late') return t('attendance.statuses.late');
+    if (cell.status === 'absent') {
+      return cell.excuse === true ? `${t('attendance.statuses.absent')} (E)` : t('attendance.statuses.absent');
+    }
+    return '-';
+  };
+
+  const getStatusColor = (cell: DayCell) => {
+    if (cell.status === 'punctual') return Colors.success;
+    if (cell.status === 'late') return Colors.warning;
+    if (cell.status === 'absent') return Colors.error;
+    return muted;
+  };
+
   // Exportacion.
   const handleExport = async (format: 'excel' | 'csv') => {
     if (!cells.length || !selectedLearner) return;
     setExporting(true);
     try {
-      const headers = [t('attendance.fields.date'), 'Salida'];
+      const headers = [t('attendance.fields.date'), t('attendance.fields.status'), 'Salida'];
       const rows = cells.map(cell => [
         fmtDate(cell.date),
+        getStatusLabel(cell),
         cell.exitRegistered ? 'x' : '-',
       ]);
       const data: ExportData = {
@@ -294,7 +315,7 @@ export default function AttendanceByUserScreen({ allowedFichaIds }: { allowedFic
         </View>
       )}
 
-      {/* Tabla de salida por fecha */}
+      {/* Tabla de asistencia por fecha */}
       {selectedLearner && loadingMatrix && (
         <View style={s.emptyBox}>
           <Ionicons name="sync-outline" size={28} color={muted} />
@@ -316,6 +337,9 @@ export default function AttendanceByUserScreen({ allowedFichaIds }: { allowedFic
               <View style={[s.exitDateCell, { borderColor: border }]}>
                 <Text style={[s.thText, { color: theme.primary }]}>{t('attendance.fields.date')}</Text>
               </View>
+              <View style={[s.exitStatusCell, { borderColor: border }]}>
+                <Text style={[s.thText, { color: theme.primary }]}>{t('attendance.fields.status')}</Text>
+              </View>
               <View style={[s.exitMarkCell, { borderColor: border }]}>
                 <Text style={[s.thText, { color: theme.primary }]}>Salida</Text>
               </View>
@@ -334,6 +358,33 @@ export default function AttendanceByUserScreen({ allowedFichaIds }: { allowedFic
                 <View style={[s.exitDateCell, { borderColor: border }]}>
                   <Text style={[s.exitDateText, { color: text }]}>{fmtDateLong(cell.date)}</Text>
                 </View>
+                <View style={[s.exitStatusCell, { borderColor: border }]}>
+                  <TouchableOpacity
+                    activeOpacity={cell.status === 'absent' || cell.status === 'late' ? 0.75 : 1}
+                    disabled={cell.status !== 'absent' && cell.status !== 'late'}
+                    onPress={() => (cell.status === 'absent' || cell.status === 'late') && setCellDetail(cell)}
+                    style={[
+                      s.statusBox,
+                      {
+                        backgroundColor: getStatusColor(cell) + '30',
+                        borderColor: getStatusColor(cell) + '80',
+                      },
+                    ]}
+                    accessibilityRole={cell.status === 'absent' || cell.status === 'late' ? 'button' : 'none'}
+                  >
+                    {cell.status === 'absent' && cell.excuse === true ? (
+                      <Text style={[s.statusMark, { color: Colors.error }]}>E</Text>
+                    ) : cell.status === 'absent' ? (
+                      <Ionicons name="close-circle" size={15} color={Colors.error} />
+                    ) : cell.status === 'late' ? (
+                      <Ionicons name="time" size={15} color={Colors.warning} />
+                    ) : cell.status === 'punctual' ? (
+                      <View style={[s.statusDot, { backgroundColor: Colors.success }]} />
+                    ) : (
+                      <Text style={[s.emptyCell, { color: muted }]}>-</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
                 <View style={[s.exitMarkCell, { borderColor: border }]}>
                   <Text style={[s.exitMarkText, { color: cell.exitRegistered ? Colors.success : muted }]}>
                     {cell.exitRegistered ? 'x' : '-'}
@@ -346,6 +397,7 @@ export default function AttendanceByUserScreen({ allowedFichaIds }: { allowedFic
           {/* Resumen */}
           <View style={[s.summaryRow, { backgroundColor: cardBg, borderColor: border }]}>
             {[
+              { label: t('attendance.statuses.absent'), value: cells.filter(c => c.status === 'absent').length, color: Colors.error },
               { label: 'Salidas registradas', value: cells.filter(c => c.exitRegistered).length, color: Colors.success },
               { label: 'Sin salida', value: cells.filter(c => !c.exitRegistered).length, color: muted },
             ].map(stat => (
@@ -483,9 +535,13 @@ const s = StyleSheet.create({
   exitHeaderRow:  { flexDirection: 'row', borderBottomWidth: 1 },
   exitDataRow:    { flexDirection: 'row', borderBottomWidth: 1 },
   exitDateCell:   { flex: 1, minHeight: 50, borderRightWidth: 1, justifyContent: 'center', paddingHorizontal: 14, paddingVertical: 10 },
+  exitStatusCell: { width: 180, minHeight: 50, borderRightWidth: 1, justifyContent: 'center', paddingHorizontal: 10, paddingVertical: 10 },
   exitMarkCell:   { width: 110, minHeight: 50, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, paddingVertical: 10 },
   exitDateText:   { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
   exitMarkText:   { fontSize: FontSize.base, fontWeight: FontWeight.black, textTransform: 'uppercase' },
+  statusBox:      { width: 42, height: 34, borderWidth: 1, borderRadius: 8, alignItems: 'center', justifyContent: 'center', alignSelf: 'center' },
+  statusMark:     { fontSize: FontSize.sm, fontWeight: FontWeight.black },
+  statusDot:      { width: 9, height: 9, borderRadius: 5 },
 
   legend:     { flexDirection: 'row', flexWrap: 'wrap', gap: 14 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },

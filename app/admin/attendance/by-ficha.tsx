@@ -29,8 +29,9 @@ import AppButton from "@/shared/components/ui/AppButton";
 import DateField from "@/shared/components/ui/DateField";
 import { Colors } from "@/shared/constants/colors";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
+import { useAuth } from "@/shared/contexts/AuthContext";
 import { useTheme } from "@/shared/contexts/ThemeContext";
-import { fetchAttendanceMatrix } from "@/shared/services/facialAttendanceService";
+import { fetchAttendanceMatrix, updateFacialEventExcuse } from "@/shared/services/facialAttendanceService";
 import {
     exportReport,
     type ExportData,
@@ -71,6 +72,7 @@ export default function AttendanceByFichaScreen({
   allowedFichaIds?: string[];
 }) {
   const { isDark, theme } = useTheme();
+  const { role } = useAuth();
   const { t, i18n } = useTranslation();
   const { programs, allFichas, allInstructors } = useAcademic();
 
@@ -92,6 +94,8 @@ export default function AttendanceByFichaScreen({
   const [loadingFichaCards, setLoadingFichaCards] = useState(false);
   const [loadingMatrix, setLoadingMatrix] = useState(false);
   const [matrixError, setMatrixError] = useState<string | null>(null);
+  const [excuseError, setExcuseError] = useState<string | null>(null);
+  const [savingExcuse, setSavingExcuse] = useState(false);
   const [exporting, setExporting] = useState(false);
   const learnerHeaderRef = useRef<ScrollView>(null);
   const learnerGridRef = useRef<ScrollView>(null);
@@ -251,6 +255,9 @@ export default function AttendanceByFichaScreen({
           learnerName: learner.learnerName,
           learnerDocument: learner.learnerDocument,
           days: learner.days.map((day) => ({
+            idFacialEvent: day.idFacialEvent ?? null,
+            idRecordEnvironment: day.idRecordEnvironment,
+            apprenticeId: learner.apprenticeId,
             date: day.date,
             status: day.status,
             entryTime: day.entryTime,
@@ -260,6 +267,7 @@ export default function AttendanceByFichaScreen({
             fichaNumber: day.fichaNumber,
             programName: day.programName,
             exitRegistered: day.exitRegistered,
+            excuse: day.excuse ?? null,
           })),
         })));
       } catch (error: any) {
@@ -299,6 +307,56 @@ export default function AttendanceByFichaScreen({
           hour12: true,
         }).format(new Date(`1970-01-01T${v}:00`))
       : "—";
+
+  const canEditExcuse = role === "INSTRUCTOR";
+
+  const handleUpdateExcuse = async (excuse: boolean) => {
+    if (!cellDetail?.cell.idRecordEnvironment || !cellDetail.cell.apprenticeId) return;
+
+    setSavingExcuse(true);
+    setExcuseError(null);
+    try {
+      const event = await updateFacialEventExcuse({
+        idRecordEnvironment: cellDetail.cell.idRecordEnvironment,
+        idApprentice: cellDetail.cell.apprenticeId,
+        excuse,
+      });
+
+      setRealTableRows((rows) =>
+        rows.map((row) => ({
+          ...row,
+          days: row.days.map((day) =>
+            day.idRecordEnvironment === cellDetail.cell.idRecordEnvironment &&
+            day.apprenticeId === cellDetail.cell.apprenticeId
+              ? {
+                  ...day,
+                  idFacialEvent: event.idFacialEvent,
+                  excuse: event.excuse ?? excuse,
+                  status: "absent",
+                }
+              : day,
+          ),
+        })),
+      );
+      setCellDetail((current) =>
+        current
+          ? {
+              ...current,
+              cell: {
+                ...current.cell,
+                idFacialEvent: event.idFacialEvent,
+                excuse: event.excuse ?? excuse,
+                status: "absent",
+              },
+            }
+          : current,
+      );
+    } catch (error: any) {
+      setExcuseError(error?.response?.data?.message ?? "No fue posible guardar la excusa.");
+    } finally {
+      setSavingExcuse(false);
+    }
+  };
 
   // ── Exportación ───────────────────────────────
   const handleLearnerGridScroll = (event: any) => {
@@ -698,7 +756,11 @@ export default function AttendanceByFichaScreen({
                               <TouchableOpacity
                                 key={row.learnerId}
                                 disabled={!isClickable}
-                                onPress={() => isClickable && setCellDetail({ cell, learnerName: row.learnerName })}
+                                onPress={() => {
+                                  if (!isClickable) return;
+                                  setExcuseError(null);
+                                  setCellDetail({ cell, learnerName: row.learnerName });
+                                }}
                                 style={[
                                   s.learnerAttendanceCell,
                                   { borderColor: border },
@@ -707,7 +769,10 @@ export default function AttendanceByFichaScreen({
                                 ]}
                                 accessibilityRole={isClickable ? "button" : "none"}
                               >
-                                {isAbsent && <Ionicons name="close-circle" size={16} color={Colors.error} />}
+                                {isAbsent && cell.excuse === true && (
+                                  <Text style={[s.excuseMark, { color: Colors.error }]}>E</Text>
+                                )}
+                                {isAbsent && cell.excuse !== true && <Ionicons name="close-circle" size={16} color={Colors.error} />}
                                 {isLate && <Ionicons name="time" size={16} color={Colors.warning} />}
                                 {cell.status === "punctual" && <View style={[s.punctualDot, { backgroundColor: Colors.success + "60" }]} />}
                                 {!cell.status && <Text style={[s.cellEmpty, { color: muted }]}>-</Text>}
@@ -836,10 +901,11 @@ export default function AttendanceByFichaScreen({
                             disabled={!isClickable}
                             onPress={() =>
                               isClickable &&
+                              (setExcuseError(null),
                               setCellDetail({
                                 cell,
                                 learnerName: row.learnerName,
-                              })
+                              }))
                             }
                             style={[
                               s.cellDay,
@@ -855,7 +921,10 @@ export default function AttendanceByFichaScreen({
                             ]}
                             accessibilityRole={isClickable ? "button" : "none"}
                           >
-                            {isAbsent && (
+                            {isAbsent && cell.excuse === true && (
+                              <Text style={[s.excuseMark, { color: Colors.error }]}>E</Text>
+                            )}
+                            {isAbsent && cell.excuse !== true && (
                               <Ionicons
                                 name="close-circle"
                                 size={16}
@@ -975,7 +1044,13 @@ export default function AttendanceByFichaScreen({
 
       {/* ── Modal detalle de celda ── */}
       <Modal visible={!!cellDetail} transparent animationType="slide">
-        <Pressable style={s.modalOverlay} onPress={() => setCellDetail(null)}>
+        <Pressable
+          style={s.modalOverlay}
+          onPress={() => {
+            setCellDetail(null);
+            setExcuseError(null);
+          }}
+        >
           <Pressable
             style={[
               s.detailBox,
@@ -1008,6 +1083,9 @@ export default function AttendanceByFichaScreen({
                         : Colors.warning
                     }
                   />
+                  {cellDetail.cell.status === "absent" && cellDetail.cell.excuse === true && (
+                    <Text style={[s.detailExcuseMark, { color: Colors.error }]}>E</Text>
+                  )}
                   <Text
                     style={[
                       s.detailStatus,
@@ -1077,9 +1155,63 @@ export default function AttendanceByFichaScreen({
                     </Text>
                   </View>
                 ))}
+                {cellDetail.cell.status === "absent" && (
+                  <View style={[s.excusePanel, { borderColor: border, backgroundColor: theme.primary + "08" }]}>
+                    <View style={s.excuseHeader}>
+                      <View style={s.detailLabel}>
+                        <Ionicons name="document-text-outline" size={15} color={muted} />
+                        <Text style={[s.detailLabelText, { color: muted }]}>Excusa</Text>
+                      </View>
+                      <Text style={[s.detailValue, { color: text }]}>
+                        {cellDetail.cell.excuse === null || cellDetail.cell.excuse === undefined
+                          ? "-"
+                          : cellDetail.cell.excuse
+                            ? "Sí"
+                            : "No"}
+                      </Text>
+                    </View>
+                    {canEditExcuse && (
+                      <View style={s.excuseActions}>
+                        <TouchableOpacity
+                          activeOpacity={0.75}
+                          disabled={savingExcuse}
+                          onPress={() => handleUpdateExcuse(true)}
+                          style={[
+                            s.excuseOption,
+                            {
+                              borderColor: cellDetail.cell.excuse === true ? Colors.error : border,
+                              backgroundColor: cellDetail.cell.excuse === true ? Colors.error + "15" : cardBg,
+                            },
+                          ]}
+                        >
+                          <Text style={[s.excuseOptionText, { color: cellDetail.cell.excuse === true ? Colors.error : text }]}>Sí</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          activeOpacity={0.75}
+                          disabled={savingExcuse}
+                          onPress={() => handleUpdateExcuse(false)}
+                          style={[
+                            s.excuseOption,
+                            {
+                              borderColor: cellDetail.cell.excuse === false ? Colors.error : border,
+                              backgroundColor: cellDetail.cell.excuse === false ? Colors.error + "15" : cardBg,
+                            },
+                          ]}
+                        >
+                          <Text style={[s.excuseOptionText, { color: cellDetail.cell.excuse === false ? Colors.error : text }]}>No</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                    {savingExcuse && <Text style={[s.excuseFeedback, { color: muted }]}>Guardando...</Text>}
+                    {excuseError && <Text style={[s.excuseFeedback, { color: Colors.error }]}>{excuseError}</Text>}
+                  </View>
+                )}
                 <AppButton
                   title={t("common.close")}
-                  onPress={() => setCellDetail(null)}
+                  onPress={() => {
+                    setCellDetail(null);
+                    setExcuseError(null);
+                  }}
                   variant="outline"
                   style={{ marginTop: 14 }}
                 />
@@ -1272,6 +1404,7 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  excuseMark: { fontSize: FontSize.base, fontWeight: FontWeight.black },
   punctualDot: { width: 8, height: 8, borderRadius: 4 },
   cellEmpty: { fontSize: FontSize.xs },
 
@@ -1304,6 +1437,7 @@ const s = StyleSheet.create({
     gap: 8,
     marginBottom: 16,
   },
+  detailExcuseMark: { fontSize: 34, fontWeight: FontWeight.black, lineHeight: 36 },
   detailStatus: { fontSize: FontSize.xl, fontWeight: FontWeight.black },
   detailRow: {
     flexDirection: "row",
@@ -1319,4 +1453,17 @@ const s = StyleSheet.create({
     flex: 1,
     textAlign: "right",
   },
+  excusePanel: { borderWidth: 1, borderRadius: 12, padding: 12, marginTop: 12, gap: 10 },
+  excuseHeader: { flexDirection: "row", alignItems: "center" },
+  excuseActions: { flexDirection: "row", gap: 8 },
+  excuseOption: {
+    flex: 1,
+    minHeight: 38,
+    borderWidth: 1,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  excuseOptionText: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
+  excuseFeedback: { fontSize: FontSize.xs, textAlign: "center" },
 });
