@@ -14,11 +14,11 @@ import { useTranslation } from "react-i18next";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
 
 export default function FacialManagementScreen() {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
-  const { config, settings, saveConfig, setActiveSession } = useFacialRegistry();
+  const { config, settings, saveConfig, setActiveSession } = useFacialRegistry(user?.id);
   const { alert, DialogUI } = useAppDialog();
   const {
     environmentQuery,
@@ -106,20 +106,8 @@ export default function FacialManagementScreen() {
     { icon: "school-outline", label: t("facial.setup.fields.ficha"), value: selectedChip ? `${t("facial.setup.fields.ficha")} ${selectedChip.chipCode}` : t("facial.setup.unselected") },
   ];
 
-  const canSave = !!selectedEnvironment && !!selectedInstructor && !!selectedChip && !saving;
-
-  useEffect(() => {
-    if (!selectedEnvironment || !selectedInstructor || !selectedChip) return;
-
-    void saveConfig({
-      environmentId: selectedEnvironment.idEnvironment,
-      environmentName: selectedEnvironment.environmentName,
-      instructorId: selectedInstructor.idInstructor,
-      instructorName: `${selectedInstructor.firstName} ${selectedInstructor.lastName}`.trim(),
-      fichaId: selectedChip.idChip,
-      fichaNumber: selectedChip.chipCode,
-    });
-  }, [saveConfig, selectedChip, selectedEnvironment, selectedInstructor]);
+  const hasSettings = !!settings;
+  const canSave = !!selectedEnvironment && !!selectedInstructor && !!selectedChip && hasSettings && !saving;
 
   const handleCreateEnvironment = async () => {
     try {
@@ -131,7 +119,12 @@ export default function FacialManagementScreen() {
 
   const handleSave = async () => {
     if (!canSave) {
-      alert(t("common.error"), t("facial.setup.validation.allRequired"));
+      alert(
+        t("common.error"),
+        hasSettings
+          ? t("facial.setup.validation.allRequired")
+          : t("facial.settings.validation.allRequired"),
+      );
       return;
     }
 
@@ -201,15 +194,15 @@ export default function FacialManagementScreen() {
             <Text style={[fs.panelTitle, { color: text }]}>Configuracion actual</Text>
             <View style={fs.timerGrid}>
               <View style={[fs.timerTile, { backgroundColor: theme.primary + "10", borderColor: border }]}>
-                <Text style={[fs.timerValue, { color: text }]}>{settings.registrationMinutes} min</Text>
+                <Text style={[fs.timerValue, { color: text }]}>{settings ? `${settings.registrationMinutes} min` : "-"}</Text>
                 <Text style={[fs.timerLabel, { color: muted }]}>Registro</Text>
               </View>
               <View style={[fs.timerTile, { backgroundColor: theme.primary + "10", borderColor: border }]}>
-                <Text style={[fs.timerValue, { color: text }]}>{settings.exitTime}</Text>
+                <Text style={[fs.timerValue, { color: text }]}>{settings?.exitTime ?? "-"}</Text>
                 <Text style={[fs.timerLabel, { color: muted }]}>Salida</Text>
               </View>
               <View style={[fs.timerTile, { backgroundColor: theme.primary + "10", borderColor: border }]}>
-                <Text style={[fs.timerValue, { color: text }]}>{settings.shutdownTime}</Text>
+                <Text style={[fs.timerValue, { color: text }]}>{settings?.shutdownTime ?? "-"}</Text>
                 <Text style={[fs.timerLabel, { color: muted }]}>Apagado</Text>
               </View>
             </View>

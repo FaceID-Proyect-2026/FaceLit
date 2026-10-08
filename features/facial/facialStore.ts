@@ -1,7 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { pushNotification } from "../notifications/notificationsStore";
 import {
-    DEFAULT_FACIAL_SETTINGS,
     FacialConfig,
     FacialEvent,
     FacialRecord,
@@ -19,18 +18,23 @@ type RegistrationResult =
 
 let records: FacialRecord[] = MOCK_FACIAL_RECORDS;
 let events: FacialEvent[] = [];
-let config: FacialConfig | undefined;
-let settings: FacialSettings = DEFAULT_FACIAL_SETTINGS;
-let activeSession: FacialSession | undefined;
+let activeOwnerId = "anonymous";
+const configsByOwner = new Map<string, FacialConfig | undefined>();
+const settingsByOwner = new Map<string, FacialSettings>();
+const activeSessionsByOwner = new Map<string, FacialSession | undefined>();
 const listeners = new Set<Listener>();
-const FACIAL_CONFIG_STORAGE_KEY = "facial:instructor:config";
-const FACIAL_SETTINGS_STORAGE_KEY = "facial:instructor:settings";
-let configHydrated = false;
-let configHydrationPromise: Promise<void> | null = null;
-let settingsHydrated = false;
-let settingsHydrationPromise: Promise<void> | null = null;
+const FACIAL_CONFIG_STORAGE_KEY_PREFIX = "facial:instructor:config";
+const FACIAL_SETTINGS_STORAGE_KEY_PREFIX = "facial:instructor:settings";
+const hydratedConfigOwners = new Set<string>();
+const configHydrationPromises = new Map<string, Promise<void>>();
+const hydratedSettingsOwners = new Set<string>();
+const settingsHydrationPromises = new Map<string, Promise<void>>();
 
 const emit = () => listeners.forEach((listener) => listener());
+
+const ownerKey = (ownerId?: string | null) => ownerId || "anonymous";
+const configStorageKey = (ownerId: string) => `${FACIAL_CONFIG_STORAGE_KEY_PREFIX}:${ownerId}`;
+const settingsStorageKey = (ownerId: string) => `${FACIAL_SETTINGS_STORAGE_KEY_PREFIX}:${ownerId}`;
 
 const isValidConfig = (value: unknown): value is FacialConfig => {
   if (!value || typeof value !== "object") return false;
@@ -64,16 +68,25 @@ const isValidSettings = (value: unknown): value is FacialSettings => {
   );
 };
 
-export function hydrateFacialConfig() {
-  if (configHydrated) return Promise.resolve();
-  if (configHydrationPromise) return configHydrationPromise;
+export function setFacialOwner(ownerId?: string | null) {
+  const nextOwnerId = ownerKey(ownerId);
+  if (activeOwnerId === nextOwnerId) return;
+  activeOwnerId = nextOwnerId;
+  emit();
+}
 
-  configHydrationPromise = AsyncStorage.getItem(FACIAL_CONFIG_STORAGE_KEY)
+export function hydrateFacialConfig(ownerId?: string | null) {
+  const key = ownerKey(ownerId);
+  if (hydratedConfigOwners.has(key)) return Promise.resolve();
+  const currentPromise = configHydrationPromises.get(key);
+  if (currentPromise) return currentPromise;
+
+  const configHydrationPromise = AsyncStorage.getItem(configStorageKey(key))
     .then((storedConfig) => {
       if (!storedConfig) return;
       const parsed = JSON.parse(storedConfig);
       if (isValidConfig(parsed)) {
-        config = parsed;
+        configsByOwner.set(key, parsed);
         emit();
       }
     })
@@ -81,23 +94,26 @@ export function hydrateFacialConfig() {
       console.warn("[FacialConfig] No se pudo cargar la configuracion guardada:", error);
     })
     .finally(() => {
-      configHydrated = true;
-      configHydrationPromise = null;
+      hydratedConfigOwners.add(key);
+      configHydrationPromises.delete(key);
     });
 
+  configHydrationPromises.set(key, configHydrationPromise);
   return configHydrationPromise;
 }
 
-export function hydrateFacialSettings() {
-  if (settingsHydrated) return Promise.resolve();
-  if (settingsHydrationPromise) return settingsHydrationPromise;
+export function hydrateFacialSettings(ownerId?: string | null) {
+  const key = ownerKey(ownerId);
+  if (hydratedSettingsOwners.has(key)) return Promise.resolve();
+  const currentPromise = settingsHydrationPromises.get(key);
+  if (currentPromise) return currentPromise;
 
-  settingsHydrationPromise = AsyncStorage.getItem(FACIAL_SETTINGS_STORAGE_KEY)
+  const settingsHydrationPromise = AsyncStorage.getItem(settingsStorageKey(key))
     .then((storedSettings) => {
       if (!storedSettings) return;
       const parsed = JSON.parse(storedSettings);
       if (isValidSettings(parsed)) {
-        settings = parsed;
+        settingsByOwner.set(key, parsed);
         emit();
       }
     })
@@ -105,10 +121,11 @@ export function hydrateFacialSettings() {
       console.warn("[FacialSettings] No se pudo cargar la configuracion guardada:", error);
     })
     .finally(() => {
-      settingsHydrated = true;
-      settingsHydrationPromise = null;
+      hydratedSettingsOwners.add(key);
+      settingsHydrationPromises.delete(key);
     });
 
+  settingsHydrationPromises.set(key, settingsHydrationPromise);
   return settingsHydrationPromise;
 }
 
@@ -124,22 +141,26 @@ export function getFacialEventsSnapshot() {
   return events;
 }
 export function getFacialConfigSnapshot() {
-  return config;
+  return configsByOwner.get(activeOwnerId);
 }
 export function getFacialSettingsSnapshot() {
-  return settings;
+  return settingsByOwner.get(activeOwnerId);
 }
 export function getActiveFacialSessionSnapshot() {
-  return activeSession;
+  return activeSessionsByOwner.get(activeOwnerId);
 }
 
 type FacialSaveResult = { success: true } | { success: false; error: string };
 
-export function saveFacialConfig(nextConfig: FacialConfig): Promise<FacialSaveResult> {
-  config = nextConfig;
+export function saveFacialConfig(
+  nextConfig: FacialConfig,
+  ownerId?: string | null,
+): Promise<FacialSaveResult> {
+  const key = ownerKey(ownerId ?? activeOwnerId);
+  configsByOwner.set(key, nextConfig);
   emit();
   return AsyncStorage.setItem(
-    FACIAL_CONFIG_STORAGE_KEY,
+    configStorageKey(key),
     JSON.stringify(nextConfig),
   )
     .then(() => ({ success: true as const }))
@@ -151,11 +172,13 @@ export function saveFacialConfig(nextConfig: FacialConfig): Promise<FacialSaveRe
 
 export function saveFacialSettings(
   nextSettings: FacialSettings,
+  ownerId?: string | null,
 ): Promise<FacialSaveResult> {
-  settings = nextSettings;
+  const key = ownerKey(ownerId ?? activeOwnerId);
+  settingsByOwner.set(key, nextSettings);
   emit();
   return AsyncStorage.setItem(
-    FACIAL_SETTINGS_STORAGE_KEY,
+    settingsStorageKey(key),
     JSON.stringify(nextSettings),
   )
     .then(() => ({ success: true as const }))
@@ -165,8 +188,16 @@ export function saveFacialSettings(
     });
 }
 
-export function setActiveFacialSession(session: FacialSession | undefined) {
-  activeSession = session;
+export function setActiveFacialSession(
+  session: FacialSession | undefined,
+  ownerId?: string | null,
+) {
+  const key = ownerKey(ownerId ?? activeOwnerId);
+  if (session) {
+    activeSessionsByOwner.set(key, session);
+  } else {
+    activeSessionsByOwner.delete(key);
+  }
   emit();
 }
 

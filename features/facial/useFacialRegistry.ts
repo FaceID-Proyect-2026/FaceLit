@@ -11,16 +11,18 @@ import {
     registerFacialEvent,
     saveFacialConfig,
     saveFacialSettings,
+    setFacialOwner,
     setActiveFacialSession,
     subscribeFacial,
 } from "./facialStore";
 import { FacialConfig, FacialSession, FacialSettings, FacialUser } from "./types";
 
-export function useFacialRegistry() {
+export function useFacialRegistry(ownerId?: string | null) {
   useEffect(() => {
-    hydrateFacialConfig();
-    hydrateFacialSettings();
-  }, []);
+    setFacialOwner(ownerId);
+    hydrateFacialConfig(ownerId);
+    hydrateFacialSettings(ownerId);
+  }, [ownerId]);
 
   const records = useSyncExternalStore(
     subscribeFacial,
@@ -52,16 +54,16 @@ export function useFacialRegistry() {
     ),
     registerEvent: useCallback(registerFacialEvent, []),
     saveConfig: useCallback(
-      (nextConfig: FacialConfig) => saveFacialConfig(nextConfig),
-      [],
+      (nextConfig: FacialConfig) => saveFacialConfig(nextConfig, ownerId),
+      [ownerId],
     ),
     saveSettings: useCallback(
-      (nextSettings: FacialSettings) => saveFacialSettings(nextSettings),
-      [],
+      (nextSettings: FacialSettings) => saveFacialSettings(nextSettings, ownerId),
+      [ownerId],
     ),
     setActiveSession: useCallback(
-      (session: FacialSession | undefined) => setActiveFacialSession(session),
-      [],
+      (session: FacialSession | undefined) => setActiveFacialSession(session, ownerId),
+      [ownerId],
     ),
   };
 }

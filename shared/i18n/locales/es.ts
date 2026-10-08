@@ -1592,6 +1592,8 @@
         shutdownTime: "Selecciona la hora",
       },
       validation: {
+        allRequired:
+          "Debes configurar el tiempo de registro, la hora de salida y la hora de apagado.",
         shutdownAfterExit:
           "La hora de apagado debe ser posterior a la hora de salida.",
       },

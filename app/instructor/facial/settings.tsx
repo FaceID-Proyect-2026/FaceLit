@@ -11,7 +11,6 @@
 //  salida y la hora de apagado permiten entrada manual.
 // ─────────────────────────────────────────────
 import {
-    DEFAULT_FACIAL_SETTINGS,
     FACIAL_REGISTRATION_MINUTES_OPTIONS,
 } from '@/features/facial/types';
 import { useFacialRegistry } from '@/features/facial/useFacialRegistry';
@@ -19,6 +18,7 @@ import { AppButton, SelectField, TimeInput } from '@/shared/components/ui';
 import { Colors } from '@/shared/constants/colors';
 import { Routes } from '@/shared/constants/routes';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
+import { useAuth } from '@/shared/contexts/AuthContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { Ionicons } from '@expo/vector-icons';
@@ -30,20 +30,20 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 export default function FacialSettingsScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
-  const { settings, saveSettings } = useFacialRegistry();
+  const { user } = useAuth();
+  const { settings, saveSettings } = useFacialRegistry(user?.id);
   const { alert, DialogUI } = useAppDialog();
 
-  const initial = settings ?? DEFAULT_FACIAL_SETTINGS;
-  const [registrationMinutes, setRegistrationMinutes] = useState(String(initial.registrationMinutes));
-  const [exitTime, setExitTime] = useState(initial.exitTime);
-  const [shutdownTime, setShutdownTime] = useState(initial.shutdownTime);
+  const [registrationMinutes, setRegistrationMinutes] = useState(settings ? String(settings.registrationMinutes) : '');
+  const [exitTime, setExitTime] = useState(settings?.exitTime ?? '');
+  const [shutdownTime, setShutdownTime] = useState(settings?.shutdownTime ?? '');
   const [errors, setErrors] = useState<{ registrationMinutes?: string; exitTime?: string; shutdownTime?: string }>({});
 
   useEffect(() => {
-    setRegistrationMinutes(String(initial.registrationMinutes));
-    setExitTime(initial.exitTime);
-    setShutdownTime(initial.shutdownTime);
-  }, [initial.exitTime, initial.registrationMinutes, initial.shutdownTime]);
+    setRegistrationMinutes(settings ? String(settings.registrationMinutes) : '');
+    setExitTime(settings?.exitTime ?? '');
+    setShutdownTime(settings?.shutdownTime ?? '');
+  }, [settings]);
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;

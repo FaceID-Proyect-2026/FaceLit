@@ -47,6 +47,7 @@ export interface AttendanceMatrixDay {
   instructorName: string;
   fichaNumber: string;
   programName: string;
+  exitRegistered: boolean;
 }
 
 export interface AttendanceMatrixLearner {

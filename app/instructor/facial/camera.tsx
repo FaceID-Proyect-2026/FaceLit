@@ -13,6 +13,7 @@ import { useSessionAttendanceCapture } from "@/features/facial/useSessionAttenda
 import { Colors } from "@/shared/constants/colors";
 import { Routes } from "@/shared/constants/routes";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
+import { useAuth } from "@/shared/contexts/AuthContext";
 import { useTheme } from "@/shared/contexts/ThemeContext";
 import { useAppDialog } from "@/shared/hooks/useAppDialog";
 import { Ionicons } from "@expo/vector-icons";
@@ -24,8 +25,9 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 export default function InstructorFacialCameraScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
+  const { user } = useAuth();
   const { DialogUI } = useAppDialog();
-  const { activeSession, settings, setActiveSession } = useFacialRegistry();
+  const { activeSession, settings, setActiveSession } = useFacialRegistry(user?.id);
   const sessionClosedRef = useRef(false);
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
@@ -68,7 +70,7 @@ export default function InstructorFacialCameraScreen() {
         return Number.isNaN(sessionDate.getTime()) ? null : sessionDate;
       }
 
-      if (!settings.shutdownTime) return null;
+      if (!settings?.shutdownTime) return null;
       const [hours, minutes] = settings.shutdownTime.split(":").map(Number);
       if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return null;
 
@@ -95,7 +97,7 @@ export default function InstructorFacialCameraScreen() {
 
     const timer = setTimeout(closeSession, remainingMs);
     return () => clearTimeout(timer);
-  }, [activeSession, handleCancelCamera, setActiveSession, settings.shutdownTime]);
+  }, [activeSession, handleCancelCamera, setActiveSession, settings?.shutdownTime]);
 
   const qualityWarnings: { icon: string; label: string; ok: boolean }[] = [
     {

@@ -1520,6 +1520,7 @@
         shutdownTime: "Select the time",
       },
       validation: {
+        allRequired: "You must configure registration time, exit time, and shutdown time.",
         shutdownAfterExit: "Shutdown time must be after exit time.",
       },
       saveSuccess: "Facial recognition settings saved.",

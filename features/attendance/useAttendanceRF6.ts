@@ -50,6 +50,7 @@ export interface DayCell {
   instructorName: string;
   fichaNumber: string;
   programName: string;
+  exitRegistered?: boolean;
 }
 
 /** Fila de la tabla de detalle de ficha (RF-6.1 pantalla 2) */
