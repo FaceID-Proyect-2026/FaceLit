@@ -4,13 +4,12 @@ import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
+import DateField from '@/shared/components/ui/DateField';
 import { fetchAttendanceMatrix } from '@/shared/services/facialAttendanceService';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
-type FilterPeriod = 'all' | 'lastMonth' | 'lastQuarter' | 'lastYear';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 const todayBogota = () =>
   new Intl.DateTimeFormat('en-CA', {
@@ -19,15 +18,6 @@ const todayBogota = () =>
     month: '2-digit',
     day: '2-digit',
   }).format(new Date());
-
-function periodStart(period: FilterPeriod, today: string) {
-  if (period === 'all') return '2020-01-01';
-  const date = new Date(`${today}T12:00:00Z`);
-  if (period === 'lastMonth') date.setUTCMonth(date.getUTCMonth() - 1);
-  if (period === 'lastQuarter') date.setUTCMonth(date.getUTCMonth() - 3);
-  if (period === 'lastYear') date.setUTCFullYear(date.getUTCFullYear() - 1);
-  return date.toISOString().slice(0, 10);
-}
 
 function fmtDateLong(date: string, locale: string) {
   return new Intl.DateTimeFormat(locale, { dateStyle: 'long' }).format(new Date(`${date}T12:00:00Z`));
@@ -38,8 +28,10 @@ export default function ApprenticeAttendanceScreen() {
   const { allFichas } = useAcademic();
   const { theme, isDark } = useTheme();
   const { t, i18n } = useTranslation();
+  const today = useMemo(() => todayBogota(), []);
 
-  const [period, setPeriod] = useState<FilterPeriod>('all');
+  const [dateFrom, setDateFrom] = useState('2020-01-01');
+  const [dateTo, setDateTo] = useState(today);
   const [cells, setCells] = useState<DayCell[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -81,15 +73,19 @@ export default function ApprenticeAttendanceScreen() {
         setError(null);
         return;
       }
+      if (!dateFrom || !dateTo || dateFrom > dateTo) {
+        setCells([]);
+        setError(null);
+        return;
+      }
 
-      const today = todayBogota();
       setLoading(true);
       setError(null);
       try {
         const matrix = await fetchAttendanceMatrix({
           idChip: currentFicha.id,
-          dateFrom: periodStart(period, today),
-          dateTo: today,
+          dateFrom,
+          dateTo,
         });
         if (cancelled) return;
 
@@ -128,7 +124,7 @@ export default function ApprenticeAttendanceScreen() {
     return () => {
       cancelled = true;
     };
-  }, [currentFicha, currentLearner, period]);
+  }, [currentFicha, currentLearner, dateFrom, dateTo]);
 
   const stats = useMemo(() => ({
     punctual: cells.filter((cell) => cell.status === 'punctual').length,
@@ -184,25 +180,39 @@ export default function ApprenticeAttendanceScreen() {
           ))}
         </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.filterScroll}>
-          {(['all', 'lastMonth', 'lastQuarter', 'lastYear'] as FilterPeriod[]).map((item) => (
-            <TouchableOpacity
-              key={item}
-              onPress={() => setPeriod(item)}
-              style={[
-                s.filterChip,
-                {
-                  backgroundColor: period === item ? theme.primary + '20' : 'transparent',
-                  borderColor: period === item ? theme.primary : border,
-                },
-              ]}
-            >
-              <Text style={[s.filterText, { color: period === item ? theme.primary : muted }]}>
-                {item === 'all' ? t('apprentice.attendance.allPeriods') : t(`apprentice.attendance.${item}`)}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+        <View style={[s.rangeCard, { backgroundColor: cardBg, borderColor: border }]}>
+          <Text style={[s.rangeLabel, { color: muted }]}>{t('attendance.rf6.selectRange')}</Text>
+          <View style={s.rangeRow}>
+            <View style={s.dateFieldWrap}>
+              <DateField
+                label={t('reports.filters.dateFrom')}
+                value={dateFrom}
+                onChange={(value) => {
+                  setDateFrom(value);
+                  if (dateTo && value > dateTo) setDateTo('');
+                }}
+                placeholder="YYYY-MM-DD"
+                containerStyle={s.noMargin}
+              />
+            </View>
+            <View style={s.dateSepWrap}>
+              <Text style={[s.dateSep, { color: muted }]}>-&gt;</Text>
+            </View>
+            <View style={s.dateFieldWrap}>
+              <DateField
+                label={t('reports.filters.dateTo')}
+                value={dateTo}
+                onChange={setDateTo}
+                minDate={dateFrom || undefined}
+                placeholder="YYYY-MM-DD"
+                containerStyle={s.noMargin}
+              />
+            </View>
+          </View>
+          {dateFrom.length > 0 && dateTo.length > 0 && dateFrom > dateTo && (
+            <Text style={[s.dateError, { color: Colors.error }]}>{t('reports.invalidDateRange')}</Text>
+          )}
+        </View>
 
         {loading && (
           <View style={s.emptyBox}>
@@ -225,7 +235,14 @@ export default function ApprenticeAttendanceScreen() {
           </View>
         )}
 
-        {!loading && !error && currentFicha && cells.length === 0 && (
+        {!loading && !error && currentFicha && (!dateFrom || !dateTo) && (
+          <View style={s.emptyBox}>
+            <Ionicons name="calendar-outline" size={28} color={muted} />
+            <Text style={[s.emptyText, { color: muted }]}>{t('attendance.rf6.selectRangePrompt')}</Text>
+          </View>
+        )}
+
+        {!loading && !error && currentFicha && dateFrom && dateTo && dateFrom <= dateTo && cells.length === 0 && (
           <View style={s.emptyBox}>
             <Ionicons name="calendar-outline" size={28} color={muted} />
             <Text style={[s.emptyText, { color: muted }]}>{t('apprentice.attendance.noRecordsPeriod')}</Text>
@@ -310,9 +327,14 @@ const s = StyleSheet.create({
   statItem: { flex: 1, alignItems: 'center', gap: 4 },
   statValue: { fontSize: FontSize.xl, fontWeight: FontWeight.black },
   statLabel: { fontSize: FontSize.xs, textAlign: 'center' },
-  filterScroll: { gap: 8 },
-  filterChip: { borderRadius: 20, borderWidth: 1.2, paddingHorizontal: 14, paddingVertical: 7 },
-  filterText: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
+  rangeCard: { borderRadius: 14, borderWidth: 1, padding: 16, gap: 10 },
+  noMargin: { marginBottom: 0 },
+  rangeLabel: { fontSize: FontSize.sm },
+  rangeRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, flexWrap: 'wrap' },
+  dateFieldWrap: { flex: 1, minWidth: 150 },
+  dateSepWrap: { paddingTop: 34, alignItems: 'center' },
+  dateSep: { fontSize: FontSize.lg },
+  dateError: { fontSize: FontSize.xs },
   emptyBox: { alignItems: 'center', paddingVertical: 40, gap: 10 },
   emptyText: { fontSize: FontSize.sm, textAlign: 'center' },
   table: { borderWidth: 1, borderRadius: 14, overflow: 'hidden' },
