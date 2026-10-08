@@ -20,7 +20,6 @@ import {
     subscribeAttendanceUI,
 } from "@/features/attendance/attendanceUIStore";
 import {
-    useAttendanceRF6,
     type DayCell,
     type FichaDaySummary,
     type FichaTableRow,
@@ -56,6 +55,14 @@ const CELL_LATE = Colors.warning + "30";
 const BORDER_ABSENT = Colors.error + "80";
 const BORDER_LATE = Colors.warning + "80";
 
+const todayBogota = () =>
+  new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Bogota",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+
 export default function AttendanceByFichaScreen({
   directFichaOnly = false,
   allowedFichaIds,
@@ -66,7 +73,6 @@ export default function AttendanceByFichaScreen({
   const { isDark, theme } = useTheme();
   const { t, i18n } = useTranslation();
   const { programs, allFichas, allInstructors } = useAcademic();
-  const { getFichaCardsForProgram } = useAttendanceRF6();
 
   // ── Estado persistido desde el store ─────────
   const ui = useSyncExternalStore(
@@ -82,6 +88,8 @@ export default function AttendanceByFichaScreen({
   } | null>(null);
   const [realTableRows, setRealTableRows] = useState<FichaTableRow[]>([]);
   const [realDates, setRealDates] = useState<string[]>([]);
+  const [realFichaCards, setRealFichaCards] = useState<FichaDaySummary[]>([]);
+  const [loadingFichaCards, setLoadingFichaCards] = useState(false);
   const [loadingMatrix, setLoadingMatrix] = useState(false);
   const [matrixError, setMatrixError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
@@ -126,10 +134,11 @@ export default function AttendanceByFichaScreen({
     [visibleFichas],
   );
 
-  const fichaCards: FichaDaySummary[] = useMemo(
-    () => (selectedProgramId ? getFichaCardsForProgram(selectedProgramId).filter(card => !allowedFichaSet || allowedFichaSet.has(card.fichaId)) : []),
-    [selectedProgramId, getFichaCardsForProgram, allowedFichaSet],
+  const selectedProgramFichas = useMemo(
+    () => visibleFichas.filter((ficha) => ficha.programId === selectedProgramId),
+    [selectedProgramId, visibleFichas],
   );
+  const fichaCards: FichaDaySummary[] = realFichaCards;
 
   const selectedFicha = useMemo(
     () => visibleFichas.find((f) => f.id === selectedFichaId),
@@ -145,6 +154,75 @@ export default function AttendanceByFichaScreen({
     () => programs.find((p) => p.id === selectedProgramId),
     [programs, selectedProgramId],
   );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadFichaCards() {
+      if (!selectedProgramId || selectedProgramFichas.length === 0) {
+        setRealFichaCards([]);
+        return;
+      }
+
+      const today = todayBogota();
+      setLoadingFichaCards(true);
+      try {
+        const cards = await Promise.all(
+          selectedProgramFichas.map(async (ficha) => {
+            try {
+              const matrix = await fetchAttendanceMatrix({
+                idChip: ficha.id,
+                dateFrom: today,
+                dateTo: today,
+              });
+
+              const dayCells = matrix.learners.flatMap((learner) => learner.days);
+              const totalLearners = matrix.learners.length || ficha.learners.filter((learner) => learner.status === "active").length;
+              const absentToday = dayCells.filter((day) => day.status === "absent").length;
+              const lateToday = dayCells.filter((day) => day.status === "late").length;
+
+              return {
+                fichaId: ficha.id,
+                fichaNumber: matrix.chipCode ?? ficha.number,
+                programId: selectedProgramId,
+                programName: matrix.programName ?? selectedProgram?.name ?? "",
+                totalLearners,
+                absentToday,
+                lateToday,
+                absentPct: totalLearners > 0 ? Math.round((absentToday / totalLearners) * 100) : 0,
+                latePct: totalLearners > 0 ? Math.round((lateToday / totalLearners) * 100) : 0,
+              } satisfies FichaDaySummary;
+            } catch {
+              const totalLearners = ficha.learners.filter((learner) => learner.status === "active").length;
+
+              return {
+                fichaId: ficha.id,
+                fichaNumber: ficha.number,
+                programId: selectedProgramId,
+                programName: selectedProgram?.name ?? "",
+                totalLearners,
+                absentToday: 0,
+                lateToday: 0,
+                absentPct: 0,
+                latePct: 0,
+              } satisfies FichaDaySummary;
+            }
+          }),
+        );
+
+        if (!cancelled) setRealFichaCards(cards);
+      } catch {
+        if (!cancelled) setRealFichaCards([]);
+      } finally {
+        if (!cancelled) setLoadingFichaCards(false);
+      }
+    }
+
+    loadFichaCards();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedProgramFichas, selectedProgramId, selectedProgram]);
 
   useEffect(() => {
     let cancelled = false;
@@ -181,6 +259,7 @@ export default function AttendanceByFichaScreen({
             instructorName: day.instructorName,
             fichaNumber: day.fichaNumber,
             programName: day.programName,
+            exitRegistered: day.exitRegistered,
           })),
         })));
       } catch (error: any) {
@@ -360,8 +439,15 @@ export default function AttendanceByFichaScreen({
         </View>
       )}
 
+      {Boolean(selectedProgramId) && !Boolean(selectedFichaId) && loadingFichaCards && (
+        <View style={s.emptyBox}>
+          <Ionicons name="sync-outline" size={28} color={muted} />
+          <Text style={[s.emptyText, { color: muted }]}>{t("common.loading")}</Text>
+        </View>
+      )}
+
       {/* Programa sin fichas */}
-      {Boolean(selectedProgramId) && !Boolean(selectedFichaId) && fichaCards.length === 0 && (
+      {Boolean(selectedProgramId) && !Boolean(selectedFichaId) && !loadingFichaCards && fichaCards.length === 0 && (
         <View style={s.emptyBox}>
           <Ionicons name="document-outline" size={28} color={muted} />
           <Text style={[s.emptyText, { color: muted }]}>
@@ -381,7 +467,12 @@ export default function AttendanceByFichaScreen({
               <TouchableOpacity
                 key={card.fichaId}
                 activeOpacity={0.75}
-                onPress={() => setByFichaFicha(card.fichaId)}
+                onPress={() => {
+                  const today = todayBogota();
+                  setByFichaFicha(card.fichaId);
+                  setByFichaDateFrom(today);
+                  setByFichaDateTo(today);
+                }}
                 style={[
                   s.fichaCard,
                   { backgroundColor: cardBg, borderColor: border },
