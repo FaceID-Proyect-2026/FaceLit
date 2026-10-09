@@ -25,6 +25,10 @@ export default function InstructorFichaDetailScreen() {
   const cardBg = theme.surface;
   const border = theme.border;
   const bg = isDark ? Colors.dark.background : Colors.light.background;
+  const shadowColor = isDark ? '#000000' : '#243B2D';
+  const cardShadow = isDark
+    ? '0px 5px 15px rgba(0, 0, 0, 0.34)'
+    : '0px 5px 15px rgba(36, 59, 45, 0.16)';
 
   const currentInstructor = useMemo(
     () => findCurrentInstructor(allInstructors, user),
@@ -70,7 +74,7 @@ export default function InstructorFichaDetailScreen() {
               <Text style={[s.backText, { color: text }]}>{t('common.back')}</Text>
             </TouchableOpacity>
 
-            <View style={[s.card, { backgroundColor: cardBg, borderColor: border }]}>
+            <View style={[s.card, { backgroundColor: cardBg, borderColor: border, shadowColor, boxShadow: cardShadow }]}>
               <Text style={[s.fichaTitle, { color: text }]}>{t('academic.ficha')} {ficha.number}</Text>
               <Text style={[s.fichaSubtitle, { color: muted }]}>{t('instructorAcademic.fichaSubtitle')}</Text>
               <View style={[s.infoRow, { borderBottomColor: border }]}>
@@ -108,7 +112,7 @@ export default function InstructorFichaDetailScreen() {
           </View>
         }
         renderItem={({ item }) => (
-          <View style={[s.learnerCard, { backgroundColor: cardBg, borderColor: border }]}>
+          <View style={[s.learnerCard, { backgroundColor: cardBg, borderColor: border, shadowColor, boxShadow: cardShadow }]}>
             <View style={[s.avatar, { backgroundColor: theme.primary + '18' }]}>
               <Ionicons name="person-outline" size={20} color={theme.primary} />
             </View>
@@ -138,7 +142,10 @@ const s = StyleSheet.create({
   scroll: { padding: 16, paddingBottom: 40 },
   backBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 12 },
   backText: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
-  card: { borderRadius: 14, borderWidth: 1, padding: 16, marginBottom: 16 },
+  card: {
+    borderRadius: 14, borderWidth: 1, padding: 16, marginBottom: 16,
+    shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.14, shadowRadius: 12, elevation: 4,
+  },
   fichaTitle: { fontSize: FontSize['2xl'], fontWeight: FontWeight.black, marginBottom: 8 },
   fichaSubtitle: { fontSize: FontSize.sm, marginBottom: 12, lineHeight: 19 },
   infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, gap: 12 },
@@ -147,7 +154,11 @@ const s = StyleSheet.create({
   searchWrap: { flexDirection: 'row', alignItems: 'center', gap: 10, height: 44, borderRadius: 12, borderWidth: 1, paddingHorizontal: 12, marginBottom: 14 },
   searchInput: { flex: 1, fontSize: FontSize.sm, outlineStyle: 'none' } as any,
   sectionTitle: { fontSize: FontSize.xl, fontWeight: FontWeight.black, marginBottom: 10 },
-  learnerCard: { borderRadius: 12, borderWidth: 1, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 },
+  learnerCard: {
+    borderRadius: 12, borderWidth: 1, padding: 14, flexDirection: 'row',
+    alignItems: 'center', gap: 12, marginBottom: 8,
+    shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.13, shadowRadius: 9, elevation: 3,
+  },
   avatar: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   learnerName: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
   learnerMeta: { fontSize: FontSize.sm, marginTop: 2 },

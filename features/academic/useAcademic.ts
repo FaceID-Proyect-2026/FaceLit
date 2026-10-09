@@ -20,7 +20,6 @@ import {
   assignInstructorToFichaStore,
   deactivateInstructorStore,
   deactivateLearnerStore,
-  deleteInstructorStore,
   deleteOrphanLearnerStore,
   generateTransferCode,
   getFichaById,
@@ -275,7 +274,6 @@ export function useAcademic() {
   const updateInstructor            = useCallback((id: string, data: Parameters<typeof updateInstructorStore>[1]) => updateInstructorStore(id, data), []);
   const deactivateInstructor        = useCallback((id: string) => deactivateInstructorStore(id), []);
   const reactivateInstructor        = useCallback((id: string) => reactivateInstructorStore(id), []);
-  const deleteInstructor            = useCallback((id: string) => deleteInstructorStore(id), []);
   const assignInstructorToFicha     = useCallback((instructorId: string, fichaId: string) => assignInstructorToFichaStore(instructorId, fichaId), []);
   const unassignInstructorFromFicha = useCallback((instructorId: string, fichaId: string) => unassignInstructorFromFichaStore(instructorId, fichaId), []);
   const getInstructorsForFicha      = useCallback((fichaId: string) => getInstructorsByFichaId(fichaId), []);
@@ -313,7 +311,7 @@ export function useAcademic() {
     deleteOrphanLearner,
 
     // Instructores
-    addInstructor, updateInstructor, deactivateInstructor, reactivateInstructor, deleteInstructor,
+    addInstructor, updateInstructor, deactivateInstructor, reactivateInstructor,
     assignInstructorToFicha, unassignInstructorFromFicha, getInstructorsForFicha,
 
     // Utilidades

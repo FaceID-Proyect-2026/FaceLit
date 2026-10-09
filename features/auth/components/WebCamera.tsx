@@ -48,6 +48,9 @@ export type LiveWarning =
 const MOTION_THRESHOLD      = 12;   // 0-255 — sensibilidad media
 // Frames consecutivos sin advertencias necesarios para "listo"
 const REQUIRED_STABLE_FRAMES = 5;
+const LIVENESS_FRAME_COUNT = 5;
+const LIVENESS_START_DELAY_MS = 650;
+const LIVENESS_FRAME_DELAY_MS = 380;
 
 // ── Análisis de píxeles ───────────────────────
 function analyzeFrame(ctx: CanvasRenderingContext2D, W: number, H: number) {
@@ -149,15 +152,20 @@ interface WebCameraProps {
   isPositioning: boolean;
   screenState:   ScreenState;
   quality:       CaptureQuality;
-  onCapture:     (dataUri: string, brightness: number) => void;
+  onCapture:     (dataUri: string | string[], brightness: number) => void;
   onShutter:     () => void;
   onConfirm:     () => void;
   onCancel:      () => void;
+  onFaceReady?:  () => void;
+  requiresLiveness?: boolean;
+  autoCapture?: boolean;
+  livenessInstruction?: string;
 }
 
 export default function WebCamera({
   primaryColor, isTaking, isPositioning, screenState, quality,
-  onCapture, onShutter, onConfirm, onCancel,
+  onCapture, onShutter, onConfirm, onCancel, onFaceReady, requiresLiveness = false, autoCapture = false,
+  livenessInstruction,
 }: WebCameraProps) {
   const { t } = useTranslation();
   const videoRef      = useRef<HTMLVideoElement>(null);
@@ -166,12 +174,14 @@ export default function WebCamera({
   const analysisRef   = useRef<HTMLCanvasElement | null>(null);
   // Buffer del frame anterior (luminancias) para detección de movimiento
   const prevLumRef    = useRef<Float32Array | null>(null);
+  const faceReadyRef  = useRef(false);
   // Contador de frames consecutivos sin ninguna advertencia
   const stableCount   = useRef(0);
 
   const [ready,   setReady]   = useState(false);
   const [error,   setError]   = useState<string | null>(null);
   const [warning, setWarning] = useState<LiveWarning>('noSkin');
+  const [capturingSequence, setCapturingSequence] = useState(false);
   // stableFrames: cuántos frames OK consecutivos hay (0 a REQUIRED_STABLE_FRAMES)
   const [stableFrames, setStableFrames] = useState(0);
 
@@ -291,21 +301,79 @@ export default function WebCamera({
   }, [t]);
 
   // ── Captura ───────────────────────────────────
-  const capture = useCallback(() => {
+  const captureFrame = useCallback(() => {
     const video  = videoRef.current;
     const canvas = canvasRef.current;
-    if (!video || !canvas || !ready) return;
+    if (!video || !canvas || !ready) return null;
     canvas.width  = video.videoWidth  || 640;
     canvas.height = video.videoHeight || 480;
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) return null;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.translate(canvas.width, 0);
     ctx.scale(-1, 1);
     ctx.drawImage(video, 0, 0);
     const brightness = getAverageBrightness(canvas);
-    onCapture(canvas.toDataURL('image/jpeg', 0.85), brightness);
+    return { dataUri: canvas.toDataURL('image/jpeg', 0.85), brightness };
+  }, [ready]);
+
+  const capture = useCallback(async () => {
+    if (capturingSequence) return;
+    setCapturingSequence(true);
     onShutter();
-  }, [ready, onCapture, onShutter]);
+    const frames: string[] = [];
+    let brightness = 0;
+    try {
+      if (requiresLiveness) {
+        await new Promise((resolve) => setTimeout(resolve, LIVENESS_START_DELAY_MS));
+      }
+      const frameCount = requiresLiveness ? LIVENESS_FRAME_COUNT : 1;
+      for (let index = 0; index < frameCount; index += 1) {
+        const frame = captureFrame();
+        if (frame) {
+          frames.push(frame.dataUri);
+          brightness = frame.brightness;
+        }
+        if (index < frameCount - 1) {
+          await new Promise((resolve) => setTimeout(resolve, LIVENESS_FRAME_DELAY_MS));
+        }
+      }
+      if (frames.length === 0) return;
+      onCapture(requiresLiveness ? frames : frames[0]!, brightness);
+    } finally {
+      setCapturingSequence(false);
+    }
+  }, [captureFrame, capturingSequence, onCapture, onShutter, requiresLiveness]);
+
+  // Shutter habilitado SOLO cuando:
+  // • screenState === 'ready'
+  // • warning === 'none' (sin advertencias NI movimiento NI stabilizing)
+  // → 'stabilizing' bloquea hasta tener REQUIRED_STABLE_FRAMES frames quietos
+  const shutterDisabled =
+    isTaking ||
+    capturingSequence ||
+    screenState === 'confirmationRequired' ||
+    screenState === 'positioning' ||
+    (screenState === 'ready' && warning !== 'none');
+
+  useEffect(() => {
+    const faceReady = screenState === 'ready' && warning === 'none' && !capturingSequence;
+    if (!faceReady) {
+      faceReadyRef.current = false;
+      return;
+    }
+    if (faceReadyRef.current) return;
+    faceReadyRef.current = true;
+    onFaceReady?.();
+  }, [capturingSequence, onFaceReady, screenState, warning]);
+
+  useEffect(() => {
+    if (!autoCapture || shutterDisabled || screenState !== 'ready' || warning !== 'none') return;
+    const timer = setTimeout(() => {
+      capture();
+    }, 650);
+    return () => clearTimeout(timer);
+  }, [autoCapture, capture, livenessInstruction, screenState, shutterDisabled, warning]);
 
   if (error) {
     return (
@@ -315,16 +383,6 @@ export default function WebCamera({
       </View>
     );
   }
-
-  // Shutter habilitado SOLO cuando:
-  // • screenState === 'ready'
-  // • warning === 'none' (sin advertencias NI movimiento NI stabilizing)
-  // → 'stabilizing' bloquea hasta tener REQUIRED_STABLE_FRAMES frames quietos
-  const shutterDisabled =
-    isTaking ||
-    screenState === 'confirmationRequired' ||
-    screenState === 'positioning' ||
-    (screenState === 'ready' && warning !== 'none');
 
   return (
     <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
@@ -351,6 +409,9 @@ export default function WebCamera({
           screenState={screenState}
           quality={quality}
           liveWarning={warning}
+          requiresLiveness={requiresLiveness}
+          livenessCaptureActive={capturingSequence}
+          livenessInstruction={livenessInstruction}
           stableFrames={stableFrames}
           requiredFrames={REQUIRED_STABLE_FRAMES}
           onConfirm={onConfirm}
@@ -359,13 +420,13 @@ export default function WebCamera({
       )}
 
       {/* ShutterButton con zIndex alto para que no quede tapado */}
-      {ready && (
+      {ready && !autoCapture && (
         // @ts-ignore
         <View style={{ position: 'absolute', bottom: 20, left: 0, right: 0, alignItems: 'center', zIndex: 100 }}>
           <ShutterButton
             primaryColor={primaryColor}
             disabled={shutterDisabled}
-            loading={isTaking}
+            loading={isTaking || capturingSequence}
             onPress={capture}
           />
         </View>
