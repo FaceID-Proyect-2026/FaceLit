@@ -7,7 +7,7 @@
 // ─────────────────────────────────────────────
 import {
     createInstructor,
-    deleteInstructor as deleteInstructorApi,
+    deactivateInstructor,
     fetchInstructors,
     reactivateInstructor,
     updateInstructor
@@ -127,7 +127,7 @@ function InstructorFormModal({
     if (!name.trim())                                { setError(t('academic.instructorValidationName')); return; }
     if (!lastname.trim())                            { setError(t('academic.instructorValidationLastName')); return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError(t('academic.instructorValidationEmail')); return; }
-    if (selected.length === 0) { setError(t('academic.instructorValidationPrograms')); return; }
+    if (type === 'ESPECIFICO' && selected.length === 0) { setError(t('academic.instructorValidationPrograms')); return; }
 
     setSaving(true);
     try {
@@ -137,7 +137,7 @@ function InstructorFormModal({
         lastname:       lastname.trim(),
         email:          email.trim(),
         instructorType: type,
-        programIds:     selected,
+        programIds:     type === 'ESPECIFICO' ? selected : [],
       };
       const result = editing && editItem
         ? await updateInstructor(editItem.idInstructor, payload)
@@ -245,7 +245,11 @@ function InstructorFormModal({
                   {(['TRANSVERSAL', 'ESPECIFICO'] as const).map(opt => (
                     <TouchableOpacity
                       key={opt}
-                      onPress={() => { setType(opt); setError(''); }}
+                      onPress={() => {
+                        setType(opt);
+                        if (opt === 'TRANSVERSAL') setSelected([]);
+                        setError('');
+                      }}
                       style={[fm.typeBtn, {
                         borderColor:       type === opt ? theme.primary : inpBdr,
                         backgroundColor:   type === opt ? theme.primary + '18' : inputBg,
@@ -263,45 +267,46 @@ function InstructorFormModal({
                   ))}
                 </View>
               </View>
-              {/* Programas en los que puede dar formación */}
-              <View style={fm.field}>
-                <Text style={[fm.label, { color: text }]}>{t('academic.instructorProgramsLabel')}</Text>
-                <View style={[fm.programSearch, { backgroundColor: inputBg, borderColor: inpBdr }]}>
-                  <Ionicons name="search-outline" size={16} color={muted} />
-                  <TextInput
-                    value={programQuery}
-                    onChangeText={setProgramQuery}
-                    placeholder={t('academic.instructorSearchProgramsPlaceholder')}
-                    placeholderTextColor={muted}
-                    style={[fm.programSearchInput, { color: text }] as any}
-                  />
+              {type === 'ESPECIFICO' && (
+                <View style={fm.field}>
+                  <Text style={[fm.label, { color: text }]}>{t('academic.instructorProgramsLabel')}</Text>
+                  <View style={[fm.programSearch, { backgroundColor: inputBg, borderColor: inpBdr }]}>
+                    <Ionicons name="search-outline" size={16} color={muted} />
+                    <TextInput
+                      value={programQuery}
+                      onChangeText={setProgramQuery}
+                      placeholder={t('academic.instructorSearchProgramsPlaceholder')}
+                      placeholderTextColor={muted}
+                      style={[fm.programSearchInput, { color: text }] as any}
+                    />
+                  </View>
+                  {programs.length === 0
+                    ? <Text style={{ color: muted, fontSize: FontSize.sm }}>{t('academic.instructorNoActivePrograms')}</Text>
+                    : filteredPrograms.map(p => {
+                        const on = selected.includes(p.id);
+                        return (
+                          <TouchableOpacity
+                            key={p.id}
+                            onPress={() => { toggleProgram(p.id); setError(''); }}
+                            style={[fm.programOption, {
+                              borderColor:     on ? theme.primary : inpBdr,
+                              backgroundColor: on ? theme.primary + '12' : inputBg,
+                            }]}
+                            activeOpacity={0.7}
+                          >
+                            <Ionicons name={on ? 'checkbox' : 'square-outline'} size={18} color={on ? theme.primary : muted} />
+                            <Text style={{ color: on ? theme.primary : text, fontSize: FontSize.sm, fontWeight: on ? FontWeight.bold : FontWeight.semibold, flex: 1 }}>
+                              {p.name} <Text style={{ color: muted }}>({p.code})</Text>
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })
+                  }
+                  {programs.length > 0 && filteredPrograms.length === 0 ? (
+                    <Text style={{ color: muted, fontSize: FontSize.sm, textAlign: 'center', paddingVertical: 8 }}>{t('academic.instructorNoProgramsFound')}</Text>
+                  ) : null}
                 </View>
-                {programs.length === 0
-                  ? <Text style={{ color: muted, fontSize: FontSize.sm }}>{t('academic.instructorNoActivePrograms')}</Text>
-                  : filteredPrograms.map(p => {
-                      const on = selected.includes(p.id);
-                      return (
-                        <TouchableOpacity
-                          key={p.id}
-                          onPress={() => { toggleProgram(p.id); setError(''); }}
-                          style={[fm.programOption, {
-                            borderColor:     on ? theme.primary : inpBdr,
-                            backgroundColor: on ? theme.primary + '12' : inputBg,
-                          }]}
-                          activeOpacity={0.7}
-                        >
-                          <Ionicons name={on ? 'checkbox' : 'square-outline'} size={18} color={on ? theme.primary : muted} />
-                          <Text style={{ color: on ? theme.primary : text, fontSize: FontSize.sm, fontWeight: on ? FontWeight.bold : FontWeight.semibold, flex: 1 }}>
-                            {p.name} <Text style={{ color: muted }}>({p.code})</Text>
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })
-                }
-                {programs.length > 0 && filteredPrograms.length === 0 ? (
-                  <Text style={{ color: muted, fontSize: FontSize.sm, textAlign: 'center', paddingVertical: 8 }}>{t('academic.instructorNoProgramsFound')}</Text>
-                ) : null}
-              </View>
+              )}
               {/* Error */}
               {error ? <Text style={fm.error}>{error}</Text> : null}
               {/* Botón */}
@@ -420,7 +425,7 @@ export default function AcademicInstructorsScreen() {
 
   const handleDeactivateInstructor = async (item: InstructorItem, fullName: string) => {
     try {
-      await deleteInstructorApi(item.idInstructor);
+      await deactivateInstructor(item.idInstructor);
       await refreshAfterLifecycleChange();
     } catch (err: any) {
       setError(err?.message ?? err?.response?.data?.message ?? t('academic.instructorDeactivateError', { name: fullName }));
@@ -436,15 +441,6 @@ export default function AcademicInstructorsScreen() {
     }
   };
 
-  const handleDeleteInstructor = async (item: InstructorItem, fullName: string) => {
-    try {
-      await deleteInstructorApi(item.idInstructor);
-      await refreshAfterLifecycleChange();
-    } catch (err: any) {
-      setError(err?.message ?? err?.response?.data?.message ?? t('academic.instructorDeleteError', { name: fullName }));
-    }
-  };
-
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: bg }]}>
       {/* Cabecera */}
@@ -454,7 +450,7 @@ export default function AcademicInstructorsScreen() {
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={[s.title, { color: text }]}>{t('academic.instructors')}</Text>
-          <Text style={[s.subtitle, { color: muted }]}>{t('academic.instructorScreenSubtitle')}</Text>
+          <Text style={[s.subtitle, s.subtitleEmphasis, { color: muted }]}>{t('academic.instructorScreenSubtitle')}</Text>
         </View>
         <TouchableOpacity
           onPress={openCreateModal}
@@ -583,24 +579,14 @@ export default function AcademicInstructorsScreen() {
                       <Text style={[s.actionBtnText, { color: theme.primary }]}>{t('academic.instructorActionEdit')}</Text>
                     </TouchableOpacity>
                     {isInactive ? (
-                      <>
-                        <TouchableOpacity
-                          onPress={() => handleActivateInstructor(item, fullName)}
-                          style={[s.actionBtn, { borderColor: theme.primary }]}
-                          activeOpacity={0.7}
-                        >
-                          <Ionicons name="checkmark-circle-outline" size={14} color={theme.primary} />
-                          <Text style={[s.actionBtnText, { color: theme.primary }]}>{t('academic.instructorActionActivate')}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          onPress={() => handleDeleteInstructor(item, fullName)}
-                          style={[s.actionBtn, { borderColor: Colors.error }]}
-                          activeOpacity={0.7}
-                        >
-                          <Ionicons name="trash-outline" size={14} color={Colors.error} />
-                          <Text style={[s.actionBtnText, { color: Colors.error }]}>{t('academic.instructorActionDelete')}</Text>
-                        </TouchableOpacity>
-                      </>
+                      <TouchableOpacity
+                        onPress={() => handleActivateInstructor(item, fullName)}
+                        style={[s.actionBtn, { borderColor: theme.primary }]}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons name="checkmark-circle-outline" size={14} color={theme.primary} />
+                        <Text style={[s.actionBtnText, { color: theme.primary }]}>{t('academic.instructorActionActivate')}</Text>
+                      </TouchableOpacity>
                     ) : (
                       <TouchableOpacity
                         onPress={() => handleDeactivateInstructor(item, fullName)}
@@ -638,6 +624,7 @@ const s = StyleSheet.create({
   backBtn:     { padding: 4 },
   title:       { fontSize: FontSize.xl,  fontWeight: FontWeight.black },
   subtitle:    { fontSize: FontSize.xs,  marginTop: 2 },
+  subtitleEmphasis: { fontSize: FontSize.sm, lineHeight: 20, fontWeight: FontWeight.semibold },
   addBtn:      { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 9, borderRadius: 12 },
   addBtnText:  { color: Colors.white, fontWeight: FontWeight.bold, fontSize: FontSize.sm },
 

@@ -1,4 +1,5 @@
 import FichaFormModal from '@/features/academic/components/FichaFormModal';
+import PersonDetailsModal, { AcademicPersonDetails } from '@/features/academic/components/PersonDetailsModal';
 import { getProgramDisplayName } from '@/features/academic/types';
 import { useAcademic } from '@/features/academic/useAcademic';
 import { Colors } from '@/shared/constants/colors';
@@ -68,13 +69,26 @@ function EditLearnerModal({
   const modalBg   = theme.surface;
   const overlayBg = 'rgba(0,0,0,0.55)';
 
-  const handleSave = () => {
-    if (!name.trim() || !lastname.trim()) { setError('Nombre y apellido son obligatorios.'); return; }
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError('Correo inválido.'); return; }
-    if (!document.trim() || !/^\d{6,15}$/.test(document.trim())) { setError('El documento debe tener entre 6 y 15 dígitos.'); return; }
-    const result = onSave({ name: name.trim(), lastname: lastname.trim(), email: email.trim(), document: document.trim() });
-    if (!result.success) { setError(result.error ? t(result.error as any, { defaultValue: result.error }) : 'Error al guardar.'); return; }
-    onClose();
+  const handleSave = async () => {
+    if (!name.trim() || !lastname.trim()) { setError(t('academic.assignValidationName')); return; }
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError(t('academic.assignValidationEmail')); return; }
+    if (!document.trim() || !/^\d{6,15}$/.test(document.trim())) { setError(t('academic.assignValidationDoc')); return; }
+
+    setSaving(true);
+    setError('');
+    try {
+      const result = await onSave({ name: name.trim(), lastname: lastname.trim(), email: email.trim(), document: document.trim() });
+      if (!result.success) {
+        setError(result.error ? t(result.error as any, { defaultValue: result.error }) : t('academic.assignError'));
+        return;
+      }
+      onClose();
+    } catch (saveError: any) {
+      const message = saveError?.response?.data?.message ?? saveError?.message ?? t('academic.assignError');
+      setError(t(message, { defaultValue: message }));
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -82,7 +96,7 @@ function EditLearnerModal({
       <View style={[elm.overlay, { backgroundColor: overlayBg }]}>
         <View style={[elm.sheet, { backgroundColor: modalBg }]}>
           <View style={elm.modalHeader}>
-            <Text style={[elm.modalTitle, { color: text }]}>Editar aprendiz</Text>
+            <Text style={[elm.modalTitle, { color: text }]}>{t('academic.editLearnerTitle')}</Text>
             <TouchableOpacity onPress={onClose} style={{ padding: 4 }}>
               <Ionicons name="close" size={22} color={muted} />
             </TouchableOpacity>
@@ -90,10 +104,10 @@ function EditLearnerModal({
 
           <ScrollView showsVerticalScrollIndicator={false}>
             {[
-              { label: 'Nombre', value: name, onChange: setName, keyboard: 'default' as const },
-              { label: 'Apellido', value: lastname, onChange: setLastname, keyboard: 'default' as const },
-              { label: 'Correo', value: email, onChange: setEmail, keyboard: 'email-address' as const },
-              { label: 'Documento (6 a 15 dígitos)', value: document, onChange: setDoc, keyboard: 'numeric' as const },
+              { label: t('academic.assignNameLabel'), value: name, onChange: setName, keyboard: 'default' as const },
+              { label: t('academic.assignLastNameLabel'), value: lastname, onChange: setLastname, keyboard: 'default' as const },
+              { label: t('academic.assignEmailLabel'), value: email, onChange: setEmail, keyboard: 'email-address' as const },
+              { label: t('academic.assignDocLabel'), value: document, onChange: setDoc, keyboard: 'numeric' as const },
             ].map(f => (
               <View key={f.label} style={{ marginBottom: 14 }}>
                 <Text style={[elm.label, { color: text }]}>{f.label}</Text>
@@ -115,8 +129,10 @@ function EditLearnerModal({
             <TouchableOpacity onPress={onClose} style={[elm.btn, { borderColor: inputBorder, borderWidth: 1.2 }]} activeOpacity={0.7}>
               <Text style={{ color: text, fontWeight: '700' }}>{t('common.cancel')}</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={handleSave} style={[elm.btn, { backgroundColor: theme.primary }]} activeOpacity={0.85}>
-              <Text style={{ color: Colors.white, fontWeight: '700' }}>{t('common.save')}</Text>
+            <TouchableOpacity onPress={handleSave} disabled={saving} style={[elm.btn, { backgroundColor: theme.primary, opacity: saving ? 0.7 : 1 }]} activeOpacity={0.85}>
+              {saving
+                ? <ActivityIndicator size="small" color={Colors.white} />
+                : <Text style={{ color: Colors.white, fontWeight: '700' }}>{t('common.save')}</Text>}
             </TouchableOpacity>
           </View>
         </View>
@@ -131,7 +147,7 @@ export default function FichaDetailScreen() {
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const {
-    getFicha, programs, allFichas, allInstructors,
+    getFicha, programs, allFichas,
     deactivateLearner, reactivateLearner, updateLearnerInfo,
     transferLearner, regenerateTransferCode,
   } = useAcademic();
@@ -140,12 +156,12 @@ export default function FichaDetailScreen() {
   const [editFichaOpen, setEditFichaOpen]       = useState(false);
   const [copyMsg, setCopyMsg]                   = useState(false);
   const [editingLearner, setEditingLearner]     = useState<string | null>(null);
+  const [selectedLearner, setSelectedLearner] = useState<AcademicPersonDetails | null>(null);
   const [transferLearnerId, setTransferLearnerId] = useState<string | null>(null);
   const [destinationFichaId, setDestinationFichaId] = useState('');
   const [transferBusy, setTransferBusy] = useState(false);
   // Búsqueda de aprendices — filtra por nombre, documento o correo
   const [learnerSearch, setLearnerSearch]       = useState('');
-  const [instructorSearch, setInstructorSearch] = useState('');
 
   const ficha = getFicha(id ?? '');
   const text    = isDark ? Colors.dark.text       : Colors.light.text;
@@ -161,19 +177,6 @@ export default function FichaDetailScreen() {
   );
 
   const program = programs.find(p => p.id === ficha.programId);
-  const fichaInstructors = allInstructors.filter(instructor =>
-    instructor.programId === ficha.programId ||
-    instructor.programIds?.includes(ficha.programId) ||
-    instructor.fichaIds.includes(ficha.id),
-  );
-  const filteredInstructors = instructorSearch.trim()
-    ? fichaInstructors.filter(instructor => {
-        const q = instructorSearch.trim().toLowerCase();
-        return `${instructor.name} ${instructor.lastname}`.toLowerCase().includes(q)
-          || instructor.document.includes(q)
-          || instructor.email.toLowerCase().includes(q);
-      })
-    : fichaInstructors;
   const editingLearnerData = editingLearner ? ficha.learners.find(l => l.id === editingLearner) : null;
   const transferLearnerData = transferLearnerId ? ficha.learners.find(l => l.id === transferLearnerId) : null;
   const availableTransferFichas = allFichas.filter(target =>
@@ -223,7 +226,7 @@ export default function FichaDetailScreen() {
     if (currentStatus === 'active') {
       alert(
         t('academic.deactivateLearnerTitle'),
-        `¿Desactivar a ${name}? El aprendiz conserva su historial y puede reactivarse.`,
+        t('academic.deactivateLearnerConfirm', { name }),
         [
           { text: t('common.cancel'), style: 'cancel' },
           {
@@ -247,7 +250,7 @@ export default function FichaDetailScreen() {
     } else {
       alert(
         t('academic.reactivateLearnerTitle'),
-        `¿Reactivar a ${name}?`,
+        t('academic.reactivateLearnerConfirm', { name }),
         [
           { text: t('common.cancel'), style: 'cancel' },
           {
@@ -277,7 +280,7 @@ export default function FichaDetailScreen() {
 
             {/* ── Info de la ficha ── */}
             <View style={[fds.card, { backgroundColor: cardBg, borderColor: border }]}>
-              <Text style={[fds.fichaTitle, { color: text }]}>Ficha {ficha.number}</Text>
+              <Text style={[fds.fichaTitle, { color: text }]}>{t('academic.fields.fichaNumber')}: {ficha.number}</Text>
               <Text style={[fds.fichaSubtitle, { color: muted }]}>{t('academic.fichaDetailSubtitle')}</Text>
               <View style={fds.infoRow}><Text style={[fds.infoLabel, { color: muted }]}>{t('academic.program')}</Text><Text style={[fds.infoValue, { color: text }]}>{program ? getProgramDisplayName(program, t) : t('academic.assignNoProgram')}</Text></View>
               <View style={fds.infoRow}><Text style={[fds.infoLabel, { color: muted }]}>{t('academic.fields.status')}</Text><Text style={{ color: ficha.status === 'active' ? Colors.success : Colors.error, fontWeight: '700' }}>{t(`environments.statuses.${ficha.status}`)}</Text></View>
@@ -314,48 +317,7 @@ export default function FichaDetailScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* ── Buscador de aprendices ── */}
-            <Text style={[fds.sectionTitle, { color: text }]}>
-              {t('academic.instructors')} ({filteredInstructors.length}{instructorSearch ? ` ${t('common.of')} ${fichaInstructors.length}` : ''})
-            </Text>
-            <View style={[fds.searchBar, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F2F2F2', borderColor: border }]}>
-              <Ionicons name="search-outline" size={16} color={muted} />
-              <TextInput
-                style={[fds.searchInput, { color: text }] as any}
-                value={instructorSearch}
-                onChangeText={setInstructorSearch}
-                placeholder={t('academic.searchInstructorFull')}
-                placeholderTextColor={muted}
-                autoCorrect={false}
-              />
-              {instructorSearch.length > 0 && (
-                <TouchableOpacity onPress={() => setInstructorSearch('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                  <Ionicons name="close-circle" size={16} color={muted} />
-                </TouchableOpacity>
-              )}
-            </View>
-            <View style={fds.instructorList}>
-              {filteredInstructors.map(instructor => (
-                <View key={instructor.id} style={[fds.instructorCard, { backgroundColor: cardBg, borderColor: border }]}>
-                  <View style={[fds.instructorIcon, { backgroundColor: theme.primary + '18' }]}>
-                    <Ionicons name="person-outline" size={18} color={theme.primary} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[fds.instructorName, { color: text }]}>{instructor.name} {instructor.lastname}</Text>
-                    <Text style={[fds.learnerMeta, { color: muted }]}>
-                      {instructor.instructorType === 'transversal' ? t('academic.instructorTypeTransversalShort') : t('academic.instructorTypeEspecificoShort')} · {t('academic.instructorDocPrefix')}: {instructor.document}
-                    </Text>
-                    <Text style={[fds.learnerMeta, { color: muted }]}>{instructor.email}</Text>
-                  </View>
-                  <Text style={{ color: instructor.status === 'active' ? Colors.success : Colors.error, fontWeight: '700', fontSize: 12 }}>
-                    {t(`environments.statuses.${instructor.status}`)}
-                  </Text>
-                </View>
-              ))}
-              {filteredInstructors.length === 0 && (
-                <Text style={[fds.emptyText, { color: muted }]}>{t('academic.noInstructorsInFicha')}</Text>
-              )}
-            </View>
+            {/* Los instructores se consultan desde el programa asociado. */}
             <View style={[fds.searchBar, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F2F2F2', borderColor: border }]}>
               <Ionicons name="search-outline" size={16} color={muted} />
               <TextInput
@@ -375,45 +337,31 @@ export default function FichaDetailScreen() {
             </View>
 
             <Text style={[fds.sectionTitle, { color: text }]}>
-              {t('academic.learners')} ({filteredLearners.length}{learnerSearch ? ` de ${ficha.learners.length}` : ''})
+              {t('academic.learners')} ({filteredLearners.length}{learnerSearch ? ` ${t('common.of')} ${ficha.learners.length}` : ''})
             </Text>
           </View>
         }
         renderItem={({ item }) => (
-          <View style={[fds.learnerCard, { backgroundColor: cardBg, borderColor: border, opacity: item.status === 'inactive' ? 0.65 : 1 }]}>
-            <View style={{ flex: 1 }}>
+          <View style={[fds.learnerCard, { backgroundColor: cardBg, borderColor: border }]}>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel={t('academic.openPersonDetails', { name: `${item.name} ${item.lastname}` })}
+              onPress={() => setSelectedLearner(item)}
+              activeOpacity={0.75}
+              style={{ flex: 1 }}
+            >
               <Text style={[fds.learnerName, { color: text }]}>{item.name} {item.lastname}</Text>
-              <Text style={[fds.learnerMeta, { color: muted }]}>{t('academic.instructorDocPrefix')}: {item.document}{item.email ? ` · ${item.email}` : ''}</Text>
               {item.createdAt ? (
                 <Text style={[fds.learnerMeta, { color: muted }]}>
-                  {t('academic.addedOn')}: {formatDateTime(item.createdAt)}
+                  {t('academic.personCreatedPrefix')}: {formatDateTime(item.createdAt)}
                 </Text>
               ) : null}
               {item.updatedAt ? (
                 <Text style={[fds.learnerMeta, { color: muted }]}>
-                  {t('academic.instructorLastEditPrefix')}: {formatDateTime(item.updatedAt)}
+                  {t('academic.personUpdatedPrefix')}: {formatDateTime(item.updatedAt)}
                 </Text>
               ) : null}
-              <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
-                <Text style={{ color: muted, fontSize: 12 }}>{item.role}</Text>
-                <Text style={{ color: item.status === 'active' ? Colors.success : Colors.error, fontSize: 12, fontWeight: '700' }}>
-                  {t(`environments.statuses.${item.status}`)}
-                </Text>
-              </View>
-              {/* Contraseña inicial — solo visible mientras no ha sido cambiada */}
-              {item.initialPassword ? (
-                <View style={[fds.pwdBadge, { backgroundColor: Colors.warning + '18', borderColor: Colors.warning + '55' }]}>
-                  <Ionicons name="key-outline" size={12} color={Colors.warning} />
-                  <Text style={[fds.pwdLabel, { color: Colors.warning }]}>{t('academic.initialPassword')}: </Text>
-                  <Text style={[fds.pwdValue, { color: Colors.warning }]} selectable>{item.initialPassword}</Text>
-                </View>
-              ) : (
-                <View style={[fds.pwdBadge, { backgroundColor: Colors.success + '14', borderColor: Colors.success + '44' }]}>
-                  <Ionicons name="checkmark-circle-outline" size={12} color={Colors.success} />
-                  <Text style={[fds.pwdLabel, { color: Colors.success }]}>{t('academic.ownPasswordActive')}</Text>
-                </View>
-              )}
-            </View>
+            </TouchableOpacity>
 
             {/* Botón editar */}
             <TouchableOpacity
@@ -459,7 +407,7 @@ export default function FichaDetailScreen() {
               {availableTransferFichas.map(target => (
                 <TouchableOpacity key={target.id} onPress={() => setDestinationFichaId(target.id)} style={[fds.transferOption, { borderColor: destinationFichaId === target.id ? theme.primary : border, backgroundColor: destinationFichaId === target.id ? theme.primary + '14' : 'transparent' }]}>
                   <Ionicons name={destinationFichaId === target.id ? 'radio-button-on' : 'radio-button-off'} size={20} color={destinationFichaId === target.id ? theme.primary : muted} />
-                  <View><Text style={[fds.transferOptionTitle, { color: text }]}>Ficha {target.number}</Text><Text style={[fds.transferOptionMeta, { color: muted }]}>{program ? getProgramDisplayName(program, t) : ''}</Text></View>
+                  <View><Text style={[fds.transferOptionTitle, { color: text }]}>{t('academic.fields.fichaNumber')}: {target.number}</Text><Text style={[fds.transferOptionMeta, { color: muted }]}>{program ? getProgramDisplayName(program, t) : ''}</Text></View>
                 </TouchableOpacity>
               ))}
               {availableTransferFichas.length === 0 && <Text style={[fds.transferEmpty, { color: muted }]}>{t('academic.noOtherActiveFicha')}</Text>}
@@ -471,6 +419,13 @@ export default function FichaDetailScreen() {
           </View>
         </View>
       </Modal>
+
+      <PersonDetailsModal
+        visible={!!selectedLearner}
+        title={t('academic.learnerDetails')}
+        person={selectedLearner}
+        onClose={() => setSelectedLearner(null)}
+      />
 
       <FichaFormModal
         visible={editFichaOpen}
@@ -517,7 +472,7 @@ const fds = StyleSheet.create({
   backBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 12 },
   backText: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
 
-  card: { borderRadius: 14, borderWidth: 1, padding: 16, marginBottom: 16 },
+  card: { borderRadius: 14, borderWidth: 1, padding: 16, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 10, elevation: 4 },
   fichaTitle: { fontSize: FontSize['2xl'], fontWeight: FontWeight.black, marginBottom: 8 },
   fichaSubtitle: { fontSize: FontSize.sm, marginBottom: 12, lineHeight: 19 },
   infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' },
@@ -529,24 +484,14 @@ const fds = StyleSheet.create({
 
   sectionTitle: { fontSize: FontSize.xl, fontWeight: FontWeight.black, marginBottom: 10 },
 
-  learnerCard: { borderRadius: 12, borderWidth: 1, padding: 14, flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8 },
+  learnerCard: { borderRadius: 12, borderWidth: 1, padding: 14, flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 10, elevation: 4 },
   learnerName: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
   learnerMeta: { fontSize: FontSize.sm, marginTop: 2 },
   iconBtn: { width: 34, height: 34, borderRadius: 9, borderWidth: 1.2, alignItems: 'center', justifyContent: 'center' },
 
-  // ── Contraseña inicial ──
-  pwdBadge:  { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 8, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 5, marginTop: 7, flexWrap: 'wrap' },
-  pwdLabel:  { fontSize: FontSize.xs, fontWeight: FontWeight.bold },
-  pwdValue:  { fontSize: FontSize.xs, fontWeight: FontWeight.black, letterSpacing: 0.5 },
-
   // ── Buscador de aprendices ──
   searchBar:   { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 12, borderWidth: 1, paddingHorizontal: 12, height: 42, marginBottom: 10 },
   searchInput: { flex: 1, fontSize: FontSize.sm, outlineStyle: 'none' } as any,
-  instructorList: { gap: 8, marginBottom: 18 },
-  instructorCard: { borderRadius: 12, borderWidth: 1, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  instructorIcon: { width: 38, height: 38, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
-  instructorName: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
-  emptyText: { fontSize: FontSize.sm, textAlign: 'center', paddingVertical: 14 },
 
   empty: { alignItems: 'center', paddingVertical: 40 },
 

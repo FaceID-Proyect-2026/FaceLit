@@ -116,7 +116,7 @@ export default function ScheduleDetailScreen() {
 
         <View style={[sds.card, { backgroundColor: cardBg, borderColor: border }]}>
           {[
-            { icon: 'document-text-outline', label: t('schedules.fields.ficha'), value: `Ficha ${fichaNumber} — ${schedule.programName}` },
+            { icon: 'document-text-outline', label: t('schedules.fields.ficha'), value: `${t('schedules.fields.ficha')} ${fichaNumber} — ${schedule.programName}` },
             { icon: 'calendar-outline', label: t('schedules.fields.day'), value: t(`schedules.days.${schedule.day}`) },
             { icon: 'time-outline', label: t('schedules.fields.startTime'), value: schedule.startTime },
             { icon: 'time-outline', label: t('schedules.fields.endTime'), value: schedule.endTime },

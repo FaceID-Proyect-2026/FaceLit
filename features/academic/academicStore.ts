@@ -812,21 +812,3 @@ export function reactivateInstructorStore(id: string) {
   emit();
   return { success: true };
 }
-
-export function deleteInstructorStore(id: string) {
-  const inst = instructors.find(i => i.id === id);
-  if (!inst) return { success: false, error: 'academic.instructorNotFound' };
-  if (inst.status !== 'inactive') return { success: false, error: 'academic.noDeleteActiveInstructor' };
-  // RF-3.2: no se puede eliminar si tiene historial de asistencias
-  // (con backend real se verificaría; en mock lo permitimos si no hay horarios asociados)
-  const hasSchedules = getSchedulesSnapshot().some(s => s.instructorId === id);
-  if (hasSchedules) return { success: false, error: 'academic.instructorHasAttendance' };
-  // Limpiar de programas
-  programs = programs.map(p => ({
-    ...p,
-    instructorIds: p.instructorIds.filter(iid => iid !== id),
-  }));
-  instructors = instructors.filter(i => i.id !== id);
-  emit();
-  return { success: true };
-}

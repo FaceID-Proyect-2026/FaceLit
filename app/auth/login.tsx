@@ -115,7 +115,7 @@ export default function LoginScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const routerInstance = useRouter();
-  const { form, errors, loading, alreadyAccepted, setField, setDocumentField, refreshPrivacyAcceptance, handleSubmit } = useLoginForm();
+  const { form, errors, loading, alreadyAccepted, privacyStatusKnown, setField, setDocumentField, handleSubmit } = useLoginForm();
 
   const [showPassword, setShowPassword] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
@@ -228,7 +228,6 @@ export default function LoginScreen() {
                       blurOnSubmit={false}
                       maxLength={15}
                       showSoftInputOnFocus
-                      onEndEditing={() => refreshPrivacyAcceptance(form.document)}
                       onSubmitEditing={() => passwordRef.current?.focus()}
                     />
                   </View>
@@ -274,7 +273,7 @@ export default function LoginScreen() {
                 </View>
 
                 {/* ── Política de privacidad ── */}
-                {!alreadyAccepted && (
+                {privacyStatusKnown && !alreadyAccepted && !form.accepted && (
                   <View style={[s.policyCard, {
                     backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#F3F8F3',
                     borderColor: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.07)',

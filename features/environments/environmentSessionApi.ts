@@ -1,4 +1,23 @@
 import { api } from '@/shared/services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const FACELIT_DEVICE_CODE_KEY = 'facelit_device_code';
+
+function createDeviceCode() {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return crypto.randomUUID();
+  }
+  return 'dev-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 12);
+}
+
+async function getDeviceCode() {
+  const stored = await AsyncStorage.getItem(FACELIT_DEVICE_CODE_KEY);
+  if (stored) return stored;
+
+  const deviceCode = createDeviceCode();
+  await AsyncStorage.setItem(FACELIT_DEVICE_CODE_KEY, deviceCode);
+  return deviceCode;
+}
 
 export interface EnvironmentOption {
   idEnvironment: string;
@@ -26,14 +45,20 @@ export interface RecordEnvironmentResponse {
   idRecordEnvironment: string;
   idEnvironment: string;
   environmentName: string;
+  idDevice: string;
+  deviceCode: string;
   idChip: string;
   chipCode: string;
-  idInstructorInCharge: string;
+  idInstructorScheduled: string;
+  instructorScheduledName: string;
+  idInstructorInCharge?: string | null;
+  instructorInChargeName?: string | null;
   instructorName: string;
   sessionStart: string;
+  entryTime: string;
   registrationMinutes: number;
-  exitTime?: string;
-  shutdownTime?: string;
+  exitTime: string;
+  shutdownTime: string;
   active: boolean;
 }
 
@@ -63,12 +88,17 @@ export async function fetchChipsForSessionInstructor(idInstructor: string) {
 
 export async function createEnvironmentSession(payload: {
   idEnvironment: string;
+  deviceCode?: string;
   idInstructorInCharge: string;
   idChip: string;
+  entryTime: string;
   registrationMinutes: number;
-  exitTime?: string;
-  shutdownTime?: string;
+  exitTime: string;
+  shutdownTime: string;
 }) {
-  const { data } = await api.post<RecordEnvironmentResponse>('/api/environment/sessions', payload);
+  const { data } = await api.post<RecordEnvironmentResponse>('/api/environment/sessions', {
+    ...payload,
+    deviceCode: payload.deviceCode ?? await getDeviceCode(),
+  });
   return data;
 }

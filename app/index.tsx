@@ -145,7 +145,11 @@ function FeatureCard({ icon, number, title, text, bg, border, heading, body, acc
   );
 }
 const fc = StyleSheet.create({
-  wrap:     { flex: 1, minWidth: 220, borderRadius: 12, borderWidth: 1, padding: 22 },
+  wrap:     {
+    flex: 1, minWidth: 220, borderRadius: 12, borderWidth: 1, padding: 22,
+    shadowColor: '#172B4D', shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.1, shadowRadius: 12, elevation: 4,
+  },
   iconWrap: { width: 44, height: 44, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
   number:   { fontSize: FontSize.sm, fontWeight: FontWeight.black, marginBottom: 6 },
   title:    { fontSize: FontSize.lg, fontWeight: FontWeight.black, marginBottom: 8 },
@@ -710,7 +714,8 @@ const s = StyleSheet.create({
   metrics: { flexDirection: 'row', flexWrap: 'wrap', gap: 28, marginTop: 36 },
 
   // ── Mockup ──
-  heroVisual:    { flex: 1, width: '100%', minHeight: 480, borderRadius: 20, borderWidth: 1, alignItems: 'center', justifyContent: 'center', padding: 24, position: 'relative' },
+  heroVisual:    { flex: 1, width: '100%', minHeight: 480, borderRadius: 20, borderWidth: 1, alignItems: 'center', justifyContent: 'center', padding: 24, position: 'relative',
+                   shadowColor: '#172B4D', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 18, elevation: 5 },
   mockPhone:     { width: 290, maxWidth: '95%', borderRadius: 38, borderWidth: 2, alignItems: 'center', padding: 18, paddingTop: 22, paddingBottom: 18,
                    shadowColor: '#65B361', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 12 },
   phoneBrand:    { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
@@ -737,21 +742,24 @@ const s = StyleSheet.create({
   checkRow:  { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   checkItem: { flex: 1, fontSize: FontSize.base, fontWeight: FontWeight.semibold, lineHeight: 22 },
 
-  techPanel:     { flex: 1, minHeight: 285, borderRadius: 12, borderWidth: 1, padding: 24 },
+  techPanel:     { flex: 1, minHeight: 285, borderRadius: 12, borderWidth: 1, padding: 24,
+                   shadowColor: '#172B4D', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 4 },
   techTitle:     { fontSize: FontSize.xl, fontWeight: FontWeight.black, marginBottom: 8 },
   techSubtitle:  { fontSize: FontSize.md, lineHeight: 20, marginBottom: 18 },
   techGrid:      { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   techBadge:     { flexDirection: 'row', alignItems: 'center', gap: 7, borderRadius: 8, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 10, width: '48%' },
   techBadgeText: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
 
-  innovationBanner:   { width: '100%', maxWidth: 1120, borderRadius: 12, borderWidth: 1, padding: 36, marginBottom: 12, alignItems: 'center' },
+  innovationBanner:   { width: '100%', maxWidth: 1120, borderRadius: 12, borderWidth: 1, padding: 36, marginBottom: 12, alignItems: 'center',
+                       shadowColor: '#172B4D', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 4 },
   innovationTitle:    { fontSize: FontSize['3xl'], fontWeight: FontWeight.black, textAlign: 'center', marginBottom: 12 },
   innovationText:     { fontSize: FontSize.base, lineHeight: 24, textAlign: 'center', maxWidth: 720, marginBottom: 28 },
   innovationPills:    { flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'center' },
   innovationPill:     { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 999, borderWidth: 1, paddingHorizontal: 18, paddingVertical: 10 },
   innovationPillText: { fontSize: FontSize.base, fontWeight: FontWeight.black },
 
-  contact:      { width: '100%', maxWidth: 1120, borderRadius: 12, borderWidth: 1, padding: 24, gap: 22, marginVertical: 40, flexDirection: Platform.OS === 'web' ? 'row' : 'column', justifyContent: 'space-between' },
+  contact:      { width: '100%', maxWidth: 1120, borderRadius: 12, borderWidth: 1, padding: 24, gap: 22, marginVertical: 40, flexDirection: Platform.OS === 'web' ? 'row' : 'column', justifyContent: 'space-between',
+                  shadowColor: '#172B4D', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 4 },
   contactCopy:  { flex: 1 },
   contactTitle: { fontSize: FontSize['2xl'], fontWeight: FontWeight.black },
   contactText:  { fontSize: FontSize.base, lineHeight: 21, marginTop: 6 },

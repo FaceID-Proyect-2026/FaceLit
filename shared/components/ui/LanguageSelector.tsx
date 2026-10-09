@@ -9,7 +9,9 @@
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { Language, LANGUAGE_LABELS, LANGUAGE_NAMES, useLanguage } from '@/shared/contexts/I18nContext';
+import { useAuth } from '@/shared/contexts/AuthContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
+import { persistUserConfigurationPreferences } from '@/shared/services/userConfigService';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import {
@@ -74,6 +76,7 @@ interface LanguageSelectorProps { style?: ViewStyle; }
 function LanguageSelectorWeb({ style }: LanguageSelectorProps) {
   const { language, changeLanguage } = useLanguage();
   const { isDark } = useTheme();
+  const { isAuthenticated } = useAuth();
   const controlColor = isDark ? Colors.white : Colors.primaryDark;
   const [open, setOpen] = useState(false);
   const [btnRect, setBtnRect] = useState<{ top: number; right: number } | null>(null);
@@ -84,6 +87,16 @@ function LanguageSelectorWeb({ style }: LanguageSelectorProps) {
   const textCol = isDark ? '#FFFFFF' : '#0F172A';
   const activeBg = isDark ? '#404040' : '#E5E7EB';
   const hoverBg  = isDark ? '#333333' : '#F1F5F9';
+
+  function selectLanguage(lang: Language) {
+    changeLanguage(lang);
+    setOpen(false);
+    if (isAuthenticated) {
+      void persistUserConfigurationPreferences(lang, isDark).catch(error => {
+        console.warn('[Settings] No se pudo guardar el idioma seleccionado:', error);
+      });
+    }
+  }
 
   // Al abrir, calcular posición absoluta del botón en la ventana
   function handleOpen() {
@@ -158,7 +171,7 @@ function LanguageSelectorWeb({ style }: LanguageSelectorProps) {
                 // @ts-ignore
                 <div
                   key={lang}
-                  onClick={() => { changeLanguage(lang); setOpen(false); }}
+                  onClick={() => selectLanguage(lang)}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 12,
                     padding: '12px 16px', cursor: 'pointer',
@@ -197,8 +210,19 @@ function LanguageSelectorWeb({ style }: LanguageSelectorProps) {
 function LanguageSelectorMobile({ style }: LanguageSelectorProps) {
   const { language, changeLanguage } = useLanguage();
   const { theme, isDark } = useTheme();
+  const { isAuthenticated } = useAuth();
   const controlColor = isDark ? Colors.white : Colors.primaryDark;
   const [open, setOpen] = useState(false);
+
+  function selectLanguage(lang: Language) {
+    changeLanguage(lang);
+    setOpen(false);
+    if (isAuthenticated) {
+      void persistUserConfigurationPreferences(lang, isDark).catch(error => {
+        console.warn('[Settings] No se pudo guardar el idioma seleccionado:', error);
+      });
+    }
+  }
 
   return (
     <View style={[{ zIndex: 9999 }, style]}>
@@ -232,7 +256,7 @@ function LanguageSelectorMobile({ style }: LanguageSelectorProps) {
               return (
                 <TouchableOpacity
                   key={lang}
-                  onPress={() => { changeLanguage(lang); setOpen(false); }}
+                  onPress={() => selectLanguage(lang)}
                   style={[s.option, isActive && { backgroundColor: isDark ? '#404040' : '#E5E7EB' }]}
                 >
                   <View style={[s.circle, { backgroundColor: isActive ? Colors.secondary : theme.primaryFaint }]}>

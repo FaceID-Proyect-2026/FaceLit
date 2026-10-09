@@ -7,40 +7,43 @@
 //  apagado. El botón "Volver" regresa a la pantalla de configuración
 //  de sesión (facial/index), nunca al menú principal.
 //
-//  Los tres campos usan SelectField con listas fijas de opciones (no
-//  texto libre), siguiendo el mismo criterio ya aplicado en
-//  ScheduleFormModal para horas: evita estados inválidos por horas mal
-//  formadas.
+//  El tiempo de registro usa una lista fija, mientras que la hora de
+//  salida y la hora de apagado permiten entrada manual.
 // ─────────────────────────────────────────────
 import {
-    DEFAULT_FACIAL_SETTINGS,
     FACIAL_REGISTRATION_MINUTES_OPTIONS,
-    FACIAL_TIME_SLOTS,
 } from '@/features/facial/types';
 import { useFacialRegistry } from '@/features/facial/useFacialRegistry';
-import { AppButton, SelectField } from '@/shared/components/ui';
+import { AppButton, SelectField, TimeInput } from '@/shared/components/ui';
 import { Colors } from '@/shared/constants/colors';
 import { Routes } from '@/shared/constants/routes';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
+import { useAuth } from '@/shared/contexts/AuthContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function FacialSettingsScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
-  const { settings, saveSettings } = useFacialRegistry();
+  const { user } = useAuth();
+  const { settings, saveSettings } = useFacialRegistry(user?.id);
   const { alert, DialogUI } = useAppDialog();
 
-  const initial = settings ?? DEFAULT_FACIAL_SETTINGS;
-  const [registrationMinutes, setRegistrationMinutes] = useState(String(initial.registrationMinutes));
-  const [exitTime, setExitTime] = useState(initial.exitTime);
-  const [shutdownTime, setShutdownTime] = useState(initial.shutdownTime);
+  const [registrationMinutes, setRegistrationMinutes] = useState(settings ? String(settings.registrationMinutes) : '');
+  const [exitTime, setExitTime] = useState(settings?.exitTime ?? '');
+  const [shutdownTime, setShutdownTime] = useState(settings?.shutdownTime ?? '');
   const [errors, setErrors] = useState<{ registrationMinutes?: string; exitTime?: string; shutdownTime?: string }>({});
+
+  useEffect(() => {
+    setRegistrationMinutes(settings ? String(settings.registrationMinutes) : '');
+    setExitTime(settings?.exitTime ?? '');
+    setShutdownTime(settings?.shutdownTime ?? '');
+  }, [settings]);
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -52,22 +55,12 @@ export default function FacialSettingsScreen() {
     value: String(minutes),
     label: `${minutes} min`,
   }));
-  const exitTimeOptions = FACIAL_TIME_SLOTS.map(slot => ({ value: slot, label: slot }));
-  // La hora de apagado solo puede ser posterior a la hora de salida, igual
-  // que endOptions en ScheduleFormModal para startTime/endTime.
-  const shutdownTimeOptions = FACIAL_TIME_SLOTS
-    .filter(slot => !exitTime || slot > exitTime)
-    .map(slot => ({ value: slot, label: slot }));
 
   const handleBack = () => {
-    if (router.canGoBack()) {
-      router.back();
-      return;
-    }
     router.replace(Routes.INSTRUCTOR.FACIAL as any);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const newErrors: typeof errors = {};
     if (!registrationMinutes) newErrors.registrationMinutes = t('common.required');
     if (!exitTime) newErrors.exitTime = t('common.required');
@@ -80,7 +73,7 @@ export default function FacialSettingsScreen() {
     }
     setErrors({});
 
-    const result = saveSettings({
+    const result = await saveSettings({
       registrationMinutes: Number(registrationMinutes),
       exitTime,
       shutdownTime,
@@ -129,25 +122,21 @@ export default function FacialSettingsScreen() {
               error={errors.registrationMinutes}
               placeholder={t('facial.settings.placeholders.registrationMinutes')}
             />
-            <SelectField
+            <TimeInput
               label={t('facial.settings.fields.exitTime')}
               value={exitTime}
-              options={exitTimeOptions}
-              onSelect={v => {
+              onChange={v => {
                 setExitTime(v);
                 if (shutdownTime && shutdownTime <= v) setShutdownTime('');
                 setErrors(p => ({ ...p, exitTime: '', shutdownTime: '' }));
               }}
               error={errors.exitTime}
-              placeholder={t('facial.settings.placeholders.exitTime')}
             />
-            <SelectField
+            <TimeInput
               label={t('facial.settings.fields.shutdownTime')}
               value={shutdownTime}
-              options={shutdownTimeOptions}
-              onSelect={v => { setShutdownTime(v); setErrors(p => ({ ...p, shutdownTime: '' })); }}
+              onChange={v => { setShutdownTime(v); setErrors(p => ({ ...p, shutdownTime: '' })); }}
               error={errors.shutdownTime}
-              placeholder={t('facial.settings.placeholders.shutdownTime')}
             />
 
             <AppButton title={t('common.save')} onPress={handleSave} style={{ marginTop: 20 }} />

@@ -6,19 +6,20 @@
 //  Solo puede registrar la persona autenticada.
 // ─────────────────────────────────────────────
 import FaceGuideOverlay from "@/features/auth/components/FaceGuideOverlay";
-import ShutterButton from "@/features/auth/components/ShutterButton";
 import WebCamera from "@/features/auth/components/WebCamera";
 import { useFacialRegistration } from "@/features/auth/hooks/useFacialRegistration";
 import { getFacialRecordsSnapshot } from "@/features/facial/facialStore";
 import { pushNotification } from "@/features/notifications/notificationsStore";
 import { Colors } from "@/shared/constants/colors";
+import { Routes } from "@/shared/constants/routes";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { useAuth } from "@/shared/contexts/AuthContext";
 import { useTheme } from "@/shared/contexts/ThemeContext";
 import { useAppDialog } from "@/shared/hooks/useAppDialog";
+import { fetchMyFacialEnrollmentStatus } from "@/shared/services/facialEnrollmentService";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { router, useLocalSearchParams } from "expo-router";
+import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -36,7 +37,6 @@ import {
 type Step = "confirm" | "camera" | "done";
 
 export default function ApprenticeFacialScreen() {
-  const { autoStart } = useLocalSearchParams<{ autoStart?: string }>();
   const { user } = useAuth();
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
@@ -44,6 +44,10 @@ export default function ApprenticeFacialScreen() {
   const [step, setStep] = useState<Step>("confirm");
   const [confirmed, setConfirmed] = useState(false);
   const [resetRequested, setResetRequested] = useState(false);
+  const [serverRegistered, setServerRegistered] = useState<boolean | null>(null);
+  const [serverRegistrationDate, setServerRegistrationDate] = useState<string | null>(null);
+  const [loadingRegistrationStatus, setLoadingRegistrationStatus] = useState(false);
+  const [registrationStatusError, setRegistrationStatusError] = useState<string | null>(null);
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -59,34 +63,65 @@ export default function ApprenticeFacialScreen() {
   // Estado del registro facial actual
   const records = getFacialRecordsSnapshot();
   const myRecord = records.find((r) => r.userId === user?.id);
-  const isRegistered = myRecord?.status === "registered";
+  const isRegistered = serverRegistered ?? myRecord?.status === "registered";
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadRegistrationStatus() {
+      if (!user?.id) {
+        setServerRegistered(null);
+        setServerRegistrationDate(null);
+        return;
+      }
+      setLoadingRegistrationStatus(true);
+      setRegistrationStatusError(null);
+      try {
+        const status = await fetchMyFacialEnrollmentStatus();
+        if (!cancelled) {
+          setServerRegistered(status.registered);
+          setServerRegistrationDate(status.registrationDate ?? null);
+        }
+      } catch (error) {
+        console.warn("[ApprenticeFacial] No se pudo consultar el estado facial:", error);
+        if (!cancelled) {
+          setServerRegistered(null);
+          setServerRegistrationDate(null);
+          setRegistrationStatusError("No fue posible verificar si ya tienes rostro registrado.");
+        }
+      } finally {
+        if (!cancelled) setLoadingRegistrationStatus(false);
+      }
+    }
+
+    loadRegistrationStatus();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   const {
     screenState,
-    photoUri,
     isTaking,
     quality,
     successModalVisible,
+    errorModalVisible,
+    errorModalMessage,
+    livenessChallenge,
     isWeb,
     isPositioning,
-    canFinish,
     cameraRef,
     handleOpenCamera,
     handleConfirmCamera,
     handleCancelCamera,
-    handleTakePhotoNative,
     handleWebCapture,
     handleWebShutter,
-    handleRetake,
-    handleFinish,
+    randomizeLivenessChallenge,
     handleCloseSuccessModal,
-  } = useFacialRegistration();
+    handleCloseErrorModal,
+  } = useFacialRegistration({ requireResponsibilityConfirmation: false });
 
-  useEffect(() => {
-    if (autoStart !== "1" || isRegistered) return;
-    setStep("camera");
-    handleOpenCamera();
-  }, [autoStart, handleOpenCamera, isRegistered]);
+  const canStartRegistration = !loadingRegistrationStatus && !registrationStatusError && serverRegistered === false;
 
   // ── Cancelar desde la cámara → limpia estado y vuelve al paso confirm ──
   function handleCancelAndReturn() {
@@ -97,11 +132,8 @@ export default function ApprenticeFacialScreen() {
   // ── Confirmación de identidad (RF-5.1) ────────
   function handleConfirmAndProceed() {
     if (!confirmed) return;
+    if (loadingRegistrationStatus || registrationStatusError || serverRegistered === null) return;
     if (isRegistered) {
-      alert(
-        t("facialReg.alreadyRegisteredTitle"),
-        t("facialReg.alreadyRegisteredBody"),
-      );
       return;
     }
     setStep("camera");
@@ -131,27 +163,16 @@ export default function ApprenticeFacialScreen() {
   // ── Al cerrar modal de éxito ───────────────────
   function handleSuccess() {
     handleCloseSuccessModal();
+    setServerRegistered(true);
+    setServerRegistrationDate(new Date().toISOString());
     setStep("done");
   }
 
-  // ── Validaciones de calidad como chips ────────
-  const qualityWarnings: { icon: string; label: string; ok: boolean }[] = [
-    {
-      icon: "sunny-outline",
-      label: t("facialReg.checkLight"),
-      ok: quality !== "lowLight",
-    },
-    {
-      icon: "scan-outline",
-      label: t("facialReg.checkFace"),
-      ok: screenState !== "idle" && screenState !== "requesting",
-    },
-    {
-      icon: "camera-outline",
-      label: t("facialReg.checkFrontal"),
-      ok: quality === "good",
-    },
-  ];
+  const formatRegistrationDate = (value?: string | null) => {
+    if (!value) return "";
+    return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(value));
+  };
+  const registeredDateLabel = formatRegistrationDate(serverRegistrationDate) || myRecord?.date || "";
 
   // ─────────────────────────────────────────────
   //  PASO 1 — Confirmación de identidad
@@ -163,12 +184,7 @@ export default function ApprenticeFacialScreen() {
 
         {/* Header */}
         <View style={[s.header, { borderBottomColor: border }]}>
-          <TouchableOpacity
-            onPress={() => router.back()}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons name="arrow-back" size={22} color={text} />
-          </TouchableOpacity>
+          <View style={{ width: 22 }} />
           <Text style={[s.headerTitle, { color: text }]}>
             {t("sidebar.facialRecognition")}
           </Text>
@@ -197,12 +213,16 @@ export default function ApprenticeFacialScreen() {
               <Text style={[s.statusTitle, { color: text }]}>
                 {isRegistered
                   ? t("facialReg.alreadyRegisteredTitle")
-                  : t("facialReg.pendingTitle")}
+                  : loadingRegistrationStatus
+                    ? t("common.loading")
+                    : t("facialReg.pendingTitle")}
               </Text>
               <Text style={[s.statusDesc, { color: muted }]}>
                 {isRegistered
                   ? t("facialReg.registeredOn") +
-                    ` ${myRecord?.date ?? ""}`
+                    ` ${registeredDateLabel}`
+                  : registrationStatusError
+                    ? registrationStatusError
                   : t("facialReg.registerFaceDesc")}
               </Text>
             </View>
@@ -337,12 +357,12 @@ export default function ApprenticeFacialScreen() {
           {/* Botón continuar */}
           <TouchableOpacity
             onPress={handleConfirmAndProceed}
-            disabled={!confirmed || isRegistered}
+            disabled={!confirmed || isRegistered || loadingRegistrationStatus || !!registrationStatusError || serverRegistered === null}
             style={[
               s.primaryBtn,
               {
                 backgroundColor:
-                  !confirmed || isRegistered ? muted + "40" : theme.primary,
+                  !confirmed || isRegistered || loadingRegistrationStatus ? muted + "40" : theme.primary,
               },
             ]}
             activeOpacity={0.85}
@@ -351,7 +371,9 @@ export default function ApprenticeFacialScreen() {
             <Text style={s.primaryBtnText}>
               {isRegistered
                 ? t("facialReg.alreadyRegisteredTitle")
-                : t("facialReg.captureBtn")}
+                : loadingRegistrationStatus
+                  ? t("common.loading")
+                  : t("facialReg.captureBtn")}
             </Text>
           </TouchableOpacity>
         </ScrollView>
@@ -366,119 +388,10 @@ export default function ApprenticeFacialScreen() {
     return (
       <View style={[s.safe, { backgroundColor: "#000" }]}>
         {DialogUI}
-        {/* Header cámara */}
-        <View style={[s.camHeader]}>
-          <TouchableOpacity
-            onPress={handleCancelAndReturn}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons name="arrow-back" size={22} color={Colors.white} />
-          </TouchableOpacity>
-          <Text style={s.camHeaderTitle}>{t("facialReg.title")}</Text>
-          <View style={{ width: 22 }} />
-        </View>
-
-        {/* Chips de calidad */}
-        <View style={s.qualityRow}>
-          {qualityWarnings.map((w) => (
-            <View
-              key={w.label}
-              style={[
-                s.qualityChip,
-                {
-                  backgroundColor: w.ok
-                    ? Colors.success + "22"
-                    : Colors.error + "22",
-                  borderColor: w.ok ? Colors.success : Colors.error,
-                },
-              ]}
-            >
-              <Ionicons
-                name={w.icon as any}
-                size={13}
-                color={w.ok ? Colors.success : Colors.error}
-              />
-              <Text
-                style={{
-                  color: w.ok ? Colors.success : Colors.error,
-                  fontSize: 11,
-                  fontWeight: "700",
-                }}
-              >
-                {w.label}
-              </Text>
-            </View>
-          ))}
-        </View>
 
         {/* Vista de cámara */}
         <View style={s.cameraWrap}>
-          {photoUri ? (
-            // Vista previa después de captura
-            <View
-              style={{
-                flex: 1,
-                backgroundColor: "#000",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Text
-                style={{
-                  color: Colors.white,
-                  fontSize: FontSize.lg,
-                  marginBottom: 24,
-                }}
-              >
-                {t("facialReg.captured")}
-              </Text>
-              <View style={s.previewActions}>
-                <TouchableOpacity
-                  onPress={handleRetake}
-                  style={[s.secondaryBtn]}
-                >
-                  <Ionicons
-                    name="refresh-outline"
-                    size={18}
-                    color={Colors.white}
-                  />
-                  <Text style={{ color: Colors.white, fontWeight: "700" }}>
-                    {t("facialReg.retake")}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={handleFinish}
-                  disabled={!canFinish}
-                  style={[
-                    s.primaryBtn,
-                    {
-                      backgroundColor: canFinish ? theme.primary : muted + "60",
-                      flex: 1,
-                    },
-                  ]}
-                >
-                  <Ionicons
-                    name="checkmark-circle-outline"
-                    size={18}
-                    color={Colors.white}
-                  />
-                  <Text style={s.primaryBtnText}>{t("facialReg.finish")}</Text>
-                </TouchableOpacity>
-              </View>
-              {quality === "lowLight" && (
-                <Text
-                  style={{
-                    color: Colors.warning,
-                    textAlign: "center",
-                    paddingHorizontal: 24,
-                    marginTop: 12,
-                  }}
-                >
-                  {t("facialReg.lowLight")}
-                </Text>
-              )}
-            </View>
-          ) : isWeb ? (
+          {isWeb ? (
             <WebCamera
               primaryColor={theme.primary}
               isTaking={isTaking}
@@ -489,6 +402,10 @@ export default function ApprenticeFacialScreen() {
               onShutter={handleWebShutter}
               onConfirm={handleConfirmCamera}
               onCancel={handleCancelAndReturn}
+              onFaceReady={randomizeLivenessChallenge}
+              requiresLiveness
+              autoCapture
+              livenessInstruction={livenessChallenge.label}
             />
           ) : (
             (() => {
@@ -506,6 +423,9 @@ export default function ApprenticeFacialScreen() {
                     isPositioning={isPositioning}
                     screenState={screenState}
                     quality={quality}
+                    requiresLiveness
+                    livenessCaptureActive={isTaking}
+                    livenessInstruction={livenessChallenge.label}
                     onConfirm={handleConfirmCamera}
                     onCancel={handleCancelAndReturn}
                   />
@@ -514,18 +434,6 @@ export default function ApprenticeFacialScreen() {
             })()
           )}
         </View>
-
-        {/* Botón disparador (solo nativo, cuando cámara activa y no hay foto) */}
-        {!photoUri && !isWeb && (
-          <View style={s.shutterWrap}>
-            <ShutterButton
-              primaryColor={theme.primary}
-              onPress={handleTakePhotoNative}
-              disabled={isTaking || screenState !== "ready"}
-              loading={isTaking}
-            />
-          </View>
-        )}
 
         {/* Modal de éxito */}
         {successModalVisible && (
@@ -546,6 +454,35 @@ export default function ApprenticeFacialScreen() {
               </Text>
               <TouchableOpacity
                 onPress={handleSuccess}
+                style={[
+                  s.primaryBtn,
+                  { marginTop: 24, backgroundColor: theme.primary },
+                ]}
+              >
+                <Text style={s.primaryBtnText}>{t("common.ok")}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {errorModalVisible && (
+          <View style={s.successOverlay}>
+            <View style={[s.successModal, { backgroundColor: cardBg }]}>
+              <Ionicons
+                name="alert-circle"
+                size={60}
+                color={Colors.error}
+              />
+              <Text style={[s.successTitle, { color: text }]}>
+                No se pudo registrar
+              </Text>
+              <Text
+                style={[{ color: muted, textAlign: "center", marginTop: 8 }]}
+              >
+                {errorModalMessage}
+              </Text>
+              <TouchableOpacity
+                onPress={handleCloseErrorModal}
                 style={[
                   s.primaryBtn,
                   { marginTop: 24, backgroundColor: theme.primary },
@@ -583,7 +520,7 @@ export default function ApprenticeFacialScreen() {
         {t("facialReg.successMessage")}
       </Text>
       <TouchableOpacity
-        onPress={() => router.back()}
+        onPress={() => router.replace(Routes.APPRENTICE.DASHBOARD as any)}
         style={[
           s.primaryBtn,
           { marginTop: 32, backgroundColor: theme.primary },
@@ -742,9 +679,80 @@ const s = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
+  scannerPanel: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginHorizontal: 16,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
+    backgroundColor: "rgba(12,18,16,0.82)",
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  scannerIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  scannerCopy: { flex: 1 },
+  scannerTitle: {
+    color: Colors.white,
+    fontSize: FontSize.base,
+    fontWeight: FontWeight.black,
+  },
+  scannerBody: {
+    color: "rgba(255,255,255,0.72)",
+    fontSize: FontSize.sm,
+    lineHeight: 18,
+    marginTop: 2,
+  },
+  qualityRail: { flexDirection: "row", gap: 6 },
+  qualityDot: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   cameraWrap: { flex: 1 },
   shutterWrap: { alignItems: "center", paddingBottom: 40, paddingTop: 20 },
   previewActions: { flexDirection: "row", gap: 12, paddingHorizontal: 24 },
+  processingWrap: {
+    flex: 1,
+    backgroundColor: "#000",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+  },
+  processingRing: {
+    width: 118,
+    height: 118,
+    borderRadius: 59,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.06)",
+  },
+  processingTitle: {
+    color: Colors.white,
+    fontSize: FontSize.xl,
+    fontWeight: FontWeight.black,
+    marginTop: 22,
+    textAlign: "center",
+  },
+  processingBody: {
+    color: "rgba(255,255,255,0.72)",
+    fontSize: FontSize.base,
+    marginTop: 8,
+    textAlign: "center",
+    lineHeight: 22,
+  },
 
   // Success overlay
   successOverlay: {
