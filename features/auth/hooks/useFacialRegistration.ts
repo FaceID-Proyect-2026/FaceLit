@@ -27,6 +27,26 @@ export type CaptureQuality = 'checking' | 'good' | 'lowLight';
 
 const POSITIONING_DELAY_MS  = 1500; // tiempo simulado de "acércate más"
 export const MIN_BRIGHTNESS_SCORE = 60; // umbral de brillo (0–255)
+const LIVENESS_FRAME_COUNT = 5;
+const LIVENESS_START_DELAY_MS = 650;
+const LIVENESS_FRAME_DELAY_MS = 380;
+
+type LivenessChallenge = {
+  code: 'BLINK' | 'OPEN_CLOSE_MOUTH' | 'STICK_TONGUE' | 'MOVE_LEFT' | 'MOVE_RIGHT' | 'MOVE_CLOSER' | 'MOVE_AWAY';
+  label: string;
+};
+
+const LIVENESS_CHALLENGES: LivenessChallenge[] = [
+  { code: 'BLINK', label: 'Pestañea una vez' },
+  { code: 'OPEN_CLOSE_MOUTH', label: 'Abre y cierra la boca' },
+  { code: 'STICK_TONGUE', label: 'Saca la lengua un momento' },
+  { code: 'MOVE_LEFT', label: 'Mueve tu rostro hacia la izquierda' },
+  { code: 'MOVE_RIGHT', label: 'Mueve tu rostro hacia la derecha' },
+  { code: 'MOVE_CLOSER', label: 'Acércate un poco a la cámara' },
+  { code: 'MOVE_AWAY', label: 'Aléjate un poco de la cámara' },
+];
+
+const ALREADY_REGISTERED_ERROR = 'facial.validation.alreadyRegistered';
 
 // ── Helper de negocio: brillo promedio de una imagen (canvas web) ──
 export function getAverageBrightness(canvas: HTMLCanvasElement): number {
@@ -73,11 +93,13 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
 
   const [screenState, setScreenState]                 = useState<ScreenState>('idle');
   const [photoUri, setPhotoUri]                       = useState<string | null>(null);
+  const [photoUris, setPhotoUris]                     = useState<string[]>([]);
   const [isTaking, setIsTaking]                       = useState(false);
   const [isRegistering, setIsRegistering]             = useState(false);
   const [quality, setQuality]                         = useState<CaptureQuality>('checking');
   const [successModalVisible, setSuccessModalVisible] = useState(false);
   const [errorModalMessage, setErrorModalMessage]     = useState<string | null>(null);
+  const [livenessChallenge, setLivenessChallenge]     = useState<LivenessChallenge>(() => LIVENESS_CHALLENGES[0]);
 
   const cameraRef        = useRef<CameraView>(null);
   const positioningTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -93,6 +115,7 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
 
   // ── Iniciar simulación de "acércate más" → "posición correcta" ──
   const startPositioningSimulation = useCallback(() => {
+    setLivenessChallenge(LIVENESS_CHALLENGES[Math.floor(Math.random() * LIVENESS_CHALLENGES.length)]);
     setScreenState('positioning');
     positioningTimer.current = setTimeout(() => {
       setScreenState('ready');
@@ -147,6 +170,7 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
   const handleCancelCamera = useCallback(() => {
     setScreenState('idle');
     setPhotoUri(null);
+    setPhotoUris([]);
     setQuality('checking');
   }, []);
 
@@ -160,9 +184,18 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
     if (!cameraRef.current || isTaking) return;
     setIsTaking(true);
     try {
-      const photo = await cameraRef.current.takePictureAsync({ quality: 0.7 });
-      if (photo?.uri) {
-        setPhotoUri(photo.uri);
+      const captures: string[] = [];
+      await new Promise((resolve) => setTimeout(resolve, LIVENESS_START_DELAY_MS));
+      for (let index = 0; index < LIVENESS_FRAME_COUNT; index += 1) {
+        const photo = await cameraRef.current.takePictureAsync({ quality: 0.7, skipProcessing: true });
+        if (photo?.uri) captures.push(photo.uri);
+        if (index < LIVENESS_FRAME_COUNT - 1) {
+          await new Promise((resolve) => setTimeout(resolve, LIVENESS_FRAME_DELAY_MS));
+        }
+      }
+      if (captures.length === LIVENESS_FRAME_COUNT) {
+        setPhotoUri(captures[captures.length - 1]);
+        setPhotoUris(captures);
         // En nativo no hay acceso directo a píxeles sin librerías extra,
         // así que se asume buena calidad salvo casos extremos
         setQuality('good');
@@ -176,8 +209,12 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
   }, [isTaking, t]);
 
   // ── Captura web (con análisis real de brillo) ─
-  const handleWebCapture = useCallback((dataUri: string, brightness: number) => {
-    setPhotoUri(dataUri);
+  const handleWebCapture = useCallback((dataUri: string | string[], brightness: number) => {
+    const frames = Array.isArray(dataUri) ? dataUri : [dataUri];
+    const preview = frames[frames.length - 1];
+    if (!preview) return;
+    setPhotoUri(preview);
+    setPhotoUris(frames);
     evaluateBrightness(brightness);
     setScreenState('captured');
   }, [evaluateBrightness]);
@@ -190,6 +227,7 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
   // ── Retomar ────────────────────────────────────
   const handleRetake = useCallback(() => {
     setPhotoUri(null);
+    setPhotoUris([]);
     setQuality('checking');
     startPositioningSimulation();
   }, [startPositioningSimulation]);
@@ -226,17 +264,21 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
     setIsRegistering(true);
     try {
       const imageBase64 = await imageUriToDataUri(photoUri);
+      const sourceFrames = photoUris.length >= LIVENESS_FRAME_COUNT ? photoUris : [photoUri];
+      const imageFrames = await Promise.all(sourceFrames.map((uri) => imageUriToDataUri(uri)));
       await registerFacialEmbeddingFromImage({
         userId: facialUser.id,
         imageBase64,
+        imageFrames,
+        livenessChallenge: livenessChallenge.code,
         photoReference: buildPhotoReference(photoUri, isWeb),
         replaceExisting,
         createdBy,
       });
 
       const result = registerFacialCapture(facialUser, photoUri, true, replaceExisting);
-      if (!result.success) {
-        alert(t(result.error));
+      if (!result.success && result.error !== ALREADY_REGISTERED_ERROR) {
+        setErrorModalMessage(t(result.error));
         return;
       }
       setSuccessModalVisible(true);
@@ -249,8 +291,8 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
       });
       if (allowLocalFallback) {
         const result = registerFacialCapture(facialUser, photoUri, true, replaceExisting);
-        if (!result.success) {
-          alert(t(result.error));
+        if (!result.success && result.error !== ALREADY_REGISTERED_ERROR) {
+          setErrorModalMessage(t(result.error));
           return;
         }
         setSuccessModalVisible(true);
@@ -260,7 +302,24 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
     } finally {
       setIsRegistering(false);
     }
-  }, [screenState, photoUri, quality, isRegistering, isWeb, t, user, targetUser, replaceExisting, createdBy, allowLocalFallback]);
+  }, [screenState, photoUri, photoUris, quality, isRegistering, isWeb, t, user, targetUser, replaceExisting, createdBy, allowLocalFallback, livenessChallenge.code]);
+
+  useEffect(() => {
+    if (isWeb || screenState !== 'ready' || photoUri || isTaking || isRegistering || errorModalMessage || successModalVisible) {
+      return;
+    }
+    const timer = setTimeout(() => {
+      handleTakePhotoNative();
+    }, 900);
+    return () => clearTimeout(timer);
+  }, [errorModalMessage, handleTakePhotoNative, isRegistering, isTaking, isWeb, photoUri, screenState, successModalVisible]);
+
+  useEffect(() => {
+    if (screenState !== 'captured' || quality !== 'good' || isRegistering || successModalVisible || errorModalMessage) {
+      return;
+    }
+    handleFinish();
+  }, [errorModalMessage, handleFinish, isRegistering, quality, screenState, successModalVisible]);
 
   // Al cerrar el modal se queda en el flujo actual; la pantalla decide qué mostrar después.
   const handleCloseSuccessModal = useCallback(() => {
@@ -269,7 +328,8 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
 
   const handleCloseErrorModal = useCallback(() => {
     setErrorModalMessage(null);
-  }, []);
+    handleRetake();
+  }, [handleRetake]);
 
   return {
     // estado
@@ -284,6 +344,7 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
     isWeb,
     isPositioning,
     canFinish,
+    livenessChallenge,
     cameraRef,
 
     // acciones

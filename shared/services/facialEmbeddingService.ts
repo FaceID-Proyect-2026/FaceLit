@@ -5,6 +5,8 @@ import { EMBEDDING_API_KEY, EMBEDDING_API_URL } from '@/shared/constants/api';
 export interface FacialEmbeddingFromImagePayload {
   userId: string;
   imageBase64: string;
+  imageFrames?: string[];
+  livenessChallenge?: string;
   photoReference?: string | null;
   replaceExisting?: boolean;
   createdBy?: string;
@@ -91,6 +93,8 @@ export async function registerFacialEmbeddingFromImage(
     {
       user_id: payload.userId,
       image_base64: payload.imageBase64,
+      image_frames: payload.imageFrames ?? [],
+      liveness_challenge: payload.livenessChallenge ?? null,
       photo_reference: payload.photoReference ?? null,
       replace_existing: payload.replaceExisting ?? false,
       created_by: payload.createdBy ?? 'mobile-app',

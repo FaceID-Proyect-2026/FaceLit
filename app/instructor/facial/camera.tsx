@@ -6,7 +6,6 @@
 //  configurada por el instructor.
 // ─────────────────────────────────────────────
 import FaceGuideOverlay from "@/features/auth/components/FaceGuideOverlay";
-import ShutterButton from "@/features/auth/components/ShutterButton";
 import WebCamera from "@/features/auth/components/WebCamera";
 import { useFacialRegistry } from "@/features/facial/useFacialRegistry";
 import { useSessionAttendanceCapture } from "@/features/facial/useSessionAttendanceCapture";
@@ -43,18 +42,16 @@ export default function InstructorFacialCameraScreen() {
     successModalVisible,
     errorModalVisible,
     errorModalMessage,
+    livenessChallenge,
     isWeb,
     isPositioning,
-    canFinish,
     cameraRef,
     handleOpenCamera,
     handleConfirmCamera,
     handleCancelCamera,
-    handleTakePhotoNative,
     handleWebCapture,
     handleWebShutter,
     handleRetake,
-    handleFinish,
     handleCloseSuccessModal,
     handleCloseErrorModal,
   } = useSessionAttendanceCapture({ session: activeSession });
@@ -99,6 +96,13 @@ export default function InstructorFacialCameraScreen() {
     return () => clearTimeout(timer);
   }, [activeSession, handleCancelCamera, setActiveSession, settings?.shutdownTime]);
 
+  const scannerStatus = (() => {
+    if (isRegistering) return { icon: "cloud-upload-outline", title: "Verificando identidad", body: "Comparando rostro y validando vida..." };
+    if (isTaking) return { icon: "scan-outline", title: "Capturando prueba de vida", body: livenessChallenge.label };
+    if (screenState === "ready") return { icon: "radio-outline", title: "Reto aleatorio listo", body: livenessChallenge.label };
+    return { icon: "time-outline", title: "Preparando cámara", body: "Centra el rostro y espera la detección automática." };
+  })();
+
   const qualityWarnings: { icon: string; label: string; ok: boolean }[] = [
     {
       icon: "sunny-outline",
@@ -142,65 +146,41 @@ export default function InstructorFacialCameraScreen() {
         <View style={{ width: 22 }} />
       </View>
 
-      <View style={s.qualityRow}>
-        {qualityWarnings.map((warning) => (
-          <View
-            key={warning.label}
-            style={[
-              s.qualityChip,
-              {
-                backgroundColor: warning.ok ? Colors.success + "22" : Colors.error + "22",
-                borderColor: warning.ok ? Colors.success : Colors.error,
-              },
-            ]}
-          >
-            <Ionicons
-              name={warning.icon as any}
-              size={13}
-              color={warning.ok ? Colors.success : Colors.error}
-            />
-            <Text
-              style={{
-                color: warning.ok ? Colors.success : Colors.error,
-                fontSize: 11,
-                fontWeight: "700",
-              }}
+      <View style={s.scannerPanel}>
+        <View style={[s.scannerIcon, { backgroundColor: theme.primary + "22", borderColor: theme.primary + "55" }]}>
+          <Ionicons name={scannerStatus.icon as any} size={22} color={theme.primary} />
+        </View>
+        <View style={s.scannerCopy}>
+          <Text style={s.scannerTitle}>{scannerStatus.title}</Text>
+          <Text style={s.scannerBody}>{scannerStatus.body}</Text>
+        </View>
+        <View style={s.qualityRail}>
+          {qualityWarnings.map((warning) => (
+            <View
+              key={warning.label}
+              style={[
+                s.qualityDot,
+                { backgroundColor: warning.ok ? Colors.success : Colors.error },
+              ]}
             >
-              {warning.label}
-            </Text>
-          </View>
-        ))}
+              <Ionicons name={warning.icon as any} size={12} color={Colors.white} />
+            </View>
+          ))}
+        </View>
       </View>
 
       <View style={s.cameraWrap}>
         {photoUri ? (
-          <View style={s.previewWrap}>
-            <Text style={s.capturedText}>{t("facialReg.captured")}</Text>
-            <View style={s.previewActions}>
-              <TouchableOpacity onPress={handleRetake} style={s.secondaryBtn}>
-                <Ionicons name="refresh-outline" size={18} color={Colors.white} />
-                <Text style={s.secondaryBtnText}>{t("facialReg.retake")}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleFinish}
-                disabled={!canFinish}
-                style={[
-                  s.primaryBtn,
-                  {
-                    backgroundColor: canFinish ? theme.primary : muted + "60",
-                    flex: 1,
-                  },
-                ]}
-              >
-                <Ionicons name="checkmark-circle-outline" size={18} color={Colors.white} />
-                <Text style={s.primaryBtnText}>
-                  {isRegistering ? "Registrando asistencia..." : "Registrar asistencia"}
-                </Text>
-              </TouchableOpacity>
+          <View style={s.processingWrap}>
+            <View style={[s.processingRing, { borderColor: theme.primary }]}>
+              <Ionicons name="scan" size={44} color={theme.primary} />
             </View>
-            {quality === "lowLight" && (
-              <Text style={s.lowLightText}>{t("facialReg.lowLight")}</Text>
-            )}
+            <Text style={s.processingTitle}>
+              {isRegistering ? "Identificando aprendiz" : "Captura tomada"}
+            </Text>
+            <Text style={s.processingBody}>
+              {isRegistering ? "Validando que sea una persona en vivo..." : "Preparando validación automática..."}
+            </Text>
           </View>
         ) : isWeb ? (
           <WebCamera
@@ -213,6 +193,9 @@ export default function InstructorFacialCameraScreen() {
             onShutter={handleWebShutter}
             onConfirm={handleConfirmCamera}
             onCancel={handleCancelAndReturn}
+            requiresLiveness
+            autoCapture
+            livenessInstruction={livenessChallenge.label}
           />
         ) : (
           (() => {
@@ -230,6 +213,9 @@ export default function InstructorFacialCameraScreen() {
                   isPositioning={isPositioning}
                   screenState={screenState}
                   quality={quality}
+                  requiresLiveness
+                  livenessCaptureActive={isTaking}
+                  livenessInstruction={livenessChallenge.label}
                   onConfirm={handleConfirmCamera}
                   onCancel={handleCancelAndReturn}
                 />
@@ -238,17 +224,6 @@ export default function InstructorFacialCameraScreen() {
           })()
         )}
       </View>
-
-      {!photoUri && !isWeb && (
-        <View style={s.shutterWrap}>
-          <ShutterButton
-            primaryColor={theme.primary}
-            onPress={handleTakePhotoNative}
-            disabled={isTaking || screenState !== "ready"}
-            loading={isTaking}
-          />
-        </View>
-      )}
 
       {successModalVisible && (
         <View style={s.successOverlay}>
@@ -314,6 +289,50 @@ const s = StyleSheet.create({
     paddingBottom: 8,
     flexWrap: "wrap",
   },
+  scannerPanel: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginHorizontal: 16,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
+    backgroundColor: "rgba(12,18,16,0.82)",
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  scannerIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  scannerCopy: { flex: 1 },
+  scannerTitle: {
+    color: Colors.white,
+    fontSize: FontSize.base,
+    fontWeight: FontWeight.black,
+  },
+  scannerBody: {
+    color: "rgba(255,255,255,0.72)",
+    fontSize: FontSize.sm,
+    lineHeight: 18,
+    marginTop: 2,
+  },
+  qualityRail: {
+    flexDirection: "row",
+    gap: 6,
+  },
+  qualityDot: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   qualityChip: {
     flexDirection: "row",
     alignItems: "center",
@@ -324,29 +343,36 @@ const s = StyleSheet.create({
     paddingVertical: 4,
   },
   cameraWrap: { flex: 1 },
-  previewWrap: {
+  processingWrap: {
     flex: 1,
     backgroundColor: "#000",
     alignItems: "center",
     justifyContent: "center",
+    padding: 24,
   },
-  capturedText: {
+  processingRing: {
+    width: 118,
+    height: 118,
+    borderRadius: 59,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.06)",
+  },
+  processingTitle: {
     color: Colors.white,
-    fontSize: FontSize.lg,
-    marginBottom: 24,
-  },
-  previewActions: {
-    flexDirection: "row",
-    gap: 12,
-    paddingHorizontal: 24,
-  },
-  lowLightText: {
-    color: Colors.warning,
+    fontSize: FontSize.xl,
+    fontWeight: FontWeight.black,
+    marginTop: 22,
     textAlign: "center",
-    paddingHorizontal: 24,
-    marginTop: 12,
   },
-  shutterWrap: { alignItems: "center", paddingBottom: 40, paddingTop: 20 },
+  processingBody: {
+    color: "rgba(255,255,255,0.72)",
+    fontSize: FontSize.base,
+    marginTop: 8,
+    textAlign: "center",
+    lineHeight: 22,
+  },
   successOverlay: {
     ...StyleSheet.absoluteFill,
     backgroundColor: "rgba(0,0,0,0.7)",

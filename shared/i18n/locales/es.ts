@@ -476,6 +476,9 @@
     readyToCapture: "Posición correcta, puedes capturar.",
     moving: "Mantente quieto para capturar.",
     stabilizing: "Mantén la posición…",
+    livenessReady: "Pulsa capturar y mueve la cabeza suavemente",
+    livenessCapturing: "Mueve la cabeza suavemente hacia un lado",
+    livenessKeepFace: "Mantén tu rostro dentro del óvalo",
   },
 
   // ─────────────────────────────────────────────

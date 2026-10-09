@@ -24,6 +24,9 @@ interface FaceGuideOverlayProps {
   screenState:   ScreenState;
   quality:       CaptureQuality;
   liveWarning?:  LiveWarning;
+  requiresLiveness?: boolean;
+  livenessCaptureActive?: boolean;
+  livenessInstruction?: string;
   /** Frames consecutivos sin advertencias acumulados */
   stableFrames?:   number;
   /** Frames necesarios para habilitar captura */
@@ -68,7 +71,9 @@ const POSITIONING_FALLBACKS = [
 
 export default function FaceGuideOverlay({
   primaryColor, isPositioning, screenState, quality,
-  liveWarning, stableFrames = 0, requiredFrames = 5, onConfirm, onCancel,
+  liveWarning, requiresLiveness = false, livenessCaptureActive = false,
+  livenessInstruction,
+  stableFrames = 0, requiredFrames = 5, onConfirm, onCancel,
 }: FaceGuideOverlayProps) {
   const { t } = useTranslation();
   const [posIdx, setPosIdx] = useState(0);
@@ -115,6 +120,25 @@ export default function FaceGuideOverlay({
               <Text style={s.acceptText}>{t('facialReg.accept')}</Text>
             </TouchableOpacity>
           </View>
+        </View>
+      </View>
+    );
+  }
+
+  if (requiresLiveness && livenessCaptureActive) {
+    return (
+      <View style={[s.container, { pointerEvents: 'none' } as any]}>
+        <View style={[s.oval, { borderColor: primaryColor, borderStyle: 'solid' }]} />
+        <View style={[s.badge, s.livenessBadge, { backgroundColor: primaryColor + 'F2' }]}>
+          <Ionicons name="sync-outline" size={18} color={Colors.white} />
+          <Text style={s.badgeText} numberOfLines={2}>
+            {livenessInstruction || t('facialReg.livenessCapturing', 'Mueve la cabeza suavemente hacia un lado')}
+          </Text>
+        </View>
+        <View style={s.livenessHint}>
+          <Text style={s.livenessHintText}>
+            {t('facialReg.livenessKeepFace', 'Mantén tu rostro dentro del óvalo')}
+          </Text>
         </View>
       </View>
     );
@@ -170,6 +194,20 @@ export default function FaceGuideOverlay({
 
   // ── 4. Estado ready sin advertencias → "Posición correcta" ──
   if (screenState === 'ready') {
+    if (requiresLiveness) {
+      return (
+        <View style={[s.container, { pointerEvents: 'none' } as any]}>
+          <View style={[s.oval, { borderColor: primaryColor, borderStyle: 'solid' }]} />
+          <View style={[s.badge, s.livenessBadge, { backgroundColor: primaryColor + 'EE' }]}>
+            <Ionicons name="body-outline" size={18} color={Colors.white} />
+            <Text style={s.badgeText} numberOfLines={2}>
+              {livenessInstruction || t('facialReg.livenessReady', 'Pulsa capturar y mueve la cabeza suavemente')}
+            </Text>
+          </View>
+        </View>
+      );
+    }
+
     return (
       <View style={[s.container, { pointerEvents: 'none' } as any]}>
         <View style={[s.oval, { borderColor: primaryColor, borderStyle: 'solid' }]} />
@@ -216,6 +254,26 @@ const s = StyleSheet.create({
     shadowOpacity:     0.4,
     shadowRadius:      6,
     elevation:         6,
+  },
+  livenessBadge: {
+    bottom: 118,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  livenessHint: {
+    position: 'absolute',
+    bottom: 78,
+    backgroundColor: 'rgba(0,0,0,0.58)',
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    maxWidth: '86%',
+  },
+  livenessHintText: {
+    color: Colors.white,
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.bold,
+    textAlign: 'center',
   },
   badgeText: {
     color:      Colors.white,

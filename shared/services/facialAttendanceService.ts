@@ -14,6 +14,8 @@ export interface FacialAttendanceCapturePayload {
   idRecordEnvironment: string;
   idDevice: string;
   imageBase64: string;
+  imageFrames?: string[];
+  livenessChallenge?: string;
   origin: 'PC' | 'MOBILE';
 }
 
@@ -93,6 +95,8 @@ export async function registerFacialAttendanceFromImage(
     idRecordEnvironment: payload.idRecordEnvironment,
     idDevice: payload.idDevice,
     imageBase64: payload.imageBase64,
+    imageFrames: payload.imageFrames ?? [payload.imageBase64],
+    livenessChallenge: payload.livenessChallenge,
     origin: payload.origin,
   });
 
