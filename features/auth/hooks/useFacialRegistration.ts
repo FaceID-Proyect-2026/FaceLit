@@ -108,7 +108,10 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
   const canFinish         = screenState === 'captured' && quality === 'good' && !isRegistering;
 
   const randomizeLivenessChallenge = useCallback(() => {
-    setLivenessChallenge(LIVENESS_CHALLENGES[Math.floor(Math.random() * LIVENESS_CHALLENGES.length)]);
+    setLivenessChallenge((current) => {
+      const nextOptions = LIVENESS_CHALLENGES.filter((challenge) => challenge.code !== current.code);
+      return nextOptions[Math.floor(Math.random() * nextOptions.length)] ?? current;
+    });
   }, []);
 
   useEffect(() => {

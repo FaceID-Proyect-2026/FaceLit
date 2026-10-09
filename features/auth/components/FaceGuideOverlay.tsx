@@ -174,6 +174,15 @@ export default function FaceGuideOverlay({
     );
   }
 
+  if (screenState === 'captured') {
+    return renderOvalMessage(
+      STATE_GREEN,
+      'scan-outline',
+      livenessInstruction || t('facialReg.livenessCapturing', 'Validando prueba de vida'),
+      'solid',
+    );
+  }
+
   // ── 2. Advertencia en tiempo real (máxima prioridad) ──
   if (liveWarning && liveWarning !== 'none') {
     const cfg      = WARNING_CONFIG[liveWarning];

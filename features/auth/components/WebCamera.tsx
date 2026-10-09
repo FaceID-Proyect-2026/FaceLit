@@ -373,7 +373,7 @@ export default function WebCamera({
       capture();
     }, 650);
     return () => clearTimeout(timer);
-  }, [autoCapture, capture, screenState, shutterDisabled, warning]);
+  }, [autoCapture, capture, livenessInstruction, screenState, shutterDisabled, warning]);
 
   if (error) {
     return (
