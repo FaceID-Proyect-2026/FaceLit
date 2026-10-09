@@ -10,12 +10,19 @@ import {
   SessionInstructor,
 } from './environmentSessionApi';
 
+function timeToTodayIso(time: string, baseDate = new Date()) {
+  const [hours, minutes] = time.split(':').map(Number);
+  const date = new Date(baseDate);
+  date.setHours(hours, minutes || 0, 0, 0);
+  return date.toISOString();
+}
+
 export function useEnvironmentSession() {
   const [environmentQuery, setEnvironmentQueryState] = useState('');
   const [environments, setEnvironments] = useState<EnvironmentOption[]>([]);
   const [selectedEnvironment, setSelectedEnvironment] = useState<EnvironmentOption | null>(null);
   const [instructors, setInstructors] = useState<SessionInstructor[]>([]);
-  const [selectedInstructorId, setSelectedInstructorId] = useState('');
+  const [selectedInstructorId, setSelectedInstructorIdState] = useState('');
   const [chips, setChips] = useState<SessionChip[]>([]);
   const [selectedChipId, setSelectedChipId] = useState('');
   const [loading, setLoading] = useState(false);
@@ -76,6 +83,12 @@ export function useEnvironmentSession() {
     );
   }, []);
 
+  const setSelectedInstructorId = useCallback((id: string) => {
+    setSelectedInstructorIdState(id);
+    setSelectedChipId('');
+    setChips([]);
+  }, []);
+
   const createEnvironment = useCallback(async () => {
     const name = environmentQuery.trim();
     if (!name) return null;
@@ -88,25 +101,30 @@ export function useEnvironmentSession() {
 
   const saveSession = useCallback(async (settings: {
     registrationMinutes: number;
-    exitTime?: string;
-    shutdownTime?: string;
+    exitTime: string;
+    shutdownTime: string;
   }) => {
     if (!selectedEnvironment || !selectedInstructorId || !selectedChipId) {
       return { success: false as const, error: 'facial.setup.validation.allRequired' };
     }
     setSaving(true);
     try {
+      const entryTime = new Date();
       const session = await createEnvironmentSession({
         idEnvironment: selectedEnvironment.idEnvironment,
         idInstructorInCharge: selectedInstructorId,
         idChip: selectedChipId,
+        entryTime: entryTime.toISOString(),
         registrationMinutes: settings.registrationMinutes,
-        exitTime: settings.exitTime,
-        shutdownTime: settings.shutdownTime,
+        exitTime: timeToTodayIso(settings.exitTime, entryTime),
+        shutdownTime: timeToTodayIso(settings.shutdownTime, entryTime),
       });
       return { success: true as const, session };
-    } catch {
-      return { success: false as const, error: 'facial.setup.validation.saveFailed' };
+    } catch (error: any) {
+      return {
+        success: false as const,
+        error: error?.response?.data?.message ?? 'facial.setup.validation.saveFailed',
+      };
     } finally {
       setSaving(false);
     }

@@ -172,10 +172,10 @@ export default function CreateCoordinatorScreen() {
         t('users.createCoordinator.successMessage', { password }),
         [{ text: t('common.ok') }],
       );
-    } catch (error: any) {
+    } catch {
       alert(
         t('common.error'),
-        error?.response?.data?.message || t('users.createCoordinator.createError'),
+        t('users.createCoordinator.createError'),
         [{ text: t('common.ok') }],
       );
     } finally {
@@ -213,7 +213,7 @@ export default function CreateCoordinatorScreen() {
             label={t('users.document')}
             value={form.document}
             onChange={updateField('document')}
-            placeholder="0000000000"
+            placeholder={t('users.documentPlaceholder')}
             keyboard="numeric"
              maxLength={15}
             error={errors.document}
@@ -254,7 +254,7 @@ export default function CreateCoordinatorScreen() {
             label={t('register.email')}
             value={form.email}
             onChange={updateField('email')}
-            placeholder="correo@ejemplo.com"
+            placeholder={t('users.emailPlaceholder')}
             keyboard="email-address"
             error={errors.email}
             labelColor={theme.primary}

@@ -5,6 +5,14 @@
 import { useUserSettings } from "@/features/profile/useUserSettings";
 import { refreshAcademicStoreFromBackend } from "@/features/academic/useAcademic";
 import { clearAcademicStore } from "@/features/academic/academicStore";
+import { loadNotifications } from "@/features/notifications/notificationsStore";
+import { getToken } from "@/shared/services/tokenStorage";
+import {
+  requestRealtimeSync,
+  startRealtime,
+  subscribeRealtime,
+} from "@/shared/services/realtime";
+import type { RealtimeMessage } from "@/shared/services/realtime";
 const { AuthProvider, useAuth } = require("@/shared/contexts/AuthContext") as {
   AuthProvider: React.ComponentType<React.PropsWithChildren>;
   useAuth: () => {
@@ -20,9 +28,8 @@ const { ThemeProvider, useTheme } = require("@/shared/contexts/ThemeContext") as
 import i18n from "@/shared/i18n/index";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { I18nextProvider } from "react-i18next";
-import React from "react";
 import { AppState, LogBox, StyleSheet, View } from "react-native";
 
 const { I18nProvider } = require("@/shared/contexts/I18nContext") as {
@@ -83,6 +90,75 @@ function AcademicDataLoader() {
   return null;
 }
 
+function RealtimeSync() {
+  const { isAuthenticated, user } = useAuth();
+  const { reloadAndApply } = useUserSettings();
+
+  const synchronize = useCallback((message: RealtimeMessage) => {
+    if (message.type === "ready" || message.type === "sync") {
+      void refreshAcademicStoreFromBackend(user?.role).catch(error => {
+        console.warn("[Realtime] No se pudo sincronizar la información académica:", error);
+      });
+      void loadNotifications();
+      void reloadAndApply().catch(error => {
+        console.warn("[Realtime] No se pudo sincronizar la configuración del usuario:", error);
+      });
+      return;
+    }
+
+    if (message.type === "authentication.failed") {
+      console.warn("[Realtime] El canal WebSocket rechazó la sesión; la autenticación REST se mantiene activa.");
+      return;
+    }
+    if (message.type !== "data.changed") return;
+    if (message.resource === "academic" || message.resource === "users") {
+      void refreshAcademicStoreFromBackend(user?.role).catch(error => {
+        console.warn("[Realtime] No se pudo actualizar la información académica:", error);
+      });
+    }
+    if (message.resource === "notifications" || message.resource === "attendance") {
+      void loadNotifications();
+    }
+    if (message.resource === "user-configuration" && message.actorId === user?.id) {
+      void reloadAndApply().catch(error => {
+        console.warn("[Realtime] No se pudo actualizar la configuración del usuario:", error);
+      });
+    }
+  }, [reloadAndApply, user?.id, user?.role]);
+  const synchronizeRef = useRef(synchronize);
+
+  useEffect(() => {
+    synchronizeRef.current = synchronize;
+  }, [synchronize]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id) return;
+
+    let active = true;
+    let stop: (() => void) | undefined;
+    const unsubscribe = subscribeRealtime(message => synchronizeRef.current(message));
+
+    void getToken().then(token => {
+      if (active && token) stop = startRealtime(token);
+    }).catch(error => {
+      console.warn("[Realtime] No se pudo recuperar el token de sesión:", error);
+    });
+
+    const appStateSubscription = AppState.addEventListener("change", state => {
+      if (state === "active") requestRealtimeSync();
+    });
+
+    return () => {
+      active = false;
+      unsubscribe();
+      appStateSubscription.remove();
+      stop?.();
+    };
+  }, [isAuthenticated, user?.id]);
+
+  return null;
+}
+
 function RootLayoutInner() {
   const { theme } = useTheme();
 
@@ -122,6 +198,7 @@ export default function RootLayout() {
           null,
           React.createElement(UserSettingsLoader),
           React.createElement(AcademicDataLoader),
+          React.createElement(RealtimeSync),
           React.createElement(RootLayoutInner),
         ),
       ),

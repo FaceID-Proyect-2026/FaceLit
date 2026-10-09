@@ -124,6 +124,7 @@ export default function AdminLayout() {
         <Stack.Screen name="index" />
         <Stack.Screen name="facial/index" />
         <Stack.Screen name="facial/settings" />
+        <Stack.Screen name="facial/camera" />
         <Stack.Screen name="environments/index" />
         <Stack.Screen
           name="environments/register"

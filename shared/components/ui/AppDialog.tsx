@@ -57,12 +57,17 @@ export default function AppDialog({ visible, title, message, buttons, children, 
           <Text style={[ad.title, { color: text }]}>{title}</Text>
           {message ? <Text style={[ad.message, { color: muted }]}>{message}</Text> : null}
           {children ? <View style={ad.content}>{children}</View> : null}
-          <View style={ad.buttonsRow}>
+          <View style={[ad.buttonsRow, buttons.length > 2 && ad.buttonsColumn]}>
             {buttons.map((btn, idx) => (
               <TouchableOpacity
                 key={`${btn.text}-${idx}`}
                 onPress={() => onPressButton(btn)}
-                style={[ad.button, { borderColor: border }, idx === buttons.length - 1 && ad.buttonLast]}
+                style={[
+                  ad.button,
+                  { borderColor: border },
+                  buttons.length > 2 && ad.buttonStacked,
+                  idx === buttons.length - 1 && (buttons.length > 2 ? ad.buttonStackedLast : ad.buttonLast),
+                ]}
                 activeOpacity={0.7}
               >
                 <Text style={[ad.buttonText, { color: colorFor(btn.style) }]}>{btn.text}</Text>
@@ -82,7 +87,10 @@ const ad = StyleSheet.create({
   message: { fontSize: FontSize.md, textAlign: 'center', marginTop: 8, paddingHorizontal: 20, lineHeight: 20 },
   content: { marginTop: 14, paddingHorizontal: 20 },
   buttonsRow: { flexDirection: 'row', marginTop: 20, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(101,179,97,0.20)' },
+  buttonsColumn: { flexDirection: 'column' },
   button: { flex: 1, paddingVertical: 14, paddingHorizontal: 8, alignItems: 'center', justifyContent: 'center', borderRightWidth: StyleSheet.hairlineWidth },
   buttonLast: { borderRightWidth: 0 },
+  buttonStacked: { flex: 0, borderRightWidth: 0, borderBottomWidth: StyleSheet.hairlineWidth },
+  buttonStackedLast: { borderBottomWidth: 0 },
   buttonText: { fontSize: FontSize.md, fontWeight: FontWeight.bold, textAlign: 'center' },
 });
