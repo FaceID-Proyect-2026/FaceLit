@@ -159,13 +159,14 @@ interface WebCameraProps {
   onFaceReady?:  () => void;
   requiresLiveness?: boolean;
   autoCapture?: boolean;
+  paused?: boolean;
   livenessInstruction?: string;
 }
 
 export default function WebCamera({
   primaryColor, isTaking, isPositioning, screenState, quality,
   onCapture, onShutter, onConfirm, onCancel, onFaceReady, requiresLiveness = false, autoCapture = false,
-  livenessInstruction,
+  paused = false, livenessInstruction,
 }: WebCameraProps) {
   const { t } = useTranslation();
   const videoRef      = useRef<HTMLVideoElement>(null);
@@ -193,10 +194,14 @@ export default function WebCamera({
 
   // ── Loop de análisis en tiempo real ──────────
   useEffect(() => {
-    if (!ready || screenState === 'confirmationRequired' || screenState === 'idle') {
+    if (paused || !ready || screenState === 'confirmationRequired' || screenState === 'idle') {
       // Reiniciar estabilidad al salir del estado activo
       stableCount.current = 0;
       setStableFrames(0);
+      if (paused) {
+        setWarning('noSkin');
+        faceReadyRef.current = false;
+      }
       return;
     }
 
@@ -275,7 +280,7 @@ export default function WebCamera({
     }, ANALYSIS_INTERVAL_MS);
 
     return () => clearInterval(interval);
-  }, [ready, screenState]);
+  }, [paused, ready, screenState]);
 
   // ── Stream de cámara ──────────────────────────
   useEffect(() => {
@@ -318,7 +323,7 @@ export default function WebCamera({
   }, [ready]);
 
   const capture = useCallback(async () => {
-    if (capturingSequence) return;
+    if (paused || capturingSequence) return;
     setCapturingSequence(true);
     onShutter();
     const frames: string[] = [];
@@ -343,7 +348,7 @@ export default function WebCamera({
     } finally {
       setCapturingSequence(false);
     }
-  }, [captureFrame, capturingSequence, onCapture, onShutter, requiresLiveness]);
+  }, [captureFrame, capturingSequence, onCapture, onShutter, paused, requiresLiveness]);
 
   // Shutter habilitado SOLO cuando:
   // • screenState === 'ready'
@@ -351,13 +356,14 @@ export default function WebCamera({
   // → 'stabilizing' bloquea hasta tener REQUIRED_STABLE_FRAMES frames quietos
   const shutterDisabled =
     isTaking ||
+    paused ||
     capturingSequence ||
     screenState === 'confirmationRequired' ||
     screenState === 'positioning' ||
     (screenState === 'ready' && warning !== 'none');
 
   useEffect(() => {
-    const faceReady = screenState === 'ready' && warning === 'none' && !capturingSequence;
+    const faceReady = !paused && screenState === 'ready' && warning === 'none' && !capturingSequence;
     if (!faceReady) {
       faceReadyRef.current = false;
       return;
@@ -365,15 +371,15 @@ export default function WebCamera({
     if (faceReadyRef.current) return;
     faceReadyRef.current = true;
     onFaceReady?.();
-  }, [capturingSequence, onFaceReady, screenState, warning]);
+  }, [capturingSequence, onFaceReady, paused, screenState, warning]);
 
   useEffect(() => {
-    if (!autoCapture || shutterDisabled || screenState !== 'ready' || warning !== 'none') return;
+    if (paused || !autoCapture || shutterDisabled || screenState !== 'ready' || warning !== 'none') return;
     const timer = setTimeout(() => {
       capture();
     }, 650);
     return () => clearTimeout(timer);
-  }, [autoCapture, capture, livenessInstruction, screenState, shutterDisabled, warning]);
+  }, [autoCapture, capture, livenessInstruction, paused, screenState, shutterDisabled, warning]);
 
   if (error) {
     return (

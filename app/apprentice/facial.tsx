@@ -103,11 +103,13 @@ export default function ApprenticeFacialScreen() {
   const {
     screenState,
     isTaking,
+    isValidatingLiveness,
     quality,
     successModalVisible,
     errorModalVisible,
+    errorModalTitle,
     errorModalMessage,
-    livenessChallenge,
+    livenessInstruction,
     isWeb,
     isPositioning,
     cameraRef,
@@ -116,7 +118,6 @@ export default function ApprenticeFacialScreen() {
     handleCancelCamera,
     handleWebCapture,
     handleWebShutter,
-    randomizeLivenessChallenge,
     handleCloseSuccessModal,
     handleCloseErrorModal,
   } = useFacialRegistration({ requireResponsibilityConfirmation: false });
@@ -402,10 +403,10 @@ export default function ApprenticeFacialScreen() {
               onShutter={handleWebShutter}
               onConfirm={handleConfirmCamera}
               onCancel={handleCancelAndReturn}
-              onFaceReady={randomizeLivenessChallenge}
               requiresLiveness
               autoCapture
-              livenessInstruction={livenessChallenge.label}
+              paused={isValidatingLiveness || errorModalVisible || successModalVisible}
+              livenessInstruction={livenessInstruction}
             />
           ) : (
             (() => {
@@ -425,7 +426,7 @@ export default function ApprenticeFacialScreen() {
                     quality={quality}
                     requiresLiveness
                     livenessCaptureActive={isTaking}
-                    livenessInstruction={livenessChallenge.label}
+                    livenessInstruction={livenessInstruction}
                     onConfirm={handleConfirmCamera}
                     onCancel={handleCancelAndReturn}
                   />
@@ -474,7 +475,7 @@ export default function ApprenticeFacialScreen() {
                 color={Colors.error}
               />
               <Text style={[s.successTitle, { color: text }]}>
-                No se pudo registrar
+                {errorModalTitle}
               </Text>
               <Text
                 style={[{ color: muted, textAlign: "center", marginTop: 8 }]}

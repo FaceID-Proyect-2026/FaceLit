@@ -7,6 +7,7 @@ export interface FacialEmbeddingFromImagePayload {
   imageBase64: string;
   imageFrames?: string[];
   livenessChallenge?: string;
+  livenessChallenges?: string[];
   photoReference?: string | null;
   replaceExisting?: boolean;
   createdBy?: string;
@@ -17,6 +18,16 @@ export interface FacialEmbeddingUpdateFromImagePayload {
   imageBase64: string;
   photoReference?: string | null;
   updatedBy?: string;
+}
+
+export interface FacialLivenessCheckPayload {
+  imageFrames: string[];
+  livenessChallenge: string;
+}
+
+export interface FacialLivenessCheckResponse {
+  live: boolean;
+  reason: string;
 }
 
 export interface FacialEmbeddingResponse {
@@ -95,9 +106,24 @@ export async function registerFacialEmbeddingFromImage(
       image_base64: payload.imageBase64,
       image_frames: payload.imageFrames ?? [],
       liveness_challenge: payload.livenessChallenge ?? null,
+      liveness_challenges: payload.livenessChallenges ?? [],
       photo_reference: payload.photoReference ?? null,
       replace_existing: payload.replaceExisting ?? false,
       created_by: payload.createdBy ?? 'mobile-app',
+    },
+  );
+
+  return response.data;
+}
+
+export async function validateFacialLiveness(
+  payload: FacialLivenessCheckPayload,
+): Promise<FacialLivenessCheckResponse> {
+  const response = await facialEmbeddingApi.post<FacialLivenessCheckResponse>(
+    '/api/v1/facial-embeddings/liveness-check',
+    {
+      image_frames: payload.imageFrames,
+      liveness_challenge: payload.livenessChallenge,
     },
   );
 

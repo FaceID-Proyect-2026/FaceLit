@@ -36,11 +36,13 @@ export default function InstructorFacialCameraScreen() {
   const {
     screenState,
     isTaking,
+    isValidatingLiveness,
     quality,
     successModalVisible,
     errorModalVisible,
+    errorModalTitle,
     errorModalMessage,
-    livenessChallenge,
+    livenessInstruction,
     isWeb,
     isPositioning,
     cameraRef,
@@ -49,7 +51,6 @@ export default function InstructorFacialCameraScreen() {
     handleCancelCamera,
     handleWebCapture,
     handleWebShutter,
-    randomizeLivenessChallenge,
     handleRetake,
     handleCloseSuccessModal,
     handleCloseErrorModal,
@@ -121,10 +122,10 @@ export default function InstructorFacialCameraScreen() {
             onShutter={handleWebShutter}
             onConfirm={handleConfirmCamera}
             onCancel={handleCancelAndReturn}
-            onFaceReady={randomizeLivenessChallenge}
             requiresLiveness
             autoCapture
-            livenessInstruction={livenessChallenge.label}
+            paused={isValidatingLiveness || errorModalVisible || successModalVisible}
+            livenessInstruction={livenessInstruction}
           />
         ) : (
           (() => {
@@ -144,7 +145,7 @@ export default function InstructorFacialCameraScreen() {
                   quality={quality}
                   requiresLiveness
                   livenessCaptureActive={isTaking}
-                  livenessInstruction={livenessChallenge.label}
+                  livenessInstruction={livenessInstruction}
                   onConfirm={handleConfirmCamera}
                   onCancel={handleCancelAndReturn}
                 />
@@ -179,7 +180,7 @@ export default function InstructorFacialCameraScreen() {
           <View style={[s.successModal, { backgroundColor: cardBg }]}>
             <Ionicons name="alert-circle" size={60} color={Colors.error} />
             <Text style={[s.successTitle, { color: text }]}>
-              No se pudo registrar
+              {errorModalTitle}
             </Text>
             <Text style={[{ color: muted, textAlign: "center", marginTop: 8 }]}>
               {errorModalMessage}
