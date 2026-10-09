@@ -51,6 +51,10 @@ export function useSessionAttendanceCapture({ session }: UseSessionAttendanceCap
   const isPositioning = screenState === 'positioning';
   const canFinish = screenState === 'captured' && quality === 'good' && !isRegistering;
 
+  const randomizeLivenessChallenge = useCallback(() => {
+    setLivenessChallenge(LIVENESS_CHALLENGES[Math.floor(Math.random() * LIVENESS_CHALLENGES.length)]);
+  }, []);
+
   useEffect(() => {
     return () => {
       if (positioningTimer.current) clearTimeout(positioningTimer.current);
@@ -58,12 +62,12 @@ export function useSessionAttendanceCapture({ session }: UseSessionAttendanceCap
   }, []);
 
   const startPositioningSimulation = useCallback(() => {
-    setLivenessChallenge(LIVENESS_CHALLENGES[Math.floor(Math.random() * LIVENESS_CHALLENGES.length)]);
+    randomizeLivenessChallenge();
     setScreenState('positioning');
     positioningTimer.current = setTimeout(() => {
       setScreenState('ready');
     }, POSITIONING_DELAY_MS);
-  }, []);
+  }, [randomizeLivenessChallenge]);
 
   const handleOpenCamera = useCallback(async () => {
     if (isWeb) {
@@ -254,6 +258,7 @@ export function useSessionAttendanceCapture({ session }: UseSessionAttendanceCap
     handleTakePhotoNative,
     handleWebCapture,
     handleWebShutter,
+    randomizeLivenessChallenge,
     handleRetake,
     handleFinish,
     handleCloseSuccessModal,

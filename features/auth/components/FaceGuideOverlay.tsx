@@ -36,16 +36,21 @@ interface FaceGuideOverlayProps {
 }
 
 // ── Mapeo de advertencia → mensaje + icono ────
+const STATE_RED = Colors.error;
+const STATE_YELLOW = Colors.warning;
+const STATE_BLUE = Colors.info;
+const STATE_GREEN = Colors.success;
+
 const WARNING_CONFIG: Record<LiveWarning, { icon: string; key: string; color: string; fallback: string }> = {
-  none:          { icon: 'checkmark-circle',         key: 'facialReg.goodPosition',  color: '',            fallback: 'Posición correcta'                        },
-  lowLight:      { icon: 'sunny-outline',             key: 'facialReg.goodLighting',  color: Colors.warning, fallback: 'Mantenga una iluminación adecuada'        },
-  highLight:     { icon: 'sunny',                     key: 'facialReg.goodLighting',  color: Colors.warning, fallback: 'Demasiada luz. Evita la luz directa'      },
-  lowContrast:   { icon: 'phone-portrait-outline',    key: 'facialReg.noScreenPhoto', color: Colors.error,   fallback: 'No fotografíes una pantalla o foto impresa'},
-  noSkin:        { icon: 'person-outline',            key: 'facialReg.noFaceDetected',color: Colors.error,   fallback: 'No se detecta ningún rostro'              },
-  skinTooClose:  { icon: 'arrow-back-circle-outline', key: 'facialReg.faceTooCLose',  color: Colors.warning, fallback: 'Aléjate un poco de la cámara'             },
-  skinOffCenter: { icon: 'scan-outline',              key: 'facialReg.faceOffCenter', color: Colors.warning, fallback: 'Centra tu rostro dentro del óvalo'        },
-  moving:        { icon: 'move-outline',              key: 'facialReg.moving',        color: Colors.warning, fallback: 'Mantente quieto para capturar'            },
-  stabilizing:   { icon: 'timer-outline',             key: 'facialReg.stabilizing',   color: Colors.info,    fallback: 'Mantén la posición…'                     },
+  none:          { icon: 'checkmark-circle',         key: 'facialReg.goodPosition',  color: STATE_BLUE,   fallback: 'Posición correcta'                        },
+  lowLight:      { icon: 'sunny-outline',             key: 'facialReg.goodLighting',  color: STATE_YELLOW, fallback: 'Mantenga una iluminación adecuada'        },
+  highLight:     { icon: 'sunny',                     key: 'facialReg.goodLighting',  color: STATE_YELLOW, fallback: 'Demasiada luz. Evita la luz directa'      },
+  lowContrast:   { icon: 'phone-portrait-outline',    key: 'facialReg.noScreenPhoto', color: STATE_RED,    fallback: 'No fotografíes una pantalla o foto impresa'},
+  noSkin:        { icon: 'person-outline',            key: 'facialReg.noFaceDetected',color: STATE_RED,    fallback: 'No se detecta ningún rostro'              },
+  skinTooClose:  { icon: 'arrow-back-circle-outline', key: 'facialReg.faceTooCLose',  color: STATE_BLUE,   fallback: 'Aléjate un poco de la cámara'             },
+  skinOffCenter: { icon: 'scan-outline',              key: 'facialReg.faceOffCenter', color: STATE_BLUE,   fallback: 'Centra tu rostro dentro del óvalo'        },
+  moving:        { icon: 'move-outline',              key: 'facialReg.moving',        color: STATE_BLUE,   fallback: 'Mantente quieto para capturar'            },
+  stabilizing:   { icon: 'timer-outline',             key: 'facialReg.stabilizing',   color: STATE_BLUE,   fallback: 'Mantén la posición…'                     },
 };
 
 const ROTATION_MS = 2000;
@@ -78,6 +83,32 @@ export default function FaceGuideOverlay({
   const { t } = useTranslation();
   const [posIdx, setPosIdx] = useState(0);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const renderOvalMessage = (
+    color: string,
+    icon: string,
+    message: string,
+    borderStyle: 'solid' | 'dashed' = 'solid',
+    showStability = false,
+  ) => {
+    const pct = Math.round((stableFrames / requiredFrames) * 100);
+    return (
+      <View style={[s.container, { pointerEvents: 'none' } as any]}>
+        <View style={s.ovalWrap}>
+          <View style={[s.oval, { borderColor: color, borderStyle }]} />
+          <View style={[s.badge, { backgroundColor: color + 'F2' }]}>
+            <Ionicons name={icon as any} size={16} color={Colors.white} />
+            <Text style={s.badgeText} numberOfLines={2}>{message}</Text>
+          </View>
+        </View>
+        {showStability && (
+          <View style={s.stabilityTrack}>
+            <View style={[s.stabilityFill, { width: `${pct}%` as any, backgroundColor: Colors.success }]} />
+          </View>
+        )}
+      </View>
+    );
+  };
 
   // Rotar instrucciones solo durante posicionamiento sin advertencia real
   const noActiveWarning = !liveWarning || liveWarning === 'none';
@@ -126,103 +157,72 @@ export default function FaceGuideOverlay({
   }
 
   if (requiresLiveness && livenessCaptureActive) {
-    return (
-      <View style={[s.container, { pointerEvents: 'none' } as any]}>
-        <View style={[s.oval, { borderColor: primaryColor, borderStyle: 'solid' }]} />
-        <View style={[s.badge, s.livenessBadge, { backgroundColor: primaryColor + 'F2' }]}>
-          <Ionicons name="sync-outline" size={18} color={Colors.white} />
-          <Text style={s.badgeText} numberOfLines={2}>
-            {livenessInstruction || t('facialReg.livenessCapturing', 'Mueve la cabeza suavemente hacia un lado')}
-          </Text>
-        </View>
-        <View style={s.livenessHint}>
-          <Text style={s.livenessHintText}>
-            {t('facialReg.livenessKeepFace', 'Mantén tu rostro dentro del óvalo')}
-          </Text>
-        </View>
-      </View>
+    return renderOvalMessage(
+      STATE_GREEN,
+      'sync-outline',
+      livenessInstruction || t('facialReg.livenessCapturing', 'Mueve la cabeza suavemente hacia un lado'),
+      'solid',
     );
   }
 
-  // ── Sin badge para idle / captured ───────────
-  if (screenState === 'idle' || screenState === 'captured') {
-    return (
-      <View style={[s.container, { pointerEvents: 'none' } as any]}>
-        <View style={[s.oval, { borderColor: primaryColor }]} />
-      </View>
+  if (screenState === 'idle') {
+    return renderOvalMessage(
+      STATE_RED,
+      'person-outline',
+      t('facialReg.noFaceDetected', 'No se detecta ningún rostro'),
+      'dashed',
     );
   }
 
   // ── 2. Advertencia en tiempo real (máxima prioridad) ──
   if (liveWarning && liveWarning !== 'none') {
     const cfg      = WARNING_CONFIG[liveWarning];
-    const badgeCol = cfg.color || primaryColor;
+    const badgeCol = cfg.color;
     const isStabilizing = liveWarning === 'stabilizing';
-    const pct = isStabilizing ? Math.round((stableFrames / requiredFrames) * 100) : 0;
 
-    return (
-      <View style={[s.container, { pointerEvents: 'none' } as any]}>
-        <View style={[s.oval, { borderColor: badgeCol, borderStyle: isStabilizing ? 'solid' : 'dashed' }]} />
-        <View style={[s.badge, { backgroundColor: badgeCol + 'EE' }]}>
-          <Ionicons name={cfg.icon as any} size={16} color={Colors.white} />
-          <Text style={s.badgeText} numberOfLines={2}>{t(cfg.key, cfg.fallback)}</Text>
-        </View>
-        {/* Barra de progreso de estabilidad */}
-        {isStabilizing && (
-          <View style={s.stabilityTrack}>
-            <View style={[s.stabilityFill, { width: `${pct}%` as any, backgroundColor: Colors.success }]} />
-          </View>
-        )}
-      </View>
+    return renderOvalMessage(
+      badgeCol,
+      cfg.icon,
+      t(cfg.key, cfg.fallback),
+      isStabilizing ? 'solid' : 'dashed',
+      isStabilizing,
     );
   }
 
   // ── 3. Posicionando — instrucciones rotativas ─
   if (isPositioning) {
     const instr    = POSITIONING_KEYS[posIdx];
-    const badgeCol = Colors.warning;
-    return (
-      <View style={[s.container, { pointerEvents: 'none' } as any]}>
-        <View style={[s.oval, { borderColor: badgeCol, borderStyle: 'dashed' }]} />
-        <View style={[s.badge, { backgroundColor: badgeCol + 'EE' }]}>
-          <Ionicons name={instr.icon as any} size={16} color={Colors.white} />
-          <Text style={s.badgeText} numberOfLines={2}>{t(instr.key, POSITIONING_FALLBACKS[posIdx])}</Text>
-        </View>
-      </View>
+    return renderOvalMessage(
+      STATE_BLUE,
+      instr.icon,
+      t(instr.key, POSITIONING_FALLBACKS[posIdx]),
+      'dashed',
     );
   }
 
   // ── 4. Estado ready sin advertencias → "Posición correcta" ──
   if (screenState === 'ready') {
     if (requiresLiveness) {
-      return (
-        <View style={[s.container, { pointerEvents: 'none' } as any]}>
-          <View style={[s.oval, { borderColor: primaryColor, borderStyle: 'solid' }]} />
-          <View style={[s.badge, s.livenessBadge, { backgroundColor: primaryColor + 'EE' }]}>
-            <Ionicons name="body-outline" size={18} color={Colors.white} />
-            <Text style={s.badgeText} numberOfLines={2}>
-              {livenessInstruction || t('facialReg.livenessReady', 'Pulsa capturar y mueve la cabeza suavemente')}
-            </Text>
-          </View>
-        </View>
+      return renderOvalMessage(
+        STATE_GREEN,
+        'body-outline',
+        livenessInstruction || t('facialReg.livenessReady', 'Pulsa capturar y mueve la cabeza suavemente'),
+        'solid',
       );
     }
 
-    return (
-      <View style={[s.container, { pointerEvents: 'none' } as any]}>
-        <View style={[s.oval, { borderColor: primaryColor, borderStyle: 'solid' }]} />
-        <View style={[s.badge, { backgroundColor: primaryColor + 'EE' }]}>
-          <Ionicons name="checkmark-circle" size={16} color={Colors.white} />
-          <Text style={s.badgeText}>{t('facialReg.goodPosition', 'Posición correcta, puedes capturar')}</Text>
-        </View>
-      </View>
+    return renderOvalMessage(
+      STATE_BLUE,
+      'checkmark-circle',
+      t('facialReg.goodPosition', 'Posición correcta, puedes capturar'),
+      'solid',
     );
   }
 
   // Fallback — solo óvalo
   return (
     <View style={[s.container, { pointerEvents: 'none' } as any]}>
-      <View style={[s.oval, { borderColor: primaryColor }]} />
+      <View style={[s.oval, { borderColor: STATE_BLUE }]} />
     </View>
   );
 }
@@ -238,17 +238,25 @@ const s = StyleSheet.create({
     borderWidth: 2.5,
     borderStyle: 'dashed',
   },
+  ovalWrap: {
+    width: '100%',
+    height: 300,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   badge: {
     position:          'absolute',
-    bottom:            112,
+    bottom:            56,
     alignSelf:         'center',
     flexDirection:     'row',
     alignItems:        'center',
+    justifyContent:    'center',
     gap:               8,
     paddingHorizontal: 18,
     paddingVertical:   10,
     borderRadius:      24,
-    maxWidth:          '88%',
+    width:             '76%',
+    maxWidth:          430,
     shadowColor:       '#000',
     shadowOffset:      { width: 0, height: 2 },
     shadowOpacity:     0.4,
@@ -256,7 +264,7 @@ const s = StyleSheet.create({
     elevation:         6,
   },
   livenessBadge: {
-    bottom: 118,
+    bottom: 56,
     paddingHorizontal: 20,
     paddingVertical: 12,
   },
@@ -278,9 +286,10 @@ const s = StyleSheet.create({
   badgeText: {
     color:      Colors.white,
     fontSize:   FontSize.base,
-    fontWeight: FontWeight.bold,
+    fontWeight: FontWeight.black,
     flexShrink: 1,
     lineHeight: 18,
+    textAlign: 'center',
   },
 
   // Modal de confirmación

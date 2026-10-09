@@ -107,6 +107,10 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
   const isPositioning    = screenState === 'positioning';
   const canFinish         = screenState === 'captured' && quality === 'good' && !isRegistering;
 
+  const randomizeLivenessChallenge = useCallback(() => {
+    setLivenessChallenge(LIVENESS_CHALLENGES[Math.floor(Math.random() * LIVENESS_CHALLENGES.length)]);
+  }, []);
+
   useEffect(() => {
     return () => {
       if (positioningTimer.current) clearTimeout(positioningTimer.current);
@@ -115,12 +119,12 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
 
   // ── Iniciar simulación de "acércate más" → "posición correcta" ──
   const startPositioningSimulation = useCallback(() => {
-    setLivenessChallenge(LIVENESS_CHALLENGES[Math.floor(Math.random() * LIVENESS_CHALLENGES.length)]);
+    randomizeLivenessChallenge();
     setScreenState('positioning');
     positioningTimer.current = setTimeout(() => {
       setScreenState('ready');
     }, POSITIONING_DELAY_MS);
-  }, []);
+  }, [randomizeLivenessChallenge]);
 
   // ── Abrir cámara — para en confirmationRequired antes de posicionar ──
   const handleOpenCamera = useCallback(async () => {
@@ -354,6 +358,7 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
     handleTakePhotoNative,
     handleWebCapture,
     handleWebShutter,
+    randomizeLivenessChallenge,
     handleRetake,
     handleFinish,
     handleCloseSuccessModal,

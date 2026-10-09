@@ -19,7 +19,7 @@ import { useAppDialog } from "@/shared/hooks/useAppDialog";
 import { fetchMyFacialEnrollmentStatus } from "@/shared/services/facialEnrollmentService";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { router, useLocalSearchParams } from "expo-router";
+import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -37,7 +37,6 @@ import {
 type Step = "confirm" | "camera" | "done";
 
 export default function ApprenticeFacialScreen() {
-  const { autoStart } = useLocalSearchParams<{ autoStart?: string }>();
   const { user } = useAuth();
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
@@ -103,9 +102,7 @@ export default function ApprenticeFacialScreen() {
 
   const {
     screenState,
-    photoUri,
     isTaking,
-    isRegistering,
     quality,
     successModalVisible,
     errorModalVisible,
@@ -119,17 +116,12 @@ export default function ApprenticeFacialScreen() {
     handleCancelCamera,
     handleWebCapture,
     handleWebShutter,
+    randomizeLivenessChallenge,
     handleCloseSuccessModal,
     handleCloseErrorModal,
-  } = useFacialRegistration();
+  } = useFacialRegistration({ requireResponsibilityConfirmation: false });
 
   const canStartRegistration = !loadingRegistrationStatus && !registrationStatusError && serverRegistered === false;
-
-  useEffect(() => {
-    if (autoStart !== "1" || !canStartRegistration) return;
-    setStep("camera");
-    handleOpenCamera();
-  }, [autoStart, canStartRegistration, handleOpenCamera]);
 
   // ── Cancelar desde la cámara → limpia estado y vuelve al paso confirm ──
   function handleCancelAndReturn() {
@@ -181,32 +173,6 @@ export default function ApprenticeFacialScreen() {
     return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(value));
   };
   const registeredDateLabel = formatRegistrationDate(serverRegistrationDate) || myRecord?.date || "";
-
-  // ── Validaciones de calidad como chips ────────
-  const qualityWarnings: { icon: string; label: string; ok: boolean }[] = [
-    {
-      icon: "sunny-outline",
-      label: t("facialReg.checkLight"),
-      ok: quality !== "lowLight",
-    },
-    {
-      icon: "scan-outline",
-      label: t("facialReg.checkFace"),
-      ok: screenState !== "idle" && screenState !== "requesting",
-    },
-    {
-      icon: "camera-outline",
-      label: t("facialReg.checkFrontal"),
-      ok: quality === "good",
-    },
-  ];
-
-  const scannerStatus = (() => {
-    if (isRegistering) return { icon: "cloud-upload-outline", title: "Guardando registro facial", body: "Validando vida y creando tu perfil facial..." };
-    if (isTaking) return { icon: "scan-outline", title: "Capturando prueba de vida", body: livenessChallenge.label };
-    if (screenState === "ready") return { icon: "sparkles-outline", title: "Reto listo", body: livenessChallenge.label };
-    return { icon: "time-outline", title: "Preparando cámara", body: "Centra tu rostro dentro del óvalo." };
-  })();
 
   // ─────────────────────────────────────────────
   //  PASO 1 — Confirmación de identidad
@@ -422,53 +388,10 @@ export default function ApprenticeFacialScreen() {
     return (
       <View style={[s.safe, { backgroundColor: "#000" }]}>
         {DialogUI}
-        {/* Header cámara */}
-        <View style={[s.camHeader]}>
-          <TouchableOpacity
-            onPress={handleCancelAndReturn}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons name="arrow-back" size={22} color={Colors.white} />
-          </TouchableOpacity>
-          <Text style={s.camHeaderTitle}>{t("facialReg.title")}</Text>
-          <View style={{ width: 22 }} />
-        </View>
-
-        <View style={s.scannerPanel}>
-          <View style={[s.scannerIcon, { backgroundColor: theme.primary + "22", borderColor: theme.primary + "55" }]}>
-            <Ionicons name={scannerStatus.icon as any} size={22} color={theme.primary} />
-          </View>
-          <View style={s.scannerCopy}>
-            <Text style={s.scannerTitle}>{scannerStatus.title}</Text>
-            <Text style={s.scannerBody}>{scannerStatus.body}</Text>
-          </View>
-          <View style={s.qualityRail}>
-            {qualityWarnings.map((warning) => (
-              <View
-                key={warning.label}
-                style={[s.qualityDot, { backgroundColor: warning.ok ? Colors.success : Colors.error }]}
-              >
-                <Ionicons name={warning.icon as any} size={12} color={Colors.white} />
-              </View>
-            ))}
-          </View>
-        </View>
 
         {/* Vista de cámara */}
         <View style={s.cameraWrap}>
-          {photoUri ? (
-            <View style={s.processingWrap}>
-              <View style={[s.processingRing, { borderColor: theme.primary }]}>
-                <Ionicons name="scan" size={44} color={theme.primary} />
-              </View>
-              <Text style={s.processingTitle}>
-                {isRegistering ? "Creando registro facial" : "Captura completada"}
-              </Text>
-              <Text style={s.processingBody}>
-                {isRegistering ? "Validando expresiones y guardando tu rostro..." : "Preparando validación automática..."}
-              </Text>
-            </View>
-          ) : isWeb ? (
+          {isWeb ? (
             <WebCamera
               primaryColor={theme.primary}
               isTaking={isTaking}
@@ -479,6 +402,7 @@ export default function ApprenticeFacialScreen() {
               onShutter={handleWebShutter}
               onConfirm={handleConfirmCamera}
               onCancel={handleCancelAndReturn}
+              onFaceReady={randomizeLivenessChallenge}
               requiresLiveness
               autoCapture
               livenessInstruction={livenessChallenge.label}

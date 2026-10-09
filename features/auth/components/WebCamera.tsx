@@ -156,6 +156,7 @@ interface WebCameraProps {
   onShutter:     () => void;
   onConfirm:     () => void;
   onCancel:      () => void;
+  onFaceReady?:  () => void;
   requiresLiveness?: boolean;
   autoCapture?: boolean;
   livenessInstruction?: string;
@@ -163,7 +164,7 @@ interface WebCameraProps {
 
 export default function WebCamera({
   primaryColor, isTaking, isPositioning, screenState, quality,
-  onCapture, onShutter, onConfirm, onCancel, requiresLiveness = false, autoCapture = false,
+  onCapture, onShutter, onConfirm, onCancel, onFaceReady, requiresLiveness = false, autoCapture = false,
   livenessInstruction,
 }: WebCameraProps) {
   const { t } = useTranslation();
@@ -173,6 +174,7 @@ export default function WebCamera({
   const analysisRef   = useRef<HTMLCanvasElement | null>(null);
   // Buffer del frame anterior (luminancias) para detección de movimiento
   const prevLumRef    = useRef<Float32Array | null>(null);
+  const faceReadyRef  = useRef(false);
   // Contador de frames consecutivos sin ninguna advertencia
   const stableCount   = useRef(0);
 
@@ -353,6 +355,17 @@ export default function WebCamera({
     screenState === 'confirmationRequired' ||
     screenState === 'positioning' ||
     (screenState === 'ready' && warning !== 'none');
+
+  useEffect(() => {
+    const faceReady = screenState === 'ready' && warning === 'none' && !capturingSequence;
+    if (!faceReady) {
+      faceReadyRef.current = false;
+      return;
+    }
+    if (faceReadyRef.current) return;
+    faceReadyRef.current = true;
+    onFaceReady?.();
+  }, [capturingSequence, onFaceReady, screenState, warning]);
 
   useEffect(() => {
     if (!autoCapture || shutterDisabled || screenState !== 'ready' || warning !== 'none') return;

@@ -35,9 +35,7 @@ export default function InstructorFacialCameraScreen() {
 
   const {
     screenState,
-    photoUri,
     isTaking,
-    isRegistering,
     quality,
     successModalVisible,
     errorModalVisible,
@@ -51,6 +49,7 @@ export default function InstructorFacialCameraScreen() {
     handleCancelCamera,
     handleWebCapture,
     handleWebShutter,
+    randomizeLivenessChallenge,
     handleRetake,
     handleCloseSuccessModal,
     handleCloseErrorModal,
@@ -96,31 +95,6 @@ export default function InstructorFacialCameraScreen() {
     return () => clearTimeout(timer);
   }, [activeSession, handleCancelCamera, setActiveSession, settings?.shutdownTime]);
 
-  const scannerStatus = (() => {
-    if (isRegistering) return { icon: "cloud-upload-outline", title: "Verificando identidad", body: "Comparando rostro y validando vida..." };
-    if (isTaking) return { icon: "scan-outline", title: "Capturando prueba de vida", body: livenessChallenge.label };
-    if (screenState === "ready") return { icon: "radio-outline", title: "Reto aleatorio listo", body: livenessChallenge.label };
-    return { icon: "time-outline", title: "Preparando cámara", body: "Centra el rostro y espera la detección automática." };
-  })();
-
-  const qualityWarnings: { icon: string; label: string; ok: boolean }[] = [
-    {
-      icon: "sunny-outline",
-      label: t("facialReg.checkLight"),
-      ok: quality !== "lowLight",
-    },
-    {
-      icon: "scan-outline",
-      label: t("facialReg.checkFace"),
-      ok: screenState !== "idle" && screenState !== "requesting",
-    },
-    {
-      icon: "camera-outline",
-      label: t("facialReg.checkFrontal"),
-      ok: quality === "good",
-    },
-  ];
-
   function handleCancelAndReturn() {
     handleCancelCamera();
     setActiveSession(undefined);
@@ -135,54 +109,8 @@ export default function InstructorFacialCameraScreen() {
   return (
     <View style={[s.safe, { backgroundColor: "#000" }]}>
       {DialogUI}
-      <View style={s.camHeader}>
-        <TouchableOpacity
-          onPress={handleCancelAndReturn}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Ionicons name="arrow-back" size={22} color={Colors.white} />
-        </TouchableOpacity>
-        <Text style={s.camHeaderTitle}>{t("facialReg.title")}</Text>
-        <View style={{ width: 22 }} />
-      </View>
-
-      <View style={s.scannerPanel}>
-        <View style={[s.scannerIcon, { backgroundColor: theme.primary + "22", borderColor: theme.primary + "55" }]}>
-          <Ionicons name={scannerStatus.icon as any} size={22} color={theme.primary} />
-        </View>
-        <View style={s.scannerCopy}>
-          <Text style={s.scannerTitle}>{scannerStatus.title}</Text>
-          <Text style={s.scannerBody}>{scannerStatus.body}</Text>
-        </View>
-        <View style={s.qualityRail}>
-          {qualityWarnings.map((warning) => (
-            <View
-              key={warning.label}
-              style={[
-                s.qualityDot,
-                { backgroundColor: warning.ok ? Colors.success : Colors.error },
-              ]}
-            >
-              <Ionicons name={warning.icon as any} size={12} color={Colors.white} />
-            </View>
-          ))}
-        </View>
-      </View>
-
       <View style={s.cameraWrap}>
-        {photoUri ? (
-          <View style={s.processingWrap}>
-            <View style={[s.processingRing, { borderColor: theme.primary }]}>
-              <Ionicons name="scan" size={44} color={theme.primary} />
-            </View>
-            <Text style={s.processingTitle}>
-              {isRegistering ? "Identificando aprendiz" : "Captura tomada"}
-            </Text>
-            <Text style={s.processingBody}>
-              {isRegistering ? "Validando que sea una persona en vivo..." : "Preparando validación automática..."}
-            </Text>
-          </View>
-        ) : isWeb ? (
+        {isWeb ? (
           <WebCamera
             primaryColor={theme.primary}
             isTaking={isTaking}
@@ -193,6 +121,7 @@ export default function InstructorFacialCameraScreen() {
             onShutter={handleWebShutter}
             onConfirm={handleConfirmCamera}
             onCancel={handleCancelAndReturn}
+            onFaceReady={randomizeLivenessChallenge}
             requiresLiveness
             autoCapture
             livenessInstruction={livenessChallenge.label}
