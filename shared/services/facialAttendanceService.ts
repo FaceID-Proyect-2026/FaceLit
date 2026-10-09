@@ -16,6 +16,7 @@ export interface FacialAttendanceCapturePayload {
   imageBase64: string;
   imageFrames?: string[];
   livenessChallenge?: string;
+  livenessChallenges?: string[];
   origin: 'PC' | 'MOBILE';
 }
 
@@ -97,6 +98,7 @@ export async function registerFacialAttendanceFromImage(
     imageBase64: payload.imageBase64,
     imageFrames: payload.imageFrames ?? [payload.imageBase64],
     livenessChallenge: payload.livenessChallenge,
+    livenessChallenges: payload.livenessChallenges ?? [],
     origin: payload.origin,
   });
 
