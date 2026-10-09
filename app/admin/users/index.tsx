@@ -7,10 +7,15 @@ import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
-import { deleteManagedUser, getManagedUsers } from '@/shared/services/userManagementService';
+import {
+  getManagedUsers,
+  getManagedUsersStats,
+  updateManagedUser,
+} from '@/shared/services/userManagementService';
+import { subscribeRealtime } from '@/shared/services/realtime';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     ActivityIndicator,
@@ -24,7 +29,8 @@ import {
 } from 'react-native';
 
 type RoleFilter = 'ALL' | 'COORDINATOR' | 'INSTRUCTOR' | 'APPRENTICE';
-type StatusFilter = 'ALL' | 'active' | 'inactive';
+type UserStatus = 'active' | 'inactive' | 'blocked';
+type StatusFilter = 'ALL' | UserStatus;
 
 type ManagedUser = {
   id: string;
@@ -33,10 +39,7 @@ type ManagedUser = {
   lastname: string;
   email: string;
   role: string;
-  status: 'active' | 'inactive';
-  sessionStatus: string;
-  chipCode?: string | null;
-  programName?: string | null;
+  status: UserStatus;
 };
 
 function mapManagedUser(item: any): ManagedUser {
@@ -47,10 +50,11 @@ function mapManagedUser(item: any): ManagedUser {
     lastname: item.lastName ?? '',
     email: item.email ?? '',
     role: item.role ?? 'APPRENTICE',
-    status: String(item.accountStatus ?? '').toUpperCase() === 'ACTIVE' ? 'active' : 'inactive',
-    sessionStatus: item.sessionStatus ?? 'INACTIVE',
-    chipCode: item.chipCode,
-    programName: item.programName,
+    status: String(item.accountStatus ?? '').toUpperCase() === 'ACTIVE'
+      ? 'active'
+      : String(item.accountStatus ?? '').toUpperCase() === 'BLOCKED'
+        ? 'blocked'
+        : 'inactive',
   };
 }
 
@@ -62,29 +66,57 @@ export default function UsersPanel() {
 
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const loadedOnce = useRef(false);
+  const requestVersion = useRef(0);
+  const [searchText, setSearchText] = useState('');
   const [query, setQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('ALL');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
+  const [userCounts, setUserCounts] = useState({ total: 0, active: 0, inactive: 0, blocked: 0 });
+
+  useEffect(() => {
+    const timeout = setTimeout(() => setQuery(searchText.trim()), 300);
+    return () => clearTimeout(timeout);
+  }, [searchText]);
 
   const loadUsers = useCallback(() => {
-    let mounted = true;
-    setLoading(!loadedOnce.current);
-    getManagedUsers('', { force: !loadedOnce.current })
+    const version = ++requestVersion.current;
+    let active = true;
+    setLoading(true);
+    getManagedUsers('', { force: true })
       .then((data) => {
-        if (mounted) {
-          setUsers(data.map(mapManagedUser));
-          loadedOnce.current = true;
+        if (!active || version !== requestVersion.current) return;
+        setUsers(data.map(mapManagedUser));
+      })
+      .catch(() => {
+        if (active && version === requestVersion.current) {
+          alert(t('common.error'), t('users.loadError'));
         }
       })
-      .catch((error) => alert(t('common.error'), error?.response?.data?.message ?? 'No se pudieron cargar los usuarios.'))
       .finally(() => {
-        if (mounted) setLoading(false);
+        if (active && version === requestVersion.current) setLoading(false);
       });
-    return () => { mounted = false; };
+    getManagedUsersStats()
+      .then((counts) => {
+        if (active && version === requestVersion.current) setUserCounts(counts);
+      })
+      .catch(() => {
+        if (active && version === requestVersion.current) {
+          alert(t('common.error'), t('users.loadError'));
+        }
+      });
+    return () => {
+      active = false;
+      if (version === requestVersion.current) requestVersion.current += 1;
+    };
   }, [alert, t]);
 
   useFocusEffect(loadUsers);
+
+  useEffect(() => subscribeRealtime(message => {
+    if (message.type === 'data.changed' && (message.resource === 'users' || message.resource === 'roles')) {
+      loadUsers();
+    }
+  }), [loadUsers]);
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -95,49 +127,51 @@ export default function UsersPanel() {
   const softBlue = theme.infoSoft;
   const softAmber = theme.warningSoft;
   const softRed = theme.dangerSoft;
-  const canManageDeletion = user?.role === 'COORDINATOR';
+  const canManageUsers = user?.role === 'COORDINATOR';
+
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredUsers = useMemo(() => users.filter((item) => {
+    const matchesQuery = !normalizedQuery
+      || `${item.name} ${item.lastname} ${item.document} ${item.email}`
+        .toLowerCase()
+        .includes(normalizedQuery);
+    const matchesRole = roleFilter === 'ALL'
+      || item.role === roleFilter
+      || (roleFilter === 'COORDINATOR' && item.role === 'COORDINATOR_REGISTER');
+    const matchesStatus = statusFilter === 'ALL' || item.status === statusFilter;
+    return matchesQuery && matchesRole && matchesStatus;
+  }), [normalizedQuery, roleFilter, statusFilter, users]);
 
   if (user?.role !== 'COORDINATOR' && user?.role !== 'ADMINISTRATOR') {
     router.replace('/admin' as any);
     return null;
   }
 
-  const q = query.trim().toLowerCase();
-  const filtered = users.filter((u) => {
-    const matchQuery =
-      !q ||
-      u.name.toLowerCase().includes(q) ||
-      u.lastname.toLowerCase().includes(q) ||
-      u.document.toLowerCase().includes(q) ||
-      u.email.toLowerCase().includes(q);
-    const matchRole = roleFilter === 'ALL' || u.role === roleFilter;
-    const matchStatus = statusFilter === 'ALL' || u.status === statusFilter;
-    return matchQuery && matchRole && matchStatus;
-  });
-
-  const removeUser = (id: string) => {
-    const target = users.find((u) => u.id === id);
-    if (!target) return;
-    const isActive = target.status === 'active';
+  const deactivateUser = (target: ManagedUser) => {
+    if (target.status !== 'active') return;
     alert(
-      isActive ? t('users.deactivateUser') : t('users.panel.deleteTitle'),
-      isActive
-        ? t('users.deactivateConfirm', { name: `${target.name} ${target.lastname}` })
-        : t('users.panel.deleteConfirm', { name: `${target.name} ${target.lastname}` }),
+      t('users.deactivateUser'),
+      t('users.deactivateConfirm', { name: `${target.name} ${target.lastname}` }),
       [
         { text: t('common.cancel'), style: 'cancel' },
         {
-          text: isActive ? t('users.panel.deactivate') : t('users.delete'),
+          text: t('users.panel.deactivate'),
           style: 'destructive',
           onPress: async () => {
             try {
-              await deleteManagedUser(id);
-              setUsers((prev) => isActive
-                ? prev.map((u) => u.id === id ? { ...u, status: 'inactive' } : u)
-                : prev.filter((u) => u.id !== id),
-              );
-            } catch (error: any) {
-              alert(t('common.error'), error?.response?.data?.message ?? 'No se pudo actualizar el usuario.');
+              const updated = await updateManagedUser(target.id, {
+                numberDocument: target.document,
+                firstName: target.name,
+                lastName: target.lastname,
+                email: target.email,
+                accountStatus: 'INACTIVE',
+                role: target.role,
+              });
+              const mapped = mapManagedUser(updated);
+              setUsers((previous) => previous.map((item) => item.id === target.id ? mapped : item));
+              alert(t('common.success'), t('users.deactivateSuccess'), [{ text: t('common.ok') }]);
+            } catch {
+              alert(t('common.error'), t('users.statusUpdateError'));
             }
           },
         },
@@ -158,9 +192,14 @@ export default function UsersPanel() {
   };
 
   const roleLabel = (role: string) => {
-    if (role === 'COORDINATOR') return 'Coordinador';
-    if (role === 'INSTRUCTOR') return t('users.create.roleInstructor');
-    return t('users.create.roleApprentice');
+    const roleKeys: Record<string, string> = {
+      ADMINISTRATOR: 'users.roles.ADMINISTRATOR',
+      COORDINATOR: 'users.roles.COORDINATOR',
+      COORDINATOR_REGISTER: 'users.roles.COORDINATOR_REGISTER',
+      INSTRUCTOR: 'users.roles.INSTRUCTOR',
+      APPRENTICE: 'users.roles.APPRENTICE',
+    };
+    return t(roleKeys[role] ?? 'users.detail.noRole');
   };
 
   const renderItem = ({ item }: { item: ManagedUser }) => {
@@ -168,7 +207,6 @@ export default function UsersPanel() {
     const statusColor = isActive ? Colors.success : muted;
     const statusBg = isActive ? softGreen : isDark ? 'rgba(255,255,255,0.06)' : '#F2F2F2';
     const displayName = `${item.name} ${item.lastname}`;
-    const apprenticeChip = item.role === 'APPRENTICE' ? item.chipCode ?? 'Sin ficha activa' : null;
 
     return (
       <TouchableOpacity
@@ -204,28 +242,19 @@ export default function UsersPanel() {
             <Text style={[styles.doc, { color: muted }]}>{item.document}</Text>
           </View>
 
-          {item.role === 'INSTRUCTOR' && (
-            <Text style={[styles.subMeta, { color: muted }]}>Programa: {item.programName ?? 'Sin programa'}</Text>
-          )}
-
-          {item.role === 'APPRENTICE' && apprenticeChip && (
-            <Text style={[styles.subMeta, { color: muted }]}>
-              Ficha activa: {apprenticeChip}
-            </Text>
-          )}
         </View>
 
-        {canManageDeletion && (
+        {canManageUsers && isActive && (
           <View style={styles.actions}>
             <TouchableOpacity
               onPress={(e) => {
                 e.stopPropagation?.();
-                removeUser(item.id);
+                deactivateUser(item);
               }}
               style={[styles.iconBtn, { backgroundColor: softRed }]}
-              accessibilityLabel={isActive ? t('users.panel.deactivate') : t('users.delete')}
+              accessibilityLabel={t('users.panel.deactivate')}
             >
-              <Ionicons name={isActive ? 'ban-outline' : 'trash-outline'} size={17} color={Colors.error} />
+              <Ionicons name="ban-outline" size={17} color={Colors.error} />
             </TouchableOpacity>
           </View>
         )}
@@ -236,12 +265,17 @@ export default function UsersPanel() {
   return (
     <View style={[styles.root, { backgroundColor: bg }]}>
       <FlatList
-        data={loading ? [] : filtered}
+        data={loading ? [] : filteredUsers}
         keyExtractor={(u) => u.id}
         renderItem={renderItem}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        initialNumToRender={12}
+        maxToRenderPerBatch={10}
+        updateCellsBatchingPeriod={50}
+        windowSize={7}
         ListHeaderComponent={
           <>
             <View style={styles.header}>
@@ -254,7 +288,7 @@ export default function UsersPanel() {
                 </View>
                 <Text style={[styles.title, { color: text }]}>{t('users.panel.title')}</Text>
                 <Text style={[styles.subtitle, { color: muted }]}>
-                  {filtered.length} {t('users.results')}
+                  {filteredUsers.length} {t('users.results')}
                 </Text>
               </View>
               <TouchableOpacity
@@ -267,9 +301,9 @@ export default function UsersPanel() {
 
             <View style={styles.statsRow}>
               {[
-                { label: t('users.total'), value: users.length, bg: softGreen, icon: 'people-outline', color: theme.primary },
-                { label: t('users.active'), value: users.filter((u) => u.status === 'active').length, bg: softBlue, icon: 'checkmark-circle-outline', color: theme.info },
-                { label: t('users.statuses.INACTIVE'), value: users.filter((u) => u.status === 'inactive').length, bg: softAmber, icon: 'pause-circle-outline', color: Colors.warning },
+                { label: t('users.total'), value: userCounts.total, bg: softGreen, icon: 'people-outline', color: theme.primary },
+                { label: t('users.active'), value: userCounts.active, bg: softBlue, icon: 'checkmark-circle-outline', color: theme.info },
+                { label: t('users.statuses.INACTIVE'), value: userCounts.inactive, bg: softAmber, icon: 'pause-circle-outline', color: Colors.warning },
               ].map((s) => (
                 <View key={s.label} style={[styles.statCard, { backgroundColor: s.bg }]}>
                   <View style={[styles.statIcon, { backgroundColor: s.color + '22' }]}>
@@ -285,15 +319,15 @@ export default function UsersPanel() {
               <View style={styles.searchRow}>
                 <Ionicons name="search-outline" size={19} color={theme.primary} />
                 <TextInput
-                  value={query}
-                  onChangeText={setQuery}
+                  value={searchText}
+                  onChangeText={setSearchText}
                   placeholder={t('users.panel.searchPlaceholder')}
                   placeholderTextColor={muted}
                   style={[styles.searchInput, { color: text }]}
                   returnKeyType="search"
                 />
-                {query.length > 0 && (
-                  <TouchableOpacity onPress={() => setQuery('')}>
+                {searchText.length > 0 && (
+                  <TouchableOpacity onPress={() => setSearchText('')}>
                     <Ionicons name="close-circle" size={18} color={muted} />
                   </TouchableOpacity>
                 )}
@@ -317,17 +351,17 @@ export default function UsersPanel() {
                       {f === 'ALL'
                         ? t('users.all')
                         : f === 'COORDINATOR'
-                          ? 'Coordinador'
+                          ? t('users.roles.COORDINATOR')
                           : f === 'INSTRUCTOR'
-                            ? t('users.create.roleInstructor')
-                            : t('users.create.roleApprentice')}
+                            ? t('users.roles.INSTRUCTOR')
+                            : t('users.roles.APPRENTICE')}
                     </Text>
                   </TouchableOpacity>
                 ))}
 
                 <View style={[styles.chipSep, { backgroundColor: border }]} />
 
-                {(['ALL', 'active', 'inactive'] as StatusFilter[]).map((f) => (
+                {(['ALL', 'active', 'inactive', 'blocked'] as StatusFilter[]).map((f) => (
                   <TouchableOpacity
                     key={f}
                     onPress={() => setStatusFilter(f)}
@@ -344,7 +378,9 @@ export default function UsersPanel() {
                         ? t('users.all')
                         : f === 'active'
                           ? t('users.statuses.ACTIVE')
-                          : t('users.statuses.INACTIVE')}
+                          : f === 'inactive'
+                            ? t('users.statuses.INACTIVE')
+                            : t('users.statuses.BLOCKED')}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -368,7 +404,7 @@ export default function UsersPanel() {
             {loading ? (
               <>
                 <ActivityIndicator size="large" color={theme.primary} />
-                <Text style={[styles.emptyText, { color: muted }]}>Cargando usuarios...</Text>
+                <Text style={[styles.emptyText, { color: muted }]}>{t('users.loading')}</Text>
               </>
             ) : (
               <>
@@ -394,7 +430,7 @@ const styles = StyleSheet.create({
   subtitle: { marginTop: 4, fontSize: FontSize.sm },
   backBtn: { width: 40, height: 40, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   statsRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
-  statCard: { flex: 1, borderRadius: 16, padding: 12, justifyContent: 'space-between', minHeight: 96 },
+  statCard: { flex: 1, borderRadius: 16, padding: 12, justifyContent: 'space-between', minHeight: 96, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 10, elevation: 4 },
   statIcon: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   statValue: { fontSize: 22, fontWeight: '900', marginTop: 4 },
   statLabel: { fontSize: FontSize.xs, fontWeight: '600' },
@@ -410,7 +446,7 @@ const styles = StyleSheet.create({
   listTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.black },
   createBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 11, paddingHorizontal: 13, paddingVertical: 9 },
   createBtnText: { color: Colors.white, fontWeight: '800', fontSize: FontSize.sm },
-  card: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 16, padding: 13 },
+  card: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 16, padding: 13, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 10, elevation: 4 },
   avatar: { width: 46, height: 46, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   avatarText: { color: Colors.white, fontWeight: '900', fontSize: 18 },
   cardBody: { flex: 1, marginLeft: 12, minWidth: 0 },

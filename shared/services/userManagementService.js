@@ -46,6 +46,16 @@ export const getManagedUsersCount = async () => {
   return Number(data?.total ?? 0);
 };
 
+export const getManagedUsersStats = async () => {
+  const { data } = await api.get('/api/admin/users/count');
+  return {
+    total: Number(data?.total ?? 0),
+    active: Number(data?.active ?? 0),
+    inactive: Number(data?.inactive ?? 0),
+    blocked: Number(data?.blocked ?? 0),
+  };
+};
+
 export const getManagedUser = async (id) => {
   const { data } = await api.get(`/api/admin/users/${id}`);
   return data;
@@ -61,12 +71,6 @@ export const updateManagedUser = async (id, payload) => {
   const { data } = await api.put(`/api/admin/users/${id}`, payload);
   clearUsersCache();
   return data;
-};
-
-export const deleteManagedUser = async (id) => {
-  const response = await api.delete(`/api/admin/users/${id}`);
-  clearUsersCache();
-  return response.data;
 };
 
 // PUT /api/admin/users/{userId}/role — solo ADMINISTRATOR

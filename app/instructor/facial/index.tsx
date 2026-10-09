@@ -9,16 +9,16 @@ import { useTheme } from "@/shared/contexts/ThemeContext";
 import { useAppDialog } from "@/shared/hooks/useAppDialog";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
 
 export default function FacialManagementScreen() {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
-  const { settings, saveConfig } = useFacialRegistry();
+  const { config, sectionDraft, settings, saveConfig, saveSectionDraft, setActiveSession } = useFacialRegistry(user?.id);
   const { alert, DialogUI } = useAppDialog();
   const {
     environmentQuery,
@@ -38,6 +38,7 @@ export default function FacialManagementScreen() {
     saving,
     saveSession,
   } = useEnvironmentSession();
+  const restoredConfigRef = useRef(false);
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.history?.pushState) return;
@@ -54,6 +55,39 @@ export default function FacialManagementScreen() {
     return () => window.removeEventListener("popstate", handleBrowserBack);
   }, [logout]);
 
+  useEffect(() => {
+    const savedSection = sectionDraft ?? config;
+    if (restoredConfigRef.current || !savedSection) return;
+    if (selectedEnvironment || selectedInstructorId || selectedChipId) return;
+    if (!savedSection.environmentId || !savedSection.environmentName) return;
+
+    selectEnvironment({
+      idEnvironment: savedSection.environmentId,
+      environmentName: savedSection.environmentName,
+    });
+    if (savedSection.instructorId) {
+      setSelectedInstructorId(savedSection.instructorId);
+    }
+    restoredConfigRef.current = true;
+  }, [
+    config,
+    sectionDraft,
+    selectEnvironment,
+    selectedChipId,
+    selectedEnvironment,
+    selectedInstructorId,
+    setSelectedInstructorId,
+  ]);
+
+  useEffect(() => {
+    const savedSection = sectionDraft ?? config;
+    if (!savedSection || !restoredConfigRef.current || selectedChipId) return;
+    if (!savedSection.fichaId || selectedInstructorId !== savedSection.instructorId) return;
+    if (!chips.some((chip) => chip.idChip === savedSection.fichaId)) return;
+
+    setSelectedChipId(savedSection.fichaId);
+  }, [chips, config, sectionDraft, selectedChipId, selectedInstructorId, setSelectedChipId]);
+
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
   const cardBg = theme.surface;
@@ -68,31 +102,80 @@ export default function FacialManagementScreen() {
 
   const fichaOptions = chips.map((chip) => ({
     value: chip.idChip,
-    label: `Ficha ${chip.chipCode} - ${chip.programName}`,
+    label: `${t("facial.setup.fields.ficha")} ${chip.chipCode} - ${chip.programName}`,
   }));
   const selectedInstructor = instructors.find((instructor) => instructor.idInstructor === selectedInstructorId);
   const selectedChip = chips.find((chip) => chip.idChip === selectedChipId);
   const sessionSummary = [
-    { icon: "business-outline", label: t("facial.setup.fields.environment"), value: selectedEnvironment?.environmentName ?? "Sin seleccionar" },
-    { icon: "person-outline", label: t("facial.setup.fields.instructor"), value: selectedInstructor ? `${selectedInstructor.firstName} ${selectedInstructor.lastName}` : "Sin seleccionar" },
-    { icon: "school-outline", label: t("facial.setup.fields.ficha"), value: selectedChip ? `Ficha ${selectedChip.chipCode}` : "Sin seleccionar" },
+    { icon: "business-outline", label: t("facial.setup.fields.environment"), value: selectedEnvironment?.environmentName ?? t("facial.setup.unselected") },
+    { icon: "person-outline", label: t("facial.setup.fields.instructor"), value: selectedInstructor ? `${selectedInstructor.firstName} ${selectedInstructor.lastName}` : t("facial.setup.unselected") },
+    { icon: "school-outline", label: t("facial.setup.fields.ficha"), value: selectedChip ? `${t("facial.setup.fields.ficha")} ${selectedChip.chipCode}` : t("facial.setup.unselected") },
   ];
 
-  const canSave = !!selectedEnvironment && !!selectedInstructorId && !!selectedChipId && !saving;
+  const hasSettings = !!settings;
+  const canSave = !!selectedEnvironment && !!selectedInstructor && !!selectedChip && hasSettings && !saving;
 
   const handleCreateEnvironment = async () => {
     try {
-      await createEnvironment();
+      const environment = await createEnvironment();
+      if (environment) {
+        void saveSectionDraft({
+          environmentId: environment.idEnvironment,
+          environmentName: environment.environmentName,
+        });
+      }
     } catch {
       alert(t("common.error"), t("facial.setup.validation.environmentCreateFailed"));
     }
   };
 
+  const handleSelectEnvironment = (environment: { idEnvironment: string; environmentName: string }) => {
+    selectEnvironment(environment);
+    void saveSectionDraft({
+      environmentId: environment.idEnvironment,
+      environmentName: environment.environmentName,
+    });
+  };
+
+  const handleEnvironmentQueryChange = (value: string) => {
+    setEnvironmentQuery(value);
+    if (selectedEnvironment?.environmentName.trim().toLowerCase() !== value.trim().toLowerCase()) {
+      void saveSectionDraft({ environmentId: undefined, environmentName: value.trim() || undefined });
+    }
+  };
+
+  const handleSelectInstructor = (idInstructor: string) => {
+    setSelectedInstructorId(idInstructor);
+    void saveSectionDraft({ instructorId: idInstructor || undefined, fichaId: undefined });
+  };
+
+  const handleSelectChip = (idChip: string) => {
+    setSelectedChipId(idChip);
+    void saveSectionDraft({ fichaId: idChip || undefined });
+  };
+
   const handleSave = async () => {
     if (!canSave) {
-      alert(t("common.error"), t("facial.setup.validation.allRequired"));
+      alert(
+        t("common.error"),
+        hasSettings
+          ? t("facial.setup.validation.allRequired")
+          : t("facial.settings.validation.allRequired"),
+      );
       return;
     }
+
+    const sessionConfig = {
+      environmentId: selectedEnvironment.idEnvironment,
+      environmentName: selectedEnvironment.environmentName,
+      instructorId: selectedInstructor.idInstructor,
+      instructorName: `${selectedInstructor.firstName} ${selectedInstructor.lastName}`.trim(),
+      fichaId: selectedChip.idChip,
+      fichaNumber: selectedChip.chipCode,
+    };
+
+    void saveConfig(sessionConfig);
+    void saveSectionDraft(sessionConfig);
 
     const result = await saveSession({
       registrationMinutes: settings.registrationMinutes,
@@ -105,16 +188,14 @@ export default function FacialManagementScreen() {
       return;
     }
 
-    saveConfig({
-      environmentId: result.session.idEnvironment,
-      environmentName: result.session.environmentName,
-      instructorId: result.session.idInstructorInCharge,
-      instructorName: result.session.instructorName,
-      fichaId: result.session.idChip,
-      fichaNumber: result.session.chipCode,
-    });
+    setActiveSession(result.session);
 
-    alert(t("common.success"), t("facial.setup.saveSuccess"));
+    alert(t("common.success"), t("facial.setup.saveSuccess"), [
+      {
+        text: t("common.ok"),
+        onPress: () => router.replace(Routes.INSTRUCTOR.FACIAL_CAMERA as any),
+      },
+    ]);
   };
 
   return (
@@ -151,15 +232,15 @@ export default function FacialManagementScreen() {
             <Text style={[fs.panelTitle, { color: text }]}>Configuracion actual</Text>
             <View style={fs.timerGrid}>
               <View style={[fs.timerTile, { backgroundColor: theme.primary + "10", borderColor: border }]}>
-                <Text style={[fs.timerValue, { color: text }]}>{settings.registrationMinutes} min</Text>
+                <Text style={[fs.timerValue, { color: text }]}>{settings ? `${settings.registrationMinutes} min` : "-"}</Text>
                 <Text style={[fs.timerLabel, { color: muted }]}>Registro</Text>
               </View>
               <View style={[fs.timerTile, { backgroundColor: theme.primary + "10", borderColor: border }]}>
-                <Text style={[fs.timerValue, { color: text }]}>{settings.exitTime}</Text>
+                <Text style={[fs.timerValue, { color: text }]}>{settings?.exitTime ?? "-"}</Text>
                 <Text style={[fs.timerLabel, { color: muted }]}>Salida</Text>
               </View>
               <View style={[fs.timerTile, { backgroundColor: theme.primary + "10", borderColor: border }]}>
-                <Text style={[fs.timerValue, { color: text }]}>{settings.shutdownTime}</Text>
+                <Text style={[fs.timerValue, { color: text }]}>{settings?.shutdownTime ?? "-"}</Text>
                 <Text style={[fs.timerLabel, { color: muted }]}>Apagado</Text>
               </View>
             </View>
@@ -190,7 +271,7 @@ export default function FacialManagementScreen() {
             <InputField
               label={t("facial.setup.fields.environment")}
               value={environmentQuery}
-              onChangeText={setEnvironmentQuery}
+              onChangeText={handleEnvironmentQueryChange}
               placeholder={t("facial.setup.placeholders.environment")}
             />
 
@@ -199,7 +280,7 @@ export default function FacialManagementScreen() {
                 {environments.map((environment) => (
                   <TouchableOpacity
                     key={environment.idEnvironment}
-                    onPress={() => selectEnvironment(environment)}
+                    onPress={() => handleSelectEnvironment(environment)}
                     style={[
                       fs.optionRow,
                       selectedEnvironment?.idEnvironment === environment.idEnvironment && {
@@ -226,14 +307,14 @@ export default function FacialManagementScreen() {
               label={t("facial.setup.fields.instructor")}
               value={selectedInstructorId}
               options={instructorOptions}
-              onSelect={setSelectedInstructorId}
+              onSelect={handleSelectInstructor}
               placeholder={loading ? t("common.loading") : t("facial.setup.placeholders.instructor")}
             />
             <SelectField
               label={t("facial.setup.fields.ficha")}
               value={selectedChipId}
               options={fichaOptions}
-              onSelect={setSelectedChipId}
+              onSelect={handleSelectChip}
               placeholder={
                 selectedInstructorId
                   ? t("facial.setup.placeholders.ficha")
