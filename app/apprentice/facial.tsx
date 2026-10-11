@@ -23,6 +23,7 @@ import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+    Modal,
     ScrollView,
     StyleSheet,
     Text,
@@ -43,6 +44,7 @@ export default function ApprenticeFacialScreen() {
   const { alert, DialogUI } = useAppDialog();
   const [step, setStep] = useState<Step>("confirm");
   const [confirmed, setConfirmed] = useState(false);
+  const [captureWarningVisible, setCaptureWarningVisible] = useState(false);
   const [resetRequested, setResetRequested] = useState(false);
   const [serverRegistered, setServerRegistered] = useState<boolean | null>(null);
   const [serverRegistrationDate, setServerRegistrationDate] = useState<string | null>(null);
@@ -137,6 +139,11 @@ export default function ApprenticeFacialScreen() {
     if (isRegistered) {
       return;
     }
+    setCaptureWarningVisible(true);
+  }
+
+  function handleAcceptCaptureWarning() {
+    setCaptureWarningVisible(false);
     setStep("camera");
     handleOpenCamera();
   }
@@ -182,6 +189,79 @@ export default function ApprenticeFacialScreen() {
     return (
       <View style={[s.safe, { backgroundColor: bg }]}>
         {DialogUI}
+        <Modal
+          visible={captureWarningVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setCaptureWarningVisible(false)}
+        >
+          <View style={s.captureWarningBackdrop}>
+            <View
+              style={[
+                s.captureWarningCard,
+                { backgroundColor: cardBg, borderColor: border },
+              ]}
+            >
+              <View
+                style={[
+                  s.captureWarningIcon,
+                  { backgroundColor: theme.primary + "18" },
+                ]}
+              >
+                <Ionicons
+                  name="shield-checkmark-outline"
+                  size={34}
+                  color={theme.primary}
+                />
+              </View>
+              <Text style={[s.captureWarningTitle, { color: text }]}>
+                {t("facialReg.captureWarningTitle")}
+              </Text>
+              <Text style={[s.captureWarningBody, { color: muted }]}>
+                {t("facialReg.captureWarningBody")}
+              </Text>
+              <View
+                style={[
+                  s.captureWarningNotice,
+                  { backgroundColor: theme.primary + "10", borderColor: theme.primary + "55" },
+                ]}
+              >
+                <Ionicons
+                  name="alert-circle-outline"
+                  size={20}
+                  color={theme.primary}
+                />
+                <Text style={[s.captureWarningNoticeText, { color: text }]}>
+                  {t("facialReg.captureWarningCoordinator")}
+                </Text>
+              </View>
+              <View style={s.captureWarningActions}>
+                <TouchableOpacity
+                  onPress={() => setCaptureWarningVisible(false)}
+                  style={[s.captureWarningSecondary, { borderColor: border }]}
+                  activeOpacity={0.85}
+                >
+                  <Text style={[s.captureWarningSecondaryText, { color: text }]}>
+                    {t("facialReg.captureWarningCancel")}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleAcceptCaptureWarning}
+                  style={[
+                    s.captureWarningPrimary,
+                    { backgroundColor: theme.primary },
+                  ]}
+                  activeOpacity={0.85}
+                >
+                  <Ionicons name="camera-outline" size={18} color={Colors.white} />
+                  <Text style={s.captureWarningPrimaryText}>
+                    {t("facialReg.captureWarningContinue")}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
 
         {/* Header */}
         <View style={[s.header, { borderBottomColor: border }]}>
@@ -650,6 +730,99 @@ const s = StyleSheet.create({
     marginTop: 2,
   },
   checkLabel: { flex: 1, fontSize: FontSize.sm, lineHeight: 20 },
+
+  // Capture warning modal
+  captureWarningBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.58)",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
+  },
+  captureWarningCard: {
+    width: "100%",
+    maxWidth: 460,
+    borderRadius: 22,
+    borderWidth: 1,
+    padding: 22,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.22,
+    shadowRadius: 22,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 10,
+  },
+  captureWarningIcon: {
+    width: 68,
+    height: 68,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 14,
+  },
+  captureWarningTitle: {
+    fontSize: FontSize.xl,
+    fontWeight: FontWeight.black,
+    textAlign: "center",
+  },
+  captureWarningBody: {
+    fontSize: FontSize.base,
+    lineHeight: 22,
+    textAlign: "center",
+    marginTop: 10,
+  },
+  captureWarningNotice: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 14,
+    marginTop: 18,
+  },
+  captureWarningNoticeText: {
+    flex: 1,
+    fontSize: FontSize.sm,
+    lineHeight: 20,
+    fontWeight: FontWeight.bold,
+  },
+  captureWarningActions: {
+    width: "100%",
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 20,
+  },
+  captureWarningSecondary: {
+    flex: 1,
+    minHeight: 48,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 12,
+  },
+  captureWarningSecondaryText: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.black,
+    textAlign: "center",
+  },
+  captureWarningPrimary: {
+    flex: 1.25,
+    minHeight: 48,
+    borderRadius: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingHorizontal: 12,
+  },
+  captureWarningPrimaryText: {
+    color: Colors.white,
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.black,
+    textAlign: "center",
+  },
 
   // Camera
   camHeader: {

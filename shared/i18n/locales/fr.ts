@@ -138,14 +138,26 @@
     policyPrefix: "J'ai lu et j'accepte",
     policyLink: "la politique de confidentialité",
     policySuffix: "?",
+    policyOpenPrefix: "Ouvrez et consultez",
+    policyOpenSuffix: " pour l'accepter dans l'avis.",
     policyError:
       "Vous devez accepter la politique de confidentialité pour continuer.",
     loginBtn: "Se connecter",
     loggingIn: "Connexion en cours…",
+    checkingPrivacy: "Vérification de l'avis de confidentialité...",
     recoveringAccess: "Récupération de l'accès...",
     forgotPassword: "Mot de passe oublié ?",
     noAccount: "Pas de compte ?",
     registerLink: "S'inscrire",
+    passwordPrompt: {
+      title: "Mettez à jour votre mot de passe",
+      message: "Pour votre sécurité, nous vous recommandons de remplacer votre mot de passe initial par un mot de passe que vous seul connaissez.",
+      cancel: "Annuler",
+      update: "Mettre à jour",
+      laterTitle: "Vous pourrez le changer plus tard",
+      laterMessage: "Si vous souhaitez mettre à jour votre mot de passe plus tard, allez dans Paramètres → Mot de passe et sécurité.",
+      understood: "Compris",
+    },
     errors: {
       emptyDocument: "Veuillez entrer votre numéro de document.",
       invalidDocument: "Le document ne doit contenir que des chiffres.",
@@ -179,6 +191,11 @@
     articlesRef:
       "Articles applicables : 5 (données sensibles, y compris biométriques), 8 (droits du titulaire), 9 (autorisation) et 12 (devoir d'information) de la loi 1581 de 2012.",
     moreInfo: "Plus d'infos: ",
+    acceptButton: "Accepter l'avis",
+    accepted: "Avis accepté",
+    acceptedTitle: "Avis accepté",
+    acceptedResponsibility:
+      "Vous avez accepté les conditions générales. Il vous appartient d'en connaître le contenu; FaceLit n'est pas responsable des conséquences liées au fait de ne pas les avoir lues avant acceptation.",
   },
   passwordRecovery: {
     title: "Réinitialiser le mot de passe",
@@ -386,6 +403,13 @@
       "Si une autre personne effectue l'enregistrement, la responsabilité incombera à votre compte. Pour corriger un enregistrement, demandez l'autorisation au Coordinateur.",
     confirmResponsibility:
       "J'ai lu l'avis et je comprends que je suis responsable.",
+    captureWarningTitle: "Avant d'ouvrir la caméra",
+    captureWarningBody:
+      "L'enregistrement facial est unique et doit correspondre uniquement à votre visage. Vérifiez que personne d'autre n'est devant la caméra ni n'effectue l'enregistrement avec vos données.",
+    captureWarningCoordinator:
+      "Si le visage d'une autre personne est enregistré par erreur sur votre compte, vous devrez demander l'autorisation du coordinateur pour réactiver la caméra et refaire l'enregistrement.",
+    captureWarningCancel: "Vérifier à nouveau",
+    captureWarningContinue: "Je comprends, ouvrir la caméra",
     alreadyRegisteredTitle: "Enregistrement terminé",
     alreadyRegisteredBody:
       "Pour remplacer votre enregistrement facial, vous avez besoin de l'autorisation du Coordinateur.",
@@ -1850,6 +1874,26 @@
         title: "Suppression bloquée",
         message: "Impossible de supprimer {{entity}} car des enregistrements associés sont encore actifs.",
       },
+      academic_entity_created: {
+        title: "Enregistrement académique créé",
+        message: "{{entity}} a été créé : {{name}}.",
+      },
+      academic_entity_updated: {
+        title: "Enregistrement académique mis à jour",
+        message: "{{entity}} a été mis à jour : {{name}}.",
+      },
+      academic_entity_activated: {
+        title: "Enregistrement académique activé",
+        message: "{{entity}} a été activé : {{name}}.",
+      },
+      academic_entity_deactivated: {
+        title: "Enregistrement académique désactivé",
+        message: "{{entity}} a été désactivé : {{name}}.",
+      },
+      academic_entity_deleted: {
+        title: "Enregistrement académique supprimé",
+        message: "{{entity}} a été supprimé : {{name}}.",
+      },
       instructor_profile_updated: {
         title: "Profil du formateur mis à jour",
         message: "Les informations du profil d’un formateur ont été mises à jour.",
@@ -1918,6 +1962,9 @@
     personalInfo: "Infos Personnelles",
     accountInfo: "Infos Compte",
     settings: "Paramètres",
+    passwordSecurityTitle: "Mot de passe et sécurité",
+    passwordSecurityDescription:
+      "Vérifiez votre e-mail pour recevoir un code unique, créer un nouveau mot de passe et vous reconnecter en toute sécurité.",
     fields: {
       name: "Nom",
       lastname: "Prénom",

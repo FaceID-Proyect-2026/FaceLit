@@ -44,6 +44,11 @@ export type NotificationType =
   | 'attendance_substitute'     // 12 — sesión por suplencia
   // Gestión académica (RF-3.2)
   | 'academic_delete_blocked'   // 13 — intento de eliminación bloqueado
+  | 'academic_entity_created'
+  | 'academic_entity_updated'
+  | 'academic_entity_activated'
+  | 'academic_entity_deactivated'
+  | 'academic_entity_deleted'
   | 'instructor_profile_updated'
   | 'instructor_assignment_updated'
   | 'apprentice_transfer_applied'
@@ -61,7 +66,7 @@ export const NOTIFICATION_CHANNELS: Record<NotificationType, NotificationChannel
   csv_transfer_applied:       'app',
   csv_transfer_rejected:      'app',
   csv_ref_error:              'app',
-  learner_transferred:        'app',
+  learner_transferred:        'app+email',
   attendance_absent:          'app',
   attendance_late:            'app',
   attendance_early_exit:      'app',
@@ -69,9 +74,14 @@ export const NOTIFICATION_CHANNELS: Record<NotificationType, NotificationChannel
   attendance_wrong_env:       'app+email',
   attendance_substitute:      'app',
   academic_delete_blocked:    'app',
+  academic_entity_created:    'app',
+  academic_entity_updated:    'app',
+  academic_entity_activated:  'app',
+  academic_entity_deactivated: 'app',
+  academic_entity_deleted:    'app',
   instructor_profile_updated: 'app',
   instructor_assignment_updated: 'app',
-  apprentice_transfer_applied: 'app',
+  apprentice_transfer_applied: 'app+email',
   security_multiple_failures: 'app+email',
   security_account_locked:    'app+email',
   facial_reregister_request:  'app',
