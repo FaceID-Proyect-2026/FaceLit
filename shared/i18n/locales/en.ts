@@ -1,4 +1,7 @@
-﻿const en = {
+﻿import { landingEn } from '../landing';
+
+const en = {
+  landingPage: landingEn,
   // ─────────────────────────────────────────────
   //  Module 1 - Authentication
   // ─────────────────────────────────────────────

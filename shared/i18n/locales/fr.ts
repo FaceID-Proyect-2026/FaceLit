@@ -1,4 +1,7 @@
-﻿const fr = {
+﻿import { landingFr } from '../landing';
+
+const fr = {
+  landingPage: landingFr,
   common: {
     cancel: "Annuler",
     accept: "Accepter",
