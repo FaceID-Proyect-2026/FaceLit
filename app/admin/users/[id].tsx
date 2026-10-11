@@ -1,5 +1,5 @@
 import { Colors } from '@/shared/constants/colors';
-import { FontSize, FontWeight } from '@/shared/constants/typography';
+import { FontSize } from '@/shared/constants/typography';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { getManagedUser, updateManagedUser } from '@/shared/services/userManagementService';
@@ -203,9 +203,6 @@ export default function UserDetailScreen() {
             <Ionicons name="arrow-back" size={20} color={text} />
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.title, { color: text }]} numberOfLines={1}>
-              {form.firstName} {form.lastName}
-            </Text>
             <Text style={[styles.subtitle, { color: muted }]}>{t('users.detail.title')}</Text>
           </View>
         </View>
@@ -422,9 +419,20 @@ const styles = StyleSheet.create({
   backBtnCenter: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 9, marginTop: 16 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 6, paddingBottom: 4 },
   backBtn: { width: 40, height: 40, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  title: { fontSize: FontSize['2xl'], fontWeight: FontWeight.black },
-  subtitle: { fontSize: FontSize.sm, marginTop: 3 },
-  banner: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 16, borderWidth: 1, padding: 14 },
+  subtitle: { fontSize: FontSize.sm },
+  banner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 16,
+    shadowColor: '#1F7A3A',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
+    elevation: 4,
+  },
   bannerAvatar: { width: 46, height: 46, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   bannerAvatarText: { color: Colors.white, fontWeight: '900', fontSize: 18 },
   bannerName: { fontSize: 15, fontWeight: '800' },
@@ -433,23 +441,69 @@ const styles = StyleSheet.create({
   statusPill: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 12, paddingHorizontal: 8, paddingVertical: 4 },
   statusDot: { width: 6, height: 6, borderRadius: 3 },
   statusText: { fontSize: 9, fontWeight: '800' },
-  card: { borderRadius: 16, borderWidth: 1, padding: 16, gap: 12 },
+  card: {
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 18,
+    gap: 14,
+    shadowColor: '#1E293B',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.07,
+    shadowRadius: 16,
+    elevation: 3,
+  },
   section: { fontSize: FontSize.xs, fontWeight: '900', textTransform: 'uppercase' },
   row: { flexDirection: 'row', gap: 10 },
   fieldWrap: { flex: 1, gap: 5 },
   fieldLabel: { fontSize: FontSize.xs, fontWeight: '800', textTransform: 'uppercase' },
-  field: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14 },
+  field: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 11, fontSize: 14 },
   fieldError: { color: Colors.error, fontSize: FontSize.xs, marginTop: 2 },
   infoText: { fontSize: FontSize.sm },
   infoLabel: { fontSize: FontSize.sm, fontWeight: '800' },
   pillList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   smallPill: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 },
   smallPillText: { fontSize: FontSize.xs, fontWeight: '800' },
-  note: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, borderWidth: 1, borderRadius: 10, padding: 10 },
+  note: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 12,
+    shadowColor: '#1E293B',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 2,
+  },
   noteText: { flex: 1, fontSize: FontSize.xs, lineHeight: 16 },
   formActions: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 16, marginTop: 4 },
   cancelBtn: { paddingHorizontal: 8, paddingVertical: 11 },
-  saveBtn: { flexDirection: 'row', alignItems: 'center', gap: 7, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 11 },
-  activateBtn: { flexDirection: 'row', alignItems: 'center', gap: 7, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 11 },
+  saveBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    borderRadius: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    shadowColor: '#2F8E45',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 14,
+    elevation: 4,
+  },
+  activateBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    borderRadius: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    shadowColor: '#2F8E45',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 14,
+    elevation: 4,
+  },
   saveBtnText: { color: Colors.white, fontWeight: '800', fontSize: FontSize.sm },
 });

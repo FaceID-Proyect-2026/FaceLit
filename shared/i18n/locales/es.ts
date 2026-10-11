@@ -161,13 +161,25 @@
     policyPrefix: "¿He leído y acepto el",
     policyLink: "aviso de privacidad",
     policySuffix: "?",
+    policyOpenPrefix: "Abre y revisa el",
+    policyOpenSuffix: " para aceptarlo dentro del aviso.",
     policyError: "Debes aceptar el aviso de privacidad para continuar.",
     loginBtn: "Iniciar sesión",
     loggingIn: "Ingresando…",
+    checkingPrivacy: "Verificando aviso de privacidad...",
     recoveringAccess: "Recuperando acceso...",
     forgotPassword: "¿Olvidaste tu contraseña?",
     noAccount: "¿No tienes cuenta?",
     registerLink: "Regístrate aquí",
+    passwordPrompt: {
+      title: "Actualiza tu contraseña",
+      message: "Por seguridad, te recomendamos cambiar tu contraseña inicial por una que solo tú conozcas.",
+      cancel: "Cancelar",
+      update: "Actualizar",
+      laterTitle: "Puedes cambiarla después",
+      laterMessage: "Si deseas actualizar tu contraseña más adelante, dirígete a Configuración → Contraseña y seguridad.",
+      understood: "Entendido",
+    },
     errors: {
       emptyDocument: "Debes ingresar tu número de documento.",
       invalidDocument: "El número de documento solo debe contener números.",
@@ -204,6 +216,11 @@
     articlesRef:
       "Artículos aplicables: 5° (datos sensibles, incluye biométricos), 8° (derechos del Titular), 9° (autorización) y 12° (deber de informar) de la Ley 1581 de 2012.",
     moreInfo: "Más información: ",
+    acceptButton: "Aceptar aviso",
+    accepted: "Aviso aceptado",
+    acceptedTitle: "Aviso aceptado",
+    acceptedResponsibility:
+      "Has aceptado los términos y condiciones. Es tu responsabilidad conocer su contenido; FaceLit no se hace responsable por consecuencias derivadas de no haberlos leído antes de aceptarlos.",
   },
 
   //Password Recovery
@@ -439,6 +456,13 @@
       "Si otra persona realiza el registro en tu lugar, la responsabilidad recaerá sobre tu cuenta. Para corregir un registro incorrecto deberás solicitar autorización al Coordinador.",
     confirmResponsibility:
       "He leído el aviso y entiendo que soy responsable de este registro.",
+    captureWarningTitle: "Antes de abrir la cámara",
+    captureWarningBody:
+      "El registro facial es único y debe corresponder únicamente a tu rostro. Verifica que nadie más esté frente a la cámara ni realice el registro usando tus datos.",
+    captureWarningCoordinator:
+      "Si por error se registra el rostro de otra persona en tu cuenta, deberás solicitar al coordinador autorización para habilitar nuevamente la cámara y repetir el registro.",
+    captureWarningCancel: "Revisar de nuevo",
+    captureWarningContinue: "Entiendo, abrir cámara",
     alreadyRegisteredTitle: "Registro completado",
     alreadyRegisteredBody:
       "Para reemplazar tu registro facial necesitas autorización del Coordinador.",
@@ -768,10 +792,12 @@
       subtitle: "Registro exclusivo del coordinador",
       successTitle: "Coordinador creado",
       successMessage:
-        "Usuario coordinador creado correctamente. La contraseña inicial es: {{password}}. Entrégala al usuario para que inicie sesión.",
+        "Usuario coordinador creado correctamente. Las credenciales iniciales se enviarán al correo registrado.",
       createError: "No se pudo crear el coordinador.",
       passwordNote:
-        "El sistema asigna el rol de Coordinador y genera la contraseña temporal para su primer inicio de sesión.",
+        "El backend generará la contraseña inicial y la enviará al correo registrado.",
+      credentialsEmailTitle: "Credenciales por correo",
+      credentialsEmailMessage: "El envío se programó después de crear la cuenta.",
       temporaryPassword: "Contraseña temporal",
       hide: "Ocultar",
       show: "Mostrar",
@@ -972,7 +998,7 @@
     assignFichaLabel: "Ficha",
     assignSaving: "Asignando…",
     assignBtn: "Asignar aprendiz a ficha",
-    assignInfoNote: "Si el aprendiz no tiene cuenta, el sistema la crea automáticamente y genera una contraseña inicial vinculada a su número de documento.",
+    assignInfoNote: "Si el aprendiz no tiene cuenta, el sistema la crea automáticamente y envía sus credenciales iniciales al correo registrado.",
     assignNoProgram: "Sin programa",
     assignError: "No se pudo asignar el aprendiz.",
     assignValidationEmptyLearner: "Por favor ingresa los datos del aprendiz antes de asignarlo.",
@@ -987,7 +1013,7 @@
     assignSuccessAdverb: "exitosamente.",
     assignPwdLabel: "Contraseña inicial generada",
     assignPwdDocHint: "Número de documento",
-    assignPwdWarning: "Esta contraseña solo se muestra una vez. Entrégala al aprendiz directamente.",
+    assignPwdWarning: "Las credenciales iniciales se envían automáticamente al correo personal del aprendiz.",
     assignAnotherBtn: "Registrar otro aprendiz",
     assignBackBtn: "Volver a Gestión Académica",
     institutionalTotal: "Total",
@@ -1093,7 +1119,7 @@
       "Ingresa el código que te compartió tu Coordinador para vincularte a tu nueva ficha.",
     programs: "Programas de Formación",
     programsListSubtitle:
-      "Busca programas por nombre, filtra por estado y abre cada programa para revisar sus fichas. Usa «Registrar Programa» y «Registrar Ficha» para crear registros manualmente, o «Cargar CSV» para importar o actualizar varios registros desde un archivo.",
+      "Busca programas por nombre, filtra por estado y abre cada programa para revisar sus fichas. Puedes crear programas, fichas, instructores y aprendices manualmente, o usar «Cargar CSV» para importar o actualizar varios registros desde un archivo.",
     fichasListSubtitle:
       "Consulta y administra las fichas de formación registradas en el sistema.",
     unlinkedListSubtitle:
@@ -1379,7 +1405,7 @@
     instructorDuplicateDoc: "Este número de documento ya está registrado.",
     instructorCreateError: "No se pudo crear el instructor.",
     instructorCreatedTitle: "Instructor creado",
-    instructorCreatedSubtitle: "Comparte esta contraseña inicial con el instructor. Después de que inicie sesión, podrá cambiarla.",
+    instructorCreatedSubtitle: "Las credenciales iniciales se enviarán automáticamente al correo personal del instructor.",
     instructorDocNumber: "Número de documento",
     instructorUnderstood: "Entendido",
     instructorDocLabel: "Número de documento *",
@@ -1971,6 +1997,26 @@
         title: "Intento de eliminación bloqueado",
         message: "No se pudo eliminar {{entity}} porque tiene registros relacionados activos.",
       },
+      academic_entity_created: {
+        title: "Registro académico creado",
+        message: "Se creó {{entity}}: {{name}}.",
+      },
+      academic_entity_updated: {
+        title: "Registro académico actualizado",
+        message: "Se actualizó {{entity}}: {{name}}.",
+      },
+      academic_entity_activated: {
+        title: "Registro académico activado",
+        message: "Se activó {{entity}}: {{name}}.",
+      },
+      academic_entity_deactivated: {
+        title: "Registro académico desactivado",
+        message: "Se desactivó {{entity}}: {{name}}.",
+      },
+      academic_entity_deleted: {
+        title: "Registro académico eliminado",
+        message: "Se eliminó {{entity}}: {{name}}.",
+      },
       instructor_profile_updated: {
         title: "Perfil de instructor actualizado",
         message: "Se actualizó la información del perfil de un instructor.",
@@ -2039,6 +2085,9 @@
     personalInfo: "Información Personal",
     accountInfo: "Información de Cuenta",
     settings: "Configuración",
+    passwordSecurityTitle: "Contraseña y seguridad",
+    passwordSecurityDescription:
+      "Verifica tu correo para recibir un código único, crear una nueva contraseña e iniciar sesión de nuevo de forma segura.",
     fields: {
       name: "Nombre",
       lastname: "Apellidos",

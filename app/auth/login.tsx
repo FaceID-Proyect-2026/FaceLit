@@ -8,6 +8,7 @@ import { Colors } from '@/shared/constants/colors';
 import { Routes } from '@/shared/constants/routes';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useTheme } from '@/shared/contexts/ThemeContext';
+import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useRouter } from 'expo-router';
@@ -114,8 +115,9 @@ const so = StyleSheet.create({
 export default function LoginScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
+  const { alert, DialogUI } = useAppDialog();
   const routerInstance = useRouter();
-  const { form, errors, loading, alreadyAccepted, privacyStatusKnown, setField, setDocumentField, handleSubmit } = useLoginForm();
+  const { form, errors, loading, alreadyAccepted, privacyStatusKnown, privacyChecking, setField, setDocumentField, handleSubmit } = useLoginForm();
 
   const [showPassword, setShowPassword] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
@@ -131,6 +133,13 @@ export default function LoginScreen() {
     router.push(Routes.AUTH.PASSWORD_RECOVERY as any);
     // Pequeño delay para resetear el estado después de navegar
     setTimeout(() => setTransitioning(false), 800);
+  };
+  const handleAcceptPrivacy = () => {
+    setField('accepted', true);
+    setShowPrivacy(false);
+    alert(t('privacyNotice.acceptedTitle'), t('privacyNotice.acceptedResponsibility'), [
+      { text: t('common.ok') },
+    ]);
   };
   // ── Colores locales ───────────────────────────
   const text = isDark ? Colors.dark.text : Colors.light.text;
@@ -232,6 +241,9 @@ export default function LoginScreen() {
                     />
                   </View>
                   {errors.document ? <Text style={s.errorText}>{errors.document}</Text> : null}
+                  {privacyChecking ? (
+                    <Text style={[s.helperText, { color: muted }]}>{t('login.checkingPrivacy')}</Text>
+                  ) : null}
                 </View>
 
 
@@ -279,28 +291,24 @@ export default function LoginScreen() {
                     borderColor: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.07)',
                   }]}>
                     <TouchableOpacity
-                      onPress={() => setField('accepted', !form.accepted)}
+                      onPress={() => setShowPrivacy(true)}
                       activeOpacity={0.8}
                       style={s.policyRow}
                     >
                       <View style={[s.checkbox, {
                         borderColor: errors.policy
                           ? Colors.error
-                          : form.accepted
-                            ? theme.primary
-                            : inputBorder,
-                        backgroundColor: form.accepted ? theme.primary : Colors.transparent,
+                          : inputBorder,
+                        backgroundColor: Colors.transparent,
                       }]}>
-                        {form.accepted && (
-                          <Ionicons name="checkmark" size={12} color={Colors.white} />
-                        )}
+                        <Ionicons name="document-text-outline" size={14} color={errors.policy ? Colors.error : theme.primary} />
                       </View>
                       <Text style={s.policyTextWrap}>
-                        <Text style={[s.policyText, { color: text }]}>{t('login.policyPrefix')}{' '}</Text>
-                        <Text style={[s.policyLink, { color: isDark ? theme.primaryLight : theme.primaryDark }]} onPress={() => setShowPrivacy(true)}>
+                        <Text style={[s.policyText, { color: text }]}>{t('login.policyOpenPrefix')}{' '}</Text>
+                        <Text style={[s.policyLink, { color: isDark ? theme.primaryLight : theme.primaryDark }]}>
                           {t('login.policyLink')}
                         </Text>
-                        <Text style={[s.policyText, { color: text }]}>{t('login.policySuffix')}</Text>
+                        <Text style={[s.policyText, { color: text }]}>{t('login.policyOpenSuffix')}</Text>
                       </Text>
                     </TouchableOpacity>
                     {errors.policy
@@ -334,27 +342,32 @@ export default function LoginScreen() {
                 {/* ── Botón iniciar sesión ── */}
                 <TouchableOpacity
                   onPress={handleSubmit}
-                  style={[s.loginBtn, loading && s.loginBtnDisabled]}
+                  style={[s.loginBtn, (loading || privacyChecking) && s.loginBtnDisabled]}
                   activeOpacity={0.85}
-                  disabled={loading}
+                  disabled={loading || privacyChecking}
                 >
                   <LinearGradient
                     colors={['#72C96D', '#65B361', '#4FA14B']}
                     start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                     style={s.loginBtnGradient}
                   >
-                    {loading ? (
+                    {loading || privacyChecking ? (
                       <ActivityIndicator size="small" color={Colors.white} />
                     ) : (
                       <Ionicons name="log-in-outline" size={20} color={Colors.white} />
                     )}
                     <Text style={s.loginBtnText}>
-                      {loading ? t('login.loggingIn') ?? t('login.loginBtn') : t('login.loginBtn')}
+                      {loading ? t('login.loggingIn') ?? t('login.loginBtn') : privacyChecking ? t('login.checkingPrivacy') : t('login.loginBtn')}
                     </Text>
                   </LinearGradient>
                 </TouchableOpacity>
 
-                <PrivacyNoticeModal visible={showPrivacy} onClose={() => setShowPrivacy(false)} />
+                <PrivacyNoticeModal
+                  visible={showPrivacy}
+                  onClose={() => setShowPrivacy(false)}
+                  onAccept={handleAcceptPrivacy}
+                  accepted={form.accepted}
+                />
 
                 {/* ── ¿Olvidaste tu contraseña? ── */}
                 <View style={s.links}>
@@ -382,6 +395,7 @@ export default function LoginScreen() {
 
       {/* Overlay de transición animada */}
       <TransitionOverlay visible={transitioning} onDone={handleTransitionDone} />
+      {DialogUI}
     </>
   );
 }
@@ -452,6 +466,7 @@ const s = StyleSheet.create({
   input: { flex: 1, fontSize: FontSize.lg, outlineStyle: 'none' } as any,
   eyeBtn: { padding: 4 },
   errorText: { color: Colors.error, fontSize: FontSize.xs, marginTop: 3 },
+  helperText: { fontSize: FontSize.xs, marginTop: 4 },
   policyCard: { borderRadius: 14, borderWidth: 1, padding: 14, marginTop: 4, marginBottom: 4 },
   policyRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   checkbox: { width: 20, height: 20, borderWidth: 1.5, borderRadius: 4, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },

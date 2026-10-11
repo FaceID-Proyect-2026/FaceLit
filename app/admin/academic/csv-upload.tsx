@@ -3,7 +3,6 @@
 //  RF-3.1 + RF-3.1.1 V4 — Carga académica por CSV
 // ─────────────────────────────────────────────
 import { downloadAcademicTemplate, uploadAcademicCsv } from '@/features/academic/academicApi';
-import { parseAcademicCsvV4 } from '@/features/academic/csvImport';
 import { loadNotifications } from '@/features/notifications/notificationsStore';
 import { CsvImportSummaryV4, CsvRowResult } from '@/features/academic/types';
 import { refreshAcademicStoreFromBackend } from '@/features/academic/useAcademic';
@@ -54,33 +53,6 @@ function resultCategoryLabel(cat: CsvRowResult['category'], t: (key: string) => 
     blocked: t('academic.csvV4Blocked'),
     error: t('academic.csvV4Errors'),
   }[cat];
-}
-
-type PasswordRow = CsvImportSummaryV4['generatedPasswords'][number];
-
-function firstValue(...values: unknown[]) {
-  return values.find(value => typeof value === 'string' && value.trim()) as string | undefined;
-}
-
-function getPasswordRows(result: any, csvRows: ReturnType<typeof parseAcademicCsvV4>['rows'] = []): PasswordRow[] {
-  return (result.contrasenasGeneradas ?? []).map((item: any) => {
-    const document = String(firstValue(item.documento, item.document, item.numeroDocumento) ?? '');
-    const csvRow = csvRows.find(row => row.documento === document);
-    const name = firstValue(
-      item.nombreCompleto,
-      item.nombreCompletoUsuario,
-      [item.nombre, item.apellido].filter(value => typeof value === 'string' && value.trim()).join(' '),
-      csvRow && [csvRow.nombre, csvRow.apellido].filter(Boolean).join(' '),
-    );
-    return {
-      document,
-      password: String(firstValue(item.contrasenaTemporal, item.password, item.contrasena) ?? ''),
-      name,
-      role: firstValue(item.rol, item.role, item.tipo, csvRow?.tipo),
-      ficha: firstValue(item.ficha, item.fichaCodigo, item.numeroFicha, csvRow?.fichaCodigo),
-      program: firstValue(item.programa, item.programaCodigo, item.codigoPrograma, csvRow?.programaCodigo),
-    };
-  });
 }
 
 export default function CsvUploadScreen() {
@@ -254,10 +226,6 @@ export default function CsvUploadScreen() {
     const name = file instanceof Blob ? t('academic.csvV4DefaultFileName') : file.name;
     setFileName(name); setFileError(null); setPostUploadWarning(null); setSummary(null); setLoading(true);
     try {
-      let csvRows: ReturnType<typeof parseAcademicCsvV4>['rows'] = [];
-      if (file instanceof Blob) {
-        csvRows = parseAcademicCsvV4(await file.text()).rows;
-      }
       const backendResult = await uploadAcademicCsv(file);
       const rows: CsvRowResult[] = [
         ...backendResult.creados.map((r: any) => ({ rowIndex: r.fila, category: 'created' as const, tipo: r.tipo, identifier: '', message: r.detalle })),
@@ -271,7 +239,7 @@ export default function CsvUploadScreen() {
         blocked: backendResult.inconsistenciasBloqueadas.length,
         errors: backendResult.erroresDeReferencia.length,
         rows,
-        generatedPasswords: getPasswordRows(backendResult, csvRows),
+        generatedPasswords: [],
       });
       try {
         await refreshAcademicStoreFromBackend();

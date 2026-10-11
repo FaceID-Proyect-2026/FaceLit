@@ -39,7 +39,7 @@ const CAT_CONFIG: Record<
   { icon: React.ComponentProps<typeof Ionicons>['name']; color: string; labelKey: string }
 > = {
   csv:        { icon: 'document-text-outline', color: Colors.info, labelKey: 'notifications.categories.csv' },
-  transfer:   { icon: 'swap-horizontal-outline', color: Colors.secondary, labelKey: 'notifications.categories.transfer' },
+  transfer:   { icon: 'swap-horizontal-outline', color: '#8B5CF6', labelKey: 'notifications.categories.transfer' },
   attendance: { icon: 'checkmark-circle-outline', color: Colors.success, labelKey: 'notifications.categories.attendance' },
   academic:   { icon: 'school-outline', color: Colors.warning, labelKey: 'notifications.categories.academic' },
   security:   { icon: 'shield-outline', color: Colors.error, labelKey: 'notifications.categories.security' },
@@ -103,6 +103,8 @@ export default function NotificationsScreen() {
       delayMinutes: meta.delayMinutes ?? t('notifications.values.unavailable'),
       environment: meta.environmentName || t('notifications.values.unavailable'),
       instructorName: meta.instructorName || t('notifications.values.instructor'),
+      name: (meta as any).name || (meta as any).programName || (meta as any).fichaNumber || (meta as any).instructorName || meta.learnerName || t('notifications.values.unavailable'),
+      action: (meta as any).action || t('notifications.values.unavailable'),
       failedCount: meta.failedCount ?? t('notifications.values.unavailable'),
       lockMinutes: meta.lockMinutes ?? t('notifications.values.unavailable'),
       entity: t(entityKey),
@@ -219,7 +221,7 @@ export default function NotificationsScreen() {
         {/* Enlace a corregir para CSV_INCONSISTENCY */}
         {!isApprentice && hasConflictLink && (
           <TouchableOpacity
-            style={[ns.actionLink, { backgroundColor: Colors.info + '18', borderColor: Colors.info + '50' }]}
+            style={[ns.actionLink, !isDark && ns.lightShadow, { backgroundColor: Colors.info + '18', borderColor: Colors.info + '50' }]}
             onPress={() => router.push('/admin/academic' as any)}
             accessibilityRole="button"
           >
@@ -264,6 +266,7 @@ export default function NotificationsScreen() {
         onPress={() => handlePress(item)}
         style={[
           ns.card,
+          !isDark && ns.cardLightShadow,
           { backgroundColor: cardBg, borderColor: isUnread ? cfg.color + '50' : border },
           isUnread && { shadowColor: cfg.color, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3 },
         ]}
@@ -350,7 +353,11 @@ export default function NotificationsScreen() {
             <TouchableOpacity
               key={f}
               onPress={() => setStatusFilter(f)}
-              style={[ns.filterBtn, { backgroundColor: active ? theme.primary + '20' : inputBg, borderColor: active ? theme.primary : border }]}
+              style={[
+                ns.filterBtn,
+                !isDark && ns.lightShadow,
+                { backgroundColor: active ? theme.primary + '20' : inputBg, borderColor: active ? theme.primary : border },
+              ]}
               accessibilityRole="tab"
               accessibilityState={{ selected: active }}
             >
@@ -377,7 +384,11 @@ export default function NotificationsScreen() {
             <TouchableOpacity
               key={cat}
               onPress={() => setCategoryFilter(cat)}
-              style={[ns.catBtn, { backgroundColor: active ? (cfg?.color ?? theme.primary) + '20' : inputBg, borderColor: active ? (cfg?.color ?? theme.primary) : border }]}
+              style={[
+                ns.catBtn,
+                !isDark && ns.lightShadow,
+                { backgroundColor: active ? (cfg?.color ?? theme.primary) + '20' : inputBg, borderColor: active ? (cfg?.color ?? theme.primary) : border },
+              ]}
               accessibilityRole="tab"
               accessibilityState={{ selected: active }}
             >
@@ -424,6 +435,20 @@ const ns = StyleSheet.create({
   // (la lista) pueda scrollear DENTRO del espacio restante, en vez de que
   // el contenido empuje/encoja a los hermanos de arriba (los filtros).
   root:   { flex: 1, minHeight: 0 },
+  lightShadow: {
+    shadowColor: '#1E293B',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    elevation: 3,
+  },
+  cardLightShadow: {
+    shadowColor: '#1E293B',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.10,
+    shadowRadius: 18,
+    elevation: 4,
+  },
 
   header: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 18, paddingBottom: 22, borderBottomWidth: 1 },
   headerTitle: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
