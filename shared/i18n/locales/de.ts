@@ -1,4 +1,7 @@
+import { landingDe } from '../landing';
+
 const de = {
+  landingPage: landingDe,
   common: {
     cancel: "Abbrechen",
     accept: "Akzeptieren",
