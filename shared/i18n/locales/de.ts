@@ -136,13 +136,25 @@ const de = {
     policyPrefix: "Ich habe die",
     policyLink: "Datenschutzerklärung",
     policySuffix: "gelesen?",
+    policyOpenPrefix: "Öffnen und prüfen Sie die",
+    policyOpenSuffix: ", um sie im Hinweis zu akzeptieren.",
     policyError: "Datenschutzerklärung erforderlich",
     loginBtn: "Anmelden",
     loggingIn: "Anmeldung läuft…",
+    checkingPrivacy: "Datenschutzhinweis wird geprueft...",
     recoveringAccess: "Zugriff wird wiederhergestellt...",
     forgotPassword: "Passwort vergessen?",
     noAccount: "Kein Konto?",
     registerLink: "Registrieren",
+    passwordPrompt: {
+      title: "Passwort aktualisieren",
+      message: "Aus Sicherheitsgründen empfehlen wir, dein initiales Passwort durch ein nur dir bekanntes Passwort zu ersetzen.",
+      cancel: "Abbrechen",
+      update: "Aktualisieren",
+      laterTitle: "Du kannst es später ändern",
+      laterMessage: "Wenn du dein Passwort später aktualisieren möchtest, gehe zu Einstellungen → Passwort und Sicherheit.",
+      understood: "Verstanden",
+    },
     errors: {
       documentNotFound: "Dokument nicht registriert",
       wrongPassword: "Dokument oder Passwort falsch",
@@ -176,6 +188,11 @@ const de = {
     articlesRef:
       "Anwendbare Artikel: 5 (sensible Daten einschließlich biometrischer Daten), 8 (Rechte der betroffenen Person), 9 (Einwilligung) und 12 (Informationspflicht) des Gesetzes 1581 von 2012.",
     moreInfo: "Mehr Info: ",
+    acceptButton: "Hinweis akzeptieren",
+    accepted: "Hinweis akzeptiert",
+    acceptedTitle: "Hinweis akzeptiert",
+    acceptedResponsibility:
+      "Sie haben die Nutzungsbedingungen akzeptiert. Es liegt in Ihrer Verantwortung, deren Inhalt zu kennen; FaceLit übernimmt keine Verantwortung für Folgen, die daraus entstehen, dass sie vor der Annahme nicht gelesen wurden.",
   },
   passwordRecovery: {
     title: "Passwort zurücksetzen",
@@ -376,6 +393,13 @@ const de = {
     responsibilityWarning:
       "Wenn eine andere Person die Registrierung vornimmt, liegt die Verantwortung bei deinem Konto.",
     confirmResponsibility: "Ich habe den Hinweis gelesen.",
+    captureWarningTitle: "Bevor die Kamera geöffnet wird",
+    captureWarningBody:
+      "Die Gesichtsregistrierung ist eindeutig und darf nur deinem Gesicht entsprechen. Stelle sicher, dass keine andere Person vor der Kamera steht oder die Registrierung mit deinen Daten durchführt.",
+    captureWarningCoordinator:
+      "Wenn versehentlich das Gesicht einer anderen Person in deinem Konto registriert wird, musst du die Genehmigung des Koordinators beantragen, damit die Kamera erneut aktiviert und die Registrierung wiederholt werden kann.",
+    captureWarningCancel: "Erneut prüfen",
+    captureWarningContinue: "Verstanden, Kamera öffnen",
     alreadyRegisteredTitle: "Registrierung abgeschlossen",
     alreadyRegisteredBody:
       "Für eine neue Registrierung benötigst du eine Genehmigung.",
@@ -1798,6 +1822,26 @@ const de = {
         title: "Löschversuch blockiert",
         message: "{{entity}} konnte nicht gelöscht werden, da noch aktive zugehörige Datensätze vorhanden sind.",
       },
+      academic_entity_created: {
+        title: "Akademischer Datensatz erstellt",
+        message: "{{entity}} wurde erstellt: {{name}}.",
+      },
+      academic_entity_updated: {
+        title: "Akademischer Datensatz aktualisiert",
+        message: "{{entity}} wurde aktualisiert: {{name}}.",
+      },
+      academic_entity_activated: {
+        title: "Akademischer Datensatz aktiviert",
+        message: "{{entity}} wurde aktiviert: {{name}}.",
+      },
+      academic_entity_deactivated: {
+        title: "Akademischer Datensatz deaktiviert",
+        message: "{{entity}} wurde deaktiviert: {{name}}.",
+      },
+      academic_entity_deleted: {
+        title: "Akademischer Datensatz gelöscht",
+        message: "{{entity}} wurde gelöscht: {{name}}.",
+      },
       instructor_profile_updated: {
         title: "Ausbilderprofil aktualisiert",
         message: "Die Profilinformationen eines Ausbilders wurden aktualisiert.",
@@ -1866,6 +1910,9 @@ const de = {
     personalInfo: "Persönliche Daten",
     accountInfo: "Kontoinfo",
     settings: "Einstellungen",
+    passwordSecurityTitle: "Passwort und Sicherheit",
+    passwordSecurityDescription:
+      "Bestätige deine E-Mail, um einen einmaligen Code zu erhalten, ein neues Passwort zu erstellen und dich sicher erneut anzumelden.",
     fields: {
       name: "Name",
       lastname: "Nachname",

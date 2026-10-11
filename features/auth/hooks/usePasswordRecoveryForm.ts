@@ -17,10 +17,10 @@ import { useTranslation } from 'react-i18next';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export function usePasswordRecoveryForm() {
+export function usePasswordRecoveryForm(initialEmail = '') {
   const { t } = useTranslation();
 
-  const [email, setEmailValue]    = useState('');
+  const [email, setEmailValue]    = useState(initialEmail);
   const [error, setError]         = useState('');
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading]     = useState(false);

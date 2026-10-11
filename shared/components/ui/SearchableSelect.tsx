@@ -38,6 +38,7 @@ export default function SearchableSelect({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const inputRef = useRef<TextInput>(null);
+  const pickedLabelRef = useRef<string | null>(null);
 
   const selected = options.find(o => o.value === value);
 
@@ -66,6 +67,7 @@ export default function SearchableSelect({
   };
 
   const handlePick = (opt: SearchableOption) => {
+    pickedLabelRef.current = opt.label;
     onSelect(opt.value);
     setQuery(opt.label);
     setOpen(false);
@@ -76,8 +78,10 @@ export default function SearchableSelect({
     // Pequeño delay para permitir que el onPress de una opción se
     // registre antes de cerrar la lista.
     setTimeout(() => {
+      const pickedLabel = pickedLabelRef.current;
+      pickedLabelRef.current = null;
       setOpen(false);
-      setQuery(selected ? selected.label : '');
+      setQuery(pickedLabel ?? (selected ? selected.label : ''));
     }, 150);
   };
 
