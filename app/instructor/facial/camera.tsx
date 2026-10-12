@@ -73,6 +73,9 @@ export default function InstructorFacialCameraScreen() {
 
       const fallbackDate = new Date();
       fallbackDate.setHours(hours, minutes || 0, 0, 0);
+      if (fallbackDate.getTime() <= Date.now()) {
+        fallbackDate.setDate(fallbackDate.getDate() + 1);
+      }
       return fallbackDate;
     })();
 

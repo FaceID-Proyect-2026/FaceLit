@@ -1246,7 +1246,7 @@ const en = {
     csvV4NoDataRows: "The file contains no data rows to process.",
     csvV4TooManyRows:
       "The file exceeds the 5000-row limit per upload. Split the information into multiple files.",
-    csvV4FileTooLarge: "The file is too large. Maximum allowed size is 5 MB.",
+    csvV4FileTooLarge: "The file is too large. Maximum allowed size is 20 MB.",
     csvV4WrongExtension: "The file must have a .csv extension.",
     csvV4SavedButRefreshFailed: "The upload was saved successfully, but the view could not be refreshed. Return to Academic Management to see the data.",
     csvV4ExamplesTitle: "Complete example (one row per type)",
@@ -1274,6 +1274,7 @@ const en = {
     csvV4ServerError: "Server error ({{status}}): {{message}}",
     csvV4NoConnection: "no connection",
     csvV4ServerFileTooLarge: "The file is too large for the server. Split the CSV into smaller files.",
+    csvV4Timeout: "The upload took too long. Split the CSV into smaller files or try again with a stable connection.",
     csvV4UnsupportedFormat: "Unsupported format. Make sure the file is a valid CSV.",
     csvV4InvalidFile: "The file has formatting errors. Check the columns.",
     csvV4UploadFailed: "The CSV file could not be processed.",

@@ -10,11 +10,16 @@ import {
   SessionInstructor,
 } from './environmentSessionApi';
 
-function timeToTodayIso(time: string, baseDate = new Date()) {
+function timeToSessionDate(time: string, baseDate = new Date(), mustBeAfter?: Date) {
   const [hours, minutes] = time.split(':').map(Number);
   const date = new Date(baseDate);
   date.setHours(hours, minutes || 0, 0, 0);
-  return date.toISOString();
+
+  if (mustBeAfter && date.getTime() <= mustBeAfter.getTime()) {
+    date.setDate(date.getDate() + 1);
+  }
+
+  return date;
 }
 
 export function useEnvironmentSession() {
@@ -110,14 +115,16 @@ export function useEnvironmentSession() {
     setSaving(true);
     try {
       const entryTime = new Date();
+      const exitDate = timeToSessionDate(settings.exitTime, entryTime, entryTime);
+      const shutdownDate = timeToSessionDate(settings.shutdownTime, exitDate, exitDate);
       const session = await createEnvironmentSession({
         idEnvironment: selectedEnvironment.idEnvironment,
         idInstructorInCharge: selectedInstructorId,
         idChip: selectedChipId,
         entryTime: entryTime.toISOString(),
         registrationMinutes: settings.registrationMinutes,
-        exitTime: timeToTodayIso(settings.exitTime, entryTime),
-        shutdownTime: timeToTodayIso(settings.shutdownTime, entryTime),
+        exitTime: exitDate.toISOString(),
+        shutdownTime: shutdownDate.toISOString(),
       });
       return { success: true as const, session };
     } catch (error: any) {
