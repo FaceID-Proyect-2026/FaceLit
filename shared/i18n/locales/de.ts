@@ -899,7 +899,7 @@ const de = {
     csvV4Blocked: "Blockierte Inkonsistenzen",
     csvV4Errors: "Fehler",
     csvV4FileTooLarge:
-      "Die Datei ist zu groß. Die maximal zulässige Größe beträgt 5 MB.",
+      "Die Datei ist zu groß. Die maximal zulässige Größe beträgt 20 MB.",
     csvV4WrongExtension: "Die Datei muss die Erweiterung .csv haben.",
     csvV4SavedButRefreshFailed: "Der Upload wurde gespeichert, aber die Ansicht konnte nicht aktualisiert werden. Öffnen Sie die akademische Verwaltung erneut, um die Daten zu sehen.",
     csvV4ExamplesTitle: "Vollständiges Beispiel (eine Zeile pro Typ)",
@@ -938,6 +938,7 @@ const de = {
     csvV4ServerError: "Serverfehler ({{status}}): {{message}}",
     csvV4NoConnection: "keine Verbindung",
     csvV4ServerFileTooLarge: "Die Datei ist für den Server zu groß. Teilen Sie die CSV-Datei auf.",
+    csvV4Timeout: "Der Upload hat zu lange gedauert. Teilen Sie die CSV-Datei in kleinere Dateien auf oder versuchen Sie es mit einer stabilen Verbindung erneut.",
     csvV4UnsupportedFormat: "Nicht unterstütztes Format. Stellen Sie sicher, dass die Datei eine gültige CSV-Datei ist.",
     csvV4InvalidFile: "Die Datei enthält Formatfehler. Überprüfen Sie die Spalten.",
     csvV4UploadFailed: "Die CSV-Datei konnte nicht verarbeitet werden.",

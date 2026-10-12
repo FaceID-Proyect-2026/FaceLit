@@ -434,7 +434,7 @@ const es = {
     instr2: "Mantenga una iluminación adecuada",
     instr3: "Mire directamente a la cámara",
     instr4: "Evite usar gafas oscuras o sombreros",
-    instr5: "El sistema capturará una imagen frontal del rostro",
+    instr5: "Siga las indicaciones que te da el sistema para registrar bien su rostro",
     tapToCapture: "Toca el botón para activar la cámara",
     requestingPermission: "Solicitando permiso de cámara…",
     permissionDenied: "Debes permitir el acceso a la cámara para continuar.",
@@ -482,7 +482,7 @@ const es = {
     goodLighting: "Mantenga una iluminación adecuada",
     avoidGlassesHats: "Evite usar gafas oscuras o sombreros",
     noScreenPhoto: "No fotografíes una pantalla o foto impresa",
-    frontalCapture: "El sistema capturará una imagen frontal del rostro",
+    frontalCapture: "Siga las indicaciones que te da el sistema para registrar bien su rostro",
     noFaceDetected: "No se detecta ningún rostro. Ubíquese frente a la cámara.",
     // ── Mensajes de detección real (human.js) ──────────────────────
     humanLoading: "Iniciando detector facial…",
@@ -1274,7 +1274,7 @@ const es = {
     csvV4TooManyRows:
       "El archivo supera el máximo de 5000 filas permitidas por carga. Divide la información en varios archivos.",
     csvV4FileTooLarge:
-      "El archivo es demasiado grande. El tamaño máximo permitido es 5 MB.",
+      "El archivo es demasiado grande. El tamaño máximo permitido es 20 MB.",
     csvV4WrongExtension: "El archivo debe tener extensión .csv.",
     csvV4SavedButRefreshFailed: "La carga se guardó correctamente. No se pudo actualizar la vista; vuelve a Gestión académica para consultar los datos.",
     csvV4ExamplesTitle: "Ejemplo completo (una fila por tipo)",
@@ -1302,6 +1302,7 @@ const es = {
     csvV4ServerError: "Error del servidor ({{status}}): {{message}}",
     csvV4NoConnection: "sin conexión",
     csvV4ServerFileTooLarge: "El archivo es demasiado grande para el servidor. Divide el CSV en partes más pequeñas.",
+    csvV4Timeout: "La carga tardó demasiado. Divide el CSV en partes más pequeñas o intenta de nuevo con una conexión estable.",
     csvV4UnsupportedFormat: "Formato no compatible. Asegúrate de que el archivo sea un CSV válido.",
     csvV4InvalidFile: "El archivo tiene errores de formato. Verifica las columnas.",
     csvV4UploadFailed: "No se pudo procesar el archivo CSV.",

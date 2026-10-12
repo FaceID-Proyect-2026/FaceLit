@@ -26,7 +26,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as XLSX from 'xlsx';
 
-const MAX_FILE_BYTES = 5 * 1024 * 1024;
+const MAX_FILE_BYTES = 20 * 1024 * 1024;
+const MAX_FILE_LABEL = '20 MB';
 
 function catColor(cat: CsvRowResult['category']) {
   return { created: Colors.success, updated: Colors.info, blocked: Colors.warning, error: Colors.error }[cat];
@@ -266,7 +267,9 @@ export default function CsvUploadScreen() {
       const textData = typeof rawData === 'string' ? rawData : rawData?.message ?? rawData?.error ?? '';
       const msg      = textData || error?.message || '';
 
-      if (status === 500 || status === 0) {
+      if (error?.code === 'ECONNABORTED' || String(msg).toLowerCase().includes('timeout')) {
+        setFileError(t('academic.csvV4Timeout'));
+      } else if (status === 500 || status === 0) {
         const serverMessage = String(msg).toLowerCase();
         const isHtml = serverMessage.includes('<html') || serverMessage.includes('internal server error');
         setFileError(
@@ -357,7 +360,7 @@ export default function CsvUploadScreen() {
                   <Text style={[s.dropMain, { color: text }]}>
                     {t(Platform.OS === 'web' ? 'academic.csvV4DropWeb' : 'academic.csvV4DropNative')}
                   </Text>
-                  <Text style={[s.dropSub, { color: muted }]}>{t('academic.csvV4DropHint', { maxSize: '5 MB', maxRows: '5,000' })}</Text>
+                  <Text style={[s.dropSub, { color: muted }]}>{t('academic.csvV4DropHint', { maxSize: MAX_FILE_LABEL, maxRows: '5,000' })}</Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -376,7 +379,7 @@ export default function CsvUploadScreen() {
             <View style={s.guideBody}>
               <View style={[s.fileSizeNotice, { backgroundColor: theme.primary + '12', borderColor: theme.primary + '44' }]}>
                 <Ionicons name="information-circle-outline" size={16} color={theme.primary} />
-                <Text style={[s.fileSizeNoticeText, { color: text }]}>{t('academic.csvV4FileSizeNotice', { maxSize: '5 MB' })}</Text>
+                <Text style={[s.fileSizeNoticeText, { color: text }]}>{t('academic.csvV4FileSizeNotice', { maxSize: MAX_FILE_LABEL })}</Text>
               </View>
 
               {/* Chips de columnas */}

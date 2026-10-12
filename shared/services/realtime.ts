@@ -53,8 +53,7 @@ function connect(generation: number) {
   let nextSocket: WebSocket;
   try {
     nextSocket = new WebSocket(websocketUrl());
-  } catch (error) {
-    console.warn('[Realtime] No se pudo abrir el canal WebSocket:', error);
+  } catch {
     scheduleReconnect(generation);
     return;
   }
@@ -82,7 +81,7 @@ function connect(generation: number) {
   };
 
   nextSocket.onerror = () => {
-    console.warn('[Realtime] Error en la conexión WebSocket.');
+    // REST remains active; onclose schedules reconnects without showing a LogBox warning.
   };
 
   nextSocket.onclose = event => {
