@@ -1200,7 +1200,7 @@ const fr = {
     csvV4TooManyRows:
       "Le fichier dépasse la limite de 5000 lignes par chargement. Divisez les informations en plusieurs fichiers.",
     csvV4FileTooLarge:
-      "Le fichier est trop volumineux. La taille maximale autorisée est de 5 Mo.",
+      "Le fichier est trop volumineux. La taille maximale autorisée est de 20 Mo.",
     csvV4WrongExtension: "Le fichier doit avoir une extension .csv.",
     csvV4SavedButRefreshFailed: "Le chargement a été enregistré, mais la vue n'a pas pu être actualisée. Revenez à la gestion académique pour consulter les données.",
     csvV4ExamplesTitle: "Exemple complet (une ligne par type)",
@@ -1228,6 +1228,7 @@ const fr = {
     csvV4ServerError: "Erreur du serveur ({{status}}) : {{message}}",
     csvV4NoConnection: "aucune connexion",
     csvV4ServerFileTooLarge: "Le fichier est trop volumineux pour le serveur. Divisez le CSV en fichiers plus petits.",
+    csvV4Timeout: "L'importation a pris trop de temps. Divisez le CSV en fichiers plus petits ou réessayez avec une connexion stable.",
     csvV4UnsupportedFormat: "Format non pris en charge. Vérifiez que le fichier est un CSV valide.",
     csvV4InvalidFile: "Le fichier contient des erreurs de format. Vérifiez les colonnes.",
     csvV4UploadFailed: "Le fichier CSV n'a pas pu être traité.",

@@ -9,7 +9,7 @@ import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Animated,
@@ -200,6 +200,7 @@ export default function LandingScreen() {
   const transAlpha = useRef(new Animated.Value(1)).current;
   const transY     = useRef(new Animated.Value(0)).current;
   const pillPulse   = useRef(new Animated.Value(0)).current;
+  const ambientMotion = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const animation = Animated.loop(
@@ -209,8 +210,18 @@ export default function LandingScreen() {
       ])
     );
     animation.start();
-    return () => animation.stop();
-  }, [pillPulse]);
+    const ambient = Animated.loop(
+      Animated.sequence([
+        Animated.timing(ambientMotion, { toValue: 1, duration: 2600, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(ambientMotion, { toValue: 0, duration: 2600, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+      ])
+    );
+    ambient.start();
+    return () => {
+      animation.stop();
+      ambient.stop();
+    };
+  }, [ambientMotion, pillPulse]);
 
   const goToLogin = () => {
     Animated.parallel([
@@ -255,6 +266,11 @@ export default function LandingScreen() {
   const controlColor = isDark ? Colors.white : theme.primaryDark;
   const pillScale = pillPulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.025] });
   const pillOpacity = pillPulse.interpolate({ inputRange: [0, 1], outputRange: [0.88, 1] });
+  const floatY = ambientMotion.interpolate({ inputRange: [0, 1], outputRange: [0, -16] });
+  const cardFloatY = ambientMotion.interpolate({ inputRange: [0, 1], outputRange: [0, -10] });
+  const cardScale = ambientMotion.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 1.004, 1] });
+  const signalX = ambientMotion.interpolate({ inputRange: [0, 1], outputRange: [-150, 150] });
+  const haloScale = ambientMotion.interpolate({ inputRange: [0, 1], outputRange: [0.92, 1.12] });
 
   const loginButton = (label: string) => (
     <TouchableOpacity onPress={goToLogin} accessibilityRole="button" activeOpacity={0.85} style={s.primaryBtnWrap}>
@@ -271,55 +287,91 @@ export default function LandingScreen() {
     editorialTitle: { ...s.editorialTitle, color: theme.text },
     editorialText: { ...s.editorialText, color: theme.textSecondary },
     editorialSubtitle: { ...s.editorialSubtitle, color: theme.text },
-    videoTile: { ...s.videoTile, backgroundColor: theme.surfaceSecondary, borderWidth: isDark ? 2 : 1, borderColor: isDark ? Colors.white : theme.border },
+    videoTile: { ...s.videoTile, backgroundColor: isDark ? 'rgba(4,42,25,0.94)' : '#F3FBF5', borderWidth: 1, borderColor: isDark ? '#327448' : '#B7DCC1' },
     videoOrbit: { ...s.videoOrbit, borderColor: theme.primary + '30' },
     playCircle: { ...s.playCircle, backgroundColor: theme.primaryFaint },
     videoTitle: { ...s.videoTitle, color: theme.text },
     videoDescription: { ...s.videoDescription, color: theme.textSecondary },
     videoLink: { ...s.videoLink, color: accentColor },
-    processStep: { ...s.processStep, borderTopColor: theme.border },
+    processStep: { ...s.processStep, borderTopColor: theme.primaryDark, backgroundColor: isDark ? 'rgba(4,42,25,0.74)' : '#F7FCF8', borderColor: isDark ? '#1F5A34' : '#C8E5D0' },
     stepNumber: { ...s.stepNumber, color: accentColor },
     stepText: { ...s.stepText, color: theme.textSecondary },
-    roleRow: { ...s.roleRow, borderBottomColor: theme.border },
+    roleRow: { ...s.roleRow, borderBottomColor: theme.border, backgroundColor: isDark ? 'rgba(4,42,25,0.62)' : 'rgba(246,252,247,0.92)', borderColor: isDark ? '#1F5A34' : '#C8E5D0' },
     listBullet: { ...s.listBullet, color: theme.textSecondary },
     editorialListText: { ...s.editorialListText, color: theme.textSecondary },
     tutorialDescription: { ...s.tutorialDescription, color: theme.textSecondary },
     tutorialButton: { ...s.tutorialButton, backgroundColor: theme.primaryDark },
-    facialNote: { ...s.facialNote, borderLeftColor: theme.primary, backgroundColor: theme.primaryFaint },
-    gifSlot: { ...s.gifSlot, backgroundColor: theme.surfaceSecondary, borderWidth: isDark ? 2 : 1, borderColor: isDark ? Colors.white : theme.border },
+    facialNote: { ...s.facialNote, borderLeftColor: theme.primaryDark, backgroundColor: isDark ? 'rgba(4,42,25,0.82)' : '#E9F6EC' },
+    gifSlot: { ...s.gifSlot, backgroundColor: isDark ? 'rgba(2,34,20,0.92)' : '#EAF5EE', borderWidth: 1, borderColor: isDark ? '#327448' : '#AAD7B6' },
     gifCaption: { ...s.gifCaption, color: theme.textMuted },
     closingBrand: { ...s.closingBrand, color: accentColor },
     contactDetailText: { ...s.contactDetailText, color: theme.text },
     editorialFooter: { ...s.editorialFooter, color: theme.textMuted },
+    aboutBand: { ...s.contentBand, backgroundColor: isDark ? 'rgba(255,255,255,0.035)' : '#EEF4EF', borderTopWidth: 1, borderBottomWidth: 1, borderColor: isDark ? 'rgba(101,179,97,0.16)' : '#D8E5DC' },
+    accessBand: { ...s.contentBand, backgroundColor: isDark ? 'rgba(8,45,34,0.68)' : '#E3F0E6' },
+    footerBand: { ...s.contentBand, backgroundColor: isDark ? 'rgba(3,18,10,0.78)' : '#F3F7F4' },
   });
 
   const columnStyle = [s.editorialColumn, !isWide && s.stackedContent];
   const titleStyle = [contentStyles.editorialTitle, isWide && s.editorialTitleWide];
   const contactItems = [
     { icon: 'mail-outline', text: t('landing.contactEmail') },
-    { icon: 'call-outline', text: t('landing.contactPhone') },
-    { icon: 'location-outline', text: t('landing.contactLocation') },
   ];
+  const roleVideoSources = {
+    'landingPage.roles.coordinator': require('@/assets/videos/coordinator.mp4'),
+    'landingPage.roles.instructor': require('@/assets/videos/instructor.mp4'),
+    'landingPage.roles.apprentice': require('@/assets/videos/apprentice.mp4'),
+  } as const;
+
+  const resolveVideoUri = (source: unknown) =>
+    typeof source === 'string'
+      ? source
+      : (source as any)?.uri ?? (source as any)?.default ?? '';
 
   // Replace this reserved tile with the tutorial player when its asset is ready.
-  const videoTile = (key: string, general = false) => (
-    <View accessibilityLabel={t('landingPage.media.video')} style={contentStyles.videoTile}>
+  const videoTile = (key: string, general = false) => {
+    const roleVideoUri = resolveVideoUri(roleVideoSources[key as keyof typeof roleVideoSources]);
+    const hasRoleVideo = Platform.OS === 'web' && Boolean(roleVideoUri);
+
+    return (
+    <Animated.View accessibilityLabel={t('landingPage.media.video')} style={[contentStyles.videoTile, hasRoleVideo && s.autoVideoTile, { transform: [{ translateY: cardFloatY }] }]}>
+      {hasRoleVideo ? (
+        <>
+          {React.createElement('video' as any, {
+            src: roleVideoUri,
+            autoPlay: true,
+            loop: true,
+            muted: true,
+            playsInline: true,
+            controls: false,
+            style: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
+          })}
+          <View style={s.autoVideoShade} pointerEvents="none" />
+        </>
+      ) : (
+        <>
       <View style={contentStyles.videoOrbit} pointerEvents="none" />
+      <Animated.View style={[s.videoOrbitSoft, { borderColor: theme.primary + '28', transform: [{ scale: haloScale }] }]} pointerEvents="none" />
       <View style={contentStyles.playCircle}><Ionicons name="play" size={28} color={theme.primary} /></View>
       <Text style={contentStyles.videoTitle}>{t(`${key}.videoTitle`)}</Text>
       {general && <Text style={contentStyles.videoDescription}>{t(`${key}.videoText`)}</Text>}
       {general && <Text style={contentStyles.videoLink}>{t(`${key}.videoButton`)} →</Text>}
-    </View>
-  );
+        </>
+      )}
+    </Animated.View>
+    );
+  };
 
-  const tutorial = (key: string) => (
+  const tutorial = (key: string, showAction = true) => (
     <View style={s.tutorial}>
       <Text style={contentStyles.editorialSubtitle}>{t(`${key}.videoTitle`)}</Text>
       <Text style={contentStyles.tutorialDescription}>{t(`${key}.videoText`)}</Text>
-      <TouchableOpacity disabled accessibilityRole="button" accessibilityState={{ disabled: true }} style={contentStyles.tutorialButton}>
-        <Ionicons name="play" size={16} color={Colors.white} />
-        <Text style={s.tutorialButtonText}>{t(`${key}.videoButton`)}</Text>
-      </TouchableOpacity>
+      {showAction && (
+        <TouchableOpacity disabled accessibilityRole="button" accessibilityState={{ disabled: true }} style={contentStyles.tutorialButton}>
+          <Ionicons name="play" size={16} color={Colors.white} />
+          <Text style={s.tutorialButtonText}>{t(`${key}.videoButton`)}</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 
@@ -337,6 +389,19 @@ export default function LandingScreen() {
   const logoSource = isDark
     ? require('@/assets/images/logo.png')
     : require('@/assets/images/logo2.png');
+  const logoMotion = () => (
+    <Animated.View accessibilityLabel={t('landingPage.media.gif')} style={[contentStyles.gifSlot, { transform: [{ translateY: cardFloatY }] }]}>
+      <Animated.View style={[s.logoVisualHalo, { borderColor: theme.primaryDark + '66', transform: [{ scale: haloScale }] }]} />
+      <View style={[s.logoVisualFrame, { borderColor: isDark ? '#3E8A55' : '#91CFA1', backgroundColor: isDark ? '#02180E' : Colors.white }]}>
+        <Image source={logoSource} style={s.logoVisualImage} resizeMode="contain" />
+        <Animated.View style={[s.logoScanLine, { backgroundColor: theme.primary, transform: [{ translateX: signalX }] }]} pointerEvents="none" />
+      </View>
+      <View style={s.logoVideoMeta}>
+        <View style={[s.logoSignalDot, { backgroundColor: theme.primary }]} />
+        <Text style={[s.logoSignalText, { color: accentColor }]}>{t('landingPage.hero.biometry')}</Text>
+      </View>
+    </Animated.View>
+  );
 
   // ── Render ────────────────────────────────────
   return (
@@ -424,20 +489,20 @@ export default function LandingScreen() {
             </View>
 
             {/* ── Mockup con rostro animado ── */}
-            <View style={[s.heroVisual, !isWide && s.stackedContent, {
+            <Animated.View style={[s.heroVisual, !isWide && s.stackedContent, {
               backgroundColor: isDark ? 'rgba(25,118,210,0.03)' : '#F1F5F9',
               borderColor: border,
+              transform: [{ translateY: floatY }],
             }]}>
+              <View style={[s.techGrid, { borderColor: isDark ? 'rgba(101,179,97,0.18)' : 'rgba(74,145,70,0.16)' }]} pointerEvents="none" />
+              <Animated.View style={[s.heroSignal, { backgroundColor: theme.primary, transform: [{ translateX: signalX }] }]} pointerEvents="none" />
               {/* Teléfono mock */}
-              <View style={[s.mockPhone, {
+              <Animated.View style={[s.mockPhone, {
                 borderColor: theme.borderStrong,
                 backgroundColor: isDark ? '#1A1A1A' : '#FFFFFF',
+                transform: [{ translateY: floatY }],
               }]}>
                 {/* Header del teléfono */}
-                <View style={s.phoneBrand}>
-                  <Image source={logoSource} style={s.phoneLogo} resizeMode="contain" />
-                </View>
-
                 {/* Área de escaneo con rostro animado */}
                 <View style={[s.faceArea, { borderColor: theme.borderStrong, backgroundColor: isDark ? '#121212' : '#F8F9FA' }]}>
                   <BiometricFace color={theme.primary} isDark={isDark} />
@@ -448,7 +513,7 @@ export default function LandingScreen() {
                   <Ionicons name="shield-checkmark-outline" size={16} color={theme.primary} />
                   <Text style={[s.phoneInfoText, { color: muted }]}>{t('landingPage.hero.phoneInfo')}</Text>
                 </View>
-              </View>
+              </Animated.View>
 
               {/* Decoración exterior — puntos flotantes */}
               <View style={[s.floatBadge, s.floatBadgeTR, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : theme.primaryFaint, borderColor: controlColor }]}>
@@ -459,21 +524,20 @@ export default function LandingScreen() {
                 <Ionicons name="lock-closed-outline" size={14} color={controlColor} />
                 <Text style={[s.floatBadgeText, { color: controlColor }]}>{t('landingPage.hero.secure')}</Text>
               </View>
-            </View>
+            </Animated.View>
           </View>
 
           </View>
 
-          {/* HTML composition: explanation and its video share one row. */}
-          <View style={[s.contentBand, { backgroundColor: 'transparent' }]}>
-            <View style={[s.editorialRow, isWide && s.editorialRowWide]}>
-              <View style={columnStyle}>
+          {/* HTML composition: explanation in a neutral contrast band. */}
+          <View style={contentStyles.aboutBand}>
+            <View style={[s.editorialInner, s.aboutOnlyText]}>
+              <View style={s.aboutCopy}>
                 <Text style={contentStyles.eyebrow}>{t('landingPage.about.label')}</Text>
                 <Text style={titleStyle}>{t('landingPage.about.title')}</Text>
                 <Text style={contentStyles.editorialText}>{t('landingPage.about.text')}</Text>
                 <Text style={contentStyles.editorialText}>{t('landingPage.about.roles')}</Text>
               </View>
-              <View style={columnStyle}>{videoTile('landingPage.about', true)}</View>
             </View>
           </View>
 
@@ -484,11 +548,11 @@ export default function LandingScreen() {
               <Text style={[...titleStyle, { maxWidth: 750 }]}>{t('landingPage.process.title')}</Text>
               <View style={s.processGrid}>
                 {ITEM_INDEXES.map(index => (
-                  <View key={index} style={[contentStyles.processStep, { width: isWide ? '23%' : width >= 480 ? '47%' : '100%' }]}>
+                  <Animated.View key={index} style={[contentStyles.processStep, { width: isWide ? '23%' : width >= 480 ? '47%' : '100%', transform: [{ translateY: index % 2 === 0 ? cardFloatY : floatY }, { scale: cardScale }] }]}>
                     <Text style={contentStyles.stepNumber}>0{index + 1}</Text>
                     <Text style={contentStyles.editorialSubtitle}>{t(`landingPage.process.steps.${index}.title`)}</Text>
                     <Text style={contentStyles.stepText}>{t(`landingPage.process.steps.${index}.text`)}</Text>
-                  </View>
+                  </Animated.View>
                 ))}
               </View>
             </View>
@@ -500,17 +564,17 @@ export default function LandingScreen() {
               <Text style={contentStyles.eyebrow}>{t('landingPage.rolesLabel')}</Text>
               <Text style={titleStyle}>{t('landingPage.rolesTitle')}</Text>
               {ROLE_KEYS.map((role, index) => (
-                <View key={role} style={[contentStyles.roleRow, isWide && s.editorialRowWide, isWide && index === 1 && { flexDirection: 'row-reverse' }, index === 2 && { borderBottomWidth: 0 }]}>
-                  <View style={columnStyle}>{videoTile(`landingPage.roles.${role}`)}</View>
-                  <View style={columnStyle}>
+                <Animated.View key={role} style={[contentStyles.roleRow, isWide && s.editorialRowWide, isWide && index === 1 && { flexDirection: 'row-reverse' }, index === 2 && { borderBottomWidth: 0 }, { transform: [{ translateY: index % 2 === 0 ? cardFloatY : floatY }, { scale: cardScale }] }]}>
+                  <View style={[columnStyle, isWide && s.roleVideoColumnWide]}>{videoTile(`landingPage.roles.${role}`)}</View>
+                  <View style={[columnStyle, isWide && s.roleTextColumnCompact]}>
                     <Text style={contentStyles.eyebrow}>0{index + 1} / {t(`landingPage.roles.${role}.label`)}</Text>
                     <Text style={titleStyle}>{t(`landingPage.roles.${role}.title`)}</Text>
                     <Text style={contentStyles.editorialText}>{t(`landingPage.roles.${role}.text`)}</Text>
                     <Text style={contentStyles.editorialSubtitle}>{t('landingPage.capabilities')}</Text>
                     {checklist(`landingPage.roles.${role}`)}
-                    {tutorial(`landingPage.roles.${role}`)}
+                    {tutorial(`landingPage.roles.${role}`, false)}
                   </View>
-                </View>
+                </Animated.View>
               ))}
             </View>
           </View>
@@ -527,13 +591,7 @@ export default function LandingScreen() {
                     <Text style={[contentStyles.editorialText, { marginBottom: 0 }]}>{t('landingPage.facial.distinction')}</Text>
                   </View>
                 </View>
-                <View style={columnStyle}>
-                  {/* Insert the team's GIF here; retain the frame dimensions. */}
-                  <View accessibilityLabel={t('landingPage.media.gif')} style={contentStyles.gifSlot}>
-                    <Ionicons name="image-outline" size={46} color={theme.primary} />
-                    <Text style={contentStyles.gifCaption}>{t('landingPage.media.gif')}</Text>
-                  </View>
-                </View>
+                <View style={columnStyle}>{logoMotion()}</View>
               </View>
               <View style={[s.editorialRow, isWide && s.editorialRowWide, { marginTop: 35 }]}>
                 <View style={columnStyle}>
@@ -543,13 +601,13 @@ export default function LandingScreen() {
                 <View style={columnStyle}>
                   <Text style={contentStyles.editorialSubtitle}>{t('landingPage.facial.prepare')}</Text>
                   {checklist('landingPage.facial')}
-                  {tutorial('landingPage.facial')}
+                  {tutorial('landingPage.facial', false)}
                 </View>
               </View>
             </View>
           </View>
 
-          <View style={[s.contentBand, { backgroundColor: 'transparent' }]}>
+          <View style={contentStyles.accessBand}>
             <View style={[s.editorialInner, s.centeredContent]}>
               <Text style={contentStyles.eyebrow}>{t('landingPage.accessLabel')}</Text>
               <Text style={[...titleStyle, s.centeredText]}>{t('landingPage.access.title')}</Text>
@@ -560,7 +618,7 @@ export default function LandingScreen() {
           </View>
 
           {/* Closing contact details replace the repeated sign-in button. */}
-          <View style={[s.contentBand, { backgroundColor: 'transparent' }]}>
+          <View style={contentStyles.footerBand}>
             <View style={[s.editorialInner, s.centeredContent]}>
               <Text style={contentStyles.closingBrand}>FaceLit.</Text>
               <Text style={[...titleStyle, s.centeredText]}>{t('landingPage.closing.title')}</Text>
@@ -614,7 +672,7 @@ const s = StyleSheet.create({
   navText:       { fontSize: FontSize.base, fontWeight: FontWeight.bold },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
 
-  hero:          { width: '100%', maxWidth: 1120, alignItems: 'center', gap: 34, paddingTop: 46, paddingBottom: 56 },
+  hero:          { width: '100%', maxWidth: 1180, alignItems: 'center', gap: 34, paddingTop: 56, paddingBottom: 72 },
   heroWide:      { flexDirection: 'row', alignItems: 'center', gap: 52 },
   heroCopy:      { flex: 1, width: '100%' },
   stackedContent: { flexGrow: 0, flexShrink: 0, flexBasis: 'auto' },
@@ -633,12 +691,12 @@ const s = StyleSheet.create({
 
 
   // ── Mockup ──
-  heroVisual:    { flex: 1, width: '100%', minHeight: 480, borderRadius: 20, borderWidth: 1, alignItems: 'center', justifyContent: 'center', padding: 24, position: 'relative',
-                   shadowColor: '#172B4D', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 18, elevation: 5 },
-  mockPhone:     { width: 290, maxWidth: '95%', borderRadius: 38, borderWidth: 2, alignItems: 'center', padding: 18, paddingTop: 22, paddingBottom: 18,
+  heroVisual:    { flex: 1, width: '100%', minHeight: 500, borderRadius: 30, borderWidth: 1, alignItems: 'center', justifyContent: 'center', padding: 24, position: 'relative', overflow: 'hidden',
+                   shadowColor: '#172B4D', shadowOffset: { width: 0, height: 18 }, shadowOpacity: 0.16, shadowRadius: 34, elevation: 10 },
+  techGrid:      { position: 'absolute', left: 26, right: 26, top: 26, bottom: 26, borderWidth: 1, borderRadius: 24, opacity: 0.72 },
+  heroSignal:    { position: 'absolute', width: 210, height: 2, top: 82, opacity: 0.38, borderRadius: 2 },
+  mockPhone:     { width: 290, maxWidth: '95%', borderRadius: 38, borderWidth: 2, alignItems: 'center', padding: 18, paddingTop: 26, paddingBottom: 18,
                    shadowColor: '#65B361', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 12 },
-  phoneBrand:    { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
-  phoneLogo:     { width: 120, height: 40 },
   faceArea:      { width: 220, height: 240, borderRadius: 20, borderWidth: 1, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', marginBottom: 14 },
   phoneInfo:     { flexDirection: 'row', alignItems: 'center', gap: 8, borderTopWidth: 1, paddingTop: 12, width: '100%', justifyContent: 'center' },
   phoneInfoText: { fontSize: FontSize.xs, lineHeight: 16, textAlign: 'center', flex: 1 },
@@ -653,22 +711,32 @@ const s = StyleSheet.create({
   editorialRow: { width: '100%', maxWidth: 1440, gap: 35 },
   editorialRowWide: { flexDirection: 'row', gap: 55, alignItems: 'center' },
   editorialColumn: { flex: 1, minWidth: 0 },
+  aboutOnlyText: { alignItems: 'flex-start' },
+  aboutCopy: { width: '100%', maxWidth: 930 },
+  roleVideoColumnWide: { flex: 1.35 },
+  roleTextColumnCompact: { flex: 0.9 },
   eyebrow: { fontSize: 11, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 12 },
   editorialTitle: { fontSize: 28, lineHeight: 34, fontWeight: '700', letterSpacing: -1, marginBottom: 20 },
   editorialTitleWide: { fontSize: 43, lineHeight: 50 },
   editorialText: { fontSize: 16, lineHeight: 29, fontWeight: '400', marginBottom: 20 },
   editorialSubtitle: { fontSize: 18, lineHeight: 26, fontWeight: '700', marginBottom: 12 },
-  videoTile: { width: '100%', minHeight: 310, borderRadius: 25, padding: 30, gap: 18, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  videoTile: { width: '100%', minHeight: 310, borderRadius: 25, padding: 30, gap: 18, alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+               shadowColor: '#0B3D23', shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.16, shadowRadius: 28, elevation: 9 },
+  autoVideoTile: { padding: 0, minHeight: 430, backgroundColor: '#02180E' },
+  autoVideoShade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 70, backgroundColor: 'rgba(2,24,14,0.18)' },
   videoOrbit: { position: 'absolute', width: 250, height: 250, borderRadius: 125, borderWidth: 1, borderColor: 'rgba(131,228,162,0.14)' },
+  videoOrbitSoft: { position: 'absolute', width: 170, height: 170, borderRadius: 85, borderWidth: 1, opacity: 0.9 },
   playCircle: { width: 65, height: 65, borderRadius: 33, alignItems: 'center', justifyContent: 'center', },
   videoTitle: { color: Colors.white, fontSize: 18, lineHeight: 26, fontWeight: '700', textAlign: 'center' },
   videoDescription: { fontSize: 14, lineHeight: 24, maxWidth: 370, textAlign: 'center' },
   videoLink: { color: Colors.white, fontSize: 16, lineHeight: 24, fontWeight: '700', textAlign: 'center' },
   processGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 22, marginTop: 20 },
-  processStep: { borderTopWidth: 2, paddingTop: 17 },
+  processStep: { borderTopWidth: 3, borderWidth: 1, borderRadius: 18, padding: 20, minHeight: 230,
+                 shadowColor: '#0B3D23', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.12, shadowRadius: 24, elevation: 6 },
   stepNumber: { fontSize: 13, fontWeight: '800', marginBottom: 16 },
   stepText: { fontSize: 14, lineHeight: 25 },
-  roleRow: { gap: 35, paddingVertical: 50, borderBottomWidth: 1, },
+  roleRow: { gap: 35, padding: 28, marginTop: 24, borderBottomWidth: 1, borderWidth: 1, borderRadius: 26,
+             shadowColor: '#0B3D23', shadowOffset: { width: 0, height: 14 }, shadowOpacity: 0.12, shadowRadius: 28, elevation: 7 },
   editorialList: { gap: 6, marginTop: 6, marginBottom: 24 },
   editorialListRow: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
   listBullet: { fontSize: 15, lineHeight: 28 },
@@ -678,8 +746,17 @@ const s = StyleSheet.create({
   tutorialButton: { maxWidth: '100%', flexDirection: 'row', alignItems: 'center', gap: 9, borderRadius: 14, paddingHorizontal: 20, paddingVertical: 14, },
   tutorialButtonText: { flexShrink: 1, color: Colors.white, fontSize: 15, lineHeight: 23, fontWeight: '700' },
   facialNote: { borderLeftWidth: 2,  padding: 20, marginTop: 5 },
-  gifSlot: { width: '100%', minHeight: 310, borderRadius: 30, borderWidth: 1,   alignItems: 'center', justifyContent: 'center', padding: 30, gap: 18 },
+  gifSlot: { width: '100%', minHeight: 360, borderRadius: 30, borderWidth: 1, alignItems: 'center', justifyContent: 'center', padding: 30, gap: 18, overflow: 'hidden',
+             shadowColor: '#0B3D23', shadowOffset: { width: 0, height: 18 }, shadowOpacity: 0.18, shadowRadius: 32, elevation: 9 },
   gifCaption: { fontSize: 14, lineHeight: 24, textAlign: 'center' },
+  logoVisualHalo: { position: 'absolute', width: 330, height: 330, borderRadius: 165, borderWidth: 1, opacity: 0.78 },
+  logoVisualFrame: { width: '100%', maxWidth: 420, minHeight: 235, borderRadius: 24, borderWidth: 1, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', padding: 24,
+                     shadowColor: '#0B3D23', shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.24, shadowRadius: 30, elevation: 9 },
+  logoVisualImage: { width: '100%', height: 190 },
+  logoScanLine: { position: 'absolute', width: 170, height: 2, opacity: 0.55, borderRadius: 2, top: 36 },
+  logoVideoMeta: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: 'rgba(101,179,97,0.10)' },
+  logoSignalDot: { width: 8, height: 8, borderRadius: 4 },
+  logoSignalText: { fontSize: 12, lineHeight: 18, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.8 },
   centeredContent: { alignItems: 'center' },
   centeredText: { textAlign: 'center' },
   closingBrand: { fontSize: 27, fontWeight: '900', marginBottom: 18 },

@@ -65,7 +65,7 @@ export default function FacialSettingsScreen() {
     if (!registrationMinutes) newErrors.registrationMinutes = t('common.required');
     if (!exitTime) newErrors.exitTime = t('common.required');
     if (!shutdownTime) newErrors.shutdownTime = t('common.required');
-    else if (shutdownTime <= exitTime) newErrors.shutdownTime = t('facial.settings.validation.shutdownAfterExit');
+    else if (shutdownTime === exitTime) newErrors.shutdownTime = t('facial.settings.validation.shutdownAfterExit');
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -127,7 +127,6 @@ export default function FacialSettingsScreen() {
               value={exitTime}
               onChange={v => {
                 setExitTime(v);
-                if (shutdownTime && shutdownTime <= v) setShutdownTime('');
                 setErrors(p => ({ ...p, exitTime: '', shutdownTime: '' }));
               }}
               error={errors.exitTime}
