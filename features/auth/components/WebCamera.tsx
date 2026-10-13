@@ -29,6 +29,12 @@ const ANALYSIS_INTERVAL_MS = 300;
 const MIN_BRIGHTNESS       = 55;   // muy oscuro
 const MAX_BRIGHTNESS       = 235;  // sobreexpuesto
 const MIN_CONTRAST         = 20;   // contraste mínimo (std de luminancia)
+const GUIDE_ROI = {
+  x: 0.20,
+  y: 0.12,
+  width: 0.60,
+  height: 0.76,
+};
 
 // ── Tipo de advertencia en tiempo real ────────
 export type LiveWarning =
@@ -55,8 +61,8 @@ const LIVENESS_FRAME_DELAY_MS = 380;
 // ── Análisis de píxeles ───────────────────────
 function analyzeFrame(ctx: CanvasRenderingContext2D, W: number, H: number) {
   const step = 4;
-  const x0 = Math.floor(W * 0.10); const y0 = Math.floor(H * 0.10);
-  const rw = Math.floor(W * 0.80); const rh = Math.floor(H * 0.80);
+  const x0 = Math.floor(W * GUIDE_ROI.x); const y0 = Math.floor(H * GUIDE_ROI.y);
+  const rw = Math.floor(W * GUIDE_ROI.width); const rh = Math.floor(H * GUIDE_ROI.height);
 
   let data: ImageData;
   try { data = ctx.getImageData(x0, y0, rw, rh); } catch { return null; }
@@ -132,7 +138,7 @@ function computeWarning(
 
   // Tono cálido muy disperso (baja densidad) → fondo/objeto, no un rostro concentrado
   // Un rostro real tiene los píxeles de piel agrupados, no distribuidos por todo el frame
-  if (warmDensity < 0.35 && warmRatio < 0.25) return 'noSkin';
+  if (warmDensity < 0.30 && warmRatio < 0.20) return 'noSkin';
 
   if (warmRatio  > 0.68)            return 'skinTooClose';
 
