@@ -291,7 +291,16 @@ export default function WebCamera({
   // ── Stream de cámara ──────────────────────────
   useEffect(() => {
     let cancelled = false;
-    navigator.mediaDevices
+
+    const mediaDevices = typeof navigator !== 'undefined' ? navigator.mediaDevices : undefined;
+    if (!mediaDevices?.getUserMedia) {
+      setError(t('facialReg.cameraUnavailable'));
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    mediaDevices
       .getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 } })
       .then(stream => {
         if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }

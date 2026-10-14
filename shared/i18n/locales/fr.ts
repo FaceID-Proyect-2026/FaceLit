@@ -386,6 +386,7 @@ const fr = {
     tapToCapture: "Touchez pour activer",
     requestingPermission: "Autorisation caméra...",
     permissionDenied: "Accès caméra requis.",
+    cameraUnavailable: "Ce navigateur ne permet pas l'accès à la caméra. Ouvrez l'application dans Expo Go ou utilisez un navigateur avec HTTPS.",
     moveCloser: "Approchez-vous",
     goodPosition: "Bonne position",
     captured: "Capturé",

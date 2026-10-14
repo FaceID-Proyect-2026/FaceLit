@@ -438,6 +438,7 @@ const es = {
     tapToCapture: "Toca el botón para activar la cámara",
     requestingPermission: "Solicitando permiso de cámara…",
     permissionDenied: "Debes permitir el acceso a la cámara para continuar.",
+    cameraUnavailable: "Este navegador no permite acceder a la cámara. Abre la aplicación en Expo Go o usa un navegador compatible con HTTPS.",
     moveCloser: "Acércate un poco más a la cámara",
     goodPosition: "Posición correcta, puedes capturar",
     captured: "Rostro capturado",
