@@ -8,6 +8,12 @@
 3. Luego corre:
    npx expo start --clear
 
+entrar por tunel
+
+npx expo login
+
+npx expo start --lan --clear
+
 4. Escanea el QR con Expo Go
 
 === IMAGENES REQUERIDAS ===
