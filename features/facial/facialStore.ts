@@ -28,12 +28,15 @@ const listeners = new Set<Listener>();
 const FACIAL_CONFIG_STORAGE_KEY_PREFIX = "facial:instructor:config";
 const FACIAL_SECTION_DRAFT_STORAGE_KEY_PREFIX = "facial:instructor:sectionDraft";
 const FACIAL_SETTINGS_STORAGE_KEY_PREFIX = "facial:instructor:settings";
+const FACIAL_ACTIVE_SESSION_STORAGE_KEY_PREFIX = "facial:instructor:activeSession";
 const hydratedConfigOwners = new Set<string>();
 const configHydrationPromises = new Map<string, Promise<void>>();
 const hydratedSectionDraftOwners = new Set<string>();
 const sectionDraftHydrationPromises = new Map<string, Promise<void>>();
 const hydratedSettingsOwners = new Set<string>();
 const settingsHydrationPromises = new Map<string, Promise<void>>();
+const hydratedActiveSessionOwners = new Set<string>();
+const activeSessionHydrationPromises = new Map<string, Promise<void>>();
 
 const emit = () => listeners.forEach((listener) => listener());
 
@@ -41,6 +44,7 @@ const ownerKey = (ownerId?: string | null) => ownerId || "anonymous";
 const configStorageKey = (ownerId: string) => `${FACIAL_CONFIG_STORAGE_KEY_PREFIX}:${ownerId}`;
 const sectionDraftStorageKey = (ownerId: string) => `${FACIAL_SECTION_DRAFT_STORAGE_KEY_PREFIX}:${ownerId}`;
 const settingsStorageKey = (ownerId: string) => `${FACIAL_SETTINGS_STORAGE_KEY_PREFIX}:${ownerId}`;
+const activeSessionStorageKey = (ownerId: string) => `${FACIAL_ACTIVE_SESSION_STORAGE_KEY_PREFIX}:${ownerId}`;
 
 const isValidConfig = (value: unknown): value is FacialConfig => {
   if (!value || typeof value !== "object") return false;
@@ -83,6 +87,21 @@ const isValidSectionDraft = (value: unknown): value is FacialSectionDraft => {
     (candidate.instructorId === undefined || typeof candidate.instructorId === "string") &&
     (candidate.fichaId === undefined || typeof candidate.fichaId === "string")
   );
+};
+
+const isValidActiveSession = (value: unknown): value is FacialSession => {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<FacialSession>;
+  return [
+    candidate.idRecordEnvironment,
+    candidate.idEnvironment,
+    candidate.environmentName,
+    candidate.idDevice,
+    candidate.deviceCode,
+    candidate.idChip,
+    candidate.chipCode,
+    candidate.shutdownTime,
+  ].every((item) => typeof item === "string" && item.length > 0) && candidate.active === true;
 };
 
 export function setFacialOwner(ownerId?: string | null) {
@@ -171,6 +190,31 @@ export function hydrateFacialSettings(ownerId?: string | null) {
 
   settingsHydrationPromises.set(key, settingsHydrationPromise);
   return settingsHydrationPromise;
+}
+
+export function hydrateActiveFacialSession(ownerId?: string | null) {
+  const key = ownerKey(ownerId);
+  if (hydratedActiveSessionOwners.has(key)) return Promise.resolve();
+  const currentPromise = activeSessionHydrationPromises.get(key);
+  if (currentPromise) return currentPromise;
+
+  const promise = AsyncStorage.getItem(activeSessionStorageKey(key))
+    .then((storedSession) => {
+      if (!storedSession) return;
+      const parsed = JSON.parse(storedSession);
+      if (isValidActiveSession(parsed)) {
+        activeSessionsByOwner.set(key, parsed);
+        emit();
+      }
+    })
+    .catch((error) => console.warn("[FacialSession] No se pudo cargar la sesion guardada:", error))
+    .finally(() => {
+      hydratedActiveSessionOwners.add(key);
+      activeSessionHydrationPromises.delete(key);
+    });
+
+  activeSessionHydrationPromises.set(key, promise);
+  return promise;
 }
 
 export function subscribeFacial(listener: Listener) {
@@ -268,6 +312,10 @@ export function setActiveFacialSession(
     activeSessionsByOwner.delete(key);
   }
   emit();
+  const storageOperation = session
+    ? AsyncStorage.setItem(activeSessionStorageKey(key), JSON.stringify(session))
+    : AsyncStorage.removeItem(activeSessionStorageKey(key));
+  void storageOperation.catch((error) => console.warn("[FacialSession] No se pudo guardar la sesion:", error));
 }
 
 export function registerFacialCapture(

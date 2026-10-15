@@ -22,6 +22,14 @@ function timeToSessionDate(time: string, baseDate = new Date(), mustBeAfter?: Da
   return date;
 }
 
+function isTimeInFuture(time: string, baseDate = new Date()) {
+  const [hours, minutes] = time.split(':').map(Number);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return false;
+  const candidate = new Date(baseDate);
+  candidate.setHours(hours, minutes, 0, 0);
+  return candidate.getTime() > baseDate.getTime();
+}
+
 export function useEnvironmentSession() {
   const [environmentQuery, setEnvironmentQueryState] = useState('');
   const [environments, setEnvironments] = useState<EnvironmentOption[]>([]);
@@ -111,6 +119,16 @@ export function useEnvironmentSession() {
   }) => {
     if (!selectedEnvironment || !selectedInstructorId || !selectedChipId) {
       return { success: false as const, error: 'facial.setup.validation.allRequired' };
+    }
+    const now = new Date();
+    if (!isTimeInFuture(settings.exitTime, now)) {
+      return { success: false as const, error: 'La hora de salida debe ser posterior a la hora actual.' };
+    }
+    if (!isTimeInFuture(settings.shutdownTime, now)) {
+      return { success: false as const, error: 'La hora de apagado debe ser posterior a la hora actual.' };
+    }
+    if (settings.shutdownTime <= settings.exitTime) {
+      return { success: false as const, error: 'La hora de apagado debe ser posterior a la hora de salida.' };
     }
     setSaving(true);
     try {

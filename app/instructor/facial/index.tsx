@@ -1,4 +1,5 @@
 import { useEnvironmentSession } from "@/features/environments/useEnvironmentSession";
+import { fetchCurrentActiveEnvironmentSession } from "@/features/environments/environmentSessionApi";
 import { useFacialRegistry } from "@/features/facial/useFacialRegistry";
 import { AppButton, InputField, SelectField } from "@/shared/components/ui";
 import { Colors } from "@/shared/constants/colors";
@@ -18,7 +19,7 @@ export default function FacialManagementScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
-  const { config, sectionDraft, settings, saveConfig, saveSectionDraft, setActiveSession } = useFacialRegistry(user?.id);
+  const { config, sectionDraft, settings, activeSession, saveConfig, saveSectionDraft, setActiveSession } = useFacialRegistry(user?.id);
   const { alert, DialogUI } = useAppDialog();
   const {
     environmentQuery,
@@ -39,6 +40,29 @@ export default function FacialManagementScreen() {
     saveSession,
   } = useEnvironmentSession();
   const restoredConfigRef = useRef(false);
+
+  useEffect(() => {
+    let mounted = true;
+    fetchCurrentActiveEnvironmentSession().then((session) => {
+      if (!mounted) return;
+      if (!session) {
+        setActiveSession(undefined);
+        return;
+      }
+      setActiveSession({
+        idRecordEnvironment: session.idRecordEnvironment,
+        idEnvironment: session.idEnvironment,
+        environmentName: session.environmentName,
+        idDevice: session.idDevice,
+        deviceCode: session.deviceCode,
+        idChip: session.idChip,
+        chipCode: session.chipCode,
+        shutdownTime: session.shutdownTime,
+        active: session.active,
+      });
+    }).catch(() => undefined);
+    return () => { mounted = false; };
+  }, [setActiveSession]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.history?.pushState) return;
@@ -114,6 +138,7 @@ export default function FacialManagementScreen() {
 
   const hasSettings = !!settings;
   const canSave = !!selectedEnvironment && !!selectedInstructor && !!selectedChip && hasSettings && !saving;
+  const handleContinueSession = () => router.replace(Routes.INSTRUCTOR.FACIAL_CAMERA as any);
 
   const handleCreateEnvironment = async () => {
     try {
@@ -228,6 +253,21 @@ export default function FacialManagementScreen() {
         </View>
 
         <View style={[fs.contentGrid, isCompact && fs.contentGridCompact]}>
+          {activeSession ? (
+            <View style={[fs.activeSessionCard, { backgroundColor: theme.primary + "12", borderColor: theme.primary }]}>
+              <Ionicons name="play-circle-outline" size={26} color={theme.primary} />
+              <View style={{ flex: 1 }}>
+                <Text style={[fs.activeSessionTitle, { color: text }]}>Registro en curso</Text>
+                <Text style={[fs.activeSessionBody, { color: muted }]}>La sección de {activeSession.chipCode} en {activeSession.environmentName} sigue habilitada hasta las {new Date(activeSession.shutdownTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.</Text>
+              </View>
+              <AppButton
+                title="Continuar registro"
+                onPress={handleContinueSession}
+                fullWidth={isCompact}
+                style={{ ...fs.continueButton, ...(isCompact ? fs.continueButtonCompact : {}) }}
+              />
+            </View>
+          ) : null}
           <View style={[fs.summaryCard, isCompact && fs.summaryCardCompact, { backgroundColor: cardBg, borderColor: border }]}>
             <Text style={[fs.panelTitle, { color: text }]}>Configuracion actual</Text>
             <View style={fs.timerGrid}>
@@ -390,6 +430,11 @@ const fs = StyleSheet.create({
     flexBasis: "auto",
     padding: 14,
   },
+  activeSessionCard: { width: "100%", borderRadius: 16, borderWidth: 1, padding: 16, flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 12 },
+  activeSessionTitle: { fontSize: FontSize.base, fontWeight: FontWeight.black },
+  activeSessionBody: { fontSize: FontSize.sm, marginTop: 4, lineHeight: 18 },
+  continueButton: { minWidth: 178, borderRadius: 12 },
+  continueButtonCompact: { width: "100%", marginTop: 2 },
   panelTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.black, marginBottom: 12 },
   timerGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   timerTile: { flex: 1, minWidth: 92, borderRadius: 14, borderWidth: 1, padding: 12 },
