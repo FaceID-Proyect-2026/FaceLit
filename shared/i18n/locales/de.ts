@@ -1,3 +1,4 @@
+import { notificationTemplates } from '../notificationTemplates';
 import { landingDe } from '../landing';
 
 const de = {
@@ -1772,6 +1773,7 @@ const de = {
       minutes: "Min.",
     },
     templates: {
+      ...notificationTemplates.de,
       csv_upload_done: {
         title: "CSV-Import abgeschlossen",
         message: "Die CSV-Datei wurde erfolgreich importiert.",

@@ -58,6 +58,19 @@ export type NotificationType =
   // Reconocimiento facial (RF-8.4)
   | 'facial_reregister_request' // RF-8.4 — solicitud de re-registro
   | 'facial_session_substitution' // Aviso legado de sustitución en reconocimiento facial
+  | 'attendance_excuse_registered'
+  | 'attendance_exit_reminder'
+  | 'attendance_session_summary'
+  | 'session_assigned'
+  | 'session_updated'
+  | 'session_cancelled'
+  | 'user_account_created'
+  | 'user_profile_updated'
+  | 'apprentice_profile_updated'
+  | 'facial_request_resolved'
+  | 'facial_registration_completed'
+  | 'password_changed'
+  | 'account_status_changed'
 
 /** Canal por tipo — según columna "Canal" del catálogo RF-8 */
 export const NOTIFICATION_CHANNELS: Record<NotificationType, NotificationChannel> = {
@@ -84,12 +97,26 @@ export const NOTIFICATION_CHANNELS: Record<NotificationType, NotificationChannel
   apprentice_transfer_applied: 'app+email',
   security_multiple_failures: 'app+email',
   security_account_locked:    'app+email',
-  facial_reregister_request:  'app',
+  facial_reregister_request:  'app+email',
   facial_session_substitution: 'app',
+  attendance_excuse_registered: 'app+email',
+  attendance_exit_reminder: 'app+email',
+  attendance_session_summary: 'app+email',
+  session_assigned: 'app+email',
+  session_updated: 'app+email',
+  session_cancelled: 'app+email',
+  user_account_created: 'app',
+  user_profile_updated: 'app',
+  apprentice_profile_updated: 'app',
+  facial_request_resolved: 'app+email',
+  facial_registration_completed: 'app',
+  password_changed: 'app+email',
+  account_status_changed: 'app+email',
 };
 
 /** Metadatos específicos por tipo de notificación */
 export interface NotificationMeta {
+  [key: string]: unknown;
   // CSV
   csvSummary?: { created: number; updated: number; blocked: number; errors: number };
   conflictRecordId?: string;
@@ -103,6 +130,7 @@ export interface NotificationMeta {
   // Asistencia
   date?: string;
   entryTime?: string;
+  exitTime?: string;
   delayMinutes?: number;
   environmentName?: string;
   instructorName?: string;
