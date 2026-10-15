@@ -20,6 +20,11 @@ export const getPrivacyAcceptanceStatus = async (numberDocument) => {
   return data === true;
 };
 
+export const verifyCurrentPassword = async (password) => {
+  const { data } = await api.post('/api/auth/verify-password', { password });
+  return data === true;
+};
+
 // POST /api/auth/change-password — requiere sesión activa (JWT)
 export const changePassword = async (newPassword, confirmPassword) => {
   const { data } = await api.post('/api/auth/change-password', {
