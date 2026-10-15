@@ -9,6 +9,7 @@ import {
     hydrateFacialConfig,
     hydrateFacialSectionDraft,
     hydrateFacialSettings,
+    hydrateActiveFacialSession,
     registerFacialCapture,
     registerFacialEvent,
     saveFacialConfig,
@@ -26,6 +27,7 @@ export function useFacialRegistry(ownerId?: string | null) {
     hydrateFacialConfig(ownerId);
     hydrateFacialSectionDraft(ownerId);
     hydrateFacialSettings(ownerId);
+    hydrateActiveFacialSession(ownerId);
   }, [ownerId]);
 
   const records = useSyncExternalStore(

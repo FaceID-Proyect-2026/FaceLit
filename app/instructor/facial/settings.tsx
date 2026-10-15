@@ -62,10 +62,19 @@ export default function FacialSettingsScreen() {
 
   const handleSave = async () => {
     const newErrors: typeof errors = {};
+    const now = new Date();
+    const timeToMinutes = (value: string) => {
+      const [hours, minutes] = value.split(':').map(Number);
+      return Number.isFinite(hours) && Number.isFinite(minutes) ? hours * 60 + minutes : -1;
+    };
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
     if (!registrationMinutes) newErrors.registrationMinutes = t('common.required');
     if (!exitTime) newErrors.exitTime = t('common.required');
+    else if (timeToMinutes(exitTime) <= currentMinutes) newErrors.exitTime = 'La hora de salida debe ser posterior a la hora actual.';
     if (!shutdownTime) newErrors.shutdownTime = t('common.required');
     else if (shutdownTime === exitTime) newErrors.shutdownTime = t('facial.settings.validation.shutdownAfterExit');
+    else if (timeToMinutes(shutdownTime) <= currentMinutes) newErrors.shutdownTime = 'La hora de apagado debe ser posterior a la hora actual.';
+    else if (exitTime && timeToMinutes(shutdownTime) <= timeToMinutes(exitTime)) newErrors.shutdownTime = t('facial.settings.validation.shutdownAfterExit');
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);

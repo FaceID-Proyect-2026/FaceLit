@@ -102,3 +102,8 @@ export async function createEnvironmentSession(payload: {
   });
   return data;
 }
+
+export async function fetchCurrentActiveEnvironmentSession() {
+  const { data, status } = await api.get<RecordEnvironmentResponse | null>('/api/environment/sessions/active');
+  return status === 204 || !data ? null : data;
+}
