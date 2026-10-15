@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { pushNotification } from "../notifications/notificationsStore";
+import { requestMyFacialReset } from "@/shared/services/facialEnrollmentService";
 import {
     FacialConfig,
     FacialEvent,
@@ -369,15 +369,6 @@ export function registerFacialEvent(
 // El aprendiz toca "Solicitar registro nuevamente" y esto genera una
 // notificación con botones Aceptar/Rechazar que el Coordinador resuelve
 // directamente desde su bandeja de notificaciones.
-export function requestFacialReRegistration(user: FacialUser): void {
-  pushNotification(
-    "facial_reregister_request",
-    "Solicitud de re-registro facial",
-    `${user.name} (ID: ${user.id}) solicita volver a registrar su rostro.`,
-    {
-      requestId: `req-${Date.now()}`,
-      facialUserId: user.id,
-      learnerName: user.name,
-    },
-  );
+export async function requestFacialReRegistration(_user: FacialUser): Promise<void> {
+  await requestMyFacialReset();
 }

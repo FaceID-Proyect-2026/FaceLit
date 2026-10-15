@@ -1,3 +1,4 @@
+import { localizeNotification, normalizeNotificationMeta } from '@/features/notifications/localizeNotification';
 // ─────────────────────────────────────────────
 //  app/notifications/index.tsx
 //  RF-8.2 — Bandeja de notificaciones (Coordinador)
@@ -61,8 +62,11 @@ export default function NotificationsScreen() {
   const [statusFilter,   setStatusFilter]   = useState<StatusFilter>('all');
   const [categoryFilter, setCategoryFilter] = useState<NotificationCategory | 'all'>('all');
   const [expandedId,     setExpandedId]     = useState<string | null>(null);
+  const [resolvingId, setResolvingId] = useState<string | null>(null);
+  const [decisionError, setDecisionError] = useState<string | null>(null);
 
   const isApprentice = user?.role === 'APPRENTICE';
+  const isCoordinator = user?.role === 'COORDINATOR';
   const { notifications, unreadCount, markRead, resolveFacial } = useNotifications({
     statusFilter,
     categoryFilter,
@@ -83,53 +87,8 @@ export default function NotificationsScreen() {
       : new Intl.DateTimeFormat(i18n.resolvedLanguage ?? i18n.language, { dateStyle: 'medium' }).format(parsed);
   };
 
-  const getLocalizedText = (notif: Notification) => {
-    const meta = notif.meta ?? {};
-    const date = meta.date
-      ? formatLocalizedDate(meta.date)
-      : t('notifications.values.unavailable');
-    const entityType = meta.entityType;
-    const entityKey = entityType === 'program' || entityType === 'ficha'
-      || entityType === 'learner' || entityType === 'instructor'
-      ? `notifications.entities.${entityType}`
-      : 'notifications.entities.item';
-    const values = {
-      learnerName: meta.learnerName || t('notifications.values.learner'),
-      document: meta.learnerDocument || meta.accountDocument || t('notifications.values.unavailable'),
-      fromFicha: meta.fromFichaNumber || t('notifications.values.unavailable'),
-      toFicha: meta.toFichaNumber || t('notifications.values.unavailable'),
-      ficha: meta.fichaNumber || meta.toFichaNumber || t('notifications.values.unavailable'),
-      date,
-      delayMinutes: meta.delayMinutes ?? t('notifications.values.unavailable'),
-      environment: meta.environmentName || t('notifications.values.unavailable'),
-      instructorName: meta.instructorName || t('notifications.values.instructor'),
-      name: (meta as any).name || (meta as any).programName || (meta as any).fichaNumber || (meta as any).instructorName || meta.learnerName || t('notifications.values.unavailable'),
-      action: (meta as any).action || t('notifications.values.unavailable'),
-      failedCount: meta.failedCount ?? t('notifications.values.unavailable'),
-      lockMinutes: meta.lockMinutes ?? t('notifications.values.unavailable'),
-      entity: t(entityKey),
-      email: notif.message.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0]
-        ?? t('notifications.values.unavailable'),
-    };
-    const summary = notif.type === 'csv_upload_done' ? meta.csvSummary : undefined;
-    const legacyReferenceEmail = notif.type === 'csv_ref_error'
-      && /ya está registrado en otro usuario/i.test(notif.message);
-
-    return {
-      title: t(`notifications.templates.${notif.type}.title`),
-      message: t(
-        summary ? 'notifications.templates.csv_upload_done.summaryMessage'
-          : legacyReferenceEmail ? 'notifications.templates.csv_ref_error.emailMessage'
-          : `notifications.templates.${notif.type}.message`,
-        summary ? {
-          created: summary.created,
-          updated: summary.updated,
-          blocked: summary.blocked,
-          errors: summary.errors,
-        } : values,
-      ),
-    };
-  };
+  const getLocalizedText = (notif: Notification) =>
+    localizeNotification(notif, t, i18n.resolvedLanguage ?? i18n.language);
 
   // ── Handlers ──────────────────────────────
   const handlePress = (notif: Notification) => {
@@ -137,18 +96,26 @@ export default function NotificationsScreen() {
     setExpandedId(prev => (prev === notif.id ? null : notif.id));
   };
 
-  const handleFacialDecision = (notifId: string, decision: 'accepted' | 'rejected') => {
-    resolveFacial(notifId, decision, user?.document ?? 'coordinator');
-    setExpandedId(null);
+  const handleFacialDecision = async (notifId: string, decision: 'accepted' | 'rejected') => {
+    if (resolvingId) return;
+    setResolvingId(notifId);
+    setDecisionError(null);
+    try {
+      await resolveFacial(notifId, decision, user?.id ?? '');
+      setExpandedId(null);
+    } catch (error: any) {
+      setDecisionError(error?.response?.data?.message || t('notifications.templates.resetUi.errorMessage'));
+    } finally { setResolvingId(null); }
   };
 
   // ── Render de detalle expandido ──────────
   const renderDetail = (notif: Notification) => {
-    const m = notif.meta ?? {};
+    const m = normalizeNotificationMeta(notif.meta);
     const rows: [string, string, string?, string?][] = [];
 
     // Campos comunes según tipo
     if (m.learnerName)      rows.push(['person-outline',       t('notifications.detail.learner'),   m.learnerName]);
+    if (m.programName) rows.push(['school-outline', t('notifications.templates.resetUi.program'), m.programName]);
     if (m.learnerDocument)  rows.push(['card-outline',         t('notifications.detail.document'),  m.learnerDocument]);
     if (m.accountDocument && !m.learnerDocument)
                             rows.push(['card-outline',         t('notifications.detail.document'),  m.accountDocument]);
@@ -231,10 +198,16 @@ export default function NotificationsScreen() {
         )}
 
         {/* RF-8.4 — Botones Aceptar/Rechazar para re-registro facial sin decisión aún */}
-        {!isApprentice && notif.type === 'facial_reregister_request' && !m.facialDecision && (
+        {isApprentice && notif.type === 'facial_request_resolved' && m.facialDecision === 'accepted' && (
+          <AppButton title={t('notifications.templates.resetUi.openFacial')}
+            onPress={() => router.push('/apprentice/facial')} />
+        )}
+        {decisionError && <Text style={{ color: Colors.error }}>{decisionError}</Text>}
+        {isCoordinator && notif.type === 'facial_reregister_request' && !m.facialDecision && (
           <View style={ns.facialActions}>
             <AppButton
               title={t('notifications.detail.reject')}
+              disabled={resolvingId !== null}
               onPress={() => handleFacialDecision(notif.id, 'rejected')}
               variant="outline"
               fullWidth={false}
@@ -242,6 +215,7 @@ export default function NotificationsScreen() {
             />
             <AppButton
               title={t('notifications.detail.accept')}
+              disabled={resolvingId !== null}
               onPress={() => handleFacialDecision(notif.id, 'accepted')}
               fullWidth={false}
               style={ns.facialBtn}
@@ -259,7 +233,7 @@ export default function NotificationsScreen() {
     const isUnread = !item.read;
     const expanded = expandedId === item.id;
     const isEmail  = item.channel === 'app+email';
-    const isFacialRequest = !isApprentice && item.type === 'facial_reregister_request' && !item.meta?.facialDecision;
+    const isFacialRequest = isCoordinator && item.type === 'facial_reregister_request' && !item.meta?.facialDecision;
 
     return (
       <TouchableOpacity

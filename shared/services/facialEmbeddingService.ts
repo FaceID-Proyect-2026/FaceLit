@@ -3,6 +3,7 @@ import axios from 'axios';
 import { EMBEDDING_API_KEY, EMBEDDING_API_URL } from '@/shared/constants/api';
 
 export interface FacialEmbeddingFromImagePayload {
+  resetToken?: string | null;
   userId: string;
   imageBase64: string;
   imageFrames?: string[];
@@ -109,6 +110,7 @@ export async function registerFacialEmbeddingFromImage(
       liveness_challenges: payload.livenessChallenges ?? [],
       photo_reference: payload.photoReference ?? null,
       replace_existing: payload.replaceExisting ?? false,
+      reset_token: payload.resetToken ?? null,
       created_by: payload.createdBy ?? 'mobile-app',
     },
   );

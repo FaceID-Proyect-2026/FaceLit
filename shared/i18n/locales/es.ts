@@ -1,4 +1,5 @@
-﻿import { landingEs } from '../landing';
+import { notificationTemplates } from '../notificationTemplates';
+import { landingEs } from '../landing';
 
 const es = {
   landingPage: landingEs,
@@ -1947,6 +1948,7 @@ const es = {
       minutes: "min",
     },
     templates: {
+      ...notificationTemplates.es,
       csv_upload_done: {
         title: "Carga de CSV finalizada",
         message: "La importación del archivo CSV finalizó correctamente.",

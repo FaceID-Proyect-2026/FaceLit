@@ -9,18 +9,18 @@ import FaceGuideOverlay from "@/features/auth/components/FaceGuideOverlay";
 import WebCamera from "@/features/auth/components/WebCamera";
 import { useFacialRegistration } from "@/features/auth/hooks/useFacialRegistration";
 import { getFacialRecordsSnapshot } from "@/features/facial/facialStore";
-import { pushNotification } from "@/features/notifications/notificationsStore";
+import { canStartFacialCapture, hasUnusedFacialApproval } from "@/features/facial/registrationAccess";
 import { Colors } from "@/shared/constants/colors";
 import { Routes } from "@/shared/constants/routes";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { useAuth } from "@/shared/contexts/AuthContext";
 import { useTheme } from "@/shared/contexts/ThemeContext";
 import { useAppDialog } from "@/shared/hooks/useAppDialog";
-import { fetchMyFacialEnrollmentStatus } from "@/shared/services/facialEnrollmentService";
+import { fetchMyFacialEnrollmentStatus, fetchMyFacialResetState, requestMyFacialReset, type FacialResetState } from "@/shared/services/facialEnrollmentService";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
     Modal,
@@ -46,6 +46,10 @@ export default function ApprenticeFacialScreen() {
   const [confirmed, setConfirmed] = useState(false);
   const [captureWarningVisible, setCaptureWarningVisible] = useState(false);
   const [resetRequested, setResetRequested] = useState(false);
+  const [resetState, setResetState] = useState<FacialResetState | null>(null);
+  const [consumedRequests, setConsumedRequests] = useState<ReadonlySet<string>>(() => new Set());
+  const [savedInThisScreen, setSavedInThisScreen] = useState(false);
+  const [sendingReset, setSendingReset] = useState(false);
   const [serverRegistered, setServerRegistered] = useState<boolean | null>(null);
   const [serverRegistrationDate, setServerRegistrationDate] = useState<string | null>(null);
   const [loadingRegistrationStatus, setLoadingRegistrationStatus] = useState(false);
@@ -66,6 +70,28 @@ export default function ApprenticeFacialScreen() {
   const records = getFacialRecordsSnapshot();
   const myRecord = records.find((r) => r.userId === user?.id);
   const isRegistered = serverRegistered ?? myRecord?.status === "registered";
+  const unusedApproval = hasUnusedFacialApproval(resetState, consumedRequests);
+
+  useEffect(() => {
+    setConsumedRequests(new Set());
+    setSavedInThisScreen(false);
+    setResetState(null);
+    setConfirmed(false);
+  }, [user?.id]);
+
+  const handleRegistrationSaved = useCallback(() => {
+    if (resetState?.requestId) {
+      const consumedId = resetState.requestId;
+      setConsumedRequests(previous => new Set([...previous, consumedId]));
+    }
+    setSavedInThisScreen(true);
+    setServerRegistered(true);
+    setResetState(null);
+    setResetRequested(false);
+    setConfirmed(false);
+    setCaptureWarningVisible(false);
+    setServerRegistrationDate(new Date().toISOString());
+  }, [resetState?.requestId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -79,9 +105,11 @@ export default function ApprenticeFacialScreen() {
       setLoadingRegistrationStatus(true);
       setRegistrationStatusError(null);
       try {
-        const status = await fetchMyFacialEnrollmentStatus();
+        const [status, reset] = await Promise.all([fetchMyFacialEnrollmentStatus(), fetchMyFacialResetState()]);
         if (!cancelled) {
           setServerRegistered(status.registered);
+          setResetState(reset);
+          setResetRequested(reset.status === "PENDING");
           setServerRegistrationDate(status.registrationDate ?? null);
         }
       } catch (error) {
@@ -96,11 +124,13 @@ export default function ApprenticeFacialScreen() {
       }
     }
 
-    loadRegistrationStatus();
+    void loadRegistrationStatus();
+    const timer = setInterval(() => { if (step === "confirm") void loadRegistrationStatus(); }, 15000);
     return () => {
+      clearInterval(timer);
       cancelled = true;
     };
-  }, [user?.id]);
+  }, [user?.id, step]);
 
   const {
     screenState,
@@ -122,9 +152,12 @@ export default function ApprenticeFacialScreen() {
     handleWebShutter,
     handleCloseSuccessModal,
     handleCloseErrorModal,
-  } = useFacialRegistration({ requireResponsibilityConfirmation: false });
+  } = useFacialRegistration({ requireResponsibilityConfirmation: false,
+    replaceExisting: unusedApproval, resetToken: unusedApproval ? resetState?.authorizationToken : null,
+    onRegistrationSaved: handleRegistrationSaved });
 
-  const canStartRegistration = !loadingRegistrationStatus && !registrationStatusError && serverRegistered === false;
+  const canStartRegistration = canStartFacialCapture({ registered: serverRegistered, savedInThisScreen,
+    reset: resetState, consumedRequests, loading: loadingRegistrationStatus, hasError: !!registrationStatusError });
 
   // ── Cancelar desde la cámara → limpia estado y vuelve al paso confirm ──
   function handleCancelAndReturn() {
@@ -136,42 +169,36 @@ export default function ApprenticeFacialScreen() {
   function handleConfirmAndProceed() {
     if (!confirmed) return;
     if (loadingRegistrationStatus || registrationStatusError || serverRegistered === null) return;
-    if (isRegistered) {
-      return;
-    }
+    if (!canStartRegistration) return;
     setCaptureWarningVisible(true);
   }
 
   function handleAcceptCaptureWarning() {
     setCaptureWarningVisible(false);
+    if (!canStartRegistration) return;
     setStep("camera");
     handleOpenCamera();
   }
 
-  function handleRequestFacialReset() {
-    if (!user?.id || resetRequested) return;
-
-    pushNotification(
-      "facial_reregister_request",
-      "Solicitud de restablecimiento facial",
-      `${fullName || "Un aprendiz"} solicita restablecer su registro facial.`,
-      {
-        requestId: `facial-reset-${user.id}-${Date.now()}`,
-        facialUserId: user.id,
-        learnerName: fullName,
-      },
-    );
-    setResetRequested(true);
-    alert(
-      "Solicitud enviada",
-      "Tu solicitud fue enviada al coordinador. Cuando sea aprobada podrás registrar tu rostro nuevamente.",
-    );
+  async function handleRequestFacialReset() {
+    if (!user?.id || resetRequested || sendingReset || unusedApproval) return;
+    setSendingReset(true);
+    try {
+      const state = await requestMyFacialReset();
+      setResetState(state);
+      setResetRequested(state.status === "PENDING");
+      alert(t("notifications.templates.resetUi.sentTitle"), t("notifications.templates.resetUi.sentMessage"));
+    } catch (error: any) {
+      alert(t("notifications.templates.resetUi.errorTitle"), error?.response?.data?.message || t("notifications.templates.resetUi.errorMessage"));
+    } finally { setSendingReset(false); }
   }
 
   // ── Al cerrar modal de éxito ───────────────────
   function handleSuccess() {
     handleCloseSuccessModal();
     setServerRegistered(true);
+    setResetState(null);
+    setResetRequested(false);
     setServerRegistrationDate(new Date().toISOString());
     setStep("done");
   }
@@ -309,6 +336,11 @@ export default function ApprenticeFacialScreen() {
             </View>
           </View>
 
+          {unusedApproval && (
+            <Text style={[s.statusDesc, { color: Colors.success, padding: 16 }]}>
+              {t("notifications.templates.resetUi.authorized")}
+            </Text>
+          )}
           {/* Aviso de responsabilidad (RF-5.1) */}
           <View
             style={[
@@ -344,10 +376,10 @@ export default function ApprenticeFacialScreen() {
             </LinearGradient>
           </View>
 
-          {isRegistered && (
+          {isRegistered && !unusedApproval && (
             <TouchableOpacity
               onPress={handleRequestFacialReset}
-              disabled={resetRequested}
+              disabled={resetRequested || sendingReset}
               style={[
                 s.resetRequestBtn,
                 {
@@ -363,7 +395,7 @@ export default function ApprenticeFacialScreen() {
                 color={resetRequested ? Colors.success : theme.primary}
               />
               <Text style={[s.resetRequestText, { color: resetRequested ? Colors.success : theme.primary }]}>
-                {resetRequested ? "Solicitud enviada" : "Restablecer registro facial"}
+                {t(resetRequested ? "notifications.templates.resetUi.sentTitle" : "notifications.templates.resetUi.requestButton")}
               </Text>
             </TouchableOpacity>
           )}
@@ -438,19 +470,19 @@ export default function ApprenticeFacialScreen() {
           {/* Botón continuar */}
           <TouchableOpacity
             onPress={handleConfirmAndProceed}
-            disabled={!confirmed || isRegistered || loadingRegistrationStatus || !!registrationStatusError || serverRegistered === null}
+            disabled={!confirmed || !canStartRegistration}
             style={[
               s.primaryBtn,
               {
                 backgroundColor:
-                  !confirmed || isRegistered || loadingRegistrationStatus ? muted + "40" : theme.primary,
+                  !confirmed || !canStartRegistration ? muted + "40" : theme.primary,
               },
             ]}
             activeOpacity={0.85}
           >
             <Ionicons name="scan-outline" size={20} color={Colors.white} />
             <Text style={s.primaryBtnText}>
-              {isRegistered
+              {isRegistered && !unusedApproval
                 ? t("facialReg.alreadyRegisteredTitle")
                 : loadingRegistrationStatus
                   ? t("common.loading")

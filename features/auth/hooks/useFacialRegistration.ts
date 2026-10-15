@@ -67,6 +67,8 @@ export function getAverageBrightness(canvas: HTMLCanvasElement): number {
 }
 
 interface FacialRegistrationOptions {
+  onRegistrationSaved?: () => void;
+  resetToken?: string | null;
   targetUser?: FacialUser;
   replaceExisting?: boolean;
   createdBy?: string;
@@ -110,6 +112,8 @@ function clampLivenessIndex(index: number): number {
 
 export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
   const {
+    onRegistrationSaved,
+    resetToken,
     targetUser,
     replaceExisting = false,
     createdBy = 'mobile-app',
@@ -411,8 +415,12 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
         livenessChallenges: livenessSequence.map((challenge) => challenge.code),
         photoReference: buildPhotoReference(photoUri, isWeb),
         replaceExisting,
+        resetToken,
         createdBy,
       });
+
+      // The server has committed the embedding and consumed the single-use grant.
+      onRegistrationSaved?.();
 
       const result = registerFacialCapture(facialUser, photoUri, true, replaceExisting);
       if (!result.success && result.error !== ALREADY_REGISTERED_ERROR) {
@@ -440,7 +448,7 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
     } finally {
       setIsRegistering(false);
     }
-  }, [screenState, photoUri, photoUris, quality, isRegistering, isWeb, t, user, targetUser, replaceExisting, createdBy, allowLocalFallback, livenessChallenge.code, livenessSequence]);
+  }, [screenState, photoUri, photoUris, quality, isRegistering, isWeb, t, user, targetUser, replaceExisting, resetToken, onRegistrationSaved, createdBy, allowLocalFallback, livenessChallenge.code, livenessSequence]);
 
   useEffect(() => {
     if (isWeb || screenState !== 'ready' || photoUri || isTaking || isRegistering || errorModalMessage || successModalVisible) {
