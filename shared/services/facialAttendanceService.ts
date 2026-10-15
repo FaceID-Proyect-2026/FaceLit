@@ -105,6 +105,12 @@ export async function registerFacialAttendanceFromImage(
   return data;
 }
 
+export async function initializeFacialSessionAbsences(idRecordEnvironment: string): Promise<void> {
+  await api.post('/api/facial/events/initialize-absences', null, {
+    params: { idRecordEnvironment },
+  });
+}
+
 export async function fetchAttendanceMatrix(params: {
   idChip: string;
   dateFrom: string;
