@@ -9,6 +9,7 @@ import FaceGuideOverlay from "@/features/auth/components/FaceGuideOverlay";
 import WebCamera from "@/features/auth/components/WebCamera";
 import { useFacialRegistry } from "@/features/facial/useFacialRegistry";
 import { useSessionAttendanceCapture } from "@/features/facial/useSessionAttendanceCapture";
+import { initializeFacialSessionAbsences } from "@/shared/services/facialAttendanceService";
 import { Colors } from "@/shared/constants/colors";
 import { Routes } from "@/shared/constants/routes";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
@@ -73,6 +74,11 @@ export default function InstructorFacialCameraScreen() {
       setExitPromptVisible(true);
     }
   }, [blocked]);
+
+  useEffect(() => {
+    if (!activeSession?.idRecordEnvironment) return;
+    void initializeFacialSessionAbsences(activeSession.idRecordEnvironment);
+  }, [activeSession?.idRecordEnvironment]);
 
   useEffect(() => {
     const shutdownAt = (() => {
