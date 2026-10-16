@@ -3,7 +3,6 @@
 //  RF-3.1 + RF-3.1.1 V4 — Carga académica por CSV
 // ─────────────────────────────────────────────
 import { downloadAcademicTemplate, uploadAcademicCsv } from '@/features/academic/academicApi';
-import { parseAcademicCsvV4 } from '@/features/academic/csvImport';
 import { loadNotifications } from '@/features/notifications/notificationsStore';
 import { CsvImportSummaryV4, CsvRowResult } from '@/features/academic/types';
 import { refreshAcademicStoreFromBackend } from '@/features/academic/useAcademic';
@@ -27,7 +26,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as XLSX from 'xlsx';
 
-const MAX_FILE_BYTES = 5 * 1024 * 1024;
+const MAX_FILE_BYTES = 20 * 1024 * 1024;
+const MAX_FILE_LABEL = '20 MB';
 
 function catColor(cat: CsvRowResult['category']) {
   return { created: Colors.success, updated: Colors.info, blocked: Colors.warning, error: Colors.error }[cat];
@@ -54,33 +54,6 @@ function resultCategoryLabel(cat: CsvRowResult['category'], t: (key: string) => 
     blocked: t('academic.csvV4Blocked'),
     error: t('academic.csvV4Errors'),
   }[cat];
-}
-
-type PasswordRow = CsvImportSummaryV4['generatedPasswords'][number];
-
-function firstValue(...values: unknown[]) {
-  return values.find(value => typeof value === 'string' && value.trim()) as string | undefined;
-}
-
-function getPasswordRows(result: any, csvRows: ReturnType<typeof parseAcademicCsvV4>['rows'] = []): PasswordRow[] {
-  return (result.contrasenasGeneradas ?? []).map((item: any) => {
-    const document = String(firstValue(item.documento, item.document, item.numeroDocumento) ?? '');
-    const csvRow = csvRows.find(row => row.documento === document);
-    const name = firstValue(
-      item.nombreCompleto,
-      item.nombreCompletoUsuario,
-      [item.nombre, item.apellido].filter(value => typeof value === 'string' && value.trim()).join(' '),
-      csvRow && [csvRow.nombre, csvRow.apellido].filter(Boolean).join(' '),
-    );
-    return {
-      document,
-      password: String(firstValue(item.contrasenaTemporal, item.password, item.contrasena) ?? ''),
-      name,
-      role: firstValue(item.rol, item.role, item.tipo, csvRow?.tipo),
-      ficha: firstValue(item.ficha, item.fichaCodigo, item.numeroFicha, csvRow?.fichaCodigo),
-      program: firstValue(item.programa, item.programaCodigo, item.codigoPrograma, csvRow?.programaCodigo),
-    };
-  });
 }
 
 export default function CsvUploadScreen() {
@@ -254,10 +227,6 @@ export default function CsvUploadScreen() {
     const name = file instanceof Blob ? t('academic.csvV4DefaultFileName') : file.name;
     setFileName(name); setFileError(null); setPostUploadWarning(null); setSummary(null); setLoading(true);
     try {
-      let csvRows: ReturnType<typeof parseAcademicCsvV4>['rows'] = [];
-      if (file instanceof Blob) {
-        csvRows = parseAcademicCsvV4(await file.text()).rows;
-      }
       const backendResult = await uploadAcademicCsv(file);
       const rows: CsvRowResult[] = [
         ...backendResult.creados.map((r: any) => ({ rowIndex: r.fila, category: 'created' as const, tipo: r.tipo, identifier: '', message: r.detalle })),
@@ -271,7 +240,7 @@ export default function CsvUploadScreen() {
         blocked: backendResult.inconsistenciasBloqueadas.length,
         errors: backendResult.erroresDeReferencia.length,
         rows,
-        generatedPasswords: getPasswordRows(backendResult, csvRows),
+        generatedPasswords: [],
       });
       try {
         await refreshAcademicStoreFromBackend();
@@ -298,7 +267,9 @@ export default function CsvUploadScreen() {
       const textData = typeof rawData === 'string' ? rawData : rawData?.message ?? rawData?.error ?? '';
       const msg      = textData || error?.message || '';
 
-      if (status === 500 || status === 0) {
+      if (error?.code === 'ECONNABORTED' || String(msg).toLowerCase().includes('timeout')) {
+        setFileError(t('academic.csvV4Timeout'));
+      } else if (status === 500 || status === 0) {
         const serverMessage = String(msg).toLowerCase();
         const isHtml = serverMessage.includes('<html') || serverMessage.includes('internal server error');
         setFileError(
@@ -389,7 +360,7 @@ export default function CsvUploadScreen() {
                   <Text style={[s.dropMain, { color: text }]}>
                     {t(Platform.OS === 'web' ? 'academic.csvV4DropWeb' : 'academic.csvV4DropNative')}
                   </Text>
-                  <Text style={[s.dropSub, { color: muted }]}>{t('academic.csvV4DropHint', { maxSize: '5 MB', maxRows: '5,000' })}</Text>
+                  <Text style={[s.dropSub, { color: muted }]}>{t('academic.csvV4DropHint', { maxSize: MAX_FILE_LABEL, maxRows: '5,000' })}</Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -408,7 +379,7 @@ export default function CsvUploadScreen() {
             <View style={s.guideBody}>
               <View style={[s.fileSizeNotice, { backgroundColor: theme.primary + '12', borderColor: theme.primary + '44' }]}>
                 <Ionicons name="information-circle-outline" size={16} color={theme.primary} />
-                <Text style={[s.fileSizeNoticeText, { color: text }]}>{t('academic.csvV4FileSizeNotice', { maxSize: '5 MB' })}</Text>
+                <Text style={[s.fileSizeNoticeText, { color: text }]}>{t('academic.csvV4FileSizeNotice', { maxSize: MAX_FILE_LABEL })}</Text>
               </View>
 
               {/* Chips de columnas */}

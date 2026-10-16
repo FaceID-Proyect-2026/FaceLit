@@ -37,7 +37,6 @@ const { I18nProvider } = require("@/shared/contexts/I18nContext") as {
 };
 
 LogBox.ignoreLogs([
-  "DateTimePicker: onChange is deprecated",
   "Cannot connect to Expo CLI",
 ]);
 
