@@ -45,6 +45,7 @@ export function useLoginForm() {
   const [loading, setLoading] = useState(false);
   const [alreadyAccepted, setAlreadyAccepted] = useState(false);
   const [privacyStatusKnown, setPrivacyStatusKnown] = useState(false);
+  const privacyChecking = DOCUMENT_REGEX.test(form.document.trim()) && !privacyStatusKnown;
   const privacyRequestRef = useRef(0);
 
   // Prevención de doble submit — RF-1 V4 §7
@@ -212,6 +213,7 @@ export function useLoginForm() {
     loading,
     alreadyAccepted,
     privacyStatusKnown,
+    privacyChecking,
     setField,
     setDocumentField,
     handleSubmit,

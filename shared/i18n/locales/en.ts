@@ -1,4 +1,8 @@
-﻿const en = {
+import { notificationTemplates } from '../notificationTemplates';
+import { landingEn } from '../landing';
+
+const en = {
+  landingPage: landingEn,
   // ─────────────────────────────────────────────
   //  Module 1 - Authentication
   // ─────────────────────────────────────────────
@@ -160,13 +164,25 @@
     policyPrefix: "I have read and accept the",
     policyLink: "privacy notice",
     policySuffix: "",
+    policyOpenPrefix: "Open and review the",
+    policyOpenSuffix: " to accept it inside the notice.",
     policyError: "You must accept the privacy notice",
     loginBtn: "Sign in",
     loggingIn: "Signing in…",
+    checkingPrivacy: "Checking privacy notice...",
     recoveringAccess: "Recovering access...",
     forgotPassword: "Forgot your password?",
     noAccount: "Don't have an account?",
     registerLink: "Register here",
+    passwordPrompt: {
+      title: "Update your password",
+      message: "For security, we recommend changing your initial password to one only you know.",
+      cancel: "Cancel",
+      update: "Update",
+      laterTitle: "You can change it later",
+      laterMessage: "If you want to update your password later, go to Settings → Password and security.",
+      understood: "Got it",
+    },
     errors: {
       documentNotFound: "Document not registered",
       wrongPassword: "Incorrect document or password",
@@ -202,6 +218,11 @@
     articlesRef:
       "Applicable articles: 5 (sensitive data, including biometric data), 8 (rights of the data subject), 9 (authorization), and 12 (duty to inform) of Law 1581 of 2012.",
     moreInfo: "More information: ",
+    acceptButton: "Accept notice",
+    accepted: "Notice accepted",
+    acceptedTitle: "Notice accepted",
+    acceptedResponsibility:
+      "You have accepted the terms and conditions. It is your responsibility to know their content; FaceLit is not responsible for consequences arising from not reading them before accepting.",
   },
 
   //Password Recovery
@@ -432,6 +453,13 @@
       "If another person registers in your place, the responsibility will fall on your account. To correct an incorrect registration you must request authorization from the Coordinator.",
     confirmResponsibility:
       "I have read the notice and understand that I am responsible for this registration.",
+    captureWarningTitle: "Before opening the camera",
+    captureWarningBody:
+      "Facial registration is unique and must correspond only to your face. Make sure no one else is in front of the camera or registering with your information.",
+    captureWarningCoordinator:
+      "If another person's face is registered on your account by mistake, you must request coordinator authorization to enable the camera again and repeat the registration.",
+    captureWarningCancel: "Review again",
+    captureWarningContinue: "I understand, open camera",
     alreadyRegisteredTitle: "Registration complete",
     alreadyRegisteredBody:
       "To replace your facial registration you need authorization from the Coordinator.",
@@ -755,10 +783,12 @@
       subtitle: "Coordinator-only registration",
       successTitle: "Coordinator created",
       successMessage:
-        "Coordinator user created successfully. The initial password is: {{password}}. Give it to the user so they can sign in.",
+        "Coordinator user created successfully. Initial credentials will be sent to the registered email address.",
       createError: "The coordinator could not be created.",
       passwordNote:
-        "The system assigns the Coordinator role and generates the temporary password for the first sign-in.",
+        "The backend will generate the initial password and email it to the registered address.",
+      credentialsEmailTitle: "Credentials by email",
+      credentialsEmailMessage: "Delivery was scheduled after creating the account.",
       temporaryPassword: "Temporary password",
       hide: "Hide",
       show: "Show",
@@ -955,7 +985,7 @@
     assignFichaLabel: "Cohort",
     assignSaving: "Assigning…",
     assignBtn: "Assign apprentice to cohort",
-    assignInfoNote: "If the apprentice has no account, the system creates it automatically and generates an initial password linked to their document number.",
+    assignInfoNote: "If the apprentice has no account, the system creates it automatically and emails the initial credentials to the registered address.",
     assignNoProgram: "No program",
     assignError: "Could not assign the apprentice.",
     assignValidationDoc: "The document must be between 6 and 15 digits.",
@@ -968,7 +998,7 @@
     assignSuccessAdverb: "successfully.",
     assignPwdLabel: "Initial generated password",
     assignPwdDocHint: "Document number",
-    assignPwdWarning: "This password is only shown once. Deliver it directly to the apprentice.",
+    assignPwdWarning: "Initial credentials are emailed automatically to the apprentice personal address.",
     assignAnotherBtn: "Register another apprentice",
     assignBackBtn: "Back to Academic Management",
     institutionalTotal: "Total",
@@ -1074,7 +1104,7 @@
     title: "Academic Management",
     programs: "Training Programs",
     programsListSubtitle:
-      "Search programs by name, filter by status, and open a program to review its fichas. Use “Register Program” and “Register Ficha” for manual entry, or “Load CSV” to import or update multiple records from a file.",
+      "Search programs by name, filter by status, and open each program to review its fichas. You can create programs, fichas, instructors, and apprentices manually, or use “Load CSV” to import or update multiple records from a file.",
     fichasListSubtitle:
       "View and manage the training fichas registered in the system.",
     unlinkedListSubtitle:
@@ -1217,7 +1247,7 @@
     csvV4NoDataRows: "The file contains no data rows to process.",
     csvV4TooManyRows:
       "The file exceeds the 5000-row limit per upload. Split the information into multiple files.",
-    csvV4FileTooLarge: "The file is too large. Maximum allowed size is 5 MB.",
+    csvV4FileTooLarge: "The file is too large. Maximum allowed size is 20 MB.",
     csvV4WrongExtension: "The file must have a .csv extension.",
     csvV4SavedButRefreshFailed: "The upload was saved successfully, but the view could not be refreshed. Return to Academic Management to see the data.",
     csvV4ExamplesTitle: "Complete example (one row per type)",
@@ -1245,6 +1275,7 @@
     csvV4ServerError: "Server error ({{status}}): {{message}}",
     csvV4NoConnection: "no connection",
     csvV4ServerFileTooLarge: "The file is too large for the server. Split the CSV into smaller files.",
+    csvV4Timeout: "The upload took too long. Split the CSV into smaller files or try again with a stable connection.",
     csvV4UnsupportedFormat: "Unsupported format. Make sure the file is a valid CSV.",
     csvV4InvalidFile: "The file has formatting errors. Check the columns.",
     csvV4UploadFailed: "The CSV file could not be processed.",
@@ -1311,7 +1342,7 @@
     instructorDuplicateDoc: "This document number is already registered.",
     instructorCreateError: "Could not create the instructor.",
     instructorCreatedTitle: "Instructor created",
-    instructorCreatedSubtitle: "Share this initial password with the instructor. After logging in, they will be able to change it.",
+    instructorCreatedSubtitle: "Initial credentials will be emailed automatically to the instructor personal address.",
     instructorDocNumber: "Document number",
     instructorUnderstood: "Understood",
     instructorDocLabel: "Document number *",
@@ -1833,6 +1864,7 @@
       minutes: "min",
     },
     templates: {
+      ...notificationTemplates.en,
       csv_upload_done: {
         title: "CSV upload completed",
         message: "The CSV file was imported successfully.",
@@ -1886,6 +1918,26 @@
       academic_delete_blocked: {
         title: "Deletion attempt blocked",
         message: "{{entity}} could not be deleted because it has active related records.",
+      },
+      academic_entity_created: {
+        title: "Academic record created",
+        message: "{{entity}} was created: {{name}}.",
+      },
+      academic_entity_updated: {
+        title: "Academic record updated",
+        message: "{{entity}} was updated: {{name}}.",
+      },
+      academic_entity_activated: {
+        title: "Academic record activated",
+        message: "{{entity}} was activated: {{name}}.",
+      },
+      academic_entity_deactivated: {
+        title: "Academic record deactivated",
+        message: "{{entity}} was deactivated: {{name}}.",
+      },
+      academic_entity_deleted: {
+        title: "Academic record deleted",
+        message: "{{entity}} was deleted: {{name}}.",
       },
       instructor_profile_updated: {
         title: "Instructor profile updated",
@@ -1955,6 +2007,9 @@
     personalInfo: "Personal Information",
     accountInfo: "Account Information",
     settings: "Settings",
+    passwordSecurityTitle: "Password and security",
+    passwordSecurityDescription:
+      "Verify your email to receive a unique code, create a new password, and sign in again securely.",
     fields: {
       name: "Name",
       lastname: "Last Name",

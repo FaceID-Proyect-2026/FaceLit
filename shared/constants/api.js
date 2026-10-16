@@ -31,12 +31,6 @@ const resolveLocalUrl = (configuredUrl, fallbackUrl) => {
   if (Platform.OS === 'web') {
     const browserHost = globalThis?.location?.hostname;
     if (
-      (browserHost === 'localhost' || browserHost === '127.0.0.1') &&
-      /localhost/.test(targetUrl)
-    ) {
-      return targetUrl.replace(/localhost/g, '127.0.0.1');
-    }
-    if (
       browserHost &&
       browserHost !== 'localhost' &&
       browserHost !== '127.0.0.1' &&
