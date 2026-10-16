@@ -14,6 +14,7 @@ import {
 } from '@/features/academic/academicApi';
 import { refreshAcademicStoreFromBackend, useAcademic } from '@/features/academic/useAcademic';
 import { Colors } from '@/shared/constants/colors';
+import { Routes } from '@/shared/constants/routes';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { formatDateTime } from '@/shared/utils/dates';
@@ -441,11 +442,19 @@ export default function AcademicInstructorsScreen() {
     }
   };
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace(Routes.ACADEMIC.PROGRAMS as any);
+  };
+
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: bg }]}>
       {/* Cabecera */}
       <View style={[s.header, { borderBottomColor: border }]}>
-        <TouchableOpacity onPress={() => router.back()} style={s.backBtn} activeOpacity={0.7}>
+        <TouchableOpacity onPress={handleBack} style={s.backBtn} activeOpacity={0.7}>
           <Ionicons name="arrow-back" size={20} color={text} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>

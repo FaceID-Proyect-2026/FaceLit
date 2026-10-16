@@ -8,6 +8,7 @@ import { Colors } from '@/shared/constants/colors';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -29,11 +30,12 @@ const BTN_COLORS = ['#72C96D', '#65B361', '#4FA14B'] as const;
 export default function PasswordRecoveryScreen() {
   const { t } = useTranslation();
   const { theme, isDark } = useTheme();
+  const { email: routeEmail } = useLocalSearchParams<{ email?: string }>();
 
   const {
     email, error, showModal, loading,
     setEmail, handleSubmit, closeModal, handleModalContinue, handleCancel,
-  } = usePasswordRecoveryForm();
+  } = usePasswordRecoveryForm(typeof routeEmail === 'string' ? routeEmail : '');
 
   const [focused, setFocused] = useState(false);
 

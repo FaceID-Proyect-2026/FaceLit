@@ -13,9 +13,11 @@ const PRIVACY_URL = 'https://www.funcionpublica.gov.co/eva/gestornormativo/norma
 interface Props {
     visible: boolean;
     onClose: () => void;
+    onAccept: () => void;
+    accepted?: boolean;
 }
 
-export default function PrivacyNoticeModal({ visible, onClose }: Props) {
+export default function PrivacyNoticeModal({ visible, onClose, onAccept, accepted = false }: Props) {
     const { t } = useTranslation();
     const { isDark } = useTheme();
 
@@ -35,7 +37,7 @@ export default function PrivacyNoticeModal({ visible, onClose }: Props) {
         <Modal visible={visible} transparent animationType="fade" statusBarTranslucent onRequestClose={onClose}>
             <View style={s.overlay}>
                 <View style={[s.card, { backgroundColor: cardBg }]}>
-                    <ScrollView showsVerticalScrollIndicator={false}>
+                    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scrollContent}>
 
                         <TouchableOpacity style={s.closeBtn} onPress={onClose}>
                             <Ionicons name="close" size={22} color={textColor} />
@@ -67,6 +69,21 @@ export default function PrivacyNoticeModal({ visible, onClose }: Props) {
                         </Text>
 
                     </ScrollView>
+                    <View style={s.actions}>
+                        <TouchableOpacity style={[s.secondaryBtn, { borderColor: muted }]} onPress={onClose} activeOpacity={0.8}>
+                            <Text style={[s.secondaryText, { color: muted }]}>{t('common.close')}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[s.acceptBtn, accepted && s.acceptBtnDone]}
+                            onPress={onAccept}
+                            activeOpacity={0.85}
+                        >
+                            <Ionicons name={accepted ? "checkmark-circle-outline" : "checkmark-outline"} size={18} color={Colors.white} />
+                            <Text style={s.acceptText}>
+                                {accepted ? t('privacyNotice.accepted') : t('privacyNotice.acceptButton')}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </View>
         </Modal>
@@ -76,6 +93,7 @@ export default function PrivacyNoticeModal({ visible, onClose }: Props) {
 const s = StyleSheet.create({
     overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20, paddingVertical: 40 },
     card: { width: '100%', maxWidth: 700, maxHeight: '85%', borderRadius: 26, paddingHorizontal: 24, paddingVertical: 24 },
+    scrollContent: { paddingBottom: 10 },
     closeBtn: { alignSelf: 'flex-end', marginBottom: 8 },
     title: { fontSize: FontSize['2xl'], fontWeight: FontWeight.black, textAlign: 'center', marginBottom: 8 },
     subtitle: { fontSize: FontSize.base, textAlign: 'center', marginBottom: 24 },
@@ -86,4 +104,10 @@ const s = StyleSheet.create({
     warning: { fontSize: FontSize.base, color: Colors.error, marginVertical: 12, lineHeight: 22, fontWeight: FontWeight.bold },
     bold: { fontWeight: FontWeight.bold },
     link: { fontSize: FontSize.base, fontWeight: FontWeight.bold, textDecorationLine: 'underline' },
+    actions: { flexDirection: 'row', gap: 12, justifyContent: 'flex-end', paddingTop: 14, borderTopWidth: 1, borderTopColor: 'rgba(120,120,120,0.18)' },
+    secondaryBtn: { minHeight: 46, paddingHorizontal: 18, borderRadius: 16, borderWidth: 1.2, alignItems: 'center', justifyContent: 'center' },
+    secondaryText: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
+    acceptBtn: { minHeight: 46, paddingHorizontal: 20, borderRadius: 16, backgroundColor: Colors.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+    acceptBtnDone: { backgroundColor: Colors.success },
+    acceptText: { color: Colors.white, fontSize: FontSize.base, fontWeight: FontWeight.black },
 });

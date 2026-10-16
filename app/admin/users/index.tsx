@@ -291,12 +291,6 @@ export default function UsersPanel() {
                   {filteredUsers.length} {t('users.results')}
                 </Text>
               </View>
-              <TouchableOpacity
-                onPress={() => router.back()}
-                style={[styles.backBtn, { backgroundColor: card, borderColor: border }]}
-              >
-                <Ionicons name="arrow-back" size={20} color={text} />
-              </TouchableOpacity>
             </View>
 
             <View style={styles.statsRow}>

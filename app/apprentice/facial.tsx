@@ -9,20 +9,21 @@ import FaceGuideOverlay from "@/features/auth/components/FaceGuideOverlay";
 import WebCamera from "@/features/auth/components/WebCamera";
 import { useFacialRegistration } from "@/features/auth/hooks/useFacialRegistration";
 import { getFacialRecordsSnapshot } from "@/features/facial/facialStore";
-import { pushNotification } from "@/features/notifications/notificationsStore";
+import { canStartFacialCapture, hasUnusedFacialApproval } from "@/features/facial/registrationAccess";
 import { Colors } from "@/shared/constants/colors";
 import { Routes } from "@/shared/constants/routes";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { useAuth } from "@/shared/contexts/AuthContext";
 import { useTheme } from "@/shared/contexts/ThemeContext";
 import { useAppDialog } from "@/shared/hooks/useAppDialog";
-import { fetchMyFacialEnrollmentStatus } from "@/shared/services/facialEnrollmentService";
+import { fetchMyFacialEnrollmentStatus, fetchMyFacialResetState, requestMyFacialReset, type FacialResetState } from "@/shared/services/facialEnrollmentService";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+    Modal,
     ScrollView,
     StyleSheet,
     Text,
@@ -43,7 +44,12 @@ export default function ApprenticeFacialScreen() {
   const { alert, DialogUI } = useAppDialog();
   const [step, setStep] = useState<Step>("confirm");
   const [confirmed, setConfirmed] = useState(false);
+  const [captureWarningVisible, setCaptureWarningVisible] = useState(false);
   const [resetRequested, setResetRequested] = useState(false);
+  const [resetState, setResetState] = useState<FacialResetState | null>(null);
+  const [consumedRequests, setConsumedRequests] = useState<ReadonlySet<string>>(() => new Set());
+  const [savedInThisScreen, setSavedInThisScreen] = useState(false);
+  const [sendingReset, setSendingReset] = useState(false);
   const [serverRegistered, setServerRegistered] = useState<boolean | null>(null);
   const [serverRegistrationDate, setServerRegistrationDate] = useState<string | null>(null);
   const [loadingRegistrationStatus, setLoadingRegistrationStatus] = useState(false);
@@ -64,6 +70,28 @@ export default function ApprenticeFacialScreen() {
   const records = getFacialRecordsSnapshot();
   const myRecord = records.find((r) => r.userId === user?.id);
   const isRegistered = serverRegistered ?? myRecord?.status === "registered";
+  const unusedApproval = hasUnusedFacialApproval(resetState, consumedRequests);
+
+  useEffect(() => {
+    setConsumedRequests(new Set());
+    setSavedInThisScreen(false);
+    setResetState(null);
+    setConfirmed(false);
+  }, [user?.id]);
+
+  const handleRegistrationSaved = useCallback(() => {
+    if (resetState?.requestId) {
+      const consumedId = resetState.requestId;
+      setConsumedRequests(previous => new Set([...previous, consumedId]));
+    }
+    setSavedInThisScreen(true);
+    setServerRegistered(true);
+    setResetState(null);
+    setResetRequested(false);
+    setConfirmed(false);
+    setCaptureWarningVisible(false);
+    setServerRegistrationDate(new Date().toISOString());
+  }, [resetState?.requestId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -77,9 +105,11 @@ export default function ApprenticeFacialScreen() {
       setLoadingRegistrationStatus(true);
       setRegistrationStatusError(null);
       try {
-        const status = await fetchMyFacialEnrollmentStatus();
+        const [status, reset] = await Promise.all([fetchMyFacialEnrollmentStatus(), fetchMyFacialResetState()]);
         if (!cancelled) {
           setServerRegistered(status.registered);
+          setResetState(reset);
+          setResetRequested(reset.status === "PENDING");
           setServerRegistrationDate(status.registrationDate ?? null);
         }
       } catch (error) {
@@ -94,20 +124,24 @@ export default function ApprenticeFacialScreen() {
       }
     }
 
-    loadRegistrationStatus();
+    void loadRegistrationStatus();
+    const timer = setInterval(() => { if (step === "confirm") void loadRegistrationStatus(); }, 15000);
     return () => {
+      clearInterval(timer);
       cancelled = true;
     };
-  }, [user?.id]);
+  }, [user?.id, step]);
 
   const {
     screenState,
     isTaking,
+    isValidatingLiveness,
     quality,
     successModalVisible,
     errorModalVisible,
+    errorModalTitle,
     errorModalMessage,
-    livenessChallenge,
+    livenessInstruction,
     isWeb,
     isPositioning,
     cameraRef,
@@ -116,12 +150,14 @@ export default function ApprenticeFacialScreen() {
     handleCancelCamera,
     handleWebCapture,
     handleWebShutter,
-    randomizeLivenessChallenge,
     handleCloseSuccessModal,
     handleCloseErrorModal,
-  } = useFacialRegistration({ requireResponsibilityConfirmation: false });
+  } = useFacialRegistration({ requireResponsibilityConfirmation: false,
+    replaceExisting: unusedApproval, resetToken: unusedApproval ? resetState?.authorizationToken : null,
+    onRegistrationSaved: handleRegistrationSaved });
 
-  const canStartRegistration = !loadingRegistrationStatus && !registrationStatusError && serverRegistered === false;
+  const canStartRegistration = canStartFacialCapture({ registered: serverRegistered, savedInThisScreen,
+    reset: resetState, consumedRequests, loading: loadingRegistrationStatus, hasError: !!registrationStatusError });
 
   // ── Cancelar desde la cámara → limpia estado y vuelve al paso confirm ──
   function handleCancelAndReturn() {
@@ -133,37 +169,36 @@ export default function ApprenticeFacialScreen() {
   function handleConfirmAndProceed() {
     if (!confirmed) return;
     if (loadingRegistrationStatus || registrationStatusError || serverRegistered === null) return;
-    if (isRegistered) {
-      return;
-    }
+    if (!canStartRegistration) return;
+    setCaptureWarningVisible(true);
+  }
+
+  function handleAcceptCaptureWarning() {
+    setCaptureWarningVisible(false);
+    if (!canStartRegistration) return;
     setStep("camera");
     handleOpenCamera();
   }
 
-  function handleRequestFacialReset() {
-    if (!user?.id || resetRequested) return;
-
-    pushNotification(
-      "facial_reregister_request",
-      "Solicitud de restablecimiento facial",
-      `${fullName || "Un aprendiz"} solicita restablecer su registro facial.`,
-      {
-        requestId: `facial-reset-${user.id}-${Date.now()}`,
-        facialUserId: user.id,
-        learnerName: fullName,
-      },
-    );
-    setResetRequested(true);
-    alert(
-      "Solicitud enviada",
-      "Tu solicitud fue enviada al coordinador. Cuando sea aprobada podrás registrar tu rostro nuevamente.",
-    );
+  async function handleRequestFacialReset() {
+    if (!user?.id || resetRequested || sendingReset || unusedApproval) return;
+    setSendingReset(true);
+    try {
+      const state = await requestMyFacialReset();
+      setResetState(state);
+      setResetRequested(state.status === "PENDING");
+      alert(t("notifications.templates.resetUi.sentTitle"), t("notifications.templates.resetUi.sentMessage"));
+    } catch (error: any) {
+      alert(t("notifications.templates.resetUi.errorTitle"), error?.response?.data?.message || t("notifications.templates.resetUi.errorMessage"));
+    } finally { setSendingReset(false); }
   }
 
   // ── Al cerrar modal de éxito ───────────────────
   function handleSuccess() {
     handleCloseSuccessModal();
     setServerRegistered(true);
+    setResetState(null);
+    setResetRequested(false);
     setServerRegistrationDate(new Date().toISOString());
     setStep("done");
   }
@@ -181,6 +216,79 @@ export default function ApprenticeFacialScreen() {
     return (
       <View style={[s.safe, { backgroundColor: bg }]}>
         {DialogUI}
+        <Modal
+          visible={captureWarningVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setCaptureWarningVisible(false)}
+        >
+          <View style={s.captureWarningBackdrop}>
+            <View
+              style={[
+                s.captureWarningCard,
+                { backgroundColor: cardBg, borderColor: border },
+              ]}
+            >
+              <View
+                style={[
+                  s.captureWarningIcon,
+                  { backgroundColor: theme.primary + "18" },
+                ]}
+              >
+                <Ionicons
+                  name="shield-checkmark-outline"
+                  size={34}
+                  color={theme.primary}
+                />
+              </View>
+              <Text style={[s.captureWarningTitle, { color: text }]}>
+                {t("facialReg.captureWarningTitle")}
+              </Text>
+              <Text style={[s.captureWarningBody, { color: muted }]}>
+                {t("facialReg.captureWarningBody")}
+              </Text>
+              <View
+                style={[
+                  s.captureWarningNotice,
+                  { backgroundColor: theme.primary + "10", borderColor: theme.primary + "55" },
+                ]}
+              >
+                <Ionicons
+                  name="alert-circle-outline"
+                  size={20}
+                  color={theme.primary}
+                />
+                <Text style={[s.captureWarningNoticeText, { color: text }]}>
+                  {t("facialReg.captureWarningCoordinator")}
+                </Text>
+              </View>
+              <View style={s.captureWarningActions}>
+                <TouchableOpacity
+                  onPress={() => setCaptureWarningVisible(false)}
+                  style={[s.captureWarningSecondary, { borderColor: border }]}
+                  activeOpacity={0.85}
+                >
+                  <Text style={[s.captureWarningSecondaryText, { color: text }]}>
+                    {t("facialReg.captureWarningCancel")}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleAcceptCaptureWarning}
+                  style={[
+                    s.captureWarningPrimary,
+                    { backgroundColor: theme.primary },
+                  ]}
+                  activeOpacity={0.85}
+                >
+                  <Ionicons name="camera-outline" size={18} color={Colors.white} />
+                  <Text style={s.captureWarningPrimaryText}>
+                    {t("facialReg.captureWarningContinue")}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
 
         {/* Header */}
         <View style={[s.header, { borderBottomColor: border }]}>
@@ -228,6 +336,11 @@ export default function ApprenticeFacialScreen() {
             </View>
           </View>
 
+          {unusedApproval && (
+            <Text style={[s.statusDesc, { color: Colors.success, padding: 16 }]}>
+              {t("notifications.templates.resetUi.authorized")}
+            </Text>
+          )}
           {/* Aviso de responsabilidad (RF-5.1) */}
           <View
             style={[
@@ -263,10 +376,10 @@ export default function ApprenticeFacialScreen() {
             </LinearGradient>
           </View>
 
-          {isRegistered && (
+          {isRegistered && !unusedApproval && (
             <TouchableOpacity
               onPress={handleRequestFacialReset}
-              disabled={resetRequested}
+              disabled={resetRequested || sendingReset}
               style={[
                 s.resetRequestBtn,
                 {
@@ -282,7 +395,7 @@ export default function ApprenticeFacialScreen() {
                 color={resetRequested ? Colors.success : theme.primary}
               />
               <Text style={[s.resetRequestText, { color: resetRequested ? Colors.success : theme.primary }]}>
-                {resetRequested ? "Solicitud enviada" : "Restablecer registro facial"}
+                {t(resetRequested ? "notifications.templates.resetUi.sentTitle" : "notifications.templates.resetUi.requestButton")}
               </Text>
             </TouchableOpacity>
           )}
@@ -357,19 +470,19 @@ export default function ApprenticeFacialScreen() {
           {/* Botón continuar */}
           <TouchableOpacity
             onPress={handleConfirmAndProceed}
-            disabled={!confirmed || isRegistered || loadingRegistrationStatus || !!registrationStatusError || serverRegistered === null}
+            disabled={!confirmed || !canStartRegistration}
             style={[
               s.primaryBtn,
               {
                 backgroundColor:
-                  !confirmed || isRegistered || loadingRegistrationStatus ? muted + "40" : theme.primary,
+                  !confirmed || !canStartRegistration ? muted + "40" : theme.primary,
               },
             ]}
             activeOpacity={0.85}
           >
             <Ionicons name="scan-outline" size={20} color={Colors.white} />
             <Text style={s.primaryBtnText}>
-              {isRegistered
+              {isRegistered && !unusedApproval
                 ? t("facialReg.alreadyRegisteredTitle")
                 : loadingRegistrationStatus
                   ? t("common.loading")
@@ -402,10 +515,10 @@ export default function ApprenticeFacialScreen() {
               onShutter={handleWebShutter}
               onConfirm={handleConfirmCamera}
               onCancel={handleCancelAndReturn}
-              onFaceReady={randomizeLivenessChallenge}
               requiresLiveness
               autoCapture
-              livenessInstruction={livenessChallenge.label}
+              paused={isValidatingLiveness || errorModalVisible || successModalVisible}
+              livenessInstruction={livenessInstruction}
             />
           ) : (
             (() => {
@@ -425,7 +538,7 @@ export default function ApprenticeFacialScreen() {
                     quality={quality}
                     requiresLiveness
                     livenessCaptureActive={isTaking}
-                    livenessInstruction={livenessChallenge.label}
+                    livenessInstruction={livenessInstruction}
                     onConfirm={handleConfirmCamera}
                     onCancel={handleCancelAndReturn}
                   />
@@ -474,7 +587,7 @@ export default function ApprenticeFacialScreen() {
                 color={Colors.error}
               />
               <Text style={[s.successTitle, { color: text }]}>
-                No se pudo registrar
+                {errorModalTitle}
               </Text>
               <Text
                 style={[{ color: muted, textAlign: "center", marginTop: 8 }]}
@@ -649,6 +762,99 @@ const s = StyleSheet.create({
     marginTop: 2,
   },
   checkLabel: { flex: 1, fontSize: FontSize.sm, lineHeight: 20 },
+
+  // Capture warning modal
+  captureWarningBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.58)",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
+  },
+  captureWarningCard: {
+    width: "100%",
+    maxWidth: 460,
+    borderRadius: 22,
+    borderWidth: 1,
+    padding: 22,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.22,
+    shadowRadius: 22,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 10,
+  },
+  captureWarningIcon: {
+    width: 68,
+    height: 68,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 14,
+  },
+  captureWarningTitle: {
+    fontSize: FontSize.xl,
+    fontWeight: FontWeight.black,
+    textAlign: "center",
+  },
+  captureWarningBody: {
+    fontSize: FontSize.base,
+    lineHeight: 22,
+    textAlign: "center",
+    marginTop: 10,
+  },
+  captureWarningNotice: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 14,
+    marginTop: 18,
+  },
+  captureWarningNoticeText: {
+    flex: 1,
+    fontSize: FontSize.sm,
+    lineHeight: 20,
+    fontWeight: FontWeight.bold,
+  },
+  captureWarningActions: {
+    width: "100%",
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 20,
+  },
+  captureWarningSecondary: {
+    flex: 1,
+    minHeight: 48,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 12,
+  },
+  captureWarningSecondaryText: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.black,
+    textAlign: "center",
+  },
+  captureWarningPrimary: {
+    flex: 1.25,
+    minHeight: 48,
+    borderRadius: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingHorizontal: 12,
+  },
+  captureWarningPrimaryText: {
+    color: Colors.white,
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.black,
+    textAlign: "center",
+  },
 
   // Camera
   camHeader: {
