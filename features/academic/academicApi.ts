@@ -350,7 +350,7 @@ export async function uploadAcademicCsv(file: { uri: string; name: string } | Bl
   // La carga de CSV puede demorar más de 15s porque el backend valida filas,
   // referencias y actualizaciones masivas.
   const { data } = await api.post('/api/academic/csv/upload', form, {
-    timeout: 180000,
+    timeout: 300000,
     headers: { Accept: 'application/json' },
   });
   return data;

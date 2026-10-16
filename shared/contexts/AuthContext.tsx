@@ -17,6 +17,7 @@
 //  la última palabra vía respuestas 401.
 // ─────────────────────────────────────────────
 import { Routes } from '@/shared/constants/routes';
+import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { logBlocked, logFailure, logSuccess } from '@/shared/services/auditLogger';
 import { getMyProfile, login as loginRequest } from '@/shared/services/authService';
 import { getToken, removeToken } from '@/shared/services/tokenStorage';
@@ -29,6 +30,7 @@ import React, {
   useEffect,
   useState,
 } from 'react';
+import { useTranslation } from 'react-i18next';
 
 // ── Roles ──────────────────────────────────────
 // El backend (RoleName.java) usa nombres en ESPAÑOL: APRENDIZ, INSTRUCTOR,
@@ -137,6 +139,7 @@ interface AuthContextType {
 
 export interface LoginResult {
   success: boolean;
+  firstAccessPasswordPrompt?: boolean;
   error?: string;
   /** true si la cuenta está bloqueada temporalmente (RNF-1.3) */
   locked?: boolean;
@@ -232,6 +235,8 @@ function redirectByRole(role: UserRole) {
 
 // ── Provider ──────────────────────────────────
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
+  const { alert, DialogUI } = useAppDialog();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -273,7 +278,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [alert, t]);
 
   const login = useCallback(async (
     document: string,
@@ -321,7 +326,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       redirectByRole(loggedUser.role);
 
-      return { success: true };
+      if (data.firstAccessPasswordPrompt === true) {
+        setTimeout(() => {
+          alert(
+            t('login.passwordPrompt.title'),
+            t('login.passwordPrompt.message'),
+            [
+              {
+                text: t('login.passwordPrompt.cancel'),
+                style: 'cancel',
+                onPress: () => {
+                  alert(
+                    t('login.passwordPrompt.laterTitle'),
+                    t('login.passwordPrompt.laterMessage'),
+                    [{ text: t('login.passwordPrompt.understood') }],
+                  );
+                },
+              },
+              {
+                text: t('login.passwordPrompt.update'),
+                onPress: () => router.push(Routes.ADMIN.PROFILE as any),
+              },
+            ],
+          );
+        }, 450);
+      }
+
+      return { success: true, firstAccessPasswordPrompt: data.firstAccessPasswordPrompt === true };
     } catch (err: any) {
       const status: number = err.response?.status ?? 0;
       const backendMessage: string = err.response?.data?.message ?? '';
@@ -388,6 +419,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
+      {DialogUI}
     </AuthContext.Provider>
   );
 }

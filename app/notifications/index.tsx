@@ -1,3 +1,4 @@
+import { localizeNotification, normalizeNotificationMeta } from '@/features/notifications/localizeNotification';
 // ─────────────────────────────────────────────
 //  app/notifications/index.tsx
 //  RF-8.2 — Bandeja de notificaciones (Coordinador)
@@ -39,7 +40,7 @@ const CAT_CONFIG: Record<
   { icon: React.ComponentProps<typeof Ionicons>['name']; color: string; labelKey: string }
 > = {
   csv:        { icon: 'document-text-outline', color: Colors.info, labelKey: 'notifications.categories.csv' },
-  transfer:   { icon: 'swap-horizontal-outline', color: Colors.secondary, labelKey: 'notifications.categories.transfer' },
+  transfer:   { icon: 'swap-horizontal-outline', color: '#8B5CF6', labelKey: 'notifications.categories.transfer' },
   attendance: { icon: 'checkmark-circle-outline', color: Colors.success, labelKey: 'notifications.categories.attendance' },
   academic:   { icon: 'school-outline', color: Colors.warning, labelKey: 'notifications.categories.academic' },
   security:   { icon: 'shield-outline', color: Colors.error, labelKey: 'notifications.categories.security' },
@@ -61,8 +62,11 @@ export default function NotificationsScreen() {
   const [statusFilter,   setStatusFilter]   = useState<StatusFilter>('all');
   const [categoryFilter, setCategoryFilter] = useState<NotificationCategory | 'all'>('all');
   const [expandedId,     setExpandedId]     = useState<string | null>(null);
+  const [resolvingId, setResolvingId] = useState<string | null>(null);
+  const [decisionError, setDecisionError] = useState<string | null>(null);
 
   const isApprentice = user?.role === 'APPRENTICE';
+  const isCoordinator = user?.role === 'COORDINATOR';
   const { notifications, unreadCount, markRead, resolveFacial } = useNotifications({
     statusFilter,
     categoryFilter,
@@ -83,51 +87,8 @@ export default function NotificationsScreen() {
       : new Intl.DateTimeFormat(i18n.resolvedLanguage ?? i18n.language, { dateStyle: 'medium' }).format(parsed);
   };
 
-  const getLocalizedText = (notif: Notification) => {
-    const meta = notif.meta ?? {};
-    const date = meta.date
-      ? formatLocalizedDate(meta.date)
-      : t('notifications.values.unavailable');
-    const entityType = meta.entityType;
-    const entityKey = entityType === 'program' || entityType === 'ficha'
-      || entityType === 'learner' || entityType === 'instructor'
-      ? `notifications.entities.${entityType}`
-      : 'notifications.entities.item';
-    const values = {
-      learnerName: meta.learnerName || t('notifications.values.learner'),
-      document: meta.learnerDocument || meta.accountDocument || t('notifications.values.unavailable'),
-      fromFicha: meta.fromFichaNumber || t('notifications.values.unavailable'),
-      toFicha: meta.toFichaNumber || t('notifications.values.unavailable'),
-      ficha: meta.fichaNumber || meta.toFichaNumber || t('notifications.values.unavailable'),
-      date,
-      delayMinutes: meta.delayMinutes ?? t('notifications.values.unavailable'),
-      environment: meta.environmentName || t('notifications.values.unavailable'),
-      instructorName: meta.instructorName || t('notifications.values.instructor'),
-      failedCount: meta.failedCount ?? t('notifications.values.unavailable'),
-      lockMinutes: meta.lockMinutes ?? t('notifications.values.unavailable'),
-      entity: t(entityKey),
-      email: notif.message.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0]
-        ?? t('notifications.values.unavailable'),
-    };
-    const summary = notif.type === 'csv_upload_done' ? meta.csvSummary : undefined;
-    const legacyReferenceEmail = notif.type === 'csv_ref_error'
-      && /ya está registrado en otro usuario/i.test(notif.message);
-
-    return {
-      title: t(`notifications.templates.${notif.type}.title`),
-      message: t(
-        summary ? 'notifications.templates.csv_upload_done.summaryMessage'
-          : legacyReferenceEmail ? 'notifications.templates.csv_ref_error.emailMessage'
-          : `notifications.templates.${notif.type}.message`,
-        summary ? {
-          created: summary.created,
-          updated: summary.updated,
-          blocked: summary.blocked,
-          errors: summary.errors,
-        } : values,
-      ),
-    };
-  };
+  const getLocalizedText = (notif: Notification) =>
+    localizeNotification(notif, t, i18n.resolvedLanguage ?? i18n.language);
 
   // ── Handlers ──────────────────────────────
   const handlePress = (notif: Notification) => {
@@ -135,18 +96,26 @@ export default function NotificationsScreen() {
     setExpandedId(prev => (prev === notif.id ? null : notif.id));
   };
 
-  const handleFacialDecision = (notifId: string, decision: 'accepted' | 'rejected') => {
-    resolveFacial(notifId, decision, user?.document ?? 'coordinator');
-    setExpandedId(null);
+  const handleFacialDecision = async (notifId: string, decision: 'accepted' | 'rejected') => {
+    if (resolvingId) return;
+    setResolvingId(notifId);
+    setDecisionError(null);
+    try {
+      await resolveFacial(notifId, decision, user?.id ?? '');
+      setExpandedId(null);
+    } catch (error: any) {
+      setDecisionError(error?.response?.data?.message || t('notifications.templates.resetUi.errorMessage'));
+    } finally { setResolvingId(null); }
   };
 
   // ── Render de detalle expandido ──────────
   const renderDetail = (notif: Notification) => {
-    const m = notif.meta ?? {};
+    const m = normalizeNotificationMeta(notif.meta);
     const rows: [string, string, string?, string?][] = [];
 
     // Campos comunes según tipo
     if (m.learnerName)      rows.push(['person-outline',       t('notifications.detail.learner'),   m.learnerName]);
+    if (m.programName) rows.push(['school-outline', t('notifications.templates.resetUi.program'), m.programName]);
     if (m.learnerDocument)  rows.push(['card-outline',         t('notifications.detail.document'),  m.learnerDocument]);
     if (m.accountDocument && !m.learnerDocument)
                             rows.push(['card-outline',         t('notifications.detail.document'),  m.accountDocument]);
@@ -219,7 +188,7 @@ export default function NotificationsScreen() {
         {/* Enlace a corregir para CSV_INCONSISTENCY */}
         {!isApprentice && hasConflictLink && (
           <TouchableOpacity
-            style={[ns.actionLink, { backgroundColor: Colors.info + '18', borderColor: Colors.info + '50' }]}
+            style={[ns.actionLink, !isDark && ns.lightShadow, { backgroundColor: Colors.info + '18', borderColor: Colors.info + '50' }]}
             onPress={() => router.push('/admin/academic' as any)}
             accessibilityRole="button"
           >
@@ -229,10 +198,16 @@ export default function NotificationsScreen() {
         )}
 
         {/* RF-8.4 — Botones Aceptar/Rechazar para re-registro facial sin decisión aún */}
-        {!isApprentice && notif.type === 'facial_reregister_request' && !m.facialDecision && (
+        {isApprentice && notif.type === 'facial_request_resolved' && m.facialDecision === 'accepted' && (
+          <AppButton title={t('notifications.templates.resetUi.openFacial')}
+            onPress={() => router.push('/apprentice/facial')} />
+        )}
+        {decisionError && <Text style={{ color: Colors.error }}>{decisionError}</Text>}
+        {isCoordinator && notif.type === 'facial_reregister_request' && !m.facialDecision && (
           <View style={ns.facialActions}>
             <AppButton
               title={t('notifications.detail.reject')}
+              disabled={resolvingId !== null}
               onPress={() => handleFacialDecision(notif.id, 'rejected')}
               variant="outline"
               fullWidth={false}
@@ -240,6 +215,7 @@ export default function NotificationsScreen() {
             />
             <AppButton
               title={t('notifications.detail.accept')}
+              disabled={resolvingId !== null}
               onPress={() => handleFacialDecision(notif.id, 'accepted')}
               fullWidth={false}
               style={ns.facialBtn}
@@ -257,13 +233,14 @@ export default function NotificationsScreen() {
     const isUnread = !item.read;
     const expanded = expandedId === item.id;
     const isEmail  = item.channel === 'app+email';
-    const isFacialRequest = !isApprentice && item.type === 'facial_reregister_request' && !item.meta?.facialDecision;
+    const isFacialRequest = isCoordinator && item.type === 'facial_reregister_request' && !item.meta?.facialDecision;
 
     return (
       <TouchableOpacity
         onPress={() => handlePress(item)}
         style={[
           ns.card,
+          !isDark && ns.cardLightShadow,
           { backgroundColor: cardBg, borderColor: isUnread ? cfg.color + '50' : border },
           isUnread && { shadowColor: cfg.color, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3 },
         ]}
@@ -350,7 +327,11 @@ export default function NotificationsScreen() {
             <TouchableOpacity
               key={f}
               onPress={() => setStatusFilter(f)}
-              style={[ns.filterBtn, { backgroundColor: active ? theme.primary + '20' : inputBg, borderColor: active ? theme.primary : border }]}
+              style={[
+                ns.filterBtn,
+                !isDark && ns.lightShadow,
+                { backgroundColor: active ? theme.primary + '20' : inputBg, borderColor: active ? theme.primary : border },
+              ]}
               accessibilityRole="tab"
               accessibilityState={{ selected: active }}
             >
@@ -377,7 +358,11 @@ export default function NotificationsScreen() {
             <TouchableOpacity
               key={cat}
               onPress={() => setCategoryFilter(cat)}
-              style={[ns.catBtn, { backgroundColor: active ? (cfg?.color ?? theme.primary) + '20' : inputBg, borderColor: active ? (cfg?.color ?? theme.primary) : border }]}
+              style={[
+                ns.catBtn,
+                !isDark && ns.lightShadow,
+                { backgroundColor: active ? (cfg?.color ?? theme.primary) + '20' : inputBg, borderColor: active ? (cfg?.color ?? theme.primary) : border },
+              ]}
               accessibilityRole="tab"
               accessibilityState={{ selected: active }}
             >
@@ -424,6 +409,20 @@ const ns = StyleSheet.create({
   // (la lista) pueda scrollear DENTRO del espacio restante, en vez de que
   // el contenido empuje/encoja a los hermanos de arriba (los filtros).
   root:   { flex: 1, minHeight: 0 },
+  lightShadow: {
+    shadowColor: '#1E293B',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    elevation: 3,
+  },
+  cardLightShadow: {
+    shadowColor: '#1E293B',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.10,
+    shadowRadius: 18,
+    elevation: 4,
+  },
 
   header: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 18, paddingBottom: 22, borderBottomWidth: 1 },
   headerTitle: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },

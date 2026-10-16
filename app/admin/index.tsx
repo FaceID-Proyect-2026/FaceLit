@@ -46,6 +46,7 @@ export default function AdminDashboard() {
   const [usersCount, setUsersCount] = useState<number | null>(null);
   const heroFloat = useRef(new Animated.Value(0)).current;
   const heroPulse = useRef(new Animated.Value(0)).current;
+  const heroDrift = useRef(new Animated.Value(0)).current;
 
   const loadUsersCount = useCallback(async () => {
     try {
@@ -69,13 +70,21 @@ export default function AdminDashboard() {
         Animated.timing(heroPulse, { toValue: 0, duration: 1800, useNativeDriver: true }),
       ]),
     );
+    const driftAnimation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(heroDrift, { toValue: 1, duration: 3600, useNativeDriver: true }),
+        Animated.timing(heroDrift, { toValue: 0, duration: 3600, useNativeDriver: true }),
+      ]),
+    );
     floatingAnimation.start();
     pulseAnimation.start();
+    driftAnimation.start();
     return () => {
       floatingAnimation.stop();
       pulseAnimation.stop();
+      driftAnimation.stop();
     };
-  }, [heroFloat, heroPulse]);
+  }, [heroDrift, heroFloat, heroPulse]);
 
   useEffect(() => {
     void loadUsersCount();
@@ -193,13 +202,37 @@ export default function AdminDashboard() {
             <Animated.View
               style={[
                 styles.heroGlowOne,
-                { transform: [{ translateY: heroFloat.interpolate({ inputRange: [0, 1], outputRange: [0, 18] }) }] },
+                {
+                  transform: [
+                    { translateY: heroFloat.interpolate({ inputRange: [0, 1], outputRange: [0, 22] }) },
+                    { translateX: heroDrift.interpolate({ inputRange: [0, 1], outputRange: [0, -34] }) },
+                    { scale: heroPulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.08] }) },
+                  ],
+                },
               ]}
             />
             <Animated.View
               style={[
                 styles.heroGlowTwo,
-                { transform: [{ translateX: heroFloat.interpolate({ inputRange: [0, 1], outputRange: [0, -22] }) }] },
+                {
+                  transform: [
+                    { translateX: heroFloat.interpolate({ inputRange: [0, 1], outputRange: [0, -28] }) },
+                    { translateY: heroDrift.interpolate({ inputRange: [0, 1], outputRange: [0, -18] }) },
+                    { scale: heroPulse.interpolate({ inputRange: [0, 1], outputRange: [1.02, 0.95] }) },
+                  ],
+                },
+              ]}
+            />
+            <Animated.View
+              style={[
+                styles.heroGlowThree,
+                {
+                  transform: [
+                    { translateX: heroDrift.interpolate({ inputRange: [0, 1], outputRange: [0, 42] }) },
+                    { translateY: heroFloat.interpolate({ inputRange: [0, 1], outputRange: [0, -16] }) },
+                    { scale: heroPulse.interpolate({ inputRange: [0, 1], outputRange: [0.96, 1.08] }) },
+                  ],
+                },
               ]}
             />
             <View style={styles.heroContent}>
@@ -324,6 +357,7 @@ const styles = StyleSheet.create({
   heroMobile: { minHeight: 280, borderRadius: 22, padding: 24 },
   heroGlowOne: { position: 'absolute', width: 280, height: 280, borderRadius: 140, backgroundColor: 'rgba(255,255,255,0.10)', right: -70, top: -130 },
   heroGlowTwo: { position: 'absolute', width: 180, height: 180, borderRadius: 90, backgroundColor: 'rgba(255,255,255,0.08)', right: 190, bottom: -130 },
+  heroGlowThree: { position: 'absolute', width: 230, height: 230, borderRadius: 115, backgroundColor: 'rgba(255,255,255,0.07)', right: 310, top: 118 },
   heroContent: { flex: 1, maxWidth: 720, zIndex: 2 },
   rolePill: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 7, borderRadius: 999, paddingHorizontal: 11, paddingVertical: 6, backgroundColor: 'rgba(255,255,255,0.16)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', marginBottom: 16 },
   rolePillText: { color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5 },

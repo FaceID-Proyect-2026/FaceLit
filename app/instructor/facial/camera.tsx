@@ -9,25 +9,32 @@ import FaceGuideOverlay from "@/features/auth/components/FaceGuideOverlay";
 import WebCamera from "@/features/auth/components/WebCamera";
 import { useFacialRegistry } from "@/features/facial/useFacialRegistry";
 import { useSessionAttendanceCapture } from "@/features/facial/useSessionAttendanceCapture";
+import { initializeFacialSessionAbsences } from "@/shared/services/facialAttendanceService";
 import { Colors } from "@/shared/constants/colors";
 import { Routes } from "@/shared/constants/routes";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { useAuth } from "@/shared/contexts/AuthContext";
+import { verifyCurrentPassword } from "@/shared/services/authService";
 import { useTheme } from "@/shared/contexts/ThemeContext";
 import { useAppDialog } from "@/shared/hooks/useAppDialog";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { useEffect, useRef } from "react";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 export default function InstructorFacialCameraScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const { user } = useAuth();
+  const { blocked } = useLocalSearchParams<{ blocked?: string }>();
   const { DialogUI } = useAppDialog();
   const { activeSession, settings, setActiveSession } = useFacialRegistry(user?.id);
   const sessionClosedRef = useRef(false);
+  const [exitPromptVisible, setExitPromptVisible] = useState(false);
+  const [exitPassword, setExitPassword] = useState("");
+  const [exitError, setExitError] = useState("");
+  const [verifyingExit, setVerifyingExit] = useState(false);
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -36,11 +43,13 @@ export default function InstructorFacialCameraScreen() {
   const {
     screenState,
     isTaking,
+    isValidatingLiveness,
     quality,
     successModalVisible,
     errorModalVisible,
+    errorModalTitle,
     errorModalMessage,
-    livenessChallenge,
+    livenessInstruction,
     isWeb,
     isPositioning,
     cameraRef,
@@ -49,7 +58,6 @@ export default function InstructorFacialCameraScreen() {
     handleCancelCamera,
     handleWebCapture,
     handleWebShutter,
-    randomizeLivenessChallenge,
     handleRetake,
     handleCloseSuccessModal,
     handleCloseErrorModal,
@@ -58,6 +66,19 @@ export default function InstructorFacialCameraScreen() {
   useEffect(() => {
     handleOpenCamera();
   }, [handleOpenCamera]);
+
+  useEffect(() => {
+    if (blocked === "1") {
+      setExitPassword("");
+      setExitError("");
+      setExitPromptVisible(true);
+    }
+  }, [blocked]);
+
+  useEffect(() => {
+    if (!activeSession?.idRecordEnvironment) return;
+    void initializeFacialSessionAbsences(activeSession.idRecordEnvironment);
+  }, [activeSession?.idRecordEnvironment]);
 
   useEffect(() => {
     const shutdownAt = (() => {
@@ -72,6 +93,9 @@ export default function InstructorFacialCameraScreen() {
 
       const fallbackDate = new Date();
       fallbackDate.setHours(hours, minutes || 0, 0, 0);
+      if (fallbackDate.getTime() <= Date.now()) {
+        fallbackDate.setDate(fallbackDate.getDate() + 1);
+      }
       return fallbackDate;
     })();
 
@@ -95,11 +119,46 @@ export default function InstructorFacialCameraScreen() {
     return () => clearTimeout(timer);
   }, [activeSession, handleCancelCamera, setActiveSession, settings?.shutdownTime]);
 
-  function handleCancelAndReturn() {
+  function performExit() {
     handleCancelCamera();
     setActiveSession(undefined);
-    router.replace(Routes.INSTRUCTOR.FACIAL as any);
+    router.replace(Routes.INSTRUCTOR.DASHBOARD as any);
   }
+
+  function handleCancelAndReturn() {
+    setExitPassword("");
+    setExitError("");
+    setExitPromptVisible(true);
+  }
+
+  async function confirmExit() {
+    if (!exitPassword.trim() || verifyingExit) return;
+    setVerifyingExit(true);
+    try {
+      const valid = await verifyCurrentPassword(exitPassword);
+      if (!valid) {
+        setExitError("La contraseña no es válida.");
+        return;
+      }
+      setExitPromptVisible(false);
+      performExit();
+    } catch {
+      setExitError("No se pudo validar la contraseña. Intenta nuevamente.");
+    } finally {
+      setVerifyingExit(false);
+    }
+  }
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.history?.pushState) return;
+    window.history.pushState({ facialKioskGuard: true }, "", window.location.href);
+    const handleBackAttempt = () => {
+      window.history.pushState({ facialKioskGuard: true }, "", window.location.href);
+      handleCancelAndReturn();
+    };
+    window.addEventListener("popstate", handleBackAttempt);
+    return () => window.removeEventListener("popstate", handleBackAttempt);
+  }, []);
 
   function handleSuccess() {
     handleCloseSuccessModal();
@@ -121,10 +180,10 @@ export default function InstructorFacialCameraScreen() {
             onShutter={handleWebShutter}
             onConfirm={handleConfirmCamera}
             onCancel={handleCancelAndReturn}
-            onFaceReady={randomizeLivenessChallenge}
             requiresLiveness
             autoCapture
-            livenessInstruction={livenessChallenge.label}
+            paused={isValidatingLiveness || errorModalVisible || successModalVisible}
+            livenessInstruction={livenessInstruction}
           />
         ) : (
           (() => {
@@ -144,7 +203,7 @@ export default function InstructorFacialCameraScreen() {
                   quality={quality}
                   requiresLiveness
                   livenessCaptureActive={isTaking}
-                  livenessInstruction={livenessChallenge.label}
+                  livenessInstruction={livenessInstruction}
                   onConfirm={handleConfirmCamera}
                   onCancel={handleCancelAndReturn}
                 />
@@ -179,7 +238,7 @@ export default function InstructorFacialCameraScreen() {
           <View style={[s.successModal, { backgroundColor: cardBg }]}>
             <Ionicons name="alert-circle" size={60} color={Colors.error} />
             <Text style={[s.successTitle, { color: text }]}>
-              No se pudo registrar
+              {errorModalTitle}
             </Text>
             <Text style={[{ color: muted, textAlign: "center", marginTop: 8 }]}>
               {errorModalMessage}
@@ -193,6 +252,35 @@ export default function InstructorFacialCameraScreen() {
           </View>
         </View>
       )}
+
+      <Modal visible={exitPromptVisible} transparent animationType="fade" onRequestClose={() => setExitPromptVisible(false)}>
+        <View style={s.exitOverlay}>
+          <View style={[s.exitModal, { backgroundColor: cardBg }]}>
+            <Ionicons name="lock-closed-outline" size={36} color={theme.primary} />
+            <Text style={[s.exitTitle, { color: text }]}>Registro facial activo</Text>
+            <Text style={[s.exitBody, { color: muted }]}>Para salir, ingrese la contraseña del instructor.</Text>
+            <TextInput
+              value={exitPassword}
+              onChangeText={(value) => { setExitPassword(value); setExitError(""); }}
+              placeholder="Contraseña"
+              placeholderTextColor={muted}
+              secureTextEntry
+              autoFocus
+              style={[s.exitInput, { color: text, borderColor: exitError ? Colors.error : theme.border }]}
+              onSubmitEditing={confirmExit}
+            />
+            {exitError ? <Text style={s.exitError}>{exitError}</Text> : null}
+            <View style={s.exitActions}>
+              <TouchableOpacity onPress={() => setExitPromptVisible(false)} style={s.exitCancelButton}>
+                <Text style={[s.exitCancelText, { color: muted }]}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={confirmExit} style={[s.exitConfirmButton, { backgroundColor: theme.primary }]}>
+                <Text style={s.exitConfirmText}>{verifyingExit ? "Validando…" : "Confirmar salida"}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -336,6 +424,17 @@ const s = StyleSheet.create({
     fontSize: FontSize.base,
     fontWeight: FontWeight.black,
   },
+  exitOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.72)", alignItems: "center", justifyContent: "center", padding: 24 },
+  exitModal: { width: "100%", maxWidth: 390, borderRadius: 20, padding: 24, alignItems: "center" },
+  exitTitle: { fontSize: FontSize.xl, fontWeight: FontWeight.black, marginTop: 12, textAlign: "center" },
+  exitBody: { fontSize: FontSize.base, lineHeight: 21, marginTop: 8, textAlign: "center" },
+  exitInput: { width: "100%", height: 48, borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, marginTop: 20, fontSize: FontSize.base, outlineStyle: "none" } as any,
+  exitError: { width: "100%", color: Colors.error, fontSize: FontSize.xs, marginTop: 6 },
+  exitActions: { width: "100%", flexDirection: "row", gap: 10, marginTop: 20 },
+  exitCancelButton: { flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: 13, borderRadius: 12 },
+  exitCancelText: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
+  exitConfirmButton: { flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: 13, borderRadius: 12 },
+  exitConfirmText: { color: Colors.white, fontSize: FontSize.base, fontWeight: FontWeight.bold },
   secondaryBtn: {
     flexDirection: "row",
     alignItems: "center",

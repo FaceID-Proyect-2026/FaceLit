@@ -10,11 +10,24 @@ import {
   SessionInstructor,
 } from './environmentSessionApi';
 
-function timeToTodayIso(time: string, baseDate = new Date()) {
+function timeToSessionDate(time: string, baseDate = new Date(), mustBeAfter?: Date) {
   const [hours, minutes] = time.split(':').map(Number);
   const date = new Date(baseDate);
   date.setHours(hours, minutes || 0, 0, 0);
-  return date.toISOString();
+
+  if (mustBeAfter && date.getTime() <= mustBeAfter.getTime()) {
+    date.setDate(date.getDate() + 1);
+  }
+
+  return date;
+}
+
+function isTimeInFuture(time: string, baseDate = new Date()) {
+  const [hours, minutes] = time.split(':').map(Number);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return false;
+  const candidate = new Date(baseDate);
+  candidate.setHours(hours, minutes, 0, 0);
+  return candidate.getTime() > baseDate.getTime();
 }
 
 export function useEnvironmentSession() {
@@ -107,17 +120,29 @@ export function useEnvironmentSession() {
     if (!selectedEnvironment || !selectedInstructorId || !selectedChipId) {
       return { success: false as const, error: 'facial.setup.validation.allRequired' };
     }
+    const now = new Date();
+    if (!isTimeInFuture(settings.exitTime, now)) {
+      return { success: false as const, error: 'La hora de salida debe ser posterior a la hora actual.' };
+    }
+    if (!isTimeInFuture(settings.shutdownTime, now)) {
+      return { success: false as const, error: 'La hora de apagado debe ser posterior a la hora actual.' };
+    }
+    if (settings.shutdownTime <= settings.exitTime) {
+      return { success: false as const, error: 'La hora de apagado debe ser posterior a la hora de salida.' };
+    }
     setSaving(true);
     try {
       const entryTime = new Date();
+      const exitDate = timeToSessionDate(settings.exitTime, entryTime, entryTime);
+      const shutdownDate = timeToSessionDate(settings.shutdownTime, exitDate, exitDate);
       const session = await createEnvironmentSession({
         idEnvironment: selectedEnvironment.idEnvironment,
         idInstructorInCharge: selectedInstructorId,
         idChip: selectedChipId,
         entryTime: entryTime.toISOString(),
         registrationMinutes: settings.registrationMinutes,
-        exitTime: timeToTodayIso(settings.exitTime, entryTime),
-        shutdownTime: timeToTodayIso(settings.shutdownTime, entryTime),
+        exitTime: exitDate.toISOString(),
+        shutdownTime: shutdownDate.toISOString(),
       });
       return { success: true as const, session };
     } catch (error: any) {
