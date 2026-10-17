@@ -50,6 +50,7 @@ export const LIVENESS_CHALLENGES: LivenessChallenge[] = [
 ];
 
 const ALREADY_REGISTERED_ERROR = 'facial.validation.alreadyRegistered';
+const DUPLICATE_FACE_ERROR_STATUS = 409;
 
 // ── Helper de negocio: brillo promedio de una imagen (canvas web) ──
 export function getAverageBrightness(canvas: HTMLCanvasElement): number {
@@ -437,6 +438,14 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
         data: error?.response?.data,
         message: error?.message,
       });
+      // A duplicate face is a definitive server-side rejection. Never use
+      // the local fallback here, otherwise the UI could show a saved record
+      // even though the backend correctly refused to persist it.
+      if (error?.response?.status === DUPLICATE_FACE_ERROR_STATUS) {
+        setErrorModalTitle('Rostro ya registrado');
+        setErrorModalMessage(message);
+        return;
+      }
       if (allowLocalFallback) {
         const result = registerFacialCapture(facialUser, photoUri, true, replaceExisting);
         if (!result.success && result.error !== ALREADY_REGISTERED_ERROR) {
