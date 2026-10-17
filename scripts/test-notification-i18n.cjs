@@ -20,7 +20,7 @@ function load(relative) {
   return module.exports;
 }
 
-const { localizeNotification, normalizeNotificationMeta, parseNotificationMeta } = load('features/notifications/localizeNotification.ts');
+const { localizeNotification, normalizeNotificationMeta, parseNotificationMeta, notificationDecisionActorName } = load('features/notifications/localizeNotification.ts');
 const { NOTIFICATION_CHANNELS } = load('features/notifications/types.ts');
 const catalog = fs.readFileSync(path.resolve(root, '../FaceLit-Backend/src/main/java/com/FaceLit/backend/notification/service/NotificationCatalog.java'), 'utf8');
 const types = [...catalog.matchAll(/Map\.entry\("([^"]+)"/g)].map(match => match[1]);
@@ -38,6 +38,46 @@ const sample = {
 let checked = 0;
 for (const lang of languages) {
   const t = i18n.getFixedT(lang);
+  const recovery = localizeNotification({ ...sample, type: 'password_changed', category: 'security', meta: {
+    action: 'password_recovered', recipientName: 'Carlos Ramirez', recipientContext: 'account_owner', occurredAt: '2026-10-16T15:00:00Z',
+  } }, t, lang);
+  for (const expected of ['Carlos Ramirez', t('notifications.templates.lifecycleUi.recoveryMessage'),
+    t('notifications.templates.lifecycleUi.account_owner'), t('notifications.templates.lifecycleUi.eventDate')]) assert.ok(recovery.message.includes(expected));
+  const expiry = localizeNotification({ ...sample, type: 'facial_authorization_expired', category: 'facial', meta: {
+    recipientName: 'Carlos Ramirez', recipientContext: 'learner', authorizationExpiresAt: '2026-10-17T14:00:00Z',
+  } }, t, lang);
+  assert.ok(expiry.message.includes(t('notifications.templates.lifecycleUi.expiredAt')));
+  assert.ok(!expiry.message.includes(t('notifications.templates.resetUi.expires')));
+  assert.ok(expiry.message.includes('Carlos Ramirez'));
+  for (const label of ['captureMode', 'automaticCapture', 'earlyExitCapture']) {
+    assert.ok(i18n.exists(`notifications.templates.lifecycleUi.${label}`, { lng: lang }));
+  }
+  const corrected = localizeNotification({ ...sample, type: 'attendance_corrected', meta: { ...sample.meta,
+    previousStatus: 'ABSENT', newStatus: 'LATE', previousDatetime: '2026-10-13T01:00:00Z', newDatetime: '2026-10-13T01:30:00Z',
+    previousExcuse: true, newExcuse: false, changedByName: 'Ana Gomez', correctionReasonCode: 'excuse_removed', eventType: 'ENTRY',
+  } }, t, lang);
+  for (const expected of ['Ana Gomez', 'Carlos Ramírez', t('attendance.statuses.absent'), t('attendance.statuses.late'),
+    t('notifications.templates.lifecycleUi.before'), t('notifications.templates.lifecycleUi.after'), t('notifications.templates.lifecycleUi.excuseRemoved')]) {
+    assert.ok(corrected.message.includes(expected), `${lang} corrected missing ${expected}`);
+  }
+  const roleChanged = localizeNotification({ ...sample, type: 'user_role_changed', category: 'security', meta: {
+    previousRole: 'APPRENTICE', newRole: 'INSTRUCTOR', changedByName: 'Maria Rodriguez',
+  } }, t, lang);
+  assert.ok(roleChanged.message.includes('Maria Rodriguez'));
+  assert.ok(roleChanged.message.includes(t('notifications.templates.lifecycleUi.roles.APPRENTICE')));
+  assert.ok(!roleChanged.message.includes('APPRENTICE'));
+  const emailFailed = localizeNotification({ ...sample, type: 'email_delivery_failed', category: 'security', meta: {
+    originalType: 'facial_request_resolved', originalTitle: 'Respuesta a tu solicitud facial', affectedUserName: 'Mariana Lopez', attemptCount: 3,
+  } }, t, lang);
+  assert.ok(emailFailed.message.includes(t('notifications.templates.facial_request_resolved.title')));
+  assert.ok(emailFailed.message.includes('Mariana Lopez'));
+  const actorId = '337fc0d2-1daf-481e-9329-99bb6d988a64';
+  assert.equal(notificationDecisionActorName({ decidedBy: actorId }, t), t('notifications.templates.sessionUi.coordinator'));
+  assert.equal(notificationDecisionActorName({ decidedBy: actorId, decidedByName: 'Maria Rodriguez' }, t), 'Maria Rodriguez');
+  const session = localizeNotification({ ...sample, type: 'facial_session_substitution',
+    meta: { ...sample.meta, configuredByName: 'Camila Perez', instructorName: 'Luis Gomez' } }, t, lang);
+  for (const value of ['Camila Perez', 'Luis Gomez', t('notifications.templates.sessionUi.configuredBy'),
+    t('notifications.templates.sessionUi.responsibleInstructor')]) assert.ok(session.message.includes(value));
   for (const type of types) {
     assert.ok(NOTIFICATION_CHANNELS[type], `Missing app type ${type}`);
     for (const field of ['title', 'message']) {

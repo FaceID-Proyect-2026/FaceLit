@@ -8,7 +8,15 @@ export interface FacialEnrollmentStatus {
 
 export async function fetchMyFacialEnrollmentStatus(): Promise<FacialEnrollmentStatus> {
   const { data } = await api.get<FacialEnrollmentStatus>('/api/facial/registration-status');
+  if (data.registered) await confirmMyFacialRegistration();
   return data;
+}
+
+export async function confirmMyFacialRegistration(): Promise<void> {
+  // A delivery failure must not report a successfully saved embedding as failed.
+  // This idempotent confirmation is retried when registration status is refreshed.
+  try { await api.post('/api/facial/registration-confirmation'); }
+  catch (error) { console.warn('[FacialRegistration] Confirmation pending', error); }
 }
 
 export interface FacialResetState {

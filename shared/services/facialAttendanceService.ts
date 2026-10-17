@@ -1,6 +1,7 @@
 import { api } from './api';
 
 export interface FacialEventPayload {
+  eventType?: 'ENTRY' | 'EXIT';
   idRecordEnvironment: string;
   idDevice: string;
   idApprentice: string;
@@ -11,6 +12,7 @@ export interface FacialEventPayload {
 }
 
 export interface FacialAttendanceCapturePayload {
+  eventType?: 'ENTRY' | 'EXIT';
   idRecordEnvironment: string;
   idDevice: string;
   imageBase64: string;
@@ -81,6 +83,7 @@ export async function registerFacialAttendanceEvent(
     idDevice: payload.idDevice,
     idApprentice: payload.idApprentice,
     eventDatetime: payload.eventDatetime ?? new Date().toISOString(),
+    eventType: payload.eventType,
     recognitionResult: payload.recognitionResult,
     matchScore: payload.matchScore ?? null,
     origin: payload.origin,
@@ -96,6 +99,7 @@ export async function registerFacialAttendanceFromImage(
     idRecordEnvironment: payload.idRecordEnvironment,
     idDevice: payload.idDevice,
     imageBase64: payload.imageBase64,
+    eventType: payload.eventType,
     imageFrames: payload.imageFrames ?? [payload.imageBase64],
     livenessChallenge: payload.livenessChallenge,
     livenessChallenges: payload.livenessChallenges ?? [],

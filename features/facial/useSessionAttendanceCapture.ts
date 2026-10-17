@@ -36,9 +36,10 @@ function clampLivenessIndex(index: number): number {
 
 interface UseSessionAttendanceCaptureOptions {
   session?: FacialSession;
+  eventType?: 'ENTRY' | 'EXIT';
 }
 
-export function useSessionAttendanceCapture({ session }: UseSessionAttendanceCaptureOptions) {
+export function useSessionAttendanceCapture({ session, eventType }: UseSessionAttendanceCaptureOptions) {
   const { t } = useTranslation();
   const [permission, requestPermission] = useCameraPermissions();
   const [screenState, setScreenState] = useState<ScreenState>('idle');
@@ -288,6 +289,7 @@ export function useSessionAttendanceCapture({ session }: UseSessionAttendanceCap
       const imageFrames = await Promise.all(sourceFrames.map((uri) => imageUriToDataUri(uri)));
       await registerFacialAttendanceFromImage({
         idRecordEnvironment: session.idRecordEnvironment,
+        eventType,
         idDevice: session.idDevice,
         imageBase64,
         imageFrames,
@@ -302,7 +304,7 @@ export function useSessionAttendanceCapture({ session }: UseSessionAttendanceCap
     } finally {
       setIsRegistering(false);
     }
-  }, [isRegistering, isWeb, livenessChallenge.code, livenessSequence, photoUri, photoUris, quality, screenState, session, t]);
+  }, [eventType, isRegistering, isWeb, livenessChallenge.code, livenessSequence, photoUri, photoUris, quality, screenState, session, t]);
 
   useEffect(() => {
     if (isWeb || screenState !== 'ready' || photoUri || isTaking || isRegistering || errorModalMessage || successModalVisible) {

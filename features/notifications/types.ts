@@ -27,6 +27,10 @@ export type NotificationChannel = 'app' | 'app+email';
 
 /** IDs tipados del catálogo completo (15 tipos + RF-8.4) */
 export type NotificationType =
+  | 'attendance_corrected'
+  | 'facial_authorization_expired'
+  | 'user_role_changed'
+  | 'email_delivery_failed'
   // CSV (RF-3.1)
   | 'csv_upload_done'           // 1 — resumen de carga finalizada
   | 'csv_inconsistency'         // 2 — inconsistencia bloqueada (App + Correo)
@@ -57,7 +61,7 @@ export type NotificationType =
   | 'security_account_locked'   // 15 — cuenta bloqueada (App + Correo)
   // Reconocimiento facial (RF-8.4)
   | 'facial_reregister_request' // RF-8.4 — solicitud de re-registro
-  | 'facial_session_substitution' // Aviso legado de sustitución en reconocimiento facial
+  | 'facial_session_substitution' // Sesión configurada para otro instructor responsable
   | 'attendance_excuse_registered'
   | 'attendance_exit_reminder'
   | 'attendance_session_summary'
@@ -74,6 +78,10 @@ export type NotificationType =
 
 /** Canal por tipo — según columna "Canal" del catálogo RF-8 */
 export const NOTIFICATION_CHANNELS: Record<NotificationType, NotificationChannel> = {
+  attendance_corrected: 'app+email',
+  facial_authorization_expired: 'app',
+  user_role_changed: 'app+email',
+  email_delivery_failed: 'app',
   csv_upload_done:            'app',
   csv_inconsistency:          'app+email',
   csv_transfer_applied:       'app',
@@ -98,7 +106,7 @@ export const NOTIFICATION_CHANNELS: Record<NotificationType, NotificationChannel
   security_multiple_failures: 'app+email',
   security_account_locked:    'app+email',
   facial_reregister_request:  'app+email',
-  facial_session_substitution: 'app',
+  facial_session_substitution: 'app+email',
   attendance_excuse_registered: 'app+email',
   attendance_exit_reminder: 'app+email',
   attendance_session_summary: 'app+email',
@@ -134,6 +142,7 @@ export interface NotificationMeta {
   delayMinutes?: number;
   environmentName?: string;
   instructorName?: string;
+  configuredByName?: string;
   programName?: string;
   // Seguridad
   accountDocument?: string;
@@ -144,7 +153,28 @@ export interface NotificationMeta {
   facialUserId?: string;
   facialDecision?: 'accepted' | 'rejected';
   decidedBy?: string;
+  decidedByName?: string;
   decidedAt?: string;
+  previousStatus?: string;
+  newStatus?: string;
+  previousDatetime?: string;
+  newDatetime?: string;
+  previousExcuse?: boolean;
+  newExcuse?: boolean;
+  eventType?: string;
+  changedByName?: string;
+  previousRole?: string;
+  newRole?: string;
+  correctionReason?: string;
+  correctionReasonCode?: string;
+  affectedUserName?: string;
+  originalTitle?: string;
+  originalType?: string;
+  attemptCount?: number;
+  recipientName?: string;
+  recipientContext?: 'learner' | 'responsible_instructor' | 'account_owner' | 'coordinator';
+  occurredAt?: string;
+  correctedAt?: string;
   // Académico
   entityType?: string;      // 'program' | 'ficha' | 'learner' | 'instructor'
   entityId?: string;

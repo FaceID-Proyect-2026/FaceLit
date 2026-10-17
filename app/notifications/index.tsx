@@ -1,4 +1,4 @@
-import { localizeNotification, normalizeNotificationMeta } from '@/features/notifications/localizeNotification';
+import { localizeNotification, normalizeNotificationMeta, notificationDecisionActorName } from '@/features/notifications/localizeNotification';
 // ─────────────────────────────────────────────
 //  app/notifications/index.tsx
 //  RF-8.2 — Bandeja de notificaciones (Coordinador)
@@ -101,7 +101,7 @@ export default function NotificationsScreen() {
     setResolvingId(notifId);
     setDecisionError(null);
     try {
-      await resolveFacial(notifId, decision, user?.id ?? '');
+      await resolveFacial(notifId, decision, user?.id ?? '', [user?.firstName, user?.lastName].filter(Boolean).join(' '));
       setExpandedId(null);
     } catch (error: any) {
       setDecisionError(error?.response?.data?.message || t('notifications.templates.resetUi.errorMessage'));
@@ -128,7 +128,8 @@ export default function NotificationsScreen() {
     if (m.delayMinutes && m.delayMinutes > 0)
                             rows.push(['timer-outline',        t('attendance.fields.delay'),        `${m.delayMinutes} ${t('notifications.units.minutes')}`]);
     if (m.environmentName)  rows.push(['business-outline',     t('attendance.fields.environment'),  m.environmentName]);
-    if (m.instructorName)   rows.push(['person-circle-outline',t('attendance.fields.instructor'),   m.instructorName]);
+    if (m.configuredByName) rows.push(['person-outline', t('notifications.templates.sessionUi.configuredBy'), m.configuredByName]);
+    if (m.instructorName) rows.push(['person-circle-outline', t(m.configuredByName ? 'notifications.templates.sessionUi.responsibleInstructor' : 'attendance.fields.instructor'), m.instructorName]);
     if (m.failedCount)      rows.push(['alert-circle-outline', t('notifications.detail.failedCount'), `${m.failedCount}`]);
     if (m.lockMinutes)      rows.push(['time-outline',         t('notifications.detail.lockMinutes'), `${m.lockMinutes} ${t('notifications.units.minutes')}`]);
     if (m.csvSummary) {
@@ -167,7 +168,7 @@ export default function NotificationsScreen() {
         m.facialDecision === 'accepted' ? t('notifications.detail.accepted') : t('notifications.detail.rejected'),
         m.facialDecision === 'accepted' ? Colors.success : Colors.error,
       ] as any);
-      if (m.decidedBy) rows.push(['person-outline', t('notifications.detail.decidedBy'), m.decidedBy]);
+      if (m.decidedBy || m.decidedByName) rows.push(['person-outline', t('notifications.detail.decidedBy'), notificationDecisionActorName(m, t)]);
     }
 
     // Enlace a corregir (para inconsistencias CSV)
@@ -198,7 +199,7 @@ export default function NotificationsScreen() {
         )}
 
         {/* RF-8.4 — Botones Aceptar/Rechazar para re-registro facial sin decisión aún */}
-        {isApprentice && notif.type === 'facial_request_resolved' && m.facialDecision === 'accepted' && (
+        {isApprentice && (notif.type === 'facial_authorization_expired' || (notif.type === 'facial_request_resolved' && m.facialDecision === 'accepted')) && (
           <AppButton title={t('notifications.templates.resetUi.openFacial')}
             onPress={() => router.push('/apprentice/facial')} />
         )}

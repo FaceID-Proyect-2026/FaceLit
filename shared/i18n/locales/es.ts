@@ -2052,8 +2052,8 @@ const es = {
         message: "{{learnerName}} solicita volver a registrar su rostro.",
       },
       facial_session_substitution: {
-        title: "Sustitución en sesión de reconocimiento facial",
-        message: "Se registró una sustitución para una sesión de reconocimiento facial.",
+        title: "Sesión configurada para otro instructor",
+        message: "Un instructor configuró una sesión de asistencia para otro instructor responsable. Consulta quién la configuró y quién quedó a cargo.",
       },
     },
     detail: {

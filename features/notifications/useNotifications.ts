@@ -76,7 +76,7 @@ export function useNotifications(opts?: {
     markAllRead: () => markAllNotificationsRead(),
     push: (type: NotificationType, title: string, message: string, meta?: NotificationMeta) =>
       pushNotification(type, title, message, meta),
-    resolveFacial: (notifId: string, decision: 'accepted' | 'rejected', decidedBy: string) =>
-      resolveFacialRequest(notifId, decision, decidedBy),
+    resolveFacial: (notifId: string, decision: 'accepted' | 'rejected', decidedBy: string, decidedByName?: string) =>
+      resolveFacialRequest(notifId, decision, decidedBy, decidedByName),
   };
 }

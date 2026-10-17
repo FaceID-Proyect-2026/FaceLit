@@ -1968,8 +1968,8 @@ const en = {
         message: "{{learnerName}} requested to register their face again.",
       },
       facial_session_substitution: {
-        title: "Facial recognition session substitution",
-        message: "A substitute was recorded for a facial recognition session.",
+        title: "Session configured for another instructor",
+        message: "An instructor configured an attendance session for another responsible instructor. Check who configured it and who is responsible.",
       },
     },
     detail: {

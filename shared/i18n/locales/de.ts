@@ -1877,8 +1877,8 @@ const de = {
         message: "{{learnerName}} möchte das Gesicht erneut registrieren.",
       },
       facial_session_substitution: {
-        title: "Vertretung bei einer Gesichtserkennungssitzung",
-        message: "Für eine Gesichtserkennungssitzung wurde eine Vertretung registriert.",
+        title: "Sitzung für eine andere Lehrkraft eingerichtet",
+        message: "Eine Lehrkraft hat eine Anwesenheitssitzung für eine andere verantwortliche Lehrkraft eingerichtet. Prüfen Sie, wer sie eingerichtet hat und wer verantwortlich ist.",
       },
     },
     detail: {

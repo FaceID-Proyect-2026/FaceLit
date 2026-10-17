@@ -1929,8 +1929,8 @@ const fr = {
         message: "{{learnerName}} demande à enregistrer de nouveau son visage.",
       },
       facial_session_substitution: {
-        title: "Remplacement pour une session de reconnaissance faciale",
-        message: "Un remplacement a été enregistré pour une session de reconnaissance faciale.",
+        title: "Séance configurée pour un autre formateur",
+        message: "Un formateur a configuré une séance de présence pour un autre formateur responsable. Consultez qui l’a configurée et qui en est responsable.",
       },
     },
     detail: {

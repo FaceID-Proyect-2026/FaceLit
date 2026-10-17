@@ -15,6 +15,13 @@ export function parseNotificationMeta(raw?: string | null): NotificationMeta | u
   }
 }
 
+export function notificationDecisionActorName(meta: NotificationMeta, t: TFunction): string {
+  if (meta.decidedByName?.trim()) return meta.decidedByName;
+  const legacy = meta.decidedBy?.trim();
+  if (legacy && !/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(legacy)) return legacy;
+  return t('notifications.templates.sessionUi.coordinator');
+}
+
 export function formatNotificationDate(value: string, language: string): string {
   const date = new Date(`${value}T12:00:00Z`);
   return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat(language, {
@@ -75,6 +82,13 @@ export function localizeNotification(notif: Notification, t: TFunction, language
     lockMinutes: meta.lockMinutes ?? unavailable,
     entity: t(`notifications.entities.${entity}`),
     email: notif.message.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] || unavailable,
+    previousRole: t(`notifications.templates.lifecycleUi.roles.${meta.previousRole ?? 'NONE'}`, { defaultValue: unavailable }),
+    newRole: t(`notifications.templates.lifecycleUi.roles.${meta.newRole ?? 'NONE'}`, { defaultValue: unavailable }),
+    changedByName: meta.changedByName || unavailable,
+    affectedUserName: meta.affectedUserName || unavailable,
+    originalTypeTitle: meta.originalType ? t(`notifications.templates.${meta.originalType}.title`, { defaultValue: meta.originalTitle || unavailable }) : unavailable,
+    attemptCount: meta.attemptCount ?? unavailable,
+    eventType: t(`notifications.templates.lifecycleUi.${meta.eventType === 'EXIT' ? 'exit' : 'entry'}`),
   };
   const key = `notifications.templates.${notif.type}`;
   // Unknown future types keep their source text instead of exposing an i18n key.
@@ -90,7 +104,8 @@ export function localizeNotification(notif: Notification, t: TFunction, language
   const decision = notif.type === 'facial_request_resolved' && (meta.facialDecision === 'accepted' || meta.facialDecision === 'rejected')
     ? `notifications.templates.resetUi.${meta.facialDecision}Message` : undefined;
   const replaced = notif.type === 'facial_registration_completed' && meta.requestId;
-  const message = t(decision || (replaced ? 'notifications.templates.resetUi.replacedMessage'
+  const recovered = notif.type === 'password_changed' && meta.action === 'password_recovered';
+  const message = t(recovered ? 'notifications.templates.lifecycleUi.recoveryMessage' : decision || (replaced ? 'notifications.templates.resetUi.replacedMessage'
     : summary ? `${key}.summaryMessage` : emailConflict ? `${key}.emailMessage`
     : deactivated ? `${key}.inactiveMessage` : `${key}.message`), {
     ...values, ...summary,
@@ -107,16 +122,42 @@ export function localizeNotification(notif: Notification, t: TFunction, language
     add('notifications.templates.context.start', meta.entryTime);
     add('notifications.templates.context.end', meta.exitTime);
     add('attendance.fields.environment', meta.environmentName);
-    add('attendance.fields.instructor', meta.instructorName);
+    add('notifications.templates.sessionUi.configuredBy', meta.configuredByName);
+    add(meta.configuredByName ? 'notifications.templates.sessionUi.responsibleInstructor' : 'attendance.fields.instructor', meta.instructorName);
     const expires = text(meta.authorizationExpiresAt);
     if (expires && !Number.isNaN(new Date(expires).getTime())) {
-      add('notifications.templates.resetUi.expires', new Intl.DateTimeFormat(language, {
+        add(notif.type === 'facial_authorization_expired' ? 'notifications.templates.lifecycleUi.expiredAt' : 'notifications.templates.resetUi.expires', new Intl.DateTimeFormat(language, {
         timeZone: zone, dateStyle: 'medium', timeStyle: 'short',
       }).format(new Date(expires)));
     }
   }
   if (notif.type === 'facial_request_resolved' && meta.facialDecision) {
     details.push(`${t('notifications.detail.facialDecision')}: ${t(`notifications.detail.${meta.facialDecision}`)}`);
+    details.push(`${t('notifications.detail.decidedBy')}: ${notificationDecisionActorName(meta, t)}`);
   }
+  if (notif.type === 'attendance_corrected') {
+    const state = (status?: string, datetime?: string, excuse?: boolean) => {
+      const localizedStatus = status ? t(`attendance.statuses.${status.toLowerCase()}`, { defaultValue: unavailable }) : unavailable;
+      let timestamp = '';
+      if (datetime && !Number.isNaN(new Date(datetime).getTime())) timestamp = new Intl.DateTimeFormat(language, {
+        timeZone: zone, dateStyle: 'medium', timeStyle: 'short',
+      }).format(new Date(datetime));
+      return [localizedStatus, timestamp, `${t('notifications.templates.lifecycleUi.excuse')}: ${t(`notifications.templates.lifecycleUi.${excuse ? 'yes' : 'no'}`)}`].filter(Boolean).join(' · ');
+    };
+    details.push(`${t('notifications.templates.lifecycleUi.before')}: ${state(meta.previousStatus, meta.previousDatetime, meta.previousExcuse)}`);
+    details.push(`${t('notifications.templates.lifecycleUi.after')}: ${state(meta.newStatus, meta.newDatetime, meta.newExcuse)}`);
+    details.push(`${t('notifications.templates.lifecycleUi.changedBy')}: ${meta.changedByName || unavailable}`);
+    const reason = meta.correctionReasonCode === 'excuse_removed' ? t('notifications.templates.lifecycleUi.excuseRemoved') : meta.correctionReason;
+    if (reason) details.push(`${t('notifications.templates.lifecycleUi.reason')}: ${reason}`);
+    details.push(t('notifications.templates.lifecycleUi.reviewCorrection'));
+  }
+  if (meta.recipientName) details.push(`${t('notifications.templates.lifecycleUi.recipient')}: ${meta.recipientName}`);
+  if (meta.recipientContext && ['learner', 'responsible_instructor', 'account_owner', 'coordinator'].includes(meta.recipientContext))
+    details.push(t(`notifications.templates.lifecycleUi.${meta.recipientContext === 'learner' && notif.type === 'facial_authorization_expired' ? 'learnerFacial' : meta.recipientContext}`));
+  const occurredAt = meta.occurredAt || (notif.type === 'attendance_corrected' ? text(meta.correctedAt) : undefined);
+  if (occurredAt && !Number.isNaN(new Date(occurredAt).getTime())) details.push(`${t('notifications.templates.lifecycleUi.eventDate')}: ${new Intl.DateTimeFormat(language, {
+    timeZone: zone, dateStyle: 'medium', timeStyle: 'short',
+  }).format(new Date(occurredAt))}`);
+  if (notif.type === 'user_role_changed') details.push(t('notifications.templates.lifecycleUi.roleAction'));
   return { title, message: [message, ...details].join('\n') };
 }

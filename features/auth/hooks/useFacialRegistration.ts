@@ -18,6 +18,7 @@ import {
   validateFacialLiveness,
 } from '@/shared/services/facialEmbeddingService';
 import { imageUriToDataUri } from '@/shared/utils/imageToBase64';
+import { confirmMyFacialRegistration } from '@/shared/services/facialEnrollmentService';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -421,6 +422,7 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
 
       // The server has committed the embedding and consumed the single-use grant.
       onRegistrationSaved?.();
+      if (!targetUser || targetUser.id === user?.id) await confirmMyFacialRegistration();
 
       const result = registerFacialCapture(facialUser, photoUri, true, replaceExisting);
       if (!result.success && result.error !== ALREADY_REGISTERED_ERROR) {
