@@ -240,17 +240,7 @@ export default function CsvUploadScreen() {
         blocked: backendResult.inconsistenciasBloqueadas.length,
         errors: backendResult.erroresDeReferencia.length,
         rows,
-        // Credenciales disponibles solo en la respuesta de esta importacion.
-        // No generar claves en el cliente ni persistirlas en el almacenamiento local.
-        generatedPasswords: (backendResult.contrasenasGeneradas ?? []).map((item: {
-          documento: string;
-          contrasenaTemporal: string;
-          tipo: string;
-        }) => ({
-          document: item.documento,
-          password: item.contrasenaTemporal,
-          role: translateCsvType(item.tipo, t),
-        })),
+        generatedPasswords: [],
       });
       try {
         await refreshAcademicStoreFromBackend();
