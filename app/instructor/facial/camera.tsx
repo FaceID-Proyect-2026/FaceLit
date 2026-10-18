@@ -14,27 +14,21 @@ import { Colors } from "@/shared/constants/colors";
 import { Routes } from "@/shared/constants/routes";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { useAuth } from "@/shared/contexts/AuthContext";
-import { verifyCurrentPassword } from "@/shared/services/authService";
 import { useTheme } from "@/shared/contexts/ThemeContext";
 import { useAppDialog } from "@/shared/hooks/useAppDialog";
 import { Ionicons } from "@expo/vector-icons";
-import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { router } from "expo-router";
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function InstructorFacialCameraScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { blocked } = useLocalSearchParams<{ blocked?: string }>();
   const { DialogUI } = useAppDialog();
   const { activeSession, settings, setActiveSession } = useFacialRegistry(user?.id);
   const sessionClosedRef = useRef(false);
-  const [exitPromptVisible, setExitPromptVisible] = useState(false);
-  const [exitPassword, setExitPassword] = useState("");
-  const [exitError, setExitError] = useState("");
-  const [verifyingExit, setVerifyingExit] = useState(false);
   const cameraStartedRef = useRef(false);
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
@@ -69,14 +63,6 @@ export default function InstructorFacialCameraScreen() {
     cameraStartedRef.current = true;
     void handleOpenCamera();
   }, [handleOpenCamera]);
-
-  useEffect(() => {
-    if (blocked === "1") {
-      setExitPassword("");
-      setExitError("");
-      setExitPromptVisible(true);
-    }
-  }, [blocked]);
 
   useEffect(() => {
     if (!activeSession?.idRecordEnvironment) return;
@@ -122,33 +108,8 @@ export default function InstructorFacialCameraScreen() {
     return () => clearTimeout(timer);
   }, [activeSession, handleCancelCamera, setActiveSession, settings?.shutdownTime]);
 
-  function performExit() {
-    handleCancelCamera();
-    router.replace(Routes.INSTRUCTOR.DASHBOARD as any);
-  }
-
   function handleCancelAndReturn() {
-    setExitPassword("");
-    setExitError("");
-    setExitPromptVisible(true);
-  }
-
-  async function confirmExit() {
-    if (!exitPassword.trim() || verifyingExit) return;
-    setVerifyingExit(true);
-    try {
-      const valid = await verifyCurrentPassword(exitPassword);
-      if (!valid) {
-        setExitError("La contraseña no es válida.");
-        return;
-      }
-      setExitPromptVisible(false);
-      performExit();
-    } catch {
-      setExitError("No se pudo validar la contraseña. Intenta nuevamente.");
-    } finally {
-      setVerifyingExit(false);
-    }
+    router.replace(Routes.INSTRUCTOR.FACIAL_EXIT as any);
   }
 
   useEffect(() => {
@@ -255,34 +216,6 @@ export default function InstructorFacialCameraScreen() {
         </View>
       )}
 
-      <Modal visible={exitPromptVisible} transparent animationType="fade" onRequestClose={() => setExitPromptVisible(false)}>
-        <View style={s.exitOverlay}>
-          <View style={[s.exitModal, { backgroundColor: cardBg }]}>
-            <Ionicons name="lock-closed-outline" size={36} color={theme.primary} />
-            <Text style={[s.exitTitle, { color: text }]}>Registro facial activo</Text>
-            <Text style={[s.exitBody, { color: muted }]}>Para salir, ingrese la contraseña del instructor.</Text>
-            <TextInput
-              value={exitPassword}
-              onChangeText={(value) => { setExitPassword(value); setExitError(""); }}
-              placeholder="Contraseña"
-              placeholderTextColor={muted}
-              secureTextEntry
-              autoFocus
-              style={[s.exitInput, { color: text, borderColor: exitError ? Colors.error : theme.border }]}
-              onSubmitEditing={confirmExit}
-            />
-            {exitError ? <Text style={s.exitError}>{exitError}</Text> : null}
-            <View style={s.exitActions}>
-              <TouchableOpacity onPress={() => setExitPromptVisible(false)} style={s.exitCancelButton}>
-                <Text style={[s.exitCancelText, { color: muted }]}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={confirmExit} style={[s.exitConfirmButton, { backgroundColor: theme.primary }]}>
-                <Text style={s.exitConfirmText}>{verifyingExit ? "Validando…" : "Confirmar salida"}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }

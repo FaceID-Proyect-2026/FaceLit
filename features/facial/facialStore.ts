@@ -24,6 +24,7 @@ const configsByOwner = new Map<string, FacialConfig | undefined>();
 const sectionDraftsByOwner = new Map<string, FacialSectionDraft | undefined>();
 const settingsByOwner = new Map<string, FacialSettings>();
 const activeSessionsByOwner = new Map<string, FacialSession | undefined>();
+let instructorHomeUnlockPending = false;
 const listeners = new Set<Listener>();
 const FACIAL_CONFIG_STORAGE_KEY_PREFIX = "facial:instructor:config";
 const FACIAL_SECTION_DRAFT_STORAGE_KEY_PREFIX = "facial:instructor:sectionDraft";
@@ -319,6 +320,16 @@ export function setActiveFacialSession(
     ? AsyncStorage.setItem(activeSessionStorageKey(key), JSON.stringify(session))
     : AsyncStorage.removeItem(activeSessionStorageKey(key));
   void storageOperation.catch((error) => console.warn("[FacialSession] No se pudo guardar la sesion:", error));
+}
+
+export function unlockInstructorHomeOnce() {
+  instructorHomeUnlockPending = true;
+}
+
+export function consumeInstructorHomeUnlock() {
+  if (!instructorHomeUnlockPending) return false;
+  instructorHomeUnlockPending = false;
+  return true;
 }
 
 export function registerFacialCapture(

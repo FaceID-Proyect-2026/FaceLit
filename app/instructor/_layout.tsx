@@ -31,7 +31,7 @@ export default function AdminLayout() {
   const { canRenderContent } = useAuthGuard(isAuthenticated, '/auth/login', authLoading);
   const { unreadCount } = useNotifications();
   const pathname = usePathname();
-  const { activeSession, setActiveSession } = useFacialRegistry(user?.id);
+  const { activeSession, setActiveSession, consumeInstructorHomeUnlock } = useFacialRegistry(user?.id);
   const sessionLookupDone = useRef(false);
   const [checkingActiveSession, setCheckingActiveSession] = useState(true);
 
@@ -52,11 +52,21 @@ export default function AdminLayout() {
         deviceCode: session.deviceCode,
         idChip: session.idChip,
         chipCode: session.chipCode,
+        idInstructorScheduled: session.idInstructorScheduled,
+        instructorScheduledName: session.instructorScheduledName,
+        idInstructorInCharge: session.idInstructorInCharge,
+        instructorInChargeName: session.instructorInChargeName,
         shutdownTime: session.shutdownTime,
         active: session.active,
       });
     }).catch(() => undefined).finally(() => setCheckingActiveSession(false));
   }, [isAuthenticated, setActiveSession]);
+
+  useEffect(() => {
+    if (pathname !== "/instructor" || !activeSession) return;
+    if (consumeInstructorHomeUnlock()) return;
+    router.replace("/instructor/facial/exit" as any);
+  }, [activeSession, consumeInstructorHomeUnlock, pathname]);
 
   // La pantalla de Reconocimiento Facial no debe ofrecer ninguna vía de
   // regreso al menú principal: ni la flecha propia ni el menú lateral,
@@ -153,6 +163,7 @@ export default function AdminLayout() {
         <Stack.Screen name="facial/index" />
         <Stack.Screen name="facial/settings" />
         <Stack.Screen name="facial/camera" />
+        <Stack.Screen name="facial/exit" />
         <Stack.Screen name="environments/index" />
         <Stack.Screen
           name="environments/register"

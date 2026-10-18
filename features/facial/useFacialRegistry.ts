@@ -17,6 +17,8 @@ import {
     saveFacialSettings,
     setFacialOwner,
     setActiveFacialSession,
+    unlockInstructorHomeOnce,
+    consumeInstructorHomeUnlock,
     subscribeFacial,
 } from "./facialStore";
 import { FacialConfig, FacialSectionDraft, FacialSession, FacialSettings, FacialUser } from "./types";
@@ -80,5 +82,7 @@ export function useFacialRegistry(ownerId?: string | null) {
       (session: FacialSession | undefined) => setActiveFacialSession(session, ownerId),
       [ownerId],
     ),
+    unlockInstructorHomeOnce,
+    consumeInstructorHomeUnlock,
   };
 }

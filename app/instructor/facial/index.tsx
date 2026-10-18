@@ -59,6 +59,10 @@ export default function FacialManagementScreen() {
         deviceCode: session.deviceCode,
         idChip: session.idChip,
         chipCode: session.chipCode,
+        idInstructorScheduled: session.idInstructorScheduled,
+        instructorScheduledName: session.instructorScheduledName,
+        idInstructorInCharge: session.idInstructorInCharge,
+        instructorInChargeName: session.instructorInChargeName,
         shutdownTime: session.shutdownTime,
         active: session.active,
       });

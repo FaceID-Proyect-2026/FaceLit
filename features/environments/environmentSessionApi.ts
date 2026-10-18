@@ -107,3 +107,16 @@ export async function fetchCurrentActiveEnvironmentSession() {
   const { data, status } = await api.get<RecordEnvironmentResponse | null>('/api/environment/sessions/active');
   return status === 204 || !data ? null : data;
 }
+
+export async function verifyEnvironmentSessionExitPassword(
+  idRecordEnvironment: string,
+  password: string,
+  credentialOwner: 'RESPONSIBLE' | 'REPLACEMENT' = 'RESPONSIBLE',
+) {
+  const { data } = await api.post<boolean>(
+    `/api/environment/sessions/${idRecordEnvironment}/verify-exit-password`,
+    { password },
+    { params: { credentialOwner } },
+  );
+  return data;
+}
