@@ -8,11 +8,12 @@ import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { useAuth } from "@/shared/contexts/AuthContext";
 import { useTheme } from "@/shared/contexts/ThemeContext";
 import { useAppDialog } from "@/shared/hooks/useAppDialog";
+import MobileFacialNotice from "@/shared/components/facial/MobileFacialNotice";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
+import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
 
 export default function FacialManagementScreen() {
   const { logout, user } = useAuth();
@@ -117,6 +118,10 @@ export default function FacialManagementScreen() {
 
     setSelectedChipId(savedSection.fichaId);
   }, [chips, config, sectionDraft, selectedChipId, selectedInstructorId, setSelectedChipId]);
+
+  if (Platform.OS !== "web") {
+    return <MobileFacialNotice attendanceRoute={Routes.ATTENDANCE.INSTRUCTOR} />;
+  }
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;

@@ -3,12 +3,13 @@ import { useFacialRegistry } from "@/features/facial/useFacialRegistry";
 import { Colors } from "@/shared/constants/colors";
 import { Routes } from "@/shared/constants/routes";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
+import MobileFacialNotice from "@/shared/components/facial/MobileFacialNotice";
 import { useAuth } from "@/shared/contexts/AuthContext";
 import { useTheme } from "@/shared/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 type CredentialOwner = "RESPONSIBLE" | "REPLACEMENT";
 
@@ -27,6 +28,10 @@ export default function FacialExitScreen() {
   const hasReplacement = Boolean(activeSession?.idInstructorInCharge);
   const responsibleName = activeSession?.instructorScheduledName || "instructor responsable";
   const replacementName = activeSession?.instructorInChargeName || "instructor de reemplazo";
+
+  if (Platform.OS !== "web") {
+    return <MobileFacialNotice attendanceRoute={Routes.ATTENDANCE.INSTRUCTOR} />;
+  }
 
   async function verifyAndLeave() {
     if (!activeSession || !password.trim() || verifying) return;

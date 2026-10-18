@@ -16,11 +16,12 @@ import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { useAuth } from "@/shared/contexts/AuthContext";
 import { useTheme } from "@/shared/contexts/ThemeContext";
 import { useAppDialog } from "@/shared/hooks/useAppDialog";
+import MobileFacialNotice from "@/shared/components/facial/MobileFacialNotice";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function InstructorFacialCameraScreen() {
   const { theme, isDark } = useTheme();
@@ -59,6 +60,7 @@ export default function InstructorFacialCameraScreen() {
   } = useSessionAttendanceCapture({ session: activeSession });
 
   useEffect(() => {
+    if (Platform.OS !== "web") return;
     if (cameraStartedRef.current) return;
     cameraStartedRef.current = true;
     void handleOpenCamera();
@@ -126,6 +128,10 @@ export default function InstructorFacialCameraScreen() {
   function handleSuccess() {
     handleCloseSuccessModal();
     handleRetake();
+  }
+
+  if (Platform.OS !== "web") {
+    return <MobileFacialNotice attendanceRoute={Routes.ATTENDANCE.INSTRUCTOR} />;
   }
 
   return (

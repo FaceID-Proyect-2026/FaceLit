@@ -16,6 +16,7 @@ import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { useAuth } from "@/shared/contexts/AuthContext";
 import { useTheme } from "@/shared/contexts/ThemeContext";
 import { useAppDialog } from "@/shared/hooks/useAppDialog";
+import MobileFacialNotice from "@/shared/components/facial/MobileFacialNotice";
 import { fetchMyFacialEnrollmentStatus, fetchMyFacialResetState, requestMyFacialReset, type FacialResetState } from "@/shared/services/facialEnrollmentService";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -24,6 +25,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
     Modal,
+    Platform,
     ScrollView,
     StyleSheet,
     Text,
@@ -155,6 +157,10 @@ export default function ApprenticeFacialScreen() {
   } = useFacialRegistration({ requireResponsibilityConfirmation: false,
     replaceExisting: unusedApproval, resetToken: unusedApproval ? resetState?.authorizationToken : null,
     onRegistrationSaved: handleRegistrationSaved });
+
+  if (Platform.OS !== "web") {
+    return <MobileFacialNotice attendanceRoute={Routes.APPRENTICE.ATTENDANCE} />;
+  }
 
   const canStartRegistration = canStartFacialCapture({ registered: serverRegistered, savedInThisScreen,
     reset: resetState, consumedRequests, loading: loadingRegistrationStatus, hasError: !!registrationStatusError });
