@@ -35,7 +35,7 @@ export default function InstructorFacialCameraScreen() {
   const [exitPassword, setExitPassword] = useState("");
   const [exitError, setExitError] = useState("");
   const [verifyingExit, setVerifyingExit] = useState(false);
-  const [captureChoice, setCaptureChoice] = useState<'auto' | 'EXIT' | null>(null);
+  const cameraStartedRef = useRef(false);
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -62,11 +62,13 @@ export default function InstructorFacialCameraScreen() {
     handleRetake,
     handleCloseSuccessModal,
     handleCloseErrorModal,
-  } = useSessionAttendanceCapture({ session: activeSession, eventType: captureChoice === 'EXIT' ? 'EXIT' : undefined });
+  } = useSessionAttendanceCapture({ session: activeSession });
 
   useEffect(() => {
-    if (captureChoice) handleOpenCamera();
-  }, [captureChoice, handleOpenCamera]);
+    if (cameraStartedRef.current) return;
+    cameraStartedRef.current = true;
+    void handleOpenCamera();
+  }, [handleOpenCamera]);
 
   useEffect(() => {
     if (blocked === "1") {
@@ -169,20 +171,6 @@ export default function InstructorFacialCameraScreen() {
   return (
     <View style={[s.safe, { backgroundColor: "#000" }]}>
       {DialogUI}
-      <Modal visible={captureChoice === null} transparent animationType="fade">
-        <View style={s.successOverlay}>
-          <View style={[s.successModal, { backgroundColor: cardBg }]}>
-            <Text style={[s.successTitle, { color: text }]}>{t('notifications.templates.lifecycleUi.captureMode')}</Text>
-            <TouchableOpacity onPress={() => setCaptureChoice('auto')} style={[s.primaryBtn, { backgroundColor: theme.primary, marginTop: 20 }]}>
-              <Text style={s.primaryBtnText}>{t('notifications.templates.lifecycleUi.automaticCapture')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setCaptureChoice('EXIT')} style={[s.primaryBtn, { backgroundColor: theme.primary, marginTop: 12 }]}>
-              <Text style={s.primaryBtnText}>{t('notifications.templates.lifecycleUi.earlyExitCapture')}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-      {captureChoice === 'EXIT' && <Text style={{ color: '#fff', padding: 12, textAlign: 'center' }}>{t('notifications.templates.lifecycleUi.earlyExitCapture')}</Text>}
       <View style={s.cameraWrap}>
         {isWeb ? (
           <WebCamera
