@@ -101,7 +101,10 @@ const isValidActiveSession = (value: unknown): value is FacialSession => {
     candidate.idChip,
     candidate.chipCode,
     candidate.shutdownTime,
-  ].every((item) => typeof item === "string" && item.length > 0) && candidate.active === true;
+  ].every((item) => typeof item === "string" && item.length > 0) &&
+    candidate.active === true &&
+    Number.isFinite(new Date(candidate.shutdownTime as string).getTime()) &&
+    new Date(candidate.shutdownTime as string).getTime() > Date.now();
 };
 
 export function setFacialOwner(ownerId?: string | null) {

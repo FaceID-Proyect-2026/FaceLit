@@ -124,7 +124,6 @@ export default function InstructorFacialCameraScreen() {
 
   function performExit() {
     handleCancelCamera();
-    setActiveSession(undefined);
     router.replace(Routes.INSTRUCTOR.DASHBOARD as any);
   }
 

@@ -58,11 +58,6 @@ export default function AdminLayout() {
     }).catch(() => undefined).finally(() => setCheckingActiveSession(false));
   }, [isAuthenticated, setActiveSession]);
 
-  useEffect(() => {
-    if (!activeSession || pathname.startsWith("/instructor/facial")) return;
-    router.replace("/instructor/facial/camera?blocked=1" as any);
-  }, [activeSession, pathname]);
-
   // La pantalla de Reconocimiento Facial no debe ofrecer ninguna vía de
   // regreso al menú principal: ni la flecha propia ni el menú lateral,
   // tanto en admin como en instructor. Se limita a la ruta del módulo para

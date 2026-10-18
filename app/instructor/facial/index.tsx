@@ -46,7 +46,9 @@ export default function FacialManagementScreen() {
     fetchCurrentActiveEnvironmentSession().then((session) => {
       if (!mounted) return;
       if (!session) {
-        setActiveSession(undefined);
+        // Keep a locally recovered session when the API is temporarily
+        // unavailable or returns no data during app recovery. It will be
+        // discarded automatically once its configured shutdown time passes.
         return;
       }
       setActiveSession({
@@ -261,7 +263,7 @@ export default function FacialManagementScreen() {
                 <Text style={[fs.activeSessionBody, { color: muted }]}>La sección de {activeSession.chipCode} en {activeSession.environmentName} sigue habilitada hasta las {new Date(activeSession.shutdownTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.</Text>
               </View>
               <AppButton
-                title="Continuar registro"
+                title="Continuar con la sección"
                 onPress={handleContinueSession}
                 fullWidth={isCompact}
                 style={{ ...fs.continueButton, ...(isCompact ? fs.continueButtonCompact : {}) }}
