@@ -32,7 +32,12 @@ export default function AdminLayout() {
   const { canRenderContent } = useAuthGuard(isAuthenticated, '/auth/login', authLoading);
   const { unreadCount } = useNotifications();
   const pathname = usePathname();
-  const { activeSession, setActiveSession, consumeInstructorHomeUnlock } = useFacialRegistry(user?.id);
+  const {
+    activeSession,
+    setActiveSession,
+    unlockInstructorHomeOnce,
+    consumeInstructorHomeUnlock,
+  } = useFacialRegistry(user?.id);
   const sessionLookupDone = useRef(false);
   const [checkingActiveSession, setCheckingActiveSession] = useState(true);
 
@@ -76,6 +81,7 @@ export default function AdminLayout() {
   const isFacialLockedScreen =
     pathname.startsWith("/admin/facial") ||
     pathname.startsWith("/instructor/facial");
+  const isInstructorFacialHome = pathname === "/instructor/facial";
   // En celular la pantalla facial es informativa, pero debe conservar una
   // vía clara para volver a las opciones del instructor.
   const showMobileFacialMenu = Platform.OS !== "web" && isFacialLockedScreen;
@@ -114,6 +120,18 @@ export default function AdminLayout() {
         ]}
       >
         <View style={sal.headerLeft}>
+          {isInstructorFacialHome && (
+            <TouchableOpacity
+              onPress={() => {
+                unlockInstructorHomeOnce();
+                router.replace("/instructor" as any);
+              }}
+              style={sal.menuBtn}
+              accessibilityLabel="Volver al inicio del instructor"
+            >
+              <Ionicons name="arrow-back" size={22} color={text} />
+            </TouchableOpacity>
+          )}
           {(!isFacialLockedScreen || showMobileFacialMenu) && (
             <TouchableOpacity
               onPress={() => setSidebarOpen(!sidebarOpen)}
