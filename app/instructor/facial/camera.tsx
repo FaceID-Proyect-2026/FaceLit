@@ -8,6 +8,7 @@
 import FaceGuideOverlay from "@/features/auth/components/FaceGuideOverlay";
 import WebCamera from "@/features/auth/components/WebCamera";
 import { useFacialRegistry } from "@/features/facial/useFacialRegistry";
+import { clearFacialCameraGuard, markFacialCameraGuard } from "@/features/facial/facialStore";
 import { useSessionAttendanceCapture } from "@/features/facial/useSessionAttendanceCapture";
 import { initializeFacialSessionAbsences } from "@/shared/services/facialAttendanceService";
 import { Colors } from "@/shared/constants/colors";
@@ -61,6 +62,7 @@ export default function InstructorFacialCameraScreen() {
 
   useEffect(() => {
     if (Platform.OS !== "web") return;
+    markFacialCameraGuard();
     if (cameraStartedRef.current) return;
     cameraStartedRef.current = true;
     void handleOpenCamera();
@@ -96,6 +98,7 @@ export default function InstructorFacialCameraScreen() {
       if (sessionClosedRef.current) return;
       sessionClosedRef.current = true;
       handleCancelCamera();
+      clearFacialCameraGuard();
       setActiveSession(undefined);
       router.replace(Routes.INSTRUCTOR.DASHBOARD as any);
     };

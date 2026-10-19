@@ -1,5 +1,6 @@
 import { verifyEnvironmentSessionExitPassword } from "@/features/environments/environmentSessionApi";
 import { useFacialRegistry } from "@/features/facial/useFacialRegistry";
+import { clearFacialCameraGuard } from "@/features/facial/facialStore";
 import { Colors } from "@/shared/constants/colors";
 import { Routes } from "@/shared/constants/routes";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
@@ -47,6 +48,7 @@ export default function FacialExitScreen() {
         setError("La contraseña no es válida para esta sección.");
         return;
       }
+      clearFacialCameraGuard();
       unlockInstructorHomeOnce();
       router.replace(Routes.INSTRUCTOR.DASHBOARD as any);
     } catch {

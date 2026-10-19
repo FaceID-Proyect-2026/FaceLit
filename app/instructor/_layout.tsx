@@ -5,6 +5,7 @@
 import Sidebar from "@/shared/components/layout/Sidebar";
 import { fetchCurrentActiveEnvironmentSession } from "@/features/environments/environmentSessionApi";
 import { useFacialRegistry } from "@/features/facial/useFacialRegistry";
+import { clearFacialCameraGuard } from "@/features/facial/facialStore";
 import { useNotifications } from "@/features/notifications/useNotifications";
 import { LanguageSelector, ThemeToggle } from "@/shared/components/ui";
 import { Colors } from "@/shared/constants/colors";
@@ -32,10 +33,8 @@ export default function AdminLayout() {
   const { canRenderContent } = useAuthGuard(isAuthenticated, '/auth/login', authLoading);
   const { unreadCount } = useNotifications();
   const pathname = usePathname();
-  const { activeSession, setActiveSession, consumeInstructorHomeUnlock } = useFacialRegistry(user?.id);
+  const { setActiveSession } = useFacialRegistry(user?.id);
   const sessionLookupDone = useRef(false);
-  const previousPathnameRef = useRef<string | null>(null);
-  const cameraToInstructorPendingRef = useRef(false);
   const [checkingActiveSession, setCheckingActiveSession] = useState(true);
 
   useEffect(() => {
@@ -66,45 +65,10 @@ export default function AdminLayout() {
   }, [isAuthenticated, setActiveSession]);
 
   useEffect(() => {
-    const previousPathname = previousPathnameRef.current;
-    previousPathnameRef.current = pathname;
-
-    if (pathname === "/instructor" && previousPathname === "/instructor/facial/camera") {
-      cameraToInstructorPendingRef.current = true;
+    if (pathname === "/auth/login") {
+      clearFacialCameraGuard();
     }
-
-    if (pathname !== "/instructor" || !cameraToInstructorPendingRef.current) return;
-
-    cameraToInstructorPendingRef.current = false;
-    if (consumeInstructorHomeUnlock()) return;
-
-    if (activeSession) {
-      router.replace("/instructor/facial/exit" as any);
-      return;
-    }
-
-    // Si el layout aún no terminó de hidratar la sesión, vuelve a consultarla
-    // antes de permitir la entrada al inicio del instructor.
-    void fetchCurrentActiveEnvironmentSession().then((session) => {
-      if (!session) return;
-      setActiveSession({
-        idRecordEnvironment: session.idRecordEnvironment,
-        idEnvironment: session.idEnvironment,
-        environmentName: session.environmentName,
-        idDevice: session.idDevice,
-        deviceCode: session.deviceCode,
-        idChip: session.idChip,
-        chipCode: session.chipCode,
-        idInstructorScheduled: session.idInstructorScheduled,
-        instructorScheduledName: session.instructorScheduledName,
-        idInstructorInCharge: session.idInstructorInCharge,
-        instructorInChargeName: session.instructorInChargeName,
-        shutdownTime: session.shutdownTime,
-        active: session.active,
-      });
-      router.replace("/instructor/facial/exit" as any);
-    }).catch(() => undefined);
-  }, [activeSession, consumeInstructorHomeUnlock, pathname, setActiveSession]);
+  }, [pathname]);
 
   // La contraseña se solicita únicamente desde la cámara, al intentar
   // abandonar una sesión facial en curso.
