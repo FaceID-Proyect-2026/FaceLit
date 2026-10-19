@@ -11,14 +11,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-const todayBogota = () =>
-  new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'America/Bogota',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(new Date());
-
 function fmtDateLong(date: string, locale: string) {
   return new Intl.DateTimeFormat(locale, { dateStyle: 'long' }).format(new Date(`${date}T12:00:00Z`));
 }
@@ -28,10 +20,11 @@ export default function ApprenticeAttendanceScreen() {
   const { allFichas } = useAcademic();
   const { theme, isDark } = useTheme();
   const { t, i18n } = useTranslation();
-  const today = useMemo(() => todayBogota(), []);
 
-  const [dateFrom, setDateFrom] = useState('2020-01-01');
-  const [dateTo, setDateTo] = useState(today);
+  // El aprendiz debe definir el periodo antes de consultar sus asistencias.
+  // Mantenerlos vacíos evita cargar automáticamente todo el histórico.
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [cells, setCells] = useState<DayCell[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -238,7 +231,7 @@ export default function ApprenticeAttendanceScreen() {
         {!loading && !error && currentFicha && (!dateFrom || !dateTo) && (
           <View style={s.emptyBox}>
             <Ionicons name="calendar-outline" size={28} color={muted} />
-            <Text style={[s.emptyText, { color: muted }]}>{t('attendance.rf6.selectRangePrompt')}</Text>
+            <Text style={[s.emptyText, { color: muted }]}>{t('attendance.rf6.selectRangePromptApprentice')}</Text>
           </View>
         )}
 

@@ -1513,6 +1513,7 @@ const de = {
       noLearnerFound: "Kein Lernender gefunden.",
       selectRange: "Zeitraum auswählen",
       selectRangePrompt: "Wählen Sie einen Lernenden und einen Zeitraum aus.",
+      selectRangePromptApprentice: "Wählen Sie einen Zeitraum aus, um Ihre Anwesenheit anzuzeigen.",
       noRecordsRange: "Keine Einträge im ausgewählten Zeitraum.",
       exportExcel: "Excel exportieren",
       exportCsv: "CSV exportieren",
