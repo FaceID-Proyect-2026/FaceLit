@@ -21,6 +21,7 @@ let records: FacialRecord[] = MOCK_FACIAL_RECORDS;
 let events: FacialEvent[] = [];
 let activeOwnerId = "anonymous";
 let facialCameraGuardActive = false;
+const FACIAL_CAMERA_GUARD_STORAGE_KEY = "facial:camera:exitGuard";
 const configsByOwner = new Map<string, FacialConfig | undefined>();
 const sectionDraftsByOwner = new Map<string, FacialSectionDraft | undefined>();
 const settingsByOwner = new Map<string, FacialSettings>();
@@ -335,16 +336,27 @@ export function consumeInstructorHomeUnlock() {
 
 export function markFacialCameraGuard() {
   facialCameraGuardActive = true;
+  if (typeof window !== "undefined") {
+    window.sessionStorage.setItem(FACIAL_CAMERA_GUARD_STORAGE_KEY, "1");
+  }
 }
 
 export function consumeFacialCameraGuard() {
-  if (!facialCameraGuardActive) return false;
+  const persistedGuard = typeof window !== "undefined"
+    && window.sessionStorage.getItem(FACIAL_CAMERA_GUARD_STORAGE_KEY) === "1";
+  if (!facialCameraGuardActive && !persistedGuard) return false;
   facialCameraGuardActive = false;
+  if (typeof window !== "undefined") {
+    window.sessionStorage.removeItem(FACIAL_CAMERA_GUARD_STORAGE_KEY);
+  }
   return true;
 }
 
 export function clearFacialCameraGuard() {
   facialCameraGuardActive = false;
+  if (typeof window !== "undefined") {
+    window.sessionStorage.removeItem(FACIAL_CAMERA_GUARD_STORAGE_KEY);
+  }
 }
 
 export function registerFacialCapture(
