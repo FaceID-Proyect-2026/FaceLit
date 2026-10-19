@@ -32,13 +32,10 @@ export default function AdminLayout() {
   const { canRenderContent } = useAuthGuard(isAuthenticated, '/auth/login', authLoading);
   const { unreadCount } = useNotifications();
   const pathname = usePathname();
-  const {
-    activeSession,
-    setActiveSession,
-    unlockInstructorHomeOnce,
-    consumeInstructorHomeUnlock,
-  } = useFacialRegistry(user?.id);
+  const { activeSession, setActiveSession, consumeInstructorHomeUnlock } = useFacialRegistry(user?.id);
   const sessionLookupDone = useRef(false);
+  const previousPathnameRef = useRef<string | null>(null);
+  const cameraToInstructorPendingRef = useRef(false);
   const [checkingActiveSession, setCheckingActiveSession] = useState(true);
 
   useEffect(() => {
@@ -69,22 +66,55 @@ export default function AdminLayout() {
   }, [isAuthenticated, setActiveSession]);
 
   useEffect(() => {
-    if (pathname !== "/instructor" || !activeSession) return;
-    if (consumeInstructorHomeUnlock()) return;
-    router.replace("/instructor/facial/exit" as any);
-  }, [activeSession, consumeInstructorHomeUnlock, pathname]);
+    const previousPathname = previousPathnameRef.current;
+    previousPathnameRef.current = pathname;
 
-  // La pantalla de Reconocimiento Facial no debe ofrecer ninguna vía de
-  // regreso al menú principal: ni la flecha propia ni el menú lateral,
-  // tanto en admin como en instructor. Se limita a la ruta del módulo para
-  // evitar interferir con el resto de pantallas.
+    if (pathname === "/instructor" && previousPathname === "/instructor/facial/camera") {
+      cameraToInstructorPendingRef.current = true;
+    }
+
+    if (pathname !== "/instructor" || !cameraToInstructorPendingRef.current) return;
+
+    cameraToInstructorPendingRef.current = false;
+    if (consumeInstructorHomeUnlock()) return;
+
+    if (activeSession) {
+      router.replace("/instructor/facial/exit" as any);
+      return;
+    }
+
+    // Si el layout aún no terminó de hidratar la sesión, vuelve a consultarla
+    // antes de permitir la entrada al inicio del instructor.
+    void fetchCurrentActiveEnvironmentSession().then((session) => {
+      if (!session) return;
+      setActiveSession({
+        idRecordEnvironment: session.idRecordEnvironment,
+        idEnvironment: session.idEnvironment,
+        environmentName: session.environmentName,
+        idDevice: session.idDevice,
+        deviceCode: session.deviceCode,
+        idChip: session.idChip,
+        chipCode: session.chipCode,
+        idInstructorScheduled: session.idInstructorScheduled,
+        instructorScheduledName: session.instructorScheduledName,
+        idInstructorInCharge: session.idInstructorInCharge,
+        instructorInChargeName: session.instructorInChargeName,
+        shutdownTime: session.shutdownTime,
+        active: session.active,
+      });
+      router.replace("/instructor/facial/exit" as any);
+    }).catch(() => undefined);
+  }, [activeSession, consumeInstructorHomeUnlock, pathname, setActiveSession]);
+
+  // La contraseña se solicita únicamente desde la cámara, al intentar
+  // abandonar una sesión facial en curso.
   const isFacialLockedScreen =
     pathname.startsWith("/admin/facial") ||
     pathname.startsWith("/instructor/facial");
   const isInstructorFacialHome = pathname === "/instructor/facial";
   // En celular la pantalla facial es informativa, pero debe conservar una
   // vía clara para volver a las opciones del instructor.
-  const showMobileFacialMenu = Platform.OS !== "web" && isFacialLockedScreen;
+  const showMobileFacialMenu = Platform.OS !== "web" && isInstructorFacialHome;
 
   if (!canRenderContent || checkingActiveSession) {
     return (
@@ -123,7 +153,6 @@ export default function AdminLayout() {
           {isInstructorFacialHome && (
             <TouchableOpacity
               onPress={() => {
-                unlockInstructorHomeOnce();
                 router.replace("/instructor" as any);
               }}
               style={sal.menuBtn}

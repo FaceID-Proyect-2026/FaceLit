@@ -104,7 +104,12 @@ export async function createEnvironmentSession(payload: {
 }
 
 export async function fetchCurrentActiveEnvironmentSession() {
-  const { data, status } = await api.get<RecordEnvironmentResponse | null>('/api/environment/sessions/active');
+  // Esta consulta debe reflejar inmediatamente una sesión creada desde otro
+  // navegador. El parámetro evita reutilizar una respuesta GET cacheada.
+  const { data, status } = await api.get<RecordEnvironmentResponse | null>('/api/environment/sessions/active', {
+    params: { _ts: Date.now() },
+    headers: { 'Cache-Control': 'no-cache' },
+  });
   return status === 204 || !data ? null : data;
 }
 
