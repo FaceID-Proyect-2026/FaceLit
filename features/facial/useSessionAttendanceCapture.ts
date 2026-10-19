@@ -334,15 +334,6 @@ export function useSessionAttendanceCapture({ session, eventType }: UseSessionAt
     handleFinish();
   }, [errorModalMessage, handleFinish, isRegistering, quality, screenState, successModalVisible]);
 
-  useEffect(() => {
-    if (!successModalVisible) return;
-    const timer = setTimeout(() => {
-      setSuccessModalVisible(false);
-      handleRetake();
-    }, 1600);
-    return () => clearTimeout(timer);
-  }, [handleRetake, successModalVisible]);
-
   const handleCloseSuccessModal = useCallback(() => {
     setSuccessModalVisible(false);
     handleRetake();
