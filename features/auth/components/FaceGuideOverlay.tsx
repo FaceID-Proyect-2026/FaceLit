@@ -16,7 +16,7 @@ import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface FaceGuideOverlayProps {
   primaryColor:  string;
@@ -124,6 +124,34 @@ export default function FaceGuideOverlay({
     }
     return () => { if (timer.current) clearInterval(timer.current); };
   }, [isPositioning, noActiveWarning]);
+
+  // Mantener la guía facial como referencia estable en la versión web.
+  // El zoom del navegador escala toda la interfaz, incluido el óvalo, y
+  // puede hacer que la persona deje de usarlo como referencia de posición.
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+
+    const preventBrowserZoom = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey)) return;
+
+      // Incluye Ctrl/⌘ +, -, =, 0 y sus variantes con Shift.
+      if (['+', '=', '-', '_', '0'].includes(event.key)) {
+        event.preventDefault();
+      }
+    };
+
+    const preventPinchZoom = (event: WheelEvent) => {
+      if (event.ctrlKey || event.metaKey) event.preventDefault();
+    };
+
+    document.addEventListener('keydown', preventBrowserZoom);
+    document.addEventListener('wheel', preventPinchZoom, { passive: false });
+
+    return () => {
+      document.removeEventListener('keydown', preventBrowserZoom);
+      document.removeEventListener('wheel', preventPinchZoom);
+    };
+  }, []);
 
   // ── 1. Modal de confirmación (bloqueante) ────
   if (screenState === 'confirmationRequired') {
