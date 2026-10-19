@@ -17,6 +17,7 @@ import { Stack, router, usePathname } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator,
+    Platform,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -75,6 +76,9 @@ export default function AdminLayout() {
   const isFacialLockedScreen =
     pathname.startsWith("/admin/facial") ||
     pathname.startsWith("/instructor/facial");
+  // En celular la pantalla facial es informativa, pero debe conservar una
+  // vía clara para volver a las opciones del instructor.
+  const showMobileFacialMenu = Platform.OS !== "web" && isFacialLockedScreen;
 
   if (!canRenderContent || checkingActiveSession) {
     return (
@@ -110,7 +114,7 @@ export default function AdminLayout() {
         ]}
       >
         <View style={sal.headerLeft}>
-          {!isFacialLockedScreen && (
+          {(!isFacialLockedScreen || showMobileFacialMenu) && (
             <TouchableOpacity
               onPress={() => setSidebarOpen(!sidebarOpen)}
               style={sal.menuBtn}
@@ -143,10 +147,9 @@ export default function AdminLayout() {
         </View>
       </View>
 
-      {/* Sidebar overlay — nunca se renderiza dentro del módulo de
-          Reconocimiento Facial, aunque sidebarOpen hubiera quedado true
-          de una pantalla anterior */}
-      {!isFacialLockedScreen && (
+      {/* En móvil el módulo facial conserva el acceso al menú; en web queda
+          bloqueado para evitar salir accidentalmente de la sesión facial. */}
+      {(!isFacialLockedScreen || showMobileFacialMenu) && (
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       )}
 
