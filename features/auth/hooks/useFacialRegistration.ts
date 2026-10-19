@@ -35,21 +35,28 @@ const LIVENESS_START_DELAY_MS = 650;
 const LIVENESS_FRAME_DELAY_MS = 380;
 
 export type LivenessChallenge = {
-  code: 'BLINK' | 'OPEN_CLOSE_MOUTH' | 'STICK_TONGUE' | 'MOVE_LEFT' | 'MOVE_RIGHT' | 'MOVE_CLOSER' | 'MOVE_AWAY';
+  code: 'BLINK' | 'WINK' | 'RAISE_ONE_EYEBROW' | 'RAISE_BOTH_EYEBROWS' | 'SMILE_WITH_TEETH' | 'OPEN_CLOSE_MOUTH' | 'STICK_TONGUE' | 'MOVE_LEFT' | 'MOVE_RIGHT' | 'MOVE_UP' | 'MOVE_DOWN' | 'MOVE_CLOSER' | 'MOVE_AWAY';
   label: string;
 };
 
 export const LIVENESS_CHALLENGES: LivenessChallenge[] = [
   { code: 'BLINK', label: 'Pestañea una vez' },
+  { code: 'WINK', label: 'Guiña un ojo' },
+  { code: 'RAISE_ONE_EYEBROW', label: 'Levanta una ceja' },
+  { code: 'RAISE_BOTH_EYEBROWS', label: 'Levanta las dos cejas' },
+  { code: 'SMILE_WITH_TEETH', label: 'Sonríe mostrando los dientes' },
   { code: 'OPEN_CLOSE_MOUTH', label: 'Abre y cierra la boca' },
   { code: 'STICK_TONGUE', label: 'Saca la lengua un momento' },
   { code: 'MOVE_LEFT', label: 'Mueve tu rostro hacia la izquierda' },
   { code: 'MOVE_RIGHT', label: 'Mueve tu rostro hacia la derecha' },
+  { code: 'MOVE_UP', label: 'Gira tu rostro hacia arriba' },
+  { code: 'MOVE_DOWN', label: 'Gira tu rostro hacia abajo' },
   { code: 'MOVE_CLOSER', label: 'Acércate un poco a la cámara' },
   { code: 'MOVE_AWAY', label: 'Aléjate un poco de la cámara' },
 ];
 
 const ALREADY_REGISTERED_ERROR = 'facial.validation.alreadyRegistered';
+const DUPLICATE_FACE_ERROR_STATUS = 409;
 
 // ── Helper de negocio: brillo promedio de una imagen (canvas web) ──
 export function getAverageBrightness(canvas: HTMLCanvasElement): number {
@@ -103,8 +110,9 @@ function formatLivenessStep(challenge: LivenessChallenge, index: number): string
 }
 
 function buildChallengeFailureMessage(challenge: LivenessChallenge, reason?: string): string {
-  const detail = reason && reason !== 'LIVE_OK' ? `\n\nDetalle: ${reason}` : '';
-  return `No se completó la acción solicitada: ${challenge.label}.${detail}`;
+  const detail = reason?.match(/El reto era[^.]*\./)?.[0]
+    ?? `El reto era ${challenge.label.toLowerCase()}.`;
+  return `Detalle: ${detail}`;
 }
 
 function clampLivenessIndex(index: number): number {
@@ -437,6 +445,14 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
         data: error?.response?.data,
         message: error?.message,
       });
+      // A duplicate face is a definitive server-side rejection. Never use
+      // the local fallback here, otherwise the UI could show a saved record
+      // even though the backend correctly refused to persist it.
+      if (error?.response?.status === DUPLICATE_FACE_ERROR_STATUS) {
+        setErrorModalTitle('Rostro ya registrado');
+        setErrorModalMessage(message);
+        return;
+      }
       if (allowLocalFallback) {
         const result = registerFacialCapture(facialUser, photoUri, true, replaceExisting);
         if (!result.success && result.error !== ALREADY_REGISTERED_ERROR) {

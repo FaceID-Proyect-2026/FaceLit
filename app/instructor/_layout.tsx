@@ -5,6 +5,7 @@
 import Sidebar from "@/shared/components/layout/Sidebar";
 import { fetchCurrentActiveEnvironmentSession } from "@/features/environments/environmentSessionApi";
 import { useFacialRegistry } from "@/features/facial/useFacialRegistry";
+import { clearFacialCameraGuard } from "@/features/facial/facialStore";
 import { useNotifications } from "@/features/notifications/useNotifications";
 import { LanguageSelector, ThemeToggle } from "@/shared/components/ui";
 import { Colors } from "@/shared/constants/colors";
@@ -17,6 +18,7 @@ import { Stack, router, usePathname } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator,
+    Platform,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -31,7 +33,7 @@ export default function AdminLayout() {
   const { canRenderContent } = useAuthGuard(isAuthenticated, '/auth/login', authLoading);
   const { unreadCount } = useNotifications();
   const pathname = usePathname();
-  const { activeSession, setActiveSession } = useFacialRegistry(user?.id);
+  const { setActiveSession } = useFacialRegistry(user?.id);
   const sessionLookupDone = useRef(false);
   const [checkingActiveSession, setCheckingActiveSession] = useState(true);
 
@@ -52,6 +54,10 @@ export default function AdminLayout() {
         deviceCode: session.deviceCode,
         idChip: session.idChip,
         chipCode: session.chipCode,
+        idInstructorScheduled: session.idInstructorScheduled,
+        instructorScheduledName: session.instructorScheduledName,
+        idInstructorInCharge: session.idInstructorInCharge,
+        instructorInChargeName: session.instructorInChargeName,
         shutdownTime: session.shutdownTime,
         active: session.active,
       });
@@ -59,17 +65,20 @@ export default function AdminLayout() {
   }, [isAuthenticated, setActiveSession]);
 
   useEffect(() => {
-    if (!activeSession || pathname.startsWith("/instructor/facial")) return;
-    router.replace("/instructor/facial/camera?blocked=1" as any);
-  }, [activeSession, pathname]);
+    if (pathname === "/auth/login") {
+      clearFacialCameraGuard();
+    }
+  }, [pathname]);
 
-  // La pantalla de Reconocimiento Facial no debe ofrecer ninguna vía de
-  // regreso al menú principal: ni la flecha propia ni el menú lateral,
-  // tanto en admin como en instructor. Se limita a la ruta del módulo para
-  // evitar interferir con el resto de pantallas.
+  // La contraseña se solicita únicamente desde la cámara, al intentar
+  // abandonar una sesión facial en curso.
   const isFacialLockedScreen =
     pathname.startsWith("/admin/facial") ||
     pathname.startsWith("/instructor/facial");
+  const isInstructorFacialHome = pathname === "/instructor/facial";
+  // En celular la pantalla facial es informativa, pero debe conservar una
+  // vía clara para volver a las opciones del instructor.
+  const showMobileFacialMenu = Platform.OS !== "web" && isInstructorFacialHome;
 
   if (!canRenderContent || checkingActiveSession) {
     return (
@@ -105,7 +114,18 @@ export default function AdminLayout() {
         ]}
       >
         <View style={sal.headerLeft}>
-          {!isFacialLockedScreen && (
+          {isInstructorFacialHome && (
+            <TouchableOpacity
+              onPress={() => {
+                router.replace("/instructor" as any);
+              }}
+              style={sal.menuBtn}
+              accessibilityLabel="Volver al inicio del instructor"
+            >
+              <Ionicons name="arrow-back" size={22} color={text} />
+            </TouchableOpacity>
+          )}
+          {(!isFacialLockedScreen || showMobileFacialMenu) && (
             <TouchableOpacity
               onPress={() => setSidebarOpen(!sidebarOpen)}
               style={sal.menuBtn}
@@ -138,10 +158,9 @@ export default function AdminLayout() {
         </View>
       </View>
 
-      {/* Sidebar overlay — nunca se renderiza dentro del módulo de
-          Reconocimiento Facial, aunque sidebarOpen hubiera quedado true
-          de una pantalla anterior */}
-      {!isFacialLockedScreen && (
+      {/* En móvil el módulo facial conserva el acceso al menú; en web queda
+          bloqueado para evitar salir accidentalmente de la sesión facial. */}
+      {(!isFacialLockedScreen || showMobileFacialMenu) && (
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       )}
 
@@ -158,6 +177,7 @@ export default function AdminLayout() {
         <Stack.Screen name="facial/index" />
         <Stack.Screen name="facial/settings" />
         <Stack.Screen name="facial/camera" />
+        <Stack.Screen name="facial/exit" />
         <Stack.Screen name="environments/index" />
         <Stack.Screen
           name="environments/register"

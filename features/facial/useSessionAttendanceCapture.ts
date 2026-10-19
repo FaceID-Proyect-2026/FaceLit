@@ -26,8 +26,9 @@ function formatLivenessStep(challenge: LivenessChallenge, index: number): string
 }
 
 function buildChallengeFailureMessage(challenge: LivenessChallenge, reason?: string): string {
-  const detail = reason && reason !== 'LIVE_OK' ? `\n\nDetalle: ${reason}` : '';
-  return `No se completó la acción solicitada: ${challenge.label}.${detail}`;
+  const detail = reason?.match(/El reto era[^.]*\./)?.[0]
+    ?? `El reto era ${challenge.label.toLowerCase()}.`;
+  return `Detalle: ${detail}`;
 }
 
 function clampLivenessIndex(index: number): number {
@@ -333,15 +334,6 @@ export function useSessionAttendanceCapture({ session, eventType }: UseSessionAt
 
     handleFinish();
   }, [errorModalMessage, handleFinish, isRegistering, quality, screenState, successModalVisible]);
-
-  useEffect(() => {
-    if (!successModalVisible) return;
-    const timer = setTimeout(() => {
-      setSuccessModalVisible(false);
-      handleRetake();
-    }, 1600);
-    return () => clearTimeout(timer);
-  }, [handleRetake, successModalVisible]);
 
   const handleCloseSuccessModal = useCallback(() => {
     setSuccessModalVisible(false);

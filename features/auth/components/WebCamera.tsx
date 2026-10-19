@@ -52,6 +52,13 @@ const LIVENESS_FRAME_COUNT = 5;
 const LIVENESS_START_DELAY_MS = 650;
 const LIVENESS_FRAME_DELAY_MS = 380;
 
+// Zona válida de reconocimiento: corresponde al óvalo centrado de la guía.
+// Se usa una elipse para evitar aceptar rostros ubicados en las esquinas.
+const OVAL_CENTER_X = 0.5;
+const OVAL_CENTER_Y = 0.5;
+const OVAL_RADIUS_X = 0.16;
+const OVAL_RADIUS_Y = 0.25;
+
 // ── Análisis de píxeles ───────────────────────
 function analyzeFrame(ctx: CanvasRenderingContext2D, W: number, H: number) {
   const step = 4;
@@ -136,11 +143,14 @@ function computeWarning(
 
   if (warmRatio  > 0.68)            return 'skinTooClose';
 
-  // Centro del blob fuera del área central
-  if (
-    warmCenterX < 0.22 || warmCenterX > 0.78 ||
-    warmCenterY < 0.15 || warmCenterY > 0.82
-  ) return 'skinOffCenter';
+  // El rostro solo es válido dentro de la elipse del óvalo. Esto evita que
+  // se habilite el reconocimiento cuando la persona está a los lados,
+  // demasiado arriba o demasiado abajo.
+  const ovalDistance =
+    ((warmCenterX - OVAL_CENTER_X) / OVAL_RADIUS_X) ** 2 +
+    ((warmCenterY - OVAL_CENTER_Y) / OVAL_RADIUS_Y) ** 2;
+
+  if (ovalDistance > 1) return 'skinOffCenter';
 
   return 'none';
 }
@@ -183,6 +193,7 @@ export default function WebCamera({
   const [error,   setError]   = useState<string | null>(null);
   const [warning, setWarning] = useState<LiveWarning>('noSkin');
   const [capturingSequence, setCapturingSequence] = useState(false);
+  const warningRef = useRef<LiveWarning>('noSkin');
   // stableFrames: cuántos frames OK consecutivos hay (0 a REQUIRED_STABLE_FRAMES)
   const [stableFrames, setStableFrames] = useState(0);
 
@@ -322,8 +333,17 @@ export default function WebCamera({
     return { dataUri: canvas.toDataURL('image/jpeg', 0.85), brightness };
   }, [ready]);
 
+  useEffect(() => {
+    warningRef.current = warning;
+  }, [warning]);
+
   const capture = useCallback(async () => {
     if (paused || capturingSequence) return;
+    const invalidPosition = () =>
+      warningRef.current === 'noSkin' ||
+      warningRef.current === 'skinOffCenter' ||
+      warningRef.current === 'skinTooClose';
+
     setCapturingSequence(true);
     onShutter();
     const frames: string[] = [];
@@ -332,8 +352,13 @@ export default function WebCamera({
       if (requiresLiveness) {
         await new Promise((resolve) => setTimeout(resolve, LIVENESS_START_DELAY_MS));
       }
+      if (invalidPosition()) return;
+
       const frameCount = requiresLiveness ? LIVENESS_FRAME_COUNT : 1;
       for (let index = 0; index < frameCount; index += 1) {
+        // Si el rostro sale del centro durante la secuencia, se descarta todo
+        // y no se envía el evento al backend.
+        if (invalidPosition()) return;
         const frame = captureFrame();
         if (frame) {
           frames.push(frame.dataUri);
@@ -343,7 +368,7 @@ export default function WebCamera({
           await new Promise((resolve) => setTimeout(resolve, LIVENESS_FRAME_DELAY_MS));
         }
       }
-      if (frames.length === 0) return;
+      if (frames.length === 0 || invalidPosition()) return;
       onCapture(requiresLiveness ? frames : frames[0]!, brightness);
     } finally {
       setCapturingSequence(false);

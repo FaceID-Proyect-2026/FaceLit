@@ -1569,6 +1569,7 @@ const fr = {
       noLearnerFound: "Aucun apprenant trouvé.",
       selectRange: "Sélectionnez une période",
       selectRangePrompt: "Sélectionnez un apprenant et une période.",
+      selectRangePromptApprentice: "Sélectionnez une période pour consulter vos présences.",
       noRecordsRange: "Aucun enregistrement pour cette période.",
       exportExcel: "Exporter Excel",
       exportCsv: "Exporter CSV",

@@ -8,34 +8,30 @@
 import FaceGuideOverlay from "@/features/auth/components/FaceGuideOverlay";
 import WebCamera from "@/features/auth/components/WebCamera";
 import { useFacialRegistry } from "@/features/facial/useFacialRegistry";
+import { clearFacialCameraGuard, markFacialCameraGuard } from "@/features/facial/facialStore";
 import { useSessionAttendanceCapture } from "@/features/facial/useSessionAttendanceCapture";
 import { initializeFacialSessionAbsences } from "@/shared/services/facialAttendanceService";
 import { Colors } from "@/shared/constants/colors";
 import { Routes } from "@/shared/constants/routes";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { useAuth } from "@/shared/contexts/AuthContext";
-import { verifyCurrentPassword } from "@/shared/services/authService";
 import { useTheme } from "@/shared/contexts/ThemeContext";
 import { useAppDialog } from "@/shared/hooks/useAppDialog";
+import MobileFacialNotice from "@/shared/components/facial/MobileFacialNotice";
 import { Ionicons } from "@expo/vector-icons";
-import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { router } from "expo-router";
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function InstructorFacialCameraScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { blocked } = useLocalSearchParams<{ blocked?: string }>();
   const { DialogUI } = useAppDialog();
   const { activeSession, settings, setActiveSession } = useFacialRegistry(user?.id);
   const sessionClosedRef = useRef(false);
-  const [exitPromptVisible, setExitPromptVisible] = useState(false);
-  const [exitPassword, setExitPassword] = useState("");
-  const [exitError, setExitError] = useState("");
-  const [verifyingExit, setVerifyingExit] = useState(false);
-  const [captureChoice, setCaptureChoice] = useState<'auto' | 'EXIT' | null>(null);
+  const cameraStartedRef = useRef(false);
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -62,19 +58,15 @@ export default function InstructorFacialCameraScreen() {
     handleRetake,
     handleCloseSuccessModal,
     handleCloseErrorModal,
-  } = useSessionAttendanceCapture({ session: activeSession, eventType: captureChoice === 'EXIT' ? 'EXIT' : undefined });
+  } = useSessionAttendanceCapture({ session: activeSession });
 
   useEffect(() => {
-    if (captureChoice) handleOpenCamera();
-  }, [captureChoice, handleOpenCamera]);
-
-  useEffect(() => {
-    if (blocked === "1") {
-      setExitPassword("");
-      setExitError("");
-      setExitPromptVisible(true);
-    }
-  }, [blocked]);
+    if (Platform.OS !== "web") return;
+    markFacialCameraGuard();
+    if (cameraStartedRef.current) return;
+    cameraStartedRef.current = true;
+    void handleOpenCamera();
+  }, [handleOpenCamera]);
 
   useEffect(() => {
     if (!activeSession?.idRecordEnvironment) return;
@@ -106,6 +98,7 @@ export default function InstructorFacialCameraScreen() {
       if (sessionClosedRef.current) return;
       sessionClosedRef.current = true;
       handleCancelCamera();
+      clearFacialCameraGuard();
       setActiveSession(undefined);
       router.replace(Routes.INSTRUCTOR.DASHBOARD as any);
     };
@@ -120,34 +113,8 @@ export default function InstructorFacialCameraScreen() {
     return () => clearTimeout(timer);
   }, [activeSession, handleCancelCamera, setActiveSession, settings?.shutdownTime]);
 
-  function performExit() {
-    handleCancelCamera();
-    setActiveSession(undefined);
-    router.replace(Routes.INSTRUCTOR.DASHBOARD as any);
-  }
-
   function handleCancelAndReturn() {
-    setExitPassword("");
-    setExitError("");
-    setExitPromptVisible(true);
-  }
-
-  async function confirmExit() {
-    if (!exitPassword.trim() || verifyingExit) return;
-    setVerifyingExit(true);
-    try {
-      const valid = await verifyCurrentPassword(exitPassword);
-      if (!valid) {
-        setExitError("La contraseña no es válida.");
-        return;
-      }
-      setExitPromptVisible(false);
-      performExit();
-    } catch {
-      setExitError("No se pudo validar la contraseña. Intenta nuevamente.");
-    } finally {
-      setVerifyingExit(false);
-    }
+    router.replace(Routes.INSTRUCTOR.FACIAL_EXIT as any);
   }
 
   useEffect(() => {
@@ -166,23 +133,13 @@ export default function InstructorFacialCameraScreen() {
     handleRetake();
   }
 
+  if (Platform.OS !== "web") {
+    return <MobileFacialNotice attendanceRoute={Routes.ATTENDANCE.INSTRUCTOR} />;
+  }
+
   return (
     <View style={[s.safe, { backgroundColor: "#000" }]}>
       {DialogUI}
-      <Modal visible={captureChoice === null} transparent animationType="fade">
-        <View style={s.successOverlay}>
-          <View style={[s.successModal, { backgroundColor: cardBg }]}>
-            <Text style={[s.successTitle, { color: text }]}>{t('notifications.templates.lifecycleUi.captureMode')}</Text>
-            <TouchableOpacity onPress={() => setCaptureChoice('auto')} style={[s.primaryBtn, { backgroundColor: theme.primary, marginTop: 20 }]}>
-              <Text style={s.primaryBtnText}>{t('notifications.templates.lifecycleUi.automaticCapture')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setCaptureChoice('EXIT')} style={[s.primaryBtn, { backgroundColor: theme.primary, marginTop: 12 }]}>
-              <Text style={s.primaryBtnText}>{t('notifications.templates.lifecycleUi.earlyExitCapture')}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-      {captureChoice === 'EXIT' && <Text style={{ color: '#fff', padding: 12, textAlign: 'center' }}>{t('notifications.templates.lifecycleUi.earlyExitCapture')}</Text>}
       <View style={s.cameraWrap}>
         {isWeb ? (
           <WebCamera
@@ -268,34 +225,6 @@ export default function InstructorFacialCameraScreen() {
         </View>
       )}
 
-      <Modal visible={exitPromptVisible} transparent animationType="fade" onRequestClose={() => setExitPromptVisible(false)}>
-        <View style={s.exitOverlay}>
-          <View style={[s.exitModal, { backgroundColor: cardBg }]}>
-            <Ionicons name="lock-closed-outline" size={36} color={theme.primary} />
-            <Text style={[s.exitTitle, { color: text }]}>Registro facial activo</Text>
-            <Text style={[s.exitBody, { color: muted }]}>Para salir, ingrese la contraseña del instructor.</Text>
-            <TextInput
-              value={exitPassword}
-              onChangeText={(value) => { setExitPassword(value); setExitError(""); }}
-              placeholder="Contraseña"
-              placeholderTextColor={muted}
-              secureTextEntry
-              autoFocus
-              style={[s.exitInput, { color: text, borderColor: exitError ? Colors.error : theme.border }]}
-              onSubmitEditing={confirmExit}
-            />
-            {exitError ? <Text style={s.exitError}>{exitError}</Text> : null}
-            <View style={s.exitActions}>
-              <TouchableOpacity onPress={() => setExitPromptVisible(false)} style={s.exitCancelButton}>
-                <Text style={[s.exitCancelText, { color: muted }]}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={confirmExit} style={[s.exitConfirmButton, { backgroundColor: theme.primary }]}>
-                <Text style={s.exitConfirmText}>{verifyingExit ? "Validando…" : "Confirmar salida"}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }

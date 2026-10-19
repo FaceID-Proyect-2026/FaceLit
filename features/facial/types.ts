@@ -48,6 +48,10 @@ export interface FacialSession {
   deviceCode: string;
   idChip: string;
   chipCode: string;
+  idInstructorScheduled?: string;
+  instructorScheduledName?: string;
+  idInstructorInCharge?: string | null;
+  instructorInChargeName?: string | null;
   shutdownTime: string;
   active: boolean;
 }

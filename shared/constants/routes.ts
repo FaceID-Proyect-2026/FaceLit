@@ -75,6 +75,7 @@ export const Routes = {
     FACIAL: "/instructor/facial",
     FACIAL_SETTINGS: "/instructor/facial/settings",
     FACIAL_CAMERA: "/instructor/facial/camera",
+    FACIAL_EXIT: "/instructor/facial/exit",
   },
 
   // Módulo 6: Asistencias y Validaciones

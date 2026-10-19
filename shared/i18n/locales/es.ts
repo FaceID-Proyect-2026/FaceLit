@@ -1688,6 +1688,7 @@ const es = {
       noLearnerFound: "No se encontró ningún aprendiz.",
       selectRange: "Selecciona un rango de fechas",
       selectRangePrompt: "Selecciona un aprendiz y un rango de fechas.",
+      selectRangePromptApprentice: "Selecciona un rango de fechas para consultar tus asistencias.",
       noRecordsRange: "No hay registros en el rango seleccionado.",
       exportExcel: "Exportar Excel",
       exportCsv: "Exportar CSV",

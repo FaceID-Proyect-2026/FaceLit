@@ -1610,6 +1610,7 @@ const en = {
       noLearnerFound: "No learner found.",
       selectRange: "Select a date range",
       selectRangePrompt: "Select a learner and a date range.",
+      selectRangePromptApprentice: "Select a date range to view your attendance.",
       noRecordsRange: "There are no records in the selected range.",
       exportExcel: "Export Excel",
       exportCsv: "Export CSV",

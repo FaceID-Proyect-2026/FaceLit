@@ -20,10 +20,13 @@ type RegistrationResult =
 let records: FacialRecord[] = MOCK_FACIAL_RECORDS;
 let events: FacialEvent[] = [];
 let activeOwnerId = "anonymous";
+let facialCameraGuardActive = false;
+const FACIAL_CAMERA_GUARD_STORAGE_KEY = "facial:camera:exitGuard";
 const configsByOwner = new Map<string, FacialConfig | undefined>();
 const sectionDraftsByOwner = new Map<string, FacialSectionDraft | undefined>();
 const settingsByOwner = new Map<string, FacialSettings>();
 const activeSessionsByOwner = new Map<string, FacialSession | undefined>();
+let instructorHomeUnlockPending = false;
 const listeners = new Set<Listener>();
 const FACIAL_CONFIG_STORAGE_KEY_PREFIX = "facial:instructor:config";
 const FACIAL_SECTION_DRAFT_STORAGE_KEY_PREFIX = "facial:instructor:sectionDraft";
@@ -101,7 +104,10 @@ const isValidActiveSession = (value: unknown): value is FacialSession => {
     candidate.idChip,
     candidate.chipCode,
     candidate.shutdownTime,
-  ].every((item) => typeof item === "string" && item.length > 0) && candidate.active === true;
+  ].every((item) => typeof item === "string" && item.length > 0) &&
+    candidate.active === true &&
+    Number.isFinite(new Date(candidate.shutdownTime as string).getTime()) &&
+    new Date(candidate.shutdownTime as string).getTime() > Date.now();
 };
 
 export function setFacialOwner(ownerId?: string | null) {
@@ -121,7 +127,7 @@ export function hydrateFacialConfig(ownerId?: string | null) {
     .then((storedConfig) => {
       if (!storedConfig) return;
       const parsed = JSON.parse(storedConfig);
-      if (isValidConfig(parsed)) {
+      if (isValidConfig(parsed) && !configsByOwner.has(key)) {
         configsByOwner.set(key, parsed);
         emit();
       }
@@ -148,7 +154,7 @@ export function hydrateFacialSectionDraft(ownerId?: string | null) {
     .then((storedDraft) => {
       if (!storedDraft) return;
       const parsed = JSON.parse(storedDraft);
-      if (isValidSectionDraft(parsed)) {
+      if (isValidSectionDraft(parsed) && !sectionDraftsByOwner.has(key)) {
         sectionDraftsByOwner.set(key, parsed);
         emit();
       }
@@ -175,7 +181,7 @@ export function hydrateFacialSettings(ownerId?: string | null) {
     .then((storedSettings) => {
       if (!storedSettings) return;
       const parsed = JSON.parse(storedSettings);
-      if (isValidSettings(parsed)) {
+      if (isValidSettings(parsed) && !settingsByOwner.has(key)) {
         settingsByOwner.set(key, parsed);
         emit();
       }
@@ -202,7 +208,7 @@ export function hydrateActiveFacialSession(ownerId?: string | null) {
     .then((storedSession) => {
       if (!storedSession) return;
       const parsed = JSON.parse(storedSession);
-      if (isValidActiveSession(parsed)) {
+      if (isValidActiveSession(parsed) && !activeSessionsByOwner.has(key)) {
         activeSessionsByOwner.set(key, parsed);
         emit();
       }
@@ -316,6 +322,41 @@ export function setActiveFacialSession(
     ? AsyncStorage.setItem(activeSessionStorageKey(key), JSON.stringify(session))
     : AsyncStorage.removeItem(activeSessionStorageKey(key));
   void storageOperation.catch((error) => console.warn("[FacialSession] No se pudo guardar la sesion:", error));
+}
+
+export function unlockInstructorHomeOnce() {
+  instructorHomeUnlockPending = true;
+}
+
+export function consumeInstructorHomeUnlock() {
+  if (!instructorHomeUnlockPending) return false;
+  instructorHomeUnlockPending = false;
+  return true;
+}
+
+export function markFacialCameraGuard() {
+  facialCameraGuardActive = true;
+  if (typeof window !== "undefined") {
+    window.sessionStorage.setItem(FACIAL_CAMERA_GUARD_STORAGE_KEY, "1");
+  }
+}
+
+export function consumeFacialCameraGuard() {
+  const persistedGuard = typeof window !== "undefined"
+    && window.sessionStorage.getItem(FACIAL_CAMERA_GUARD_STORAGE_KEY) === "1";
+  if (!facialCameraGuardActive && !persistedGuard) return false;
+  facialCameraGuardActive = false;
+  if (typeof window !== "undefined") {
+    window.sessionStorage.removeItem(FACIAL_CAMERA_GUARD_STORAGE_KEY);
+  }
+  return true;
+}
+
+export function clearFacialCameraGuard() {
+  facialCameraGuardActive = false;
+  if (typeof window !== "undefined") {
+    window.sessionStorage.removeItem(FACIAL_CAMERA_GUARD_STORAGE_KEY);
+  }
 }
 
 export function registerFacialCapture(
