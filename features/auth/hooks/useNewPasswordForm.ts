@@ -12,7 +12,7 @@
 //  · Auditoría (RNF-1.8)
 // ─────────────────────────────────────────────
 import { logFailure, logSuccess } from '@/shared/services/auditLogger';
-import { resetPassword } from '@/shared/services/passwordRecoveryService';
+import { resetPassword, completeAccountAccess } from '@/shared/services/passwordRecoveryService';
 import { Routes } from '@/shared/constants/routes';
 import { router } from 'expo-router';
 import { useLocalSearchParams } from 'expo-router';
@@ -35,7 +35,7 @@ export interface PasswordRequirement {
 
 export function useNewPasswordForm() {
   const { t } = useTranslation();
-  const { token, email } = useLocalSearchParams<{ token: string; email?: string }>();
+  const { token, email, accessToken } = useLocalSearchParams<{ token: string; email?: string; accessToken?: string }>();
 
   const [password, setPasswordValue]              = useState('');
   const [confirmPassword, setConfirmPasswordValue] = useState('');
@@ -117,7 +117,7 @@ export function useNewPasswordForm() {
     setErrors(validationErrors);
     if (Object.keys(validationErrors).length > 0) return;
 
-    if (!token) {
+    if (!token && !accessToken) {
       setErrors({ code: t('newPassword.errors.tokenMissing') });
       return;
     }
@@ -126,7 +126,8 @@ export function useNewPasswordForm() {
     setLoading(true);
 
     try {
-      await resetPassword(token, password, confirmPassword);
+      if (accessToken) await completeAccountAccess(accessToken, password, confirmPassword);
+      else await resetPassword(token, password, confirmPassword);
       logSuccess('PASSWORD_RESET_SUCCESS');
       setShowSuccess(true);
     } catch (error: any) {
@@ -134,6 +135,11 @@ export function useNewPasswordForm() {
       const backendMsg: string = error.response?.data?.message ?? '';
 
       logFailure('PASSWORD_RESET_FAILED', { detail: backendMsg });
+
+      if (accessToken) {
+        setErrors({ code: backendMsg || t('newPassword.errors.genericError') });
+        return;
+      }
 
       // ── Token expirado o ya usado (backend) — volver a verify-identity ──
       if (
@@ -195,6 +201,8 @@ export function useNewPasswordForm() {
     requirements,
     loading,
     showSuccess,
+    isAccessLink: Boolean(accessToken),
+    recoveryEmail: email,
     setPassword,
     setConfirmPassword,
     handleSubmit,

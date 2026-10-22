@@ -40,3 +40,8 @@ export const resetPassword = async (token, newPassword, confirmPassword) => {
   });
   return data;
 };
+
+export const completeAccountAccess = async (token, newPassword, confirmPassword) => {
+  const { data } = await api.post('/api/auth/complete-access', { token, newPassword, confirmPassword });
+  return data;
+};

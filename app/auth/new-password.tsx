@@ -213,7 +213,7 @@ export default function NewPasswordScreen() {
 
   const {
     password, confirmPassword,
-    errors, requirements, loading, showSuccess,
+    errors, requirements, loading, showSuccess, isAccessLink, recoveryEmail,
     setPassword, setConfirmPassword, handleSubmit,
   } = useNewPasswordForm();
 
@@ -369,6 +369,12 @@ export default function NewPasswordScreen() {
                 <Text style={[s.tokenErrorText, { color: Colors.error }]}>{errors.code}</Text>
               </View>
             ) : null}
+
+              {errors.code && isAccessLink ? (
+                <TouchableOpacity onPress={() => router.replace({ pathname: Routes.AUTH.PASSWORD_RECOVERY as any, params: { email: recoveryEmail ?? '' } })}>
+                  <Text style={[s.backText, { color: theme.primary }]}>Solicitar nuevas instrucciones de acceso</Text>
+                </TouchableOpacity>
+              ) : null}
 
             {/* ── Nueva contraseña ── */}
             <Animated.View style={[s.fieldGroup, makeSlide(field1Anim)]}>

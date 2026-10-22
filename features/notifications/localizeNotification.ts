@@ -22,6 +22,20 @@ export function notificationDecisionActorName(meta: NotificationMeta, t: TFuncti
   return t('notifications.templates.sessionUi.coordinator');
 }
 
+export function profileChangeDetails(meta: NotificationMeta, t: TFunction) {
+  const allowed = ['nombre', 'apellido', 'documento', 'correo', 'correoPendiente', 'estado', 'rol', 'tipoInstructor'];
+  const value = (field: string, raw: string) => {
+    if (!raw) return t('notifications.templates.profileUi.empty');
+    if (field === 'rol') return t(`notifications.templates.lifecycleUi.roles.${raw === 'Sin rol' ? 'NONE' : raw}`, { defaultValue: t('notifications.values.unavailable') });
+    if (field === 'tipoInstructor') return t(`notifications.templates.profileUi.${raw === 'ESPECIFICO' ? 'specific' : 'transversal'}`);
+    if (field === 'estado') return t(`notifications.templates.profileUi.${raw === 'ACTIVE' ? 'active' : raw === 'INACTIVE' ? 'inactive' : 'pendingStatus'}`);
+    return raw;
+  };
+  return (Array.isArray(meta.profileChanges) ? meta.profileChanges : [])
+    .filter(c => c && allowed.includes(c.field) && typeof c.before === 'string' && typeof c.after === 'string' && c.before !== c.after)
+    .map(c => ({ field: c.field, label: t(`notifications.templates.profileUi.fields.${c.field}`), before: value(c.field, c.before), after: value(c.field, c.after) }));
+}
+
 export function formatNotificationDate(value: string, language: string): string {
   const date = new Date(`${value}T12:00:00Z`);
   return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat(language, {
@@ -64,6 +78,8 @@ export function normalizeNotificationMeta(input?: NotificationMeta): Notificatio
 
 export function localizeNotification(notif: Notification, t: TFunction, language: string) {
   const meta = normalizeNotificationMeta(notif.meta);
+  const profile = ['user_profile_updated', 'apprentice_profile_updated', 'instructor_profile_updated'].includes(notif.type);
+  const changes = profile ? profileChangeDetails(meta, t) : [];
   const unavailable = t('notifications.values.unavailable');
   const entity = ['program', 'ficha', 'learner', 'instructor'].includes(meta.entityType ?? '') ? meta.entityType : 'item';
   const values = {
@@ -112,6 +128,11 @@ export function localizeNotification(notif: Notification, t: TFunction, language
   });
   const contextual = notif.category === 'attendance' || notif.category === 'facial';
   const details: string[] = [];
+  if (changes.length) {
+    for (const change of changes) details.push(`${change.label}: ${t('notifications.templates.profileUi.before')}: ${change.before} → ${t('notifications.templates.profileUi.after')}: ${change.after}`);
+    if (meta.changedByName) details.push(`${t('notifications.templates.lifecycleUi.changedBy')}: ${meta.changedByName}`);
+    if (meta.action === 'email_change_requested') details.push(t('notifications.templates.profileUi.pending'));
+  }
   if (contextual) {
     const add = (label: string, value?: string) => { if (value) details.push(`${t(label)}: ${value}`); };
     add('notifications.detail.learner', meta.learnerName);
@@ -159,5 +180,9 @@ export function localizeNotification(notif: Notification, t: TFunction, language
     timeZone: zone, dateStyle: 'medium', timeStyle: 'short',
   }).format(new Date(occurredAt))}`);
   if (notif.type === 'user_role_changed') details.push(t('notifications.templates.lifecycleUi.roleAction'));
-  return { title, message: [message, ...details].join('\n') };
+  const profileMessage = changes.length ? t('notifications.templates.profileUi.summary', { name: meta.affectedUserName || unavailable }) : notif.message;
+  return {
+    title: profile && meta.action === 'email_change_requested' ? t('notifications.templates.profileUi.pendingTitle') : title,
+    message: [profile ? (profileMessage || message) : message, ...details].join('\n'),
+  };
 }

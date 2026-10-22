@@ -1,5 +1,6 @@
 import { refreshAcademicStoreFromBackend, useAcademic } from '@/features/academic/useAcademic';
 import type { DayCell } from '@/features/attendance/useAttendanceRF6';
+import { getAttendanceUISnapshot, setApprenticeDateFrom, setApprenticeDateTo, subscribeAttendanceUI } from '@/features/attendance/attendanceUIStore';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAuth } from '@/shared/contexts/AuthContext';
@@ -7,7 +8,8 @@ import { useTheme } from '@/shared/contexts/ThemeContext';
 import DateField from '@/shared/components/ui/DateField';
 import { fetchAttendanceMatrix } from '@/shared/services/facialAttendanceService';
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -21,10 +23,9 @@ export default function ApprenticeAttendanceScreen() {
   const { theme, isDark } = useTheme();
   const { t, i18n } = useTranslation();
 
-  // El aprendiz debe definir el periodo antes de consultar sus asistencias.
-  // Mantenerlos vacíos evita cargar automáticamente todo el histórico.
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  // Preserve the selected period when this route unmounts, separately for each account.
+  const attendanceUI = useSyncExternalStore(subscribeAttendanceUI, getAttendanceUISnapshot, getAttendanceUISnapshot);
+  const { dateFrom, dateTo } = (user?.id && attendanceUI.apprentice[user.id]) || { dateFrom: '', dateTo: '' };
   const [cells, setCells] = useState<DayCell[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,18 +58,20 @@ export default function ApprenticeAttendanceScreen() {
     ) ?? null;
   }, [currentFicha, user]);
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     let cancelled = false;
 
     async function loadAttendance() {
       if (!currentFicha || !currentLearner) {
         setCells([]);
         setError(null);
+        setLoading(false);
         return;
       }
       if (!dateFrom || !dateTo || dateFrom > dateTo) {
         setCells([]);
         setError(null);
+        setLoading(false);
         return;
       }
 
@@ -117,7 +120,7 @@ export default function ApprenticeAttendanceScreen() {
     return () => {
       cancelled = true;
     };
-  }, [currentFicha, currentLearner, dateFrom, dateTo]);
+  }, [currentFicha, currentLearner, dateFrom, dateTo]));
 
   const stats = useMemo(() => ({
     punctual: cells.filter((cell) => cell.status === 'punctual').length,
@@ -181,8 +184,7 @@ export default function ApprenticeAttendanceScreen() {
                 label={t('reports.filters.dateFrom')}
                 value={dateFrom}
                 onChange={(value) => {
-                  setDateFrom(value);
-                  if (dateTo && value > dateTo) setDateTo('');
+                  if (user?.id) setApprenticeDateFrom(user.id, value);
                 }}
                 placeholder="YYYY-MM-DD"
                 containerStyle={s.noMargin}
@@ -195,7 +197,7 @@ export default function ApprenticeAttendanceScreen() {
               <DateField
                 label={t('reports.filters.dateTo')}
                 value={dateTo}
-                onChange={setDateTo}
+                onChange={(value) => { if (user?.id) setApprenticeDateTo(user.id, value); }}
                 minDate={dateFrom || undefined}
                 placeholder="YYYY-MM-DD"
                 containerStyle={s.noMargin}
@@ -214,7 +216,7 @@ export default function ApprenticeAttendanceScreen() {
           </View>
         )}
 
-        {!loading && error && (
+        {!loading && !!error && (
           <View style={s.emptyBox}>
             <Ionicons name="alert-circle-outline" size={28} color={Colors.error} />
             <Text style={[s.emptyText, { color: Colors.error }]}>{error}</Text>
@@ -235,7 +237,7 @@ export default function ApprenticeAttendanceScreen() {
           </View>
         )}
 
-        {!loading && !error && currentFicha && dateFrom && dateTo && dateFrom <= dateTo && cells.length === 0 && (
+        {!loading && !error && currentFicha && !!dateFrom && !!dateTo && dateFrom <= dateTo && cells.length === 0 && (
           <View style={s.emptyBox}>
             <Ionicons name="calendar-outline" size={28} color={muted} />
             <Text style={[s.emptyText, { color: muted }]}>{t('apprentice.attendance.noRecordsPeriod')}</Text>

@@ -17,6 +17,7 @@ import { useAuth } from "@/shared/contexts/AuthContext";
 import { useTheme } from "@/shared/contexts/ThemeContext";
 import { useAppDialog } from "@/shared/hooks/useAppDialog";
 import MobileFacialNotice from "@/shared/components/facial/MobileFacialNotice";
+import { getMyProfile } from "@/shared/services/authService";
 import { fetchMyFacialEnrollmentStatus, fetchMyFacialResetState, requestMyFacialReset, type FacialResetState } from "@/shared/services/facialEnrollmentService";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -56,6 +57,7 @@ export default function ApprenticeFacialScreen() {
   const [serverRegistrationDate, setServerRegistrationDate] = useState<string | null>(null);
   const [loadingRegistrationStatus, setLoadingRegistrationStatus] = useState(false);
   const [registrationStatusError, setRegistrationStatusError] = useState<string | null>(null);
+  const [identityProfile, setIdentityProfile] = useState<{ userId: string; name: string; failed?: boolean } | null>(null);
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -64,9 +66,23 @@ export default function ApprenticeFacialScreen() {
   const bg = isDark ? Colors.dark.background : Colors.light.background;
 
   // Nombre completo del aprendiz
-  const fullName = user?.firstName
-    ? `${user.firstName} ${user.lastName ?? ""}`.trim()
-    : (user?.email ?? "");
+  const sessionName = `${user?.firstName || user?.name || ""} ${user?.lastName || user?.lastname || ""}`.trim();
+  const fullName = identityProfile?.userId === user?.id ? identityProfile?.name || sessionName : sessionName;
+  const identityFailed = identityProfile?.userId === user?.id && identityProfile?.failed;
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const userId = user.id;
+    let cancelled = false;
+    getMyProfile().then((profile) => {
+      if (cancelled) return;
+      const name = `${profile.firstName || profile.name || ""} ${profile.lastName || profile.lastname || ""}`.trim();
+      setIdentityProfile({ userId, name, failed: !name });
+    }).catch(() => {
+      if (!cancelled) setIdentityProfile({ userId, name: "", failed: true });
+    });
+    return () => { cancelled = true; };
+  }, [user?.id]);
 
   // Estado del registro facial actual
   const records = getFacialRecordsSnapshot();
@@ -162,7 +178,7 @@ export default function ApprenticeFacialScreen() {
     return <MobileFacialNotice attendanceRoute={Routes.APPRENTICE.ATTENDANCE} />;
   }
 
-  const canStartRegistration = canStartFacialCapture({ registered: serverRegistered, savedInThisScreen,
+  const canStartRegistration = !!fullName && canStartFacialCapture({ registered: serverRegistered, savedInThisScreen,
     reset: resetState, consumedRequests, loading: loadingRegistrationStatus, hasError: !!registrationStatusError });
 
   // ── Cancelar desde la cámara → limpia estado y vuelve al paso confirm ──
@@ -378,7 +394,7 @@ export default function ApprenticeFacialScreen() {
               end={{ x: 1, y: 0 }}
               style={s.nameBadge}
             >
-              <Text style={s.nameBadgeText}>{fullName}</Text>
+              <Text style={s.nameBadgeText}>{fullName || t(identityFailed ? "common.error" : "common.loading")}</Text>
             </LinearGradient>
           </View>
 
@@ -700,7 +716,7 @@ const s = StyleSheet.create({
     textAlign: "center",
   },
   noticeBody: { fontSize: FontSize.base, textAlign: "center" },
-  nameBadge: { borderRadius: 10, paddingVertical: 10, paddingHorizontal: 24 },
+  nameBadge: { maxWidth: "100%", borderRadius: 10, paddingVertical: 10, paddingHorizontal: 24 },
   nameBadgeText: {
     color: Colors.white,
     fontSize: FontSize.lg,
