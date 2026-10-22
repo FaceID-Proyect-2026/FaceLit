@@ -105,6 +105,26 @@ export function buildLivenessSequence(previousCodes: string[] = []): LivenessCha
   return [...sequence, ...fallback].slice(0, LIVENESS_SEQUENCE_LENGTH);
 }
 
+/** Sustituye solo el reto fallido y conserva el mismo número de paso. */
+export function replaceLivenessChallengeAtIndex(
+  sequence: LivenessChallenge[],
+  index: number,
+): LivenessChallenge[] {
+  const currentCode = sequence[index]?.code;
+  const usedCodes = new Set(
+    sequence.filter((_, challengeIndex) => challengeIndex !== index).map((challenge) => challenge.code),
+  );
+  const replacement = [...LIVENESS_CHALLENGES]
+    .filter((challenge) => challenge.code !== currentCode && !usedCodes.has(challenge.code))
+    .sort(() => Math.random() - 0.5)[0]
+    ?? LIVENESS_CHALLENGES.find((challenge) => challenge.code !== currentCode)
+    ?? LIVENESS_CHALLENGES[0];
+
+  return sequence.map((challenge, challengeIndex) => (
+    challengeIndex === index ? replacement : challenge
+  ));
+}
+
 function formatLivenessStep(challenge: LivenessChallenge, index: number): string {
   return `Paso ${index + 1}/${LIVENESS_SEQUENCE_LENGTH}: ${challenge.label}`;
 }
@@ -174,7 +194,7 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
     setLivenessFrames([]);
   }, []);
 
-  const resetFailedLivenessGroup = useCallback(() => {
+  const resetFailedLivenessGroup = useCallback((failedChallengeIndex: number) => {
     clearPositioningTimer();
     livenessGroupRef.current += 1;
     livenessValidationRef.current = false;
@@ -182,9 +202,7 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
     setScreenState('idle');
     setPhotoUri(null);
     setPhotoUris([]);
-    setLivenessFrames([]);
-    setActiveChallengeIndex(0);
-    setLivenessSequence((current) => buildLivenessSequence(current.map((challenge) => challenge.code)));
+    setLivenessSequence((current) => replaceLivenessChallengeAtIndex(current, failedChallengeIndex));
     setQuality('checking');
   }, [clearPositioningTimer]);
 
@@ -292,7 +310,7 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
       });
       if (groupId !== livenessGroupRef.current) return;
       if (!result.live) {
-        resetFailedLivenessGroup();
+        resetFailedLivenessGroup(activeChallengeIndex);
         setErrorModalTitle('Acción no realizada');
         setErrorModalMessage(buildChallengeFailureMessage(challenge, result.reason));
         return;
@@ -301,7 +319,7 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
       if (groupId !== livenessGroupRef.current) return;
       const message = getFacialEmbeddingErrorMessage(error);
       const normalized = message.toLowerCase();
-      resetFailedLivenessGroup();
+      resetFailedLivenessGroup(activeChallengeIndex);
       setErrorModalTitle(normalized.includes('más de un rostro') || normalized.includes('mas de un rostro')
         ? 'Más de un rostro detectado'
         : 'No se pudo validar la acción');
@@ -380,6 +398,15 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
     setActiveChallengeIndex(0);
     setQuality('checking');
     startPositioningSimulation();
+  }, [startPositioningSimulation]);
+
+  // Reintenta únicamente el reto que falló. Los retos anteriores y sus
+  // capturas permanecen intactos para no obligar al usuario a comenzar de 0.
+  const handleRetryCurrentChallenge = useCallback(() => {
+    setPhotoUri(null);
+    setPhotoUris([]);
+    setQuality('checking');
+    startPositioningSimulation(false);
   }, [startPositioningSimulation]);
 
   // ── Finalizar ──────────────────────────────────
@@ -493,8 +520,8 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
   const handleCloseErrorModal = useCallback(() => {
     setErrorModalMessage(null);
     setErrorModalTitle('No se pudo registrar');
-    handleRetake();
-  }, [handleRetake]);
+    handleRetryCurrentChallenge();
+  }, [handleRetryCurrentChallenge]);
 
   return {
     // estado

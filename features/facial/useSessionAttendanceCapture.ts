@@ -6,6 +6,7 @@ import {
   LIVENESS_CHALLENGES,
   LivenessChallenge,
   buildLivenessSequence,
+  replaceLivenessChallengeAtIndex,
 } from '@/features/auth/hooks/useFacialRegistration';
 import { FacialSession } from '@/features/facial/types';
 import { registerFacialAttendanceFromImage } from '@/shared/services/facialAttendanceService';
@@ -84,7 +85,7 @@ export function useSessionAttendanceCapture({ session, eventType }: UseSessionAt
     setLivenessFrames([]);
   }, []);
 
-  const resetFailedLivenessGroup = useCallback(() => {
+  const resetFailedLivenessGroup = useCallback((failedChallengeIndex: number) => {
     clearPositioningTimer();
     livenessGroupRef.current += 1;
     livenessValidationRef.current = false;
@@ -92,9 +93,7 @@ export function useSessionAttendanceCapture({ session, eventType }: UseSessionAt
     setScreenState('idle');
     setPhotoUri(null);
     setPhotoUris([]);
-    setLivenessFrames([]);
-    setActiveChallengeIndex(0);
-    setLivenessSequence((current) => buildLivenessSequence(current.map((challenge) => challenge.code)));
+    setLivenessSequence((current) => replaceLivenessChallengeAtIndex(current, failedChallengeIndex));
     setQuality('checking');
   }, [clearPositioningTimer]);
 
@@ -104,9 +103,9 @@ export function useSessionAttendanceCapture({ session, eventType }: UseSessionAt
     };
   }, [clearPositioningTimer]);
 
-  const startPositioningSimulation = useCallback(() => {
+  const startPositioningSimulation = useCallback((resetSequence = true) => {
     clearPositioningTimer();
-    randomizeLivenessChallenge();
+    if (resetSequence) randomizeLivenessChallenge();
     setScreenState('positioning');
     positioningTimer.current = setTimeout(() => {
       setScreenState('ready');
@@ -185,7 +184,7 @@ export function useSessionAttendanceCapture({ session, eventType }: UseSessionAt
       });
       if (groupId !== livenessGroupRef.current) return;
       if (!result.live) {
-        resetFailedLivenessGroup();
+        resetFailedLivenessGroup(activeChallengeIndex);
         setErrorModalTitle('Acción no realizada');
         setErrorModalMessage(buildChallengeFailureMessage(challenge, result.reason));
         return;
@@ -194,7 +193,7 @@ export function useSessionAttendanceCapture({ session, eventType }: UseSessionAt
       if (groupId !== livenessGroupRef.current) return;
       const message = getFacialEmbeddingErrorMessage(error);
       const normalized = message.toLowerCase();
-      resetFailedLivenessGroup();
+      resetFailedLivenessGroup(activeChallengeIndex);
       setErrorModalTitle(normalized.includes('más de un rostro') || normalized.includes('mas de un rostro')
         ? 'Más de un rostro detectado'
         : 'No se pudo validar la acción');
@@ -272,6 +271,14 @@ export function useSessionAttendanceCapture({ session, eventType }: UseSessionAt
     startPositioningSimulation();
   }, [startPositioningSimulation]);
 
+  // Reintenta únicamente el reto que falló y conserva los retos ya aprobados.
+  const handleRetryCurrentChallenge = useCallback(() => {
+    setPhotoUri(null);
+    setPhotoUris([]);
+    setQuality('checking');
+    startPositioningSimulation(false);
+  }, [startPositioningSimulation]);
+
   const handleFinish = useCallback(async () => {
     if (!session) {
       setErrorModalMessage('No hay una sesión activa para registrar asistencia.');
@@ -343,8 +350,8 @@ export function useSessionAttendanceCapture({ session, eventType }: UseSessionAt
   const handleCloseErrorModal = useCallback(() => {
     setErrorModalMessage(null);
     setErrorModalTitle('No se pudo registrar');
-    handleRetake();
-  }, [handleRetake]);
+    handleRetryCurrentChallenge();
+  }, [handleRetryCurrentChallenge]);
 
   return {
     screenState,
