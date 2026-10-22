@@ -182,9 +182,6 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
     setScreenState('idle');
     setPhotoUri(null);
     setPhotoUris([]);
-    setLivenessFrames([]);
-    setActiveChallengeIndex(0);
-    setLivenessSequence((current) => buildLivenessSequence(current.map((challenge) => challenge.code)));
     setQuality('checking');
   }, [clearPositioningTimer]);
 
@@ -382,6 +379,15 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
     startPositioningSimulation();
   }, [startPositioningSimulation]);
 
+  // Reintenta únicamente el reto que falló. Los retos anteriores y sus
+  // capturas permanecen intactos para no obligar al usuario a comenzar de 0.
+  const handleRetryCurrentChallenge = useCallback(() => {
+    setPhotoUri(null);
+    setPhotoUris([]);
+    setQuality('checking');
+    startPositioningSimulation(false);
+  }, [startPositioningSimulation]);
+
   // ── Finalizar ──────────────────────────────────
   const handleFinish = useCallback(async () => {
     if (!photoUri) {
@@ -493,8 +499,8 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
   const handleCloseErrorModal = useCallback(() => {
     setErrorModalMessage(null);
     setErrorModalTitle('No se pudo registrar');
-    handleRetake();
-  }, [handleRetake]);
+    handleRetryCurrentChallenge();
+  }, [handleRetryCurrentChallenge]);
 
   return {
     // estado

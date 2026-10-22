@@ -92,9 +92,6 @@ export function useSessionAttendanceCapture({ session, eventType }: UseSessionAt
     setScreenState('idle');
     setPhotoUri(null);
     setPhotoUris([]);
-    setLivenessFrames([]);
-    setActiveChallengeIndex(0);
-    setLivenessSequence((current) => buildLivenessSequence(current.map((challenge) => challenge.code)));
     setQuality('checking');
   }, [clearPositioningTimer]);
 
@@ -104,9 +101,9 @@ export function useSessionAttendanceCapture({ session, eventType }: UseSessionAt
     };
   }, [clearPositioningTimer]);
 
-  const startPositioningSimulation = useCallback(() => {
+  const startPositioningSimulation = useCallback((resetSequence = true) => {
     clearPositioningTimer();
-    randomizeLivenessChallenge();
+    if (resetSequence) randomizeLivenessChallenge();
     setScreenState('positioning');
     positioningTimer.current = setTimeout(() => {
       setScreenState('ready');
@@ -272,6 +269,14 @@ export function useSessionAttendanceCapture({ session, eventType }: UseSessionAt
     startPositioningSimulation();
   }, [startPositioningSimulation]);
 
+  // Reintenta únicamente el reto que falló y conserva los retos ya aprobados.
+  const handleRetryCurrentChallenge = useCallback(() => {
+    setPhotoUri(null);
+    setPhotoUris([]);
+    setQuality('checking');
+    startPositioningSimulation(false);
+  }, [startPositioningSimulation]);
+
   const handleFinish = useCallback(async () => {
     if (!session) {
       setErrorModalMessage('No hay una sesión activa para registrar asistencia.');
@@ -343,8 +348,8 @@ export function useSessionAttendanceCapture({ session, eventType }: UseSessionAt
   const handleCloseErrorModal = useCallback(() => {
     setErrorModalMessage(null);
     setErrorModalTitle('No se pudo registrar');
-    handleRetake();
-  }, [handleRetake]);
+    handleRetryCurrentChallenge();
+  }, [handleRetryCurrentChallenge]);
 
   return {
     screenState,
