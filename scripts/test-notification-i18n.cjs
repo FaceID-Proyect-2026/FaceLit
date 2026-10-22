@@ -20,7 +20,7 @@ function load(relative) {
   return module.exports;
 }
 
-const { localizeNotification, normalizeNotificationMeta, parseNotificationMeta, notificationDecisionActorName } = load('features/notifications/localizeNotification.ts');
+const { localizeNotification, normalizeNotificationMeta, parseNotificationMeta, notificationDecisionActorName, profileChangeDetails } = load('features/notifications/localizeNotification.ts');
 const { NOTIFICATION_CHANNELS } = load('features/notifications/types.ts');
 const catalog = fs.readFileSync(path.resolve(root, '../FaceLit-Backend/src/main/java/com/FaceLit/backend/notification/service/NotificationCatalog.java'), 'utf8');
 const types = [...catalog.matchAll(/Map\.entry\("([^"]+)"/g)].map(match => match[1]);
@@ -38,6 +38,31 @@ const sample = {
 let checked = 0;
 for (const lang of languages) {
   const t = i18n.getFixedT(lang);
+  const profileMeta = { affectedUserName: 'Maria Jose', changedByName: 'Ana Coordinadora', occurredAt: '2026-10-21T20:30:00Z',
+    profileChanges: [
+      { field: 'nombre', before: 'Maria', after: 'Maria Jose' },
+      { field: 'correo', before: 'old@example.com', after: 'new@example.com' },
+      { field: 'apellido', before: 'Prueba', after: 'Prueba' },
+      { field: 'password', before: 'SECRET', after: 'SECRET2' },
+    ] };
+  const changed = localizeNotification({ ...sample, category: 'academic', type: 'apprentice_profile_updated', meta: profileMeta }, t, lang);
+  for (const expected of ['Maria Jose', 'old@example.com', 'new@example.com', 'Ana Coordinadora',
+    t('notifications.templates.profileUi.before'), t('notifications.templates.profileUi.after'),
+    t('notifications.templates.lifecycleUi.eventDate')]) assert.ok(changed.message.includes(expected), `${lang}: missing profile detail ${expected}`);
+  assert.ok(!changed.message.includes('SECRET'));
+  assert.equal(profileChangeDetails(profileMeta, t).length, 2);
+  const instructorType = profileChangeDetails({ profileChanges: [{ field: 'tipoInstructor', before: 'ESPECIFICO', after: 'TRANSVERSAL' }] }, t)[0];
+  assert.equal(instructorType.before, t('notifications.templates.profileUi.specific'));
+  assert.equal(instructorType.after, t('notifications.templates.profileUi.transversal'));
+  assert.ok(!/notifications\.|\?/.test(instructorType.label));
+  assert.ok(!/notifications\.|\{\{/.test(changed.title + changed.message));
+  const oldProfile = { ...sample, category: 'academic', type: 'apprentice_profile_updated', message: 'Nombre: Maria -> Maria Jose', meta: {} };
+  assert.equal(localizeNotification(oldProfile, t, lang).message, oldProfile.message);
+  assert.equal(profileChangeDetails({ profileChanges: [{ field: 'nombre', before: 'Maria', after: 'Maria' }] }, t).length, 0);
+  const pending = localizeNotification({ ...sample, category: 'security', type: 'user_profile_updated',
+    meta: { ...profileMeta, action: 'email_change_requested' } }, t, lang);
+  assert.equal(pending.title, t('notifications.templates.profileUi.pendingTitle'));
+  assert.ok(pending.message.includes(t('notifications.templates.profileUi.pending')));
   const recovery = localizeNotification({ ...sample, type: 'password_changed', category: 'security', meta: {
     action: 'password_recovered', recipientName: 'Carlos Ramirez', recipientContext: 'account_owner', occurredAt: '2026-10-16T15:00:00Z',
   } }, t, lang);

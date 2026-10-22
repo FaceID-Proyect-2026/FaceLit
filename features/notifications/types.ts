@@ -124,6 +124,7 @@ export const NOTIFICATION_CHANNELS: Record<NotificationType, NotificationChannel
 
 /** Metadatos específicos por tipo de notificación */
 export interface NotificationMeta {
+  profileChanges?: { field: string; before: string; after: string }[];
   [key: string]: unknown;
   // CSV
   csvSummary?: { created: number; updated: number; blocked: number; errors: number };

@@ -1,4 +1,4 @@
-import { localizeNotification, normalizeNotificationMeta, notificationDecisionActorName } from '@/features/notifications/localizeNotification';
+import { localizeNotification, normalizeNotificationMeta, notificationDecisionActorName, profileChangeDetails } from '@/features/notifications/localizeNotification';
 // ─────────────────────────────────────────────
 //  app/notifications/index.tsx
 //  RF-8.2 — Bandeja de notificaciones (Coordinador)
@@ -112,6 +112,19 @@ export default function NotificationsScreen() {
   const renderDetail = (notif: Notification) => {
     const m = normalizeNotificationMeta(notif.meta);
     const rows: [string, string, string?, string?][] = [];
+    const changes = profileChangeDetails(m, t);
+    for (const change of changes) {
+      rows.push(['arrow-back-outline', `${change.label} · ${t('notifications.templates.profileUi.before')}`, change.before]);
+      rows.push(['arrow-forward-outline', `${change.label} · ${t('notifications.templates.profileUi.after')}`, change.after]);
+    }
+    if (changes.length) {
+      if (m.affectedUserName) rows.push(['person-outline', t('notifications.templates.lifecycleUi.recipient'), m.affectedUserName]);
+      if (m.changedByName) rows.push(['person-outline', t('notifications.templates.lifecycleUi.changedBy'), m.changedByName]);
+      if (m.occurredAt && !Number.isNaN(new Date(m.occurredAt).getTime())) rows.push(['calendar-outline',
+        t('notifications.templates.lifecycleUi.eventDate'), new Intl.DateTimeFormat(i18n.resolvedLanguage ?? i18n.language, {
+          timeZone: 'America/Bogota', dateStyle: 'medium', timeStyle: 'short',
+        }).format(new Date(m.occurredAt))]);
+    }
 
     // Campos comunes según tipo
     if (m.learnerName)      rows.push(['person-outline',       t('notifications.detail.learner'),   m.learnerName]);
@@ -139,7 +152,7 @@ export default function NotificationsScreen() {
       rows.push(['alert-circle-outline', t('notifications.detail.blocked'), `${s.blocked}`]);
       rows.push(['close-circle-outline', t('notifications.detail.errors'),  `${s.errors}`]);
     }
-    if (m.entityType) {
+    if (m.entityType && !changes.length) {
       const entityTypeKey = m.entityType === 'program' || m.entityType === 'ficha'
         || m.entityType === 'learner' || m.entityType === 'instructor'
         ? `notifications.entities.${m.entityType}`
@@ -471,9 +484,9 @@ const ns = StyleSheet.create({
   // Detalle expandido
   detail:     { marginTop: 10, paddingTop: 10, gap: 2 },
   detailRow:  { flexDirection: 'row', alignItems: 'center', paddingVertical: 7, borderBottomWidth: 0.5 },
-  detailLabel: { flexDirection: 'row', alignItems: 'center', gap: 5, flex: 1 },
-  detailLabelText: { fontSize: FontSize.xs },
-  detailValue: { fontSize: FontSize.xs, fontWeight: FontWeight.bold, flex: 1, textAlign: 'right' },
+  detailLabel: { flexDirection: 'row', alignItems: 'center', gap: 5, flex: 1, minWidth: 0 },
+  detailLabelText: { fontSize: FontSize.xs, flexShrink: 1 },
+  detailValue: { fontSize: FontSize.xs, fontWeight: FontWeight.bold, flex: 1, minWidth: 0, textAlign: 'right' },
 
   actionLink:     { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 8, borderWidth: 1, padding: 10, marginTop: 8 },
   actionLinkText: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },

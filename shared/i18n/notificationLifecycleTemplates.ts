@@ -1,5 +1,10 @@
 export const notificationLifecycleTemplates = {
   es: {
+    profileUi: {
+      fields: { nombre: 'Nombre', apellido: 'Apellido', documento: 'Documento', correo: 'Correo electrónico', correoPendiente: 'Correo pendiente de verificación', estado: 'Estado de cuenta', rol: 'Rol', tipoInstructor: 'Tipo de instructor' },
+      before: 'Valor anterior', after: 'Valor nuevo', summary: 'Se actualizaron los datos de {{name}}.', pendingTitle: 'Cambio de correo pendiente',
+      pending: 'El correo y la contraseña actuales se conservan hasta verificar el nuevo correo.', empty: 'Sin dato', active: 'Activa', inactive: 'Inactiva', pendingStatus: 'Pendiente', specific: 'Específico', transversal: 'Transversal',
+    },
     attendance_corrected: { title: 'Asistencia corregida', message: 'Se corrigió un registro de {{eventType}} del aprendiz {{learnerName}}.' },
     facial_authorization_expired: { title: 'Permiso facial vencido', message: 'Tu permiso para reemplazar el rostro venció sin utilizarse. Tu rostro anterior se conserva. Solicita nuevamente autorización al coordinador.' },
     user_role_changed: { title: 'Rol de usuario modificado', message: 'Tu rol cambió de {{previousRole}} a {{newRole}}. Modificado por: {{changedByName}}.' },
@@ -15,6 +20,11 @@ export const notificationLifecycleTemplates = {
       roles: { NONE: 'Sin rol', APPRENTICE: 'Aprendiz', INSTRUCTOR: 'Instructor', COORDINATOR: 'Coordinador' } },
   },
   en: {
+    profileUi: {
+      fields: { nombre: 'First name', apellido: 'Last name', documento: 'Document', correo: 'Email address', correoPendiente: 'Email pending verification', estado: 'Account status', rol: 'Role', tipoInstructor: 'Instructor type' },
+      before: 'Previous value', after: 'New value', summary: 'The details of {{name}} were updated.', pendingTitle: 'Email change pending',
+      pending: 'The current email and password remain valid until the new email is verified.', empty: 'No value', active: 'Active', inactive: 'Inactive', pendingStatus: 'Pending', specific: 'Specific', transversal: 'Cross-program',
+    },
     attendance_corrected: { title: 'Attendance corrected', message: 'An {{eventType}} record was corrected for learner {{learnerName}}.' },
     facial_authorization_expired: { title: 'Facial permission expired', message: 'Your permission to replace your facial record expired unused. Your previous facial record is preserved. Request authorization from the coordinator again.' },
     user_role_changed: { title: 'User role changed', message: 'Your role changed from {{previousRole}} to {{newRole}}. Changed by: {{changedByName}}.' },
@@ -30,6 +40,11 @@ export const notificationLifecycleTemplates = {
       roles: { NONE: 'No role', APPRENTICE: 'Learner', INSTRUCTOR: 'Instructor', COORDINATOR: 'Coordinator' } },
   },
   fr: {
+    profileUi: {
+      fields: { nombre: 'Prénom', apellido: 'Nom', documento: 'Document', correo: 'Adresse e-mail', correoPendiente: 'E-mail en attente de vérification', estado: 'État du compte', rol: 'Rôle', tipoInstructor: 'Type de formateur' },
+      before: 'Ancienne valeur', after: 'Nouvelle valeur', summary: 'Les informations de {{name}} ont été mises à jour.', pendingTitle: 'Changement d’e-mail en attente',
+      pending: 'L’e-mail et le mot de passe actuels restent valides jusqu’à la vérification du nouvel e-mail.', empty: 'Aucune valeur', active: 'Actif', inactive: 'Inactif', pendingStatus: 'En attente', specific: 'Spécifique', transversal: 'Transversal',
+    },
     attendance_corrected: { title: 'Présence corrigée', message: 'Un enregistrement d’{{eventType}} a été corrigé pour l’apprenant {{learnerName}}.' },
     facial_authorization_expired: { title: 'Autorisation faciale expirée', message: 'Votre autorisation de remplacer votre visage a expiré sans être utilisée. Votre ancien enregistrement est conservé. Demandez une nouvelle autorisation au coordinateur.' },
     user_role_changed: { title: 'Rôle utilisateur modifié', message: 'Votre rôle est passé de {{previousRole}} à {{newRole}}. Modification effectuée par : {{changedByName}}.' },
@@ -45,6 +60,11 @@ export const notificationLifecycleTemplates = {
       roles: { NONE: 'Aucun rôle', APPRENTICE: 'Apprenant', INSTRUCTOR: 'Formateur', COORDINATOR: 'Coordinateur' } },
   },
   de: {
+    profileUi: {
+      fields: { nombre: 'Vorname', apellido: 'Nachname', documento: 'Dokument', correo: 'E-Mail-Adresse', correoPendiente: 'E-Mail wartet auf Bestätigung', estado: 'Kontostatus', rol: 'Rolle', tipoInstructor: 'Dozententyp' },
+      before: 'Vorheriger Wert', after: 'Neuer Wert', summary: 'Die Daten von {{name}} wurden aktualisiert.', pendingTitle: 'E-Mail-Änderung ausstehend',
+      pending: 'Die bisherige E-Mail und das Passwort bleiben gültig, bis die neue E-Mail bestätigt ist.', empty: 'Kein Wert', active: 'Aktiv', inactive: 'Inaktiv', pendingStatus: 'Ausstehend', specific: 'Fachspezifisch', transversal: 'Fachübergreifend',
+    },
     attendance_corrected: { title: 'Anwesenheit korrigiert', message: 'Ein {{eventType}} wurde für {{learnerName}} korrigiert.' },
     facial_authorization_expired: { title: 'Gesichtsberechtigung abgelaufen', message: 'Deine Berechtigung zum Ersetzen der Gesichtsdaten ist ungenutzt abgelaufen. Deine bisherigen Gesichtsdaten bleiben erhalten. Bitte die Koordination erneut um eine Genehmigung.' },
     user_role_changed: { title: 'Benutzerrolle geändert', message: 'Deine Rolle wurde von {{previousRole}} zu {{newRole}} geändert. Geändert von: {{changedByName}}.' },
