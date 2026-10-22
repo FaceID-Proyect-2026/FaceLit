@@ -16,7 +16,7 @@ import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 
 interface FaceGuideOverlayProps {
   primaryColor:  string;
@@ -55,6 +55,9 @@ const WARNING_CONFIG: Record<LiveWarning, { icon: string; key: string; color: st
 
 const ROTATION_MS = 2000;
 
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(Math.max(value, min), max);
+
 // Instrucciones rotativas durante posicionamiento (sin advertencia activa)
 const POSITIONING_KEYS = [
   { icon: 'person-outline',         key: 'facialReg.instr1'        },
@@ -81,8 +84,26 @@ export default function FaceGuideOverlay({
   stableFrames = 0, requiredFrames = 5, onConfirm, onCancel,
 }: FaceGuideOverlayProps) {
   const { t } = useTranslation();
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const [posIdx, setPosIdx] = useState(0);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // La guía acompaña el espacio disponible, con límites para conservar un
+  // tamaño mediano tanto en portátiles como en monitores grandes.
+  const availableWidth = Math.max(windowWidth - 32, 160);
+  const minGuideWidth = Math.min(190, availableWidth);
+  const guideWidth = clamp(
+    Math.min(availableWidth, windowWidth * 0.44, windowHeight * 0.42),
+    minGuideWidth,
+    340,
+  );
+  const guideHeight = guideWidth * 1.25;
+  const guideBottom = Math.max(46, guideHeight * 0.18);
+  const guideStyle = {
+    width: guideWidth,
+    height: guideHeight,
+    borderRadius: guideWidth,
+  };
 
   const renderOvalMessage = (
     color: string,
@@ -94,9 +115,9 @@ export default function FaceGuideOverlay({
     const pct = Math.round((stableFrames / requiredFrames) * 100);
     return (
       <View style={[s.container, { pointerEvents: 'none' } as any]}>
-        <View style={s.ovalWrap}>
-          <View style={[s.oval, { borderColor: color, borderStyle }]} />
-          <View style={[s.badge, { backgroundColor: color + 'F2' }]}>
+        <View style={[s.ovalWrap, { height: guideHeight }]}>
+          <View style={[s.oval, guideStyle, { borderColor: color, borderStyle }]} />
+          <View style={[s.badge, { backgroundColor: color + 'F2', bottom: guideBottom }]}>
             <Ionicons name={icon as any} size={16} color={Colors.white} />
             <Text style={s.badgeText} numberOfLines={2}>{message}</Text>
           </View>
@@ -259,7 +280,7 @@ export default function FaceGuideOverlay({
   // Fallback — solo óvalo
   return (
     <View style={[s.container, { pointerEvents: 'none' } as any]}>
-      <View style={[s.oval, { borderColor: STATE_BLUE }]} />
+      <View style={[s.oval, guideStyle, { borderColor: STATE_BLUE }]} />
     </View>
   );
 }
@@ -270,20 +291,16 @@ const s = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   oval: {
-    width: 240, height: 300,
-    borderRadius: 130,
     borderWidth: 2.5,
     borderStyle: 'dashed',
   },
   ovalWrap: {
     width: '100%',
-    height: 300,
     alignItems: 'center',
     justifyContent: 'center',
   },
   badge: {
     position:          'absolute',
-    bottom:            56,
     alignSelf:         'center',
     flexDirection:     'row',
     alignItems:        'center',

@@ -29,6 +29,12 @@ const ANALYSIS_INTERVAL_MS = 300;
 const MIN_BRIGHTNESS       = 55;   // muy oscuro
 const MAX_BRIGHTNESS       = 235;  // sobreexpuesto
 const MIN_CONTRAST         = 20;   // contraste mínimo (std de luminancia)
+// Permiten detectar un rostro que ocupa menos espacio en la imagen, es decir,
+// una persona sentada a una distancia normal de la cámara.
+const MIN_FACE_WARM_RATIO  = 0.025;
+const MIN_FACE_DENSITY      = 0.22;
+const DENSITY_RATIO_GATE    = 0.12;
+const TOO_CLOSE_WARM_RATIO  = 0.82;
 
 // ── Tipo de advertencia en tiempo real ────────
 export type LiveWarning =
@@ -133,15 +139,15 @@ function computeWarning(
   if (brightness > MAX_BRIGHTNESS)  return 'highLight';
   if (contrast   < MIN_CONTRAST)    return 'lowContrast';
 
-  // Sin tono cálido suficiente → no hay rostro
-  // Umbral subido a 0.06 (6%) para evitar falsos positivos con fondos cálidos
-  if (warmRatio  < 0.06)            return 'noSkin';
+  // Sin tono cálido suficiente → no hay rostro. El umbral es bajo para que
+  // una cara alejada no obligue a la persona a acercarse a la cámara.
+  if (warmRatio  < MIN_FACE_WARM_RATIO) return 'noSkin';
 
   // Tono cálido muy disperso (baja densidad) → fondo/objeto, no un rostro concentrado
   // Un rostro real tiene los píxeles de piel agrupados, no distribuidos por todo el frame
-  if (warmDensity < 0.35 && warmRatio < 0.25) return 'noSkin';
+  if (warmDensity < MIN_FACE_DENSITY && warmRatio < DENSITY_RATIO_GATE) return 'noSkin';
 
-  if (warmRatio  > 0.68)            return 'skinTooClose';
+  if (warmRatio  > TOO_CLOSE_WARM_RATIO) return 'skinTooClose';
 
   // El rostro solo es válido dentro de la elipse del óvalo. Esto evita que
   // se habilite el reconocimiento cuando la persona está a los lados,
