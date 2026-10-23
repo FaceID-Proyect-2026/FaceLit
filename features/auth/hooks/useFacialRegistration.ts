@@ -163,6 +163,7 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
   const [successModalVisible, setSuccessModalVisible] = useState(false);
   const [errorModalTitle, setErrorModalTitle]         = useState('No se pudo registrar');
   const [errorModalMessage, setErrorModalMessage]     = useState<string | null>(null);
+  const [errorRecoveryMode, setErrorRecoveryMode]     = useState<'challenge' | 'capture'>('challenge');
   const [livenessSequence, setLivenessSequence]       = useState<LivenessChallenge[]>(() => buildLivenessSequence());
   const [activeChallengeIndex, setActiveChallengeIndex] = useState(0);
   const [livenessFrames, setLivenessFrames]           = useState<string[]>([]);
@@ -311,6 +312,7 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
       if (groupId !== livenessGroupRef.current) return;
       if (!result.live) {
         resetFailedLivenessGroup(activeChallengeIndex);
+        setErrorRecoveryMode('challenge');
         setErrorModalTitle('Acción no realizada');
         setErrorModalMessage(buildChallengeFailureMessage(challenge, result.reason));
         return;
@@ -320,6 +322,7 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
       const message = getFacialEmbeddingErrorMessage(error);
       const normalized = message.toLowerCase();
       resetFailedLivenessGroup(activeChallengeIndex);
+      setErrorRecoveryMode('challenge');
       setErrorModalTitle(normalized.includes('más de un rostro') || normalized.includes('mas de un rostro')
         ? 'Más de un rostro detectado'
         : 'No se pudo validar la acción');
@@ -412,6 +415,7 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
   // ── Finalizar ──────────────────────────────────
   const handleFinish = useCallback(async () => {
     if (!photoUri) {
+      setErrorRecoveryMode('capture');
       setErrorModalMessage(t('facial.validation.noFace'));
       return;
     }
@@ -434,6 +438,7 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
       : undefined);
 
     if (!facialUser) {
+      setErrorRecoveryMode('capture');
       setErrorModalMessage(t('facial.validation.userNotFound'));
       return;
     }
@@ -466,6 +471,8 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
       }
       setSuccessModalVisible(true);
     } catch (error: any) {
+      // Reiniciar la captura evita concatenar frames nuevos con los ya enviados.
+      setErrorRecoveryMode('capture');
       const message = getFacialEmbeddingErrorMessage(error);
       console.warn('[FacialRegistration] Error registering embedding', {
         status: error?.response?.status,
@@ -520,8 +527,12 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
   const handleCloseErrorModal = useCallback(() => {
     setErrorModalMessage(null);
     setErrorModalTitle('No se pudo registrar');
+    if (errorRecoveryMode === 'capture') {
+      handleRetake();
+      return;
+    }
     handleRetryCurrentChallenge();
-  }, [handleRetryCurrentChallenge]);
+  }, [errorRecoveryMode, handleRetake, handleRetryCurrentChallenge]);
 
   return {
     // estado

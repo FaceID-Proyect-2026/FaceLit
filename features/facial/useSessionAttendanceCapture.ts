@@ -54,6 +54,7 @@ export function useSessionAttendanceCapture({ session, eventType }: UseSessionAt
   const [successModalVisible, setSuccessModalVisible] = useState(false);
   const [errorModalTitle, setErrorModalTitle] = useState('No se pudo registrar');
   const [errorModalMessage, setErrorModalMessage] = useState<string | null>(null);
+  const [errorRecoveryMode, setErrorRecoveryMode] = useState<'challenge' | 'capture'>('challenge');
   const [livenessSequence, setLivenessSequence] = useState<LivenessChallenge[]>(() => buildLivenessSequence());
   const [activeChallengeIndex, setActiveChallengeIndex] = useState(0);
   const [livenessFrames, setLivenessFrames] = useState<string[]>([]);
@@ -185,6 +186,7 @@ export function useSessionAttendanceCapture({ session, eventType }: UseSessionAt
       if (groupId !== livenessGroupRef.current) return;
       if (!result.live) {
         resetFailedLivenessGroup(activeChallengeIndex);
+        setErrorRecoveryMode('challenge');
         setErrorModalTitle('Acción no realizada');
         setErrorModalMessage(buildChallengeFailureMessage(challenge, result.reason));
         return;
@@ -194,6 +196,7 @@ export function useSessionAttendanceCapture({ session, eventType }: UseSessionAt
       const message = getFacialEmbeddingErrorMessage(error);
       const normalized = message.toLowerCase();
       resetFailedLivenessGroup(activeChallengeIndex);
+      setErrorRecoveryMode('challenge');
       setErrorModalTitle(normalized.includes('más de un rostro') || normalized.includes('mas de un rostro')
         ? 'Más de un rostro detectado'
         : 'No se pudo validar la acción');
@@ -281,10 +284,12 @@ export function useSessionAttendanceCapture({ session, eventType }: UseSessionAt
 
   const handleFinish = useCallback(async () => {
     if (!session) {
+      setErrorRecoveryMode('capture');
       setErrorModalMessage('No hay una sesión activa para registrar asistencia.');
       return;
     }
     if (!photoUri) {
+      setErrorRecoveryMode('capture');
       setErrorModalMessage(t('facial.validation.noFace'));
       return;
     }
@@ -308,6 +313,8 @@ export function useSessionAttendanceCapture({ session, eventType }: UseSessionAt
 
       setSuccessModalVisible(true);
     } catch (error: any) {
+      // Reiniciar la captura evita concatenar frames nuevos con los ya enviados.
+      setErrorRecoveryMode('capture');
       setErrorModalMessage(getFacialEmbeddingErrorMessage(error));
     } finally {
       setIsRegistering(false);
@@ -350,8 +357,12 @@ export function useSessionAttendanceCapture({ session, eventType }: UseSessionAt
   const handleCloseErrorModal = useCallback(() => {
     setErrorModalMessage(null);
     setErrorModalTitle('No se pudo registrar');
+    if (errorRecoveryMode === 'capture') {
+      handleRetake();
+      return;
+    }
     handleRetryCurrentChallenge();
-  }, [handleRetryCurrentChallenge]);
+  }, [errorRecoveryMode, handleRetake, handleRetryCurrentChallenge]);
 
   return {
     screenState,
