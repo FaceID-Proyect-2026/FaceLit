@@ -350,7 +350,7 @@ export async function uploadAcademicCsv(file: { uri: string; name: string } | Bl
   // La carga de CSV puede demorar más de 15s porque el backend valida filas,
   // referencias y actualizaciones masivas.
   const { data } = await api.post('/api/academic/csv/upload', form, {
-    timeout: 180000,
+    timeout: 300000,
     headers: { Accept: 'application/json' },
   });
   return data;
@@ -386,6 +386,10 @@ export async function createInstructor(payload: {
 }
 
 export async function updateInstructor(id: string, payload: {
+  document: string;
+  name: string;
+  lastname: string;
+  email: string;
   instructorType: 'ESPECIFICO' | 'TRANSVERSAL';
   programIds: string[];
 }) {
@@ -393,8 +397,9 @@ export async function updateInstructor(id: string, payload: {
   return data;
 }
 
-export async function deleteInstructor(id: string) {
-  return api.delete(`/api/academic/instructors/${id}`);
+export async function deactivateInstructor(id: string) {
+  const { data } = await api.patch<BackendInstructor>(`/api/academic/instructors/${id}/deactivate`);
+  return data;
 }
 
 export async function reactivateInstructor(id: string) {

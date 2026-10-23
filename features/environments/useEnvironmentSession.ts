@@ -10,12 +10,32 @@ import {
   SessionInstructor,
 } from './environmentSessionApi';
 
+function timeToSessionDate(time: string, baseDate = new Date(), mustBeAfter?: Date) {
+  const [hours, minutes] = time.split(':').map(Number);
+  const date = new Date(baseDate);
+  date.setHours(hours, minutes || 0, 0, 0);
+
+  if (mustBeAfter && date.getTime() <= mustBeAfter.getTime()) {
+    date.setDate(date.getDate() + 1);
+  }
+
+  return date;
+}
+
+function isTimeInFuture(time: string, baseDate = new Date()) {
+  const [hours, minutes] = time.split(':').map(Number);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return false;
+  const candidate = new Date(baseDate);
+  candidate.setHours(hours, minutes, 0, 0);
+  return candidate.getTime() > baseDate.getTime();
+}
+
 export function useEnvironmentSession() {
   const [environmentQuery, setEnvironmentQueryState] = useState('');
   const [environments, setEnvironments] = useState<EnvironmentOption[]>([]);
   const [selectedEnvironment, setSelectedEnvironment] = useState<EnvironmentOption | null>(null);
   const [instructors, setInstructors] = useState<SessionInstructor[]>([]);
-  const [selectedInstructorId, setSelectedInstructorId] = useState('');
+  const [selectedInstructorId, setSelectedInstructorIdState] = useState('');
   const [chips, setChips] = useState<SessionChip[]>([]);
   const [selectedChipId, setSelectedChipId] = useState('');
   const [loading, setLoading] = useState(false);
@@ -76,6 +96,12 @@ export function useEnvironmentSession() {
     );
   }, []);
 
+  const setSelectedInstructorId = useCallback((id: string) => {
+    setSelectedInstructorIdState(id);
+    setSelectedChipId('');
+    setChips([]);
+  }, []);
+
   const createEnvironment = useCallback(async () => {
     const name = environmentQuery.trim();
     if (!name) return null;
@@ -88,25 +114,42 @@ export function useEnvironmentSession() {
 
   const saveSession = useCallback(async (settings: {
     registrationMinutes: number;
-    exitTime?: string;
-    shutdownTime?: string;
+    exitTime: string;
+    shutdownTime: string;
   }) => {
     if (!selectedEnvironment || !selectedInstructorId || !selectedChipId) {
       return { success: false as const, error: 'facial.setup.validation.allRequired' };
     }
+    const now = new Date();
+    if (!isTimeInFuture(settings.exitTime, now)) {
+      return { success: false as const, error: 'La hora de salida debe ser posterior a la hora actual.' };
+    }
+    if (!isTimeInFuture(settings.shutdownTime, now)) {
+      return { success: false as const, error: 'La hora de apagado debe ser posterior a la hora actual.' };
+    }
+    if (settings.shutdownTime <= settings.exitTime) {
+      return { success: false as const, error: 'La hora de apagado debe ser posterior a la hora de salida.' };
+    }
     setSaving(true);
     try {
+      const entryTime = new Date();
+      const exitDate = timeToSessionDate(settings.exitTime, entryTime, entryTime);
+      const shutdownDate = timeToSessionDate(settings.shutdownTime, exitDate, exitDate);
       const session = await createEnvironmentSession({
         idEnvironment: selectedEnvironment.idEnvironment,
         idInstructorInCharge: selectedInstructorId,
         idChip: selectedChipId,
+        entryTime: entryTime.toISOString(),
         registrationMinutes: settings.registrationMinutes,
-        exitTime: settings.exitTime,
-        shutdownTime: settings.shutdownTime,
+        exitTime: exitDate.toISOString(),
+        shutdownTime: shutdownDate.toISOString(),
       });
       return { success: true as const, session };
-    } catch {
-      return { success: false as const, error: 'facial.setup.validation.saveFailed' };
+    } catch (error: any) {
+      return {
+        success: false as const,
+        error: error?.response?.data?.message ?? 'facial.setup.validation.saveFailed',
+      };
     } finally {
       setSaving(false);
     }

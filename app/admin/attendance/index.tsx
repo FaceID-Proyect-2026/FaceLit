@@ -2,24 +2,20 @@
 //  app/admin/attendance/index.tsx
 //  RF-6 V4 — Módulo de Asistencias (Coordinador)
 //
-//  El estado de cada tab vive en attendanceUIStore
-//  (fuera de React) → sobrevive desmontajes al
-//  cambiar de tab o salir y volver a la pantalla.
+//  El estado de cada tab vive en attendanceUIStore.
 // ─────────────────────────────────────────────
-import { getAttendanceUISnapshot, subscribeAttendanceUI } from '@/features/attendance/attendanceUIStore';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
-import { useState, useSyncExternalStore } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import AttendanceByFichaScreen from './by-ficha';
 import AttendanceByUserScreen from './by-user';
-import AttendanceHistoryScreen from './history';
 
-type Tab = 'byFicha' | 'byUser' | 'history';
+type Tab = 'byFicha' | 'byUser';
 
 export default function AttendanceIndexScreen() {
   const { isDark, theme } = useTheme();
@@ -27,7 +23,6 @@ export default function AttendanceIndexScreen() {
 
   // Solo el tab activo vive en estado local — lo demás está en el store
   const [activeTab, setActiveTab] = useState<Tab>('byFicha');
-  const attendanceUI = useSyncExternalStore(subscribeAttendanceUI, getAttendanceUISnapshot);
 
   const text   = isDark ? Colors.dark.text      : Colors.light.text;
   const muted  = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -38,7 +33,6 @@ export default function AttendanceIndexScreen() {
   const tabs: { key: Tab; label: string; icon: React.ComponentProps<typeof Ionicons>['name'] }[] = [
     { key: 'byFicha', label: t('attendance.rf6.tabByFicha'), icon: 'people-outline'   },
     { key: 'byUser',  label: t('attendance.rf6.tabByUser'),  icon: 'person-outline'   },
-    { key: 'history', label: t('attendance.rf6.tabHistory'), icon: 'time-outline'     },
   ];
 
   return (
@@ -77,11 +71,6 @@ export default function AttendanceIndexScreen() {
       <View style={s.tabContent}>
         {activeTab === 'byFicha'  && <AttendanceByFichaScreen />}
         {activeTab === 'byUser'   && <AttendanceByUserScreen  />}
-        {activeTab === 'history'  && (
-          <AttendanceHistoryScreen
-            selectedProgramId={attendanceUI.byFicha.selectedProgramId}
-          />
-        )}
       </View>
     </View>
   );

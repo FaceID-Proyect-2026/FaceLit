@@ -365,6 +365,14 @@ export function parseAcademicCsvV4(csvText: string): ParseCsvV4Result {
         row.instructorTipo = rawInstTipo as 'especifico' | 'transversal';
 
         const progCode = normalizeProgramCode(get(progIdx));
+        const fichaCode = get(fichaIdx);
+        if (fichaCode) {
+          if (!isValidFichaCode(fichaCode)) {
+            errors.push(`El código de ficha de la fila ${rowNum} debe tener 7 dígitos numéricos.`);
+          } else {
+            row.fichaCodigo = fichaCode;
+          }
+        }
 
         if (rawInstTipo === 'especifico') {
           // §8 — específico requiere programa_codigo
@@ -593,7 +601,7 @@ export const CSV_TEMPLATE = [
   'ficha,,,,,ADSO,2825551,',
   'ficha,,,,,ADSO,2825552,',
   'aprendiz,1002345678,Juan,Pérez,juan.perez@correo.com,,2825551,',
-  'instructor,1029384756,Laura,Gómez,laura.gomez@correo.com,ADSO,,especifico',
+  'instructor,1029384756,Laura,Gómez,laura.gomez@correo.com,ADSO,2825551,especifico',
   'instructor,1050607080,Carlos,Ruiz,carlos.ruiz@correo.com,,,transversal',
 ].join('\n');
 

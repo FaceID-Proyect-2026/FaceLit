@@ -1,4 +1,5 @@
 import { useEnvironmentSession } from "@/features/environments/useEnvironmentSession";
+import { fetchCurrentActiveEnvironmentSession } from "@/features/environments/environmentSessionApi";
 import { useFacialRegistry } from "@/features/facial/useFacialRegistry";
 import { AppButton, InputField, SelectField } from "@/shared/components/ui";
 import { Colors } from "@/shared/constants/colors";
@@ -9,16 +10,16 @@ import { useTheme } from "@/shared/contexts/ThemeContext";
 import { useAppDialog } from "@/shared/hooks/useAppDialog";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
 
 export default function FacialManagementScreen() {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
-  const { settings, saveConfig } = useFacialRegistry();
+  const { config, sectionDraft, settings, activeSession, saveConfig, saveSectionDraft, setActiveSession } = useFacialRegistry(user?.id);
   const { alert, DialogUI } = useAppDialog();
   const {
     environmentQuery,
@@ -38,6 +39,30 @@ export default function FacialManagementScreen() {
     saving,
     saveSession,
   } = useEnvironmentSession();
+  const restoredConfigRef = useRef(false);
+
+  useEffect(() => {
+    let mounted = true;
+    fetchCurrentActiveEnvironmentSession().then((session) => {
+      if (!mounted) return;
+      if (!session) {
+        setActiveSession(undefined);
+        return;
+      }
+      setActiveSession({
+        idRecordEnvironment: session.idRecordEnvironment,
+        idEnvironment: session.idEnvironment,
+        environmentName: session.environmentName,
+        idDevice: session.idDevice,
+        deviceCode: session.deviceCode,
+        idChip: session.idChip,
+        chipCode: session.chipCode,
+        shutdownTime: session.shutdownTime,
+        active: session.active,
+      });
+    }).catch(() => undefined);
+    return () => { mounted = false; };
+  }, [setActiveSession]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.history?.pushState) return;
@@ -54,6 +79,39 @@ export default function FacialManagementScreen() {
     return () => window.removeEventListener("popstate", handleBrowserBack);
   }, [logout]);
 
+  useEffect(() => {
+    const savedSection = sectionDraft ?? config;
+    if (restoredConfigRef.current || !savedSection) return;
+    if (selectedEnvironment || selectedInstructorId || selectedChipId) return;
+    if (!savedSection.environmentId || !savedSection.environmentName) return;
+
+    selectEnvironment({
+      idEnvironment: savedSection.environmentId,
+      environmentName: savedSection.environmentName,
+    });
+    if (savedSection.instructorId) {
+      setSelectedInstructorId(savedSection.instructorId);
+    }
+    restoredConfigRef.current = true;
+  }, [
+    config,
+    sectionDraft,
+    selectEnvironment,
+    selectedChipId,
+    selectedEnvironment,
+    selectedInstructorId,
+    setSelectedInstructorId,
+  ]);
+
+  useEffect(() => {
+    const savedSection = sectionDraft ?? config;
+    if (!savedSection || !restoredConfigRef.current || selectedChipId) return;
+    if (!savedSection.fichaId || selectedInstructorId !== savedSection.instructorId) return;
+    if (!chips.some((chip) => chip.idChip === savedSection.fichaId)) return;
+
+    setSelectedChipId(savedSection.fichaId);
+  }, [chips, config, sectionDraft, selectedChipId, selectedInstructorId, setSelectedChipId]);
+
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
   const cardBg = theme.surface;
@@ -68,31 +126,81 @@ export default function FacialManagementScreen() {
 
   const fichaOptions = chips.map((chip) => ({
     value: chip.idChip,
-    label: `Ficha ${chip.chipCode} - ${chip.programName}`,
+    label: `${t("facial.setup.fields.ficha")} ${chip.chipCode} - ${chip.programName}`,
   }));
   const selectedInstructor = instructors.find((instructor) => instructor.idInstructor === selectedInstructorId);
   const selectedChip = chips.find((chip) => chip.idChip === selectedChipId);
   const sessionSummary = [
-    { icon: "business-outline", label: t("facial.setup.fields.environment"), value: selectedEnvironment?.environmentName ?? "Sin seleccionar" },
-    { icon: "person-outline", label: t("facial.setup.fields.instructor"), value: selectedInstructor ? `${selectedInstructor.firstName} ${selectedInstructor.lastName}` : "Sin seleccionar" },
-    { icon: "school-outline", label: t("facial.setup.fields.ficha"), value: selectedChip ? `Ficha ${selectedChip.chipCode}` : "Sin seleccionar" },
+    { icon: "business-outline", label: t("facial.setup.fields.environment"), value: selectedEnvironment?.environmentName ?? t("facial.setup.unselected") },
+    { icon: "person-outline", label: t("facial.setup.fields.instructor"), value: selectedInstructor ? `${selectedInstructor.firstName} ${selectedInstructor.lastName}` : t("facial.setup.unselected") },
+    { icon: "school-outline", label: t("facial.setup.fields.ficha"), value: selectedChip ? `${t("facial.setup.fields.ficha")} ${selectedChip.chipCode}` : t("facial.setup.unselected") },
   ];
 
-  const canSave = !!selectedEnvironment && !!selectedInstructorId && !!selectedChipId && !saving;
+  const hasSettings = !!settings;
+  const canSave = !!selectedEnvironment && !!selectedInstructor && !!selectedChip && hasSettings && !saving;
+  const handleContinueSession = () => router.replace(Routes.INSTRUCTOR.FACIAL_CAMERA as any);
 
   const handleCreateEnvironment = async () => {
     try {
-      await createEnvironment();
+      const environment = await createEnvironment();
+      if (environment) {
+        void saveSectionDraft({
+          environmentId: environment.idEnvironment,
+          environmentName: environment.environmentName,
+        });
+      }
     } catch {
       alert(t("common.error"), t("facial.setup.validation.environmentCreateFailed"));
     }
   };
 
+  const handleSelectEnvironment = (environment: { idEnvironment: string; environmentName: string }) => {
+    selectEnvironment(environment);
+    void saveSectionDraft({
+      environmentId: environment.idEnvironment,
+      environmentName: environment.environmentName,
+    });
+  };
+
+  const handleEnvironmentQueryChange = (value: string) => {
+    setEnvironmentQuery(value);
+    if (selectedEnvironment?.environmentName.trim().toLowerCase() !== value.trim().toLowerCase()) {
+      void saveSectionDraft({ environmentId: undefined, environmentName: value.trim() || undefined });
+    }
+  };
+
+  const handleSelectInstructor = (idInstructor: string) => {
+    setSelectedInstructorId(idInstructor);
+    void saveSectionDraft({ instructorId: idInstructor || undefined, fichaId: undefined });
+  };
+
+  const handleSelectChip = (idChip: string) => {
+    setSelectedChipId(idChip);
+    void saveSectionDraft({ fichaId: idChip || undefined });
+  };
+
   const handleSave = async () => {
     if (!canSave) {
-      alert(t("common.error"), t("facial.setup.validation.allRequired"));
+      alert(
+        t("common.error"),
+        hasSettings
+          ? t("facial.setup.validation.allRequired")
+          : t("facial.settings.validation.allRequired"),
+      );
       return;
     }
+
+    const sessionConfig = {
+      environmentId: selectedEnvironment.idEnvironment,
+      environmentName: selectedEnvironment.environmentName,
+      instructorId: selectedInstructor.idInstructor,
+      instructorName: `${selectedInstructor.firstName} ${selectedInstructor.lastName}`.trim(),
+      fichaId: selectedChip.idChip,
+      fichaNumber: selectedChip.chipCode,
+    };
+
+    void saveConfig(sessionConfig);
+    void saveSectionDraft(sessionConfig);
 
     const result = await saveSession({
       registrationMinutes: settings.registrationMinutes,
@@ -105,16 +213,14 @@ export default function FacialManagementScreen() {
       return;
     }
 
-    saveConfig({
-      environmentId: result.session.idEnvironment,
-      environmentName: result.session.environmentName,
-      instructorId: result.session.idInstructorInCharge,
-      instructorName: result.session.instructorName,
-      fichaId: result.session.idChip,
-      fichaNumber: result.session.chipCode,
-    });
+    setActiveSession(result.session);
 
-    alert(t("common.success"), t("facial.setup.saveSuccess"));
+    alert(t("common.success"), t("facial.setup.saveSuccess"), [
+      {
+        text: t("common.ok"),
+        onPress: () => router.replace(Routes.INSTRUCTOR.FACIAL_CAMERA as any),
+      },
+    ]);
   };
 
   return (
@@ -147,19 +253,34 @@ export default function FacialManagementScreen() {
         </View>
 
         <View style={[fs.contentGrid, isCompact && fs.contentGridCompact]}>
+          {activeSession ? (
+            <View style={[fs.activeSessionCard, { backgroundColor: theme.primary + "12", borderColor: theme.primary }]}>
+              <Ionicons name="play-circle-outline" size={26} color={theme.primary} />
+              <View style={{ flex: 1 }}>
+                <Text style={[fs.activeSessionTitle, { color: text }]}>Registro en curso</Text>
+                <Text style={[fs.activeSessionBody, { color: muted }]}>La sección de {activeSession.chipCode} en {activeSession.environmentName} sigue habilitada hasta las {new Date(activeSession.shutdownTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.</Text>
+              </View>
+              <AppButton
+                title="Continuar registro"
+                onPress={handleContinueSession}
+                fullWidth={isCompact}
+                style={{ ...fs.continueButton, ...(isCompact ? fs.continueButtonCompact : {}) }}
+              />
+            </View>
+          ) : null}
           <View style={[fs.summaryCard, isCompact && fs.summaryCardCompact, { backgroundColor: cardBg, borderColor: border }]}>
             <Text style={[fs.panelTitle, { color: text }]}>Configuracion actual</Text>
             <View style={fs.timerGrid}>
               <View style={[fs.timerTile, { backgroundColor: theme.primary + "10", borderColor: border }]}>
-                <Text style={[fs.timerValue, { color: text }]}>{settings.registrationMinutes} min</Text>
+                <Text style={[fs.timerValue, { color: text }]}>{settings ? `${settings.registrationMinutes} min` : "-"}</Text>
                 <Text style={[fs.timerLabel, { color: muted }]}>Registro</Text>
               </View>
               <View style={[fs.timerTile, { backgroundColor: theme.primary + "10", borderColor: border }]}>
-                <Text style={[fs.timerValue, { color: text }]}>{settings.exitTime}</Text>
+                <Text style={[fs.timerValue, { color: text }]}>{settings?.exitTime ?? "-"}</Text>
                 <Text style={[fs.timerLabel, { color: muted }]}>Salida</Text>
               </View>
               <View style={[fs.timerTile, { backgroundColor: theme.primary + "10", borderColor: border }]}>
-                <Text style={[fs.timerValue, { color: text }]}>{settings.shutdownTime}</Text>
+                <Text style={[fs.timerValue, { color: text }]}>{settings?.shutdownTime ?? "-"}</Text>
                 <Text style={[fs.timerLabel, { color: muted }]}>Apagado</Text>
               </View>
             </View>
@@ -190,7 +311,7 @@ export default function FacialManagementScreen() {
             <InputField
               label={t("facial.setup.fields.environment")}
               value={environmentQuery}
-              onChangeText={setEnvironmentQuery}
+              onChangeText={handleEnvironmentQueryChange}
               placeholder={t("facial.setup.placeholders.environment")}
             />
 
@@ -199,7 +320,7 @@ export default function FacialManagementScreen() {
                 {environments.map((environment) => (
                   <TouchableOpacity
                     key={environment.idEnvironment}
-                    onPress={() => selectEnvironment(environment)}
+                    onPress={() => handleSelectEnvironment(environment)}
                     style={[
                       fs.optionRow,
                       selectedEnvironment?.idEnvironment === environment.idEnvironment && {
@@ -226,14 +347,14 @@ export default function FacialManagementScreen() {
               label={t("facial.setup.fields.instructor")}
               value={selectedInstructorId}
               options={instructorOptions}
-              onSelect={setSelectedInstructorId}
+              onSelect={handleSelectInstructor}
               placeholder={loading ? t("common.loading") : t("facial.setup.placeholders.instructor")}
             />
             <SelectField
               label={t("facial.setup.fields.ficha")}
               value={selectedChipId}
               options={fichaOptions}
-              onSelect={setSelectedChipId}
+              onSelect={handleSelectChip}
               placeholder={
                 selectedInstructorId
                   ? t("facial.setup.placeholders.ficha")
@@ -309,6 +430,11 @@ const fs = StyleSheet.create({
     flexBasis: "auto",
     padding: 14,
   },
+  activeSessionCard: { width: "100%", borderRadius: 16, borderWidth: 1, padding: 16, flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 12 },
+  activeSessionTitle: { fontSize: FontSize.base, fontWeight: FontWeight.black },
+  activeSessionBody: { fontSize: FontSize.sm, marginTop: 4, lineHeight: 18 },
+  continueButton: { minWidth: 178, borderRadius: 12 },
+  continueButtonCompact: { width: "100%", marginTop: 2 },
   panelTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.black, marginBottom: 12 },
   timerGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   timerTile: { flex: 1, minWidth: 92, borderRadius: 14, borderWidth: 1, padding: 12 },

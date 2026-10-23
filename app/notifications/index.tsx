@@ -1,3 +1,4 @@
+import { localizeNotification, normalizeNotificationMeta } from '@/features/notifications/localizeNotification';
 // ─────────────────────────────────────────────
 //  app/notifications/index.tsx
 //  RF-8.2 — Bandeja de notificaciones (Coordinador)
@@ -39,7 +40,7 @@ const CAT_CONFIG: Record<
   { icon: React.ComponentProps<typeof Ionicons>['name']; color: string; labelKey: string }
 > = {
   csv:        { icon: 'document-text-outline', color: Colors.info, labelKey: 'notifications.categories.csv' },
-  transfer:   { icon: 'swap-horizontal-outline', color: Colors.secondary, labelKey: 'notifications.categories.transfer' },
+  transfer:   { icon: 'swap-horizontal-outline', color: '#8B5CF6', labelKey: 'notifications.categories.transfer' },
   attendance: { icon: 'checkmark-circle-outline', color: Colors.success, labelKey: 'notifications.categories.attendance' },
   academic:   { icon: 'school-outline', color: Colors.warning, labelKey: 'notifications.categories.academic' },
   security:   { icon: 'shield-outline', color: Colors.error, labelKey: 'notifications.categories.security' },
@@ -55,14 +56,17 @@ const APPRENTICE_CATEGORIES: (NotificationCategory | 'all')[] = [
 
 export default function NotificationsScreen() {
   const { isDark, theme } = useTheme();
-  const { t }              = useTranslation();
+  const { t, i18n }         = useTranslation();
   const { user }           = useAuth();
 
   const [statusFilter,   setStatusFilter]   = useState<StatusFilter>('all');
   const [categoryFilter, setCategoryFilter] = useState<NotificationCategory | 'all'>('all');
   const [expandedId,     setExpandedId]     = useState<string | null>(null);
+  const [resolvingId, setResolvingId] = useState<string | null>(null);
+  const [decisionError, setDecisionError] = useState<string | null>(null);
 
   const isApprentice = user?.role === 'APPRENTICE';
+  const isCoordinator = user?.role === 'COORDINATOR';
   const { notifications, unreadCount, markRead, resolveFacial } = useNotifications({
     statusFilter,
     categoryFilter,
@@ -76,24 +80,42 @@ export default function NotificationsScreen() {
   const bg      = isDark ? Colors.dark.background : Colors.light.background;
   const inputBg = theme.inputBg;
 
+  const formatLocalizedDate = (value: string) => {
+    const parsed = new Date(`${value}T12:00:00`);
+    return Number.isNaN(parsed.getTime())
+      ? value
+      : new Intl.DateTimeFormat(i18n.resolvedLanguage ?? i18n.language, { dateStyle: 'medium' }).format(parsed);
+  };
+
+  const getLocalizedText = (notif: Notification) =>
+    localizeNotification(notif, t, i18n.resolvedLanguage ?? i18n.language);
+
   // ── Handlers ──────────────────────────────
   const handlePress = (notif: Notification) => {
     markRead(notif.id);
     setExpandedId(prev => (prev === notif.id ? null : notif.id));
   };
 
-  const handleFacialDecision = (notifId: string, decision: 'accepted' | 'rejected') => {
-    resolveFacial(notifId, decision, user?.document ?? 'coordinator');
-    setExpandedId(null);
+  const handleFacialDecision = async (notifId: string, decision: 'accepted' | 'rejected') => {
+    if (resolvingId) return;
+    setResolvingId(notifId);
+    setDecisionError(null);
+    try {
+      await resolveFacial(notifId, decision, user?.id ?? '');
+      setExpandedId(null);
+    } catch (error: any) {
+      setDecisionError(error?.response?.data?.message || t('notifications.templates.resetUi.errorMessage'));
+    } finally { setResolvingId(null); }
   };
 
   // ── Render de detalle expandido ──────────
   const renderDetail = (notif: Notification) => {
-    const m = notif.meta ?? {};
+    const m = normalizeNotificationMeta(notif.meta);
     const rows: [string, string, string?, string?][] = [];
 
     // Campos comunes según tipo
     if (m.learnerName)      rows.push(['person-outline',       t('notifications.detail.learner'),   m.learnerName]);
+    if (m.programName) rows.push(['school-outline', t('notifications.templates.resetUi.program'), m.programName]);
     if (m.learnerDocument)  rows.push(['card-outline',         t('notifications.detail.document'),  m.learnerDocument]);
     if (m.accountDocument && !m.learnerDocument)
                             rows.push(['card-outline',         t('notifications.detail.document'),  m.accountDocument]);
@@ -101,14 +123,14 @@ export default function NotificationsScreen() {
     if (m.toFichaNumber)    rows.push(['arrow-forward-circle-outline', t('notifications.detail.toFicha'), m.toFichaNumber]);
     if (m.fichaNumber && !m.fromFichaNumber)
                             rows.push(['school-outline',       t('notifications.detail.ficha'),     m.fichaNumber]);
-    if (m.date)             rows.push(['calendar-outline',     t('attendance.fields.date'),         m.date]);
+    if (m.date)             rows.push(['calendar-outline',     t('attendance.fields.date'),         formatLocalizedDate(m.date)]);
     if (m.entryTime)        rows.push(['log-in-outline',       t('attendance.fields.entryTime'),    m.entryTime]);
     if (m.delayMinutes && m.delayMinutes > 0)
-                            rows.push(['timer-outline',        t('attendance.fields.delay'),        `${m.delayMinutes} min`]);
+                            rows.push(['timer-outline',        t('attendance.fields.delay'),        `${m.delayMinutes} ${t('notifications.units.minutes')}`]);
     if (m.environmentName)  rows.push(['business-outline',     t('attendance.fields.environment'),  m.environmentName]);
     if (m.instructorName)   rows.push(['person-circle-outline',t('attendance.fields.instructor'),   m.instructorName]);
     if (m.failedCount)      rows.push(['alert-circle-outline', t('notifications.detail.failedCount'), `${m.failedCount}`]);
-    if (m.lockMinutes)      rows.push(['time-outline',         t('notifications.detail.lockMinutes'), `${m.lockMinutes} min`]);
+    if (m.lockMinutes)      rows.push(['time-outline',         t('notifications.detail.lockMinutes'), `${m.lockMinutes} ${t('notifications.units.minutes')}`]);
     if (m.csvSummary) {
       const s = m.csvSummary;
       rows.push(['add-circle-outline',   t('notifications.detail.created'), `${s.created}`]);
@@ -116,7 +138,13 @@ export default function NotificationsScreen() {
       rows.push(['alert-circle-outline', t('notifications.detail.blocked'), `${s.blocked}`]);
       rows.push(['close-circle-outline', t('notifications.detail.errors'),  `${s.errors}`]);
     }
-    if (m.entityType) rows.push(['information-circle-outline', t('notifications.detail.entityType'), m.entityType]);
+    if (m.entityType) {
+      const entityTypeKey = m.entityType === 'program' || m.entityType === 'ficha'
+        || m.entityType === 'learner' || m.entityType === 'instructor'
+        ? `notifications.entities.${m.entityType}`
+        : 'notifications.entities.item';
+      rows.push(['information-circle-outline', t('notifications.detail.entityType'), t(entityTypeKey)]);
+    }
 
     // Canal y correo
     const channelLabel = notif.channel === 'app+email'
@@ -160,7 +188,7 @@ export default function NotificationsScreen() {
         {/* Enlace a corregir para CSV_INCONSISTENCY */}
         {!isApprentice && hasConflictLink && (
           <TouchableOpacity
-            style={[ns.actionLink, { backgroundColor: Colors.info + '18', borderColor: Colors.info + '50' }]}
+            style={[ns.actionLink, !isDark && ns.lightShadow, { backgroundColor: Colors.info + '18', borderColor: Colors.info + '50' }]}
             onPress={() => router.push('/admin/academic' as any)}
             accessibilityRole="button"
           >
@@ -170,10 +198,16 @@ export default function NotificationsScreen() {
         )}
 
         {/* RF-8.4 — Botones Aceptar/Rechazar para re-registro facial sin decisión aún */}
-        {!isApprentice && notif.type === 'facial_reregister_request' && !m.facialDecision && (
+        {isApprentice && notif.type === 'facial_request_resolved' && m.facialDecision === 'accepted' && (
+          <AppButton title={t('notifications.templates.resetUi.openFacial')}
+            onPress={() => router.push('/apprentice/facial')} />
+        )}
+        {decisionError && <Text style={{ color: Colors.error }}>{decisionError}</Text>}
+        {isCoordinator && notif.type === 'facial_reregister_request' && !m.facialDecision && (
           <View style={ns.facialActions}>
             <AppButton
               title={t('notifications.detail.reject')}
+              disabled={resolvingId !== null}
               onPress={() => handleFacialDecision(notif.id, 'rejected')}
               variant="outline"
               fullWidth={false}
@@ -181,6 +215,7 @@ export default function NotificationsScreen() {
             />
             <AppButton
               title={t('notifications.detail.accept')}
+              disabled={resolvingId !== null}
               onPress={() => handleFacialDecision(notif.id, 'accepted')}
               fullWidth={false}
               style={ns.facialBtn}
@@ -194,16 +229,18 @@ export default function NotificationsScreen() {
   // ── Render de una tarjeta ─────────────────
   const renderItem = ({ item }: { item: Notification }) => {
     const cfg      = CAT_CONFIG[item.category];
+    const localized = getLocalizedText(item);
     const isUnread = !item.read;
     const expanded = expandedId === item.id;
     const isEmail  = item.channel === 'app+email';
-    const isFacialRequest = !isApprentice && item.type === 'facial_reregister_request' && !item.meta?.facialDecision;
+    const isFacialRequest = isCoordinator && item.type === 'facial_reregister_request' && !item.meta?.facialDecision;
 
     return (
       <TouchableOpacity
         onPress={() => handlePress(item)}
         style={[
           ns.card,
+          !isDark && ns.cardLightShadow,
           { backgroundColor: cardBg, borderColor: isUnread ? cfg.color + '50' : border },
           isUnread && { shadowColor: cfg.color, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3 },
         ]}
@@ -225,7 +262,7 @@ export default function NotificationsScreen() {
                   style={[ns.cardTitle, { color: text, fontWeight: isUnread ? FontWeight.black : FontWeight.medium }]}
                   numberOfLines={expanded ? undefined : 1}
                 >
-                  {item.title}
+                  {localized.title}
                 </Text>
                 <View style={ns.badges}>
                   {isEmail && (
@@ -242,10 +279,10 @@ export default function NotificationsScreen() {
                 </View>
               </View>
               <Text style={[ns.cardMsg, { color: muted }]} numberOfLines={expanded ? undefined : 2}>
-                {item.message}
+                {localized.message}
               </Text>
               <View style={ns.cardFooter}>
-                <Text style={[ns.cardDate, { color: muted }]}>{item.date} · {item.time}</Text>
+                <Text style={[ns.cardDate, { color: muted }]}>{formatLocalizedDate(item.date)} · {item.time}</Text>
                 <View style={[ns.catChip, { backgroundColor: cfg.color + '15', borderColor: cfg.color + '30' }]}>
                   <Ionicons name={cfg.icon} size={10} color={cfg.color} />
                   <Text style={[ns.catChipText, { color: cfg.color }]} numberOfLines={1}>{t(cfg.labelKey)}</Text>
@@ -290,7 +327,11 @@ export default function NotificationsScreen() {
             <TouchableOpacity
               key={f}
               onPress={() => setStatusFilter(f)}
-              style={[ns.filterBtn, { backgroundColor: active ? theme.primary + '20' : inputBg, borderColor: active ? theme.primary : border }]}
+              style={[
+                ns.filterBtn,
+                !isDark && ns.lightShadow,
+                { backgroundColor: active ? theme.primary + '20' : inputBg, borderColor: active ? theme.primary : border },
+              ]}
               accessibilityRole="tab"
               accessibilityState={{ selected: active }}
             >
@@ -317,7 +358,11 @@ export default function NotificationsScreen() {
             <TouchableOpacity
               key={cat}
               onPress={() => setCategoryFilter(cat)}
-              style={[ns.catBtn, { backgroundColor: active ? (cfg?.color ?? theme.primary) + '20' : inputBg, borderColor: active ? (cfg?.color ?? theme.primary) : border }]}
+              style={[
+                ns.catBtn,
+                !isDark && ns.lightShadow,
+                { backgroundColor: active ? (cfg?.color ?? theme.primary) + '20' : inputBg, borderColor: active ? (cfg?.color ?? theme.primary) : border },
+              ]}
               accessibilityRole="tab"
               accessibilityState={{ selected: active }}
             >
@@ -364,6 +409,20 @@ const ns = StyleSheet.create({
   // (la lista) pueda scrollear DENTRO del espacio restante, en vez de que
   // el contenido empuje/encoja a los hermanos de arriba (los filtros).
   root:   { flex: 1, minHeight: 0 },
+  lightShadow: {
+    shadowColor: '#1E293B',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    elevation: 3,
+  },
+  cardLightShadow: {
+    shadowColor: '#1E293B',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.10,
+    shadowRadius: 18,
+    elevation: 4,
+  },
 
   header: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 18, paddingBottom: 22, borderBottomWidth: 1 },
   headerTitle: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },

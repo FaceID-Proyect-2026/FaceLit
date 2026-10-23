@@ -16,8 +16,8 @@
 //  fallidos es una primera línea de defensa en UI; el backend manda
 //  la última palabra vía respuestas 401.
 // ─────────────────────────────────────────────
-import { initPrivacyStore } from '@/features/auth/privacyAcceptanceStore';
 import { Routes } from '@/shared/constants/routes';
+import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { logBlocked, logFailure, logSuccess } from '@/shared/services/auditLogger';
 import { getMyProfile, login as loginRequest } from '@/shared/services/authService';
 import { getToken, removeToken } from '@/shared/services/tokenStorage';
@@ -30,6 +30,7 @@ import React, {
   useEffect,
   useState,
 } from 'react';
+import { useTranslation } from 'react-i18next';
 
 // ── Roles ──────────────────────────────────────
 // El backend (RoleName.java) usa nombres en ESPAÑOL: APRENDIZ, INSTRUCTOR,
@@ -132,12 +133,13 @@ interface AuthContextType {
   /** true mientras se restaura la sesión al abrir la app */
   loading: boolean;
   role: UserRole | null;
-  login: (document: string, password: string) => Promise<LoginResult>;
+  login: (document: string, password: string, privacyAccepted: boolean) => Promise<LoginResult>;
   logout: () => Promise<void>;
 }
 
 export interface LoginResult {
   success: boolean;
+  firstAccessPasswordPrompt?: boolean;
   error?: string;
   /** true si la cuenta está bloqueada temporalmente (RNF-1.3) */
   locked?: boolean;
@@ -233,16 +235,14 @@ function redirectByRole(role: UserRole) {
 
 // ── Provider ──────────────────────────────────
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
+  const { alert, DialogUI } = useAppDialog();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Al abrir la app: inicializar el store de privacidad y restaurar sesión
+  // Al abrir la app, restaurar la sesión persistida.
   useEffect(() => {
     (async () => {
-      // RNF-1.6: cargar preferencias de privacidad desde almacenamiento
-      // persistente (no en memoria volátil)
-      await initPrivacyStore();
-
       try {
         const token = await getToken();
         if (token) {
@@ -278,9 +278,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [alert, t]);
 
-  const login = useCallback(async (document: string, password: string): Promise<LoginResult> => {
+  const login = useCallback(async (
+    document: string,
+    password: string,
+    privacyAccepted: boolean,
+  ): Promise<LoginResult> => {
     const normalizedDocument = document.trim();
 
     // Bloqueo local: primera línea de defensa antes de golpear el backend.
@@ -301,7 +305,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       // loginRequest ya guarda el JWT en tokenStorage (authService.login)
-      const data = await loginRequest(normalizedDocument, password);
+      const data = await loginRequest(normalizedDocument, password, privacyAccepted);
 
       const payload = decodeJwtPayload(data.token);
       const loggedUser: User = {
@@ -322,7 +326,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       redirectByRole(loggedUser.role);
 
-      return { success: true };
+      if (data.firstAccessPasswordPrompt === true) {
+        setTimeout(() => {
+          alert(
+            t('login.passwordPrompt.title'),
+            t('login.passwordPrompt.message'),
+            [
+              {
+                text: t('login.passwordPrompt.cancel'),
+                style: 'cancel',
+                onPress: () => {
+                  alert(
+                    t('login.passwordPrompt.laterTitle'),
+                    t('login.passwordPrompt.laterMessage'),
+                    [{ text: t('login.passwordPrompt.understood') }],
+                  );
+                },
+              },
+              {
+                text: t('login.passwordPrompt.update'),
+                onPress: () => router.push(Routes.ADMIN.PROFILE as any),
+              },
+            ],
+          );
+        }, 450);
+      }
+
+      return { success: true, firstAccessPasswordPrompt: data.firstAccessPasswordPrompt === true };
     } catch (err: any) {
       const status: number = err.response?.status ?? 0;
       const backendMessage: string = err.response?.data?.message ?? '';
@@ -389,6 +419,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
+      {DialogUI}
     </AuthContext.Provider>
   );
 }
@@ -397,4 +428,3 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth(): AuthContextType {
   return useContext(AuthContext);
 }
-

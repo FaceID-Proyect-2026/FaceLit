@@ -5,6 +5,7 @@
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import {
   getNotificationsSnapshot,
+  getRemoteUnreadCount,
   loadNotifications,
   markAllNotificationsRead,
   markNotificationRead,
@@ -16,12 +17,20 @@ import type { NotificationCategory, NotificationMeta, NotificationType } from '.
 
 export type StatusFilter = 'all' | 'unread' | 'read';
 
+export function useRemoteUnreadCount(recipientUserId?: string): number {
+  return useSyncExternalStore(
+    subscribeNotifications,
+    () => getRemoteUnreadCount(recipientUserId),
+  );
+}
+
 export function useNotifications(opts?: {
   statusFilter?: StatusFilter;
   categoryFilter?: NotificationCategory | 'all';
   /** Limita la bandeja a las notificaciones personales del destinatario. */
   recipientUserId?: string;
 }) {
+  const { statusFilter, categoryFilter, recipientUserId } = opts ?? {};
   const all = useSyncExternalStore(subscribeNotifications, getNotificationsSnapshot);
 
   useEffect(() => {
@@ -33,17 +42,17 @@ export function useNotifications(opts?: {
   }, []);
 
   const filtered = useMemo(() => {
-    let list = opts?.recipientUserId
-      ? all.filter(n => n.recipientUserId === opts.recipientUserId)
+    let list = recipientUserId
+      ? all.filter(n => n.recipientUserId === recipientUserId)
       : all;
 
     // Filtro por estado
-    const sf = opts?.statusFilter ?? 'all';
+    const sf = statusFilter ?? 'all';
     if (sf === 'unread') list = list.filter(n => !n.read);
     else if (sf === 'read') list = list.filter(n => n.read);
 
     // Filtro por categoría
-    const cf = opts?.categoryFilter ?? 'all';
+    const cf = categoryFilter ?? 'all';
     if (cf !== 'all') list = list.filter(n => n.category === cf);
 
     // Siempre más reciente primero
@@ -52,12 +61,12 @@ export function useNotifications(opts?: {
       const tb = `${b.date}T${b.time}`;
       return tb.localeCompare(ta);
     });
-  }, [all, opts?.statusFilter, opts?.categoryFilter, opts?.recipientUserId]);
+  }, [all, statusFilter, categoryFilter, recipientUserId]);
 
   const unreadCount = useMemo(
-    () => (opts?.recipientUserId ? all.filter(n => n.recipientUserId === opts.recipientUserId) : all)
+    () => (recipientUserId ? all.filter(n => n.recipientUserId === recipientUserId) : all)
       .filter(n => !n.read).length,
-    [all, opts?.recipientUserId],
+    [all, recipientUserId],
   );
 
   return {

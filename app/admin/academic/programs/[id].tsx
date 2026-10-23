@@ -1,4 +1,5 @@
 import ProgramFormModal from '@/features/academic/components/ProgramFormModal';
+import PersonDetailsModal, { AcademicPersonDetails } from '@/features/academic/components/PersonDetailsModal';
 import { getProgramDisplayName } from '@/features/academic/types';
 import { useAcademic } from '@/features/academic/useAcademic';
 import { Colors } from '@/shared/constants/colors';
@@ -19,6 +20,7 @@ export default function ProgramDetailScreen() {
   const { getProgram, allFichas, allInstructors, deleteFicha } = useAcademic();
   const { alert, DialogUI } = useAppDialog();
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedInstructor, setSelectedInstructor] = useState<AcademicPersonDetails | null>(null);
   const [fichaSearch, setFichaSearch]     = useState('');
   const [instructorSearch, setInstructorSearch] = useState('');
 
@@ -28,10 +30,12 @@ export default function ProgramDetailScreen() {
   const cardBg = theme.surface;
   const border = theme.border;
   const bg = isDark ? Colors.dark.background : Colors.light.background;
-  if (!program) return <View style={[pds.safe, { backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }]}><Text style={{ color: muted }}>Programa no encontrado</Text></View>;
+  if (!program) return <View style={[pds.safe, { backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }]}><Text style={{ color: muted }}>{t('academic.programNotFound')}</Text></View>;
 
   const programFichas = allFichas.filter(f => program.fichas.includes(f.id));
-  const programInstructors = allInstructors.filter(i => i.programId === program.id || i.programIds?.includes(program.id));
+  const programInstructors = allInstructors.filter(i =>
+    i.instructorType === 'transversal' || i.programId === program.id || i.programIds?.includes(program.id)
+  );
   const filteredInstructors = instructorSearch.trim()
     ? programInstructors.filter(instructor => {
         const q = instructorSearch.trim().toLowerCase();
@@ -153,41 +157,27 @@ export default function ProgramDetailScreen() {
           // ── Instructor card ──
           if (section.key === 'instructors') {
             return (
-              <View style={[pds.card, { backgroundColor: cardBg, borderColor: border }]}>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={t('academic.openPersonDetails', { name: `${item.name} ${item.lastname}` })}
+                onPress={() => setSelectedInstructor(item)}
+                style={[pds.card, { backgroundColor: cardBg, borderColor: border }]}
+                activeOpacity={0.75}
+              >
                 <View style={[pds.iconCircle, { backgroundColor: theme.primary + '20' }]}>
                   <Ionicons name="person-outline" size={20} color={theme.primary} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[pds.cardTitle, { color: text }]}>{item.name} {item.lastname}</Text>
-                  <Text style={[pds.cardMeta, { color: muted }]}>
-                    {item.instructorType === 'especifico' ? t('academic.instructorTypeEspecificoShort') : t('academic.instructorTypeTransversalShort')} · {t('academic.instructorDocPrefix')}: {item.document}
-                  </Text>
-                  <Text style={[pds.cardMeta, { color: muted }]}>{item.email}</Text>
                   {item.createdAt ? (
                     <Text style={[pds.cardMeta, { color: muted }]}>{t('academic.instructorCreatedPrefix')}: {formatDateTime(item.createdAt)}</Text>
                   ) : null}
                   {item.updatedAt ? (
                     <Text style={[pds.cardMeta, { color: muted }]}>{t('academic.instructorLastEditPrefix')}: {formatDateTime(item.updatedAt)}</Text>
                   ) : null}
-                  {/* Contraseña inicial — el coordinador la ve para enviársela al instructor */}
-                  {item.initialPassword ? (
-                    <View style={[pds.pwdBadge, { backgroundColor: Colors.warning + '18', borderColor: Colors.warning + '55' }]}>
-                      <Ionicons name="key-outline" size={11} color={Colors.warning} />
-                      <Text style={[pds.pwdLabel, { color: Colors.warning }]}>{t('academic.initialPassword')}: </Text>
-                      <Text style={[pds.pwdValue, { color: Colors.warning }]} selectable>{item.initialPassword}</Text>
-                    </View>
-                  ) : (
-                    <View style={[pds.pwdBadge, { backgroundColor: Colors.success + '14', borderColor: Colors.success + '44' }]}>
-                      <Ionicons name="checkmark-circle-outline" size={11} color={Colors.success} />
-                      <Text style={[pds.pwdLabel, { color: Colors.success }]}>{t('academic.ownPasswordActive')}</Text>
-                    </View>
-                  )}
                 </View>
-                <View style={[pds.statusBadge, { backgroundColor: item.status === 'active' ? Colors.success + '18' : Colors.error + '18' }]}>
-                  <View style={[pds.statusDot, { backgroundColor: item.status === 'active' ? Colors.success : Colors.error }]} />
-                  <Text style={{ color: item.status === 'active' ? Colors.success : Colors.error, fontWeight: '700', fontSize: 11 }}>{t(`environments.statuses.${item.status}`)}</Text>
-                </View>
-              </View>
+                <Ionicons name="chevron-forward" size={18} color={muted} />
+              </TouchableOpacity>
             );
           }
           // ── Ficha card ──
@@ -197,15 +187,15 @@ export default function ProgramDetailScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
                 <View style={[pds.iconCircle, { backgroundColor: theme.primary + '20' }]}><Ionicons name="document-text-outline" size={20} color={theme.primary} /></View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[pds.cardTitle, { color: text }]}>Ficha {item.number}</Text>
+                  <Text style={[pds.cardTitle, { color: text }]}>{t('academic.fields.fichaNumber')}: {item.number}</Text>
                   <Text style={[pds.cardMeta, { color: muted }]}>{t('academic.learnersCount', { count: item.learners.length })}</Text>
                 </View>
               </View>
               <TouchableOpacity onPress={() => {
                 if (item.learners.length > 0) { alert(t('common.error'), t('academic.fichaHasLearners')); return; }
-                alert('Eliminar ficha permanentemente', 'Esta accion no se puede deshacer.', [{ text: t('common.cancel'), style: 'cancel' }, { text: 'Eliminar', style: 'destructive', onPress: async () => {
-                  try { await deleteFicha(item.id); alert('Ficha eliminada', 'La ficha fue eliminada permanentemente.'); }
-                  catch (error: any) { alert(t('common.error'), error?.response?.data?.message ?? 'No se pudo eliminar la ficha.'); }
+                alert(t('academic.fichaDeleteCompletely'), t('academic.fichaDeleteCompletelyConfirm'), [{ text: t('common.cancel'), style: 'cancel' }, { text: t('academic.fichaDeleteCompletely'), style: 'destructive', onPress: async () => {
+                  try { await deleteFicha(item.id); alert(t('academic.fichaDeleteCompletelySuccess')); }
+                  catch (error: any) { alert(t('common.error'), error?.response?.data?.message ?? t('academic.fichaDeleteError')); }
                 } }]);
               }}
                 style={{ padding: 6 }}><Ionicons name="link-outline" size={18} color={Colors.warning} /></TouchableOpacity>
@@ -216,6 +206,12 @@ export default function ProgramDetailScreen() {
       />
       {DialogUI}
       <ProgramFormModal visible={editModalOpen} editId={program.id} onClose={() => setEditModalOpen(false)} />
+      <PersonDetailsModal
+        visible={!!selectedInstructor}
+        title={t('academic.instructorDetails')}
+        person={selectedInstructor}
+        onClose={() => setSelectedInstructor(null)}
+      />
     </View>
   );
 }
@@ -224,7 +220,7 @@ const pds = StyleSheet.create({
   safe: { flex: 1 }, scroll: { padding: 16, paddingBottom: 40 },
   backBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 12 },
   backText: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
-  headerCard: { borderRadius: 16, borderWidth: 1, padding: 18, marginBottom: 20 },
+  headerCard: { borderRadius: 16, borderWidth: 1, padding: 18, marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 10, elevation: 4 },
   headerTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 14, marginBottom: 14 },
   iconCircleLg: { width: 52, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   title: { fontSize: FontSize.xl, fontWeight: FontWeight.black, marginBottom: 4, flexShrink: 1, flexWrap: 'wrap' },
@@ -236,15 +232,11 @@ const pds = StyleSheet.create({
   infoValue: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
   editBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 1.5, borderRadius: 10, paddingVertical: 10, marginTop: 16 },
   sectionTitle: { fontSize: FontSize.xl, fontWeight: FontWeight.black, marginBottom: 10, marginTop: 4 },
-  card: { borderRadius: 14, borderWidth: 1, padding: 16, flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8 },
+  card: { borderRadius: 14, borderWidth: 1, padding: 16, flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 10, elevation: 4 },
   iconCircle: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 12, flexShrink: 0 },
   cardTitle: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
   cardMeta: { fontSize: FontSize.sm, marginTop: 2 },
   empty: { alignItems: 'center', paddingVertical: 40 },
-  // ── Contraseña inicial ──
-  pwdBadge:  { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 7, borderWidth: 1, paddingHorizontal: 7, paddingVertical: 4, marginTop: 6, flexWrap: 'wrap' },
-  pwdLabel:  { fontSize: FontSize.xs, fontWeight: FontWeight.bold },
-  pwdValue:  { fontSize: FontSize.xs, fontWeight: FontWeight.black, letterSpacing: 0.5 },
   // ── Buscador de fichas ──
   searchBar:   { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 11, borderWidth: 1, paddingHorizontal: 11, height: 40, marginBottom: 10 },
   searchInput: { flex: 1, fontSize: FontSize.sm, outlineStyle: 'none' } as any,

@@ -24,6 +24,10 @@ export default function InstructorAcademicScreen() {
   const border = theme.border;
   const inputBg = theme.inputBg;
   const bg = isDark ? Colors.dark.background : Colors.light.background;
+  const shadowColor = isDark ? '#000000' : '#243B2D';
+  const cardShadow = isDark
+    ? '0px 5px 15px rgba(0, 0, 0, 0.34)'
+    : '0px 5px 15px rgba(36, 59, 45, 0.16)';
 
   const currentInstructor = useMemo(
     () => findCurrentInstructor(allInstructors, user),
@@ -112,7 +116,7 @@ export default function InstructorAcademicScreen() {
         renderItem={({ item }) => (
           <TouchableOpacity
             onPress={() => router.push(`/instructor/academic/programs/${item.id}` as any)}
-            style={[s.card, { backgroundColor: cardBg, borderColor: border }]}
+            style={[s.card, { backgroundColor: cardBg, borderColor: border, shadowColor, boxShadow: cardShadow }]}
             activeOpacity={0.75}
           >
             <View style={s.cardHeader}>
@@ -160,7 +164,10 @@ const s = StyleSheet.create({
   filterChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, borderWidth: 1.2 },
   filterChipText: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
   list: { padding: 16, gap: 12 },
-  card: { borderRadius: 14, borderWidth: 1, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
+  card: {
+    borderRadius: 14, borderWidth: 1, padding: 16,
+    shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.14, shadowRadius: 12, elevation: 4,
+  },
   cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, gap: 8 },
   typeBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   typeText: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },

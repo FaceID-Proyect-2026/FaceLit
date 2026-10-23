@@ -99,10 +99,11 @@ export default function DateField({
           mode="date"
           minimumDate={minDate ? toDate(minDate) : undefined}
           display={Platform.OS === 'ios' ? 'inline' : 'default'}
-          onChange={(_, date) => {
+          onValueChange={(_, date) => {
             setShowPicker(false);
             if (date) onChange(toIsoDate(date));
           }}
+          onDismiss={() => setShowPicker(false)}
         />
       )}
 

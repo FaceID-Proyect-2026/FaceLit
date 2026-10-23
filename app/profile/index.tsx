@@ -4,6 +4,7 @@
 //  los valores de la sesión como respaldo para no romper la UI.
 // ─────────────────────────────────────────────
 import { Colors } from '@/shared/constants/colors';
+import { Routes } from '@/shared/constants/routes';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import RoleTopbar from '@/shared/components/layout/RoleTopbar';
 import { useAuth } from '@/shared/contexts/AuthContext';
@@ -70,11 +71,18 @@ export default function ProfileScreen() {
   const document = pickValue(profile.documentNumber, user.document);
   const email = pickValue(profile.email, user.email);
   const role = pickValue(profile.role, String(user.role ?? ''));
+  const roleKey = role.toUpperCase() === 'APRENDIZ'
+    ? 'APPRENTICE'
+    : role.toUpperCase() === 'COORDINADOR'
+      ? 'COORDINATOR'
+      : role.toUpperCase();
   const firstNameInitial = displayName ? displayName.charAt(0).toUpperCase() : (email ? email.charAt(0).toUpperCase() : '?');
   const lastNameInitial = displayLastName ? displayLastName.charAt(0).toUpperCase() : '';
-  const roleLabel = role ? role.charAt(0).toUpperCase() + role.slice(1).toLowerCase() : '';
+  const roleLabel = role
+    ? t(`users.roles.${roleKey}`, { defaultValue: role.charAt(0).toUpperCase() + role.slice(1).toLowerCase() })
+    : '';
   const avatarText = `${firstNameInitial}${lastNameInitial}`.trim() || (email.charAt(0).toUpperCase() || '?');
-  const userName = `${displayName} ${displayLastName}`.trim() || email || 'Usuario';
+  const userName = `${displayName} ${displayLastName}`.trim() || email || t('profile.unknownUser');
 
   const handleLogout = () => {
     alert(
@@ -147,6 +155,25 @@ export default function ProfileScreen() {
 
         {/* ── Acciones ── */}
         <TouchableOpacity
+          onPress={() => router.push({ pathname: Routes.AUTH.PASSWORD_RECOVERY as any, params: { email } })}
+          style={[ps.securityCard, { backgroundColor: cardBg, borderColor: border }]}
+          activeOpacity={0.78}
+        >
+          <View style={ps.securityLeft}>
+            <View style={[ps.securityIconWrap, { backgroundColor: theme.primary + '18' }]}>
+              <Ionicons name="key-outline" size={20} color={theme.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[ps.securityTitle, { color: text }]}>{t('profile.passwordSecurityTitle')}</Text>
+              <Text style={[ps.securityText, { color: muted }]}>
+                {t('profile.passwordSecurityDescription')}
+              </Text>
+            </View>
+          </View>
+          <Ionicons name="arrow-forward" size={18} color={theme.primary} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
           onPress={() => router.push('/profile/settings' as any)}
           style={[ps.actionBtn, { backgroundColor: cardBg, borderColor: border }]}
           activeOpacity={0.75}
@@ -188,6 +215,7 @@ const ps = StyleSheet.create({
     borderRadius: 22, borderWidth: 1, alignItems: 'center',
     paddingVertical: 32, paddingHorizontal: 20, marginBottom: 24,
     overflow: 'hidden',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.14, shadowRadius: 12, elevation: 5,
   },
   headerDecoTop: {
     position: 'absolute', top: -60, right: -60,
@@ -210,7 +238,7 @@ const ps = StyleSheet.create({
   sectionIconWrap: { width: 26, height: 26, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   sectionTitle: { fontSize: FontSize.md, fontWeight: FontWeight.black },
 
-  card: { borderRadius: 18, borderWidth: 1, padding: 6, marginBottom: 24 },
+  card: { borderRadius: 18, borderWidth: 1, padding: 6, marginBottom: 18, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 10, elevation: 4 },
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 10 },
   infoIconWrap: { width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   infoLabel: { fontSize: 12, marginBottom: 2, fontWeight: '500' },
@@ -219,8 +247,28 @@ const ps = StyleSheet.create({
   actionBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     borderWidth: 1, borderRadius: 16, paddingVertical: 14, paddingHorizontal: 14,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 3,
   },
   actionLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   actionIconWrap: { width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   actionText: { fontSize: 15, fontWeight: '700' },
+  securityCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 14,
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 18,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  securityLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  securityIconWrap: { width: 42, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
+  securityTitle: { fontSize: FontSize.md, fontWeight: FontWeight.black, marginBottom: 4 },
+  securityText: { fontSize: FontSize.sm, lineHeight: 19 },
 });

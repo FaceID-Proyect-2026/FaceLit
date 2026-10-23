@@ -3,6 +3,8 @@
 //  Layout principal admin con sidebar y header
 // ─────────────────────────────────────────────
 import Sidebar from "@/shared/components/layout/Sidebar";
+import { fetchCurrentActiveEnvironmentSession } from "@/features/environments/environmentSessionApi";
+import { useFacialRegistry } from "@/features/facial/useFacialRegistry";
 import { useNotifications } from "@/features/notifications/useNotifications";
 import { LanguageSelector, ThemeToggle } from "@/shared/components/ui";
 import { Colors } from "@/shared/constants/colors";
@@ -12,7 +14,7 @@ import { useTheme } from "@/shared/contexts/ThemeContext";
 import { useAuthGuard } from "@/shared/hooks/useAuthGuard";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, router, usePathname } from "expo-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator,
     StyleSheet,
@@ -23,12 +25,43 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function AdminLayout() {
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading, user } = useAuth();
   const { theme, isDark } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { canRenderContent } = useAuthGuard(isAuthenticated, '/auth/login', authLoading);
   const { unreadCount } = useNotifications();
   const pathname = usePathname();
+  const { activeSession, setActiveSession } = useFacialRegistry(user?.id);
+  const sessionLookupDone = useRef(false);
+  const [checkingActiveSession, setCheckingActiveSession] = useState(true);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setCheckingActiveSession(false);
+      return;
+    }
+    if (sessionLookupDone.current) return;
+    sessionLookupDone.current = true;
+    fetchCurrentActiveEnvironmentSession().then((session) => {
+      if (!session) return;
+      setActiveSession({
+        idRecordEnvironment: session.idRecordEnvironment,
+        idEnvironment: session.idEnvironment,
+        environmentName: session.environmentName,
+        idDevice: session.idDevice,
+        deviceCode: session.deviceCode,
+        idChip: session.idChip,
+        chipCode: session.chipCode,
+        shutdownTime: session.shutdownTime,
+        active: session.active,
+      });
+    }).catch(() => undefined).finally(() => setCheckingActiveSession(false));
+  }, [isAuthenticated, setActiveSession]);
+
+  useEffect(() => {
+    if (!activeSession || pathname.startsWith("/instructor/facial")) return;
+    router.replace("/instructor/facial/camera?blocked=1" as any);
+  }, [activeSession, pathname]);
 
   // La pantalla de Reconocimiento Facial no debe ofrecer ninguna vía de
   // regreso al menú principal: ni la flecha propia ni el menú lateral,
@@ -38,7 +71,7 @@ export default function AdminLayout() {
     pathname.startsWith("/admin/facial") ||
     pathname.startsWith("/instructor/facial");
 
-  if (!canRenderContent) {
+  if (!canRenderContent || checkingActiveSession) {
     return (
       <SafeAreaView
         style={[
@@ -124,6 +157,7 @@ export default function AdminLayout() {
         <Stack.Screen name="index" />
         <Stack.Screen name="facial/index" />
         <Stack.Screen name="facial/settings" />
+        <Stack.Screen name="facial/camera" />
         <Stack.Screen name="environments/index" />
         <Stack.Screen
           name="environments/register"

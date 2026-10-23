@@ -64,6 +64,7 @@ export const Routes = {
   FACIAL: {
     MANAGEMENT: "/instructor/facial",
     SETTINGS: "/instructor/facial/settings",
+    CAMERA: "/instructor/facial/camera",
     ADMIN_MANAGEMENT: "/admin/facial",
     REGISTER: "/facial/register",
     VERIFY: "/facial/verify",
@@ -73,6 +74,7 @@ export const Routes = {
     DASHBOARD: "/instructor",
     FACIAL: "/instructor/facial",
     FACIAL_SETTINGS: "/instructor/facial/settings",
+    FACIAL_CAMERA: "/instructor/facial/camera",
   },
 
   // Módulo 6: Asistencias y Validaciones

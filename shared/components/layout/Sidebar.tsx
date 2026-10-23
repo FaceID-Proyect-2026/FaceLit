@@ -72,6 +72,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const activeBg = isDark ? "rgba(101,179,97,0.15)" : "rgba(101,179,97,0.10)";
   const bg = isDark ? Colors.dark.surface : Colors.light.surface;
   const border = isDark ? Colors.dark.border : Colors.light.border;
+  const roleLabel =
+    user?.role === "ADMINISTRATOR"
+      ? t("sidebar.administratorRole")
+      : user?.role === "COORDINATOR" || user?.role === "COORDINATOR_REGISTER"
+        ? t("sidebar.coordinatorRole")
+        : user?.role === "INSTRUCTOR"
+          ? t("sidebar.instructorRole")
+          : t("sidebar.apprenticeRole");
 
   const adminMenu: MenuItem[] = [
     {
@@ -248,7 +256,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         <View style={[ss.header, { borderBottomColor: border, paddingTop: Math.max(insets.top + 14, 28) }]}>
           <View>
             <Text style={[ss.logo, { color: theme.primary }]}>FaceLit</Text>
-            <Text style={[ss.logoMeta, { color: muted }]}>Panel de navegacion</Text>
+            <Text style={[ss.logoMeta, { color: muted }]}>{t("sidebar.navigationPanel")}</Text>
           </View>
           <TouchableOpacity onPress={onClose} style={[ss.closeBtn, { backgroundColor: activeBg }]}>
             <Ionicons name="close" size={22} color={muted} />
@@ -266,8 +274,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 {getDisplayName()}
               </Text>
               <Text style={[ss.userRole, { color: muted }]}>
-                {user.role.charAt(0).toUpperCase() +
-                  user.role.slice(1).toLowerCase()}
+                {roleLabel}
               </Text>
             </View>
           </View>

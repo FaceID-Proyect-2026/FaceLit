@@ -1,5 +1,5 @@
 import { Colors } from '@/shared/constants/colors';
-import { FontSize, FontWeight } from '@/shared/constants/typography';
+import { FontSize } from '@/shared/constants/typography';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { getManagedUser, updateManagedUser } from '@/shared/services/userManagementService';
@@ -47,17 +47,21 @@ type FormErrors = Partial<Record<keyof FormState, string>>;
 const EMPTY_FORM: FormState = { document: '', firstName: '', lastName: '', email: '' };
 const LETTERS_ONLY = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+$/;
 
-function normalizeDate(value?: string | null, emptyLabel = 'Sin registro') {
+function normalizeDate(value: string | null | undefined, emptyLabel: string, locale?: string) {
   if (!value) return emptyLabel;
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString(locale);
 }
 
 function roleLabel(role: string | undefined, t: (key: any) => string) {
-  if (role === 'COORDINATOR') return t('users.roles.COORDINATOR');
-  if (role === 'INSTRUCTOR') return t('users.roles.INSTRUCTOR');
-  if (role === 'APPRENTICE') return t('users.roles.APPRENTICE');
-  return role || t('users.detail.noRole');
+  const roleKeys: Record<string, string> = {
+    ADMINISTRATOR: 'users.roles.ADMINISTRATOR',
+    COORDINATOR: 'users.roles.COORDINATOR',
+    COORDINATOR_REGISTER: 'users.roles.COORDINATOR_REGISTER',
+    INSTRUCTOR: 'users.roles.INSTRUCTOR',
+    APPRENTICE: 'users.roles.APPRENTICE',
+  };
+  return role ? t(roleKeys[role] ?? 'users.detail.noRole') : t('users.detail.noRole');
 }
 
 function PillList({ items, empty, color }: { items?: string[]; empty: string; color: string }) {
@@ -79,7 +83,7 @@ function PillList({ items, empty, color }: { items?: string[]; empty: string; co
 
 export default function UserDetailScreen() {
   const { theme, isDark } = useTheme();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { alert, DialogUI } = useAppDialog();
   const { id } = useLocalSearchParams<{ id: string }>();
 
@@ -87,6 +91,7 @@ export default function UserDetailScreen() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(true);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -114,6 +119,7 @@ export default function UserDetailScreen() {
   const isCoordinator = role === 'COORDINATOR';
   const isInstructor = role === 'INSTRUCTOR';
   const isApprentice = role === 'APPRENTICE';
+  const isInactive = base?.accountStatus === 'INACTIVE';
 
   const roleColor = useMemo(() => {
     if (isInstructor) return theme.info;
@@ -162,8 +168,8 @@ export default function UserDetailScreen() {
       });
       setBase(updated);
       alert(t('common.save'), t('users.detail.saveSuccess'), [{ text: t('common.ok') }]);
-    } catch (error: any) {
-      alert(t('common.error'), error?.response?.data?.message || t('users.saveError'), [
+    } catch {
+      alert(t('common.error'), t('users.saveError'), [
         { text: t('common.ok') },
       ]);
     }
@@ -197,9 +203,6 @@ export default function UserDetailScreen() {
             <Ionicons name="arrow-back" size={20} color={text} />
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.title, { color: text }]} numberOfLines={1}>
-              {form.firstName} {form.lastName}
-            </Text>
             <Text style={[styles.subtitle, { color: muted }]}>{t('users.detail.title')}</Text>
           </View>
         </View>
@@ -217,7 +220,7 @@ export default function UserDetailScreen() {
           <View style={[styles.statusPill, { backgroundColor: theme.successSoft }]}>
             <View style={[styles.statusDot, { backgroundColor: base.accountStatus === 'ACTIVE' ? Colors.success : muted }]} />
             <Text style={[styles.statusText, { color: base.accountStatus === 'ACTIVE' ? Colors.success : muted }]}>
-              {base.accountStatus === 'ACTIVE' ? t('users.statuses.ACTIVE') : t('users.statuses.INACTIVE')}
+              {t(`users.statuses.${base.accountStatus === 'ACTIVE' || base.accountStatus === 'BLOCKED' ? base.accountStatus : 'INACTIVE'}`)}
             </Text>
           </View>
         </View>
@@ -280,7 +283,7 @@ export default function UserDetailScreen() {
             })}
           </Text>
           <Text style={[styles.infoText, { color: muted }]}>
-            {t('users.detail.sessionExpires', { date: normalizeDate(base.sessionExpiresAt, t('users.detail.noDate')) })}
+            {t('users.detail.sessionExpires', { date: normalizeDate(base.sessionExpiresAt, t('users.detail.noDate'), i18n.resolvedLanguage) })}
           </Text>
           <Text style={[styles.infoText, { color: muted }]}>
             {t('users.detail.hasLoggedIn', { value: base.hasSession ? t('common.yes') : t('common.no') })}
@@ -319,6 +322,42 @@ export default function UserDetailScreen() {
         ) : null}
 
         <View style={styles.formActions}>
+          {isInactive && (
+            <TouchableOpacity
+              disabled={updatingStatus}
+              onPress={() => {
+                alert(t('users.activateUser'), t('users.activateConfirm', { name: `${form.firstName} ${form.lastName}` }), [
+                  { text: t('common.cancel'), style: 'cancel' },
+                  {
+                    text: t('users.panel.activate'),
+                    onPress: async () => {
+                      setUpdatingStatus(true);
+                      try {
+                        const updated = await updateManagedUser(base.userId, {
+                          numberDocument: base.documentNumber ?? '',
+                          firstName: base.firstName ?? '',
+                          lastName: base.lastName ?? '',
+                          email: base.email ?? '',
+                          accountStatus: 'ACTIVE',
+                          role: base.role,
+                        });
+                        setBase(updated);
+                        alert(t('common.success'), t('users.activateSuccess'), [{ text: t('common.ok') }]);
+                      } catch {
+                        alert(t('common.error'), t('users.statusUpdateError'), [{ text: t('common.ok') }]);
+                      } finally {
+                        setUpdatingStatus(false);
+                      }
+                    },
+                  },
+                ]);
+              }}
+              style={[styles.activateBtn, { backgroundColor: theme.primary, opacity: updatingStatus ? 0.6 : 1 }]}
+            >
+              <Ionicons name="checkmark-circle-outline" size={16} color={Colors.white} />
+              <Text style={styles.saveBtnText}>{t('users.panel.activate')}</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity onPress={() => router.back()} style={styles.cancelBtn}>
             <Text style={{ color: muted, fontWeight: '600' }}>{t('common.cancel')}</Text>
           </TouchableOpacity>
@@ -380,9 +419,20 @@ const styles = StyleSheet.create({
   backBtnCenter: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 9, marginTop: 16 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 6, paddingBottom: 4 },
   backBtn: { width: 40, height: 40, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  title: { fontSize: FontSize['2xl'], fontWeight: FontWeight.black },
-  subtitle: { fontSize: FontSize.sm, marginTop: 3 },
-  banner: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 16, borderWidth: 1, padding: 14 },
+  subtitle: { fontSize: FontSize.sm },
+  banner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 16,
+    shadowColor: '#1F7A3A',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
+    elevation: 4,
+  },
   bannerAvatar: { width: 46, height: 46, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   bannerAvatarText: { color: Colors.white, fontWeight: '900', fontSize: 18 },
   bannerName: { fontSize: 15, fontWeight: '800' },
@@ -391,22 +441,69 @@ const styles = StyleSheet.create({
   statusPill: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 12, paddingHorizontal: 8, paddingVertical: 4 },
   statusDot: { width: 6, height: 6, borderRadius: 3 },
   statusText: { fontSize: 9, fontWeight: '800' },
-  card: { borderRadius: 16, borderWidth: 1, padding: 16, gap: 12 },
+  card: {
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 18,
+    gap: 14,
+    shadowColor: '#1E293B',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.07,
+    shadowRadius: 16,
+    elevation: 3,
+  },
   section: { fontSize: FontSize.xs, fontWeight: '900', textTransform: 'uppercase' },
   row: { flexDirection: 'row', gap: 10 },
   fieldWrap: { flex: 1, gap: 5 },
   fieldLabel: { fontSize: FontSize.xs, fontWeight: '800', textTransform: 'uppercase' },
-  field: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14 },
+  field: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 11, fontSize: 14 },
   fieldError: { color: Colors.error, fontSize: FontSize.xs, marginTop: 2 },
   infoText: { fontSize: FontSize.sm },
   infoLabel: { fontSize: FontSize.sm, fontWeight: '800' },
   pillList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   smallPill: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 },
   smallPillText: { fontSize: FontSize.xs, fontWeight: '800' },
-  note: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, borderWidth: 1, borderRadius: 10, padding: 10 },
+  note: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 12,
+    shadowColor: '#1E293B',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 2,
+  },
   noteText: { flex: 1, fontSize: FontSize.xs, lineHeight: 16 },
   formActions: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 16, marginTop: 4 },
   cancelBtn: { paddingHorizontal: 8, paddingVertical: 11 },
-  saveBtn: { flexDirection: 'row', alignItems: 'center', gap: 7, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 11 },
+  saveBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    borderRadius: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    shadowColor: '#2F8E45',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 14,
+    elevation: 4,
+  },
+  activateBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    borderRadius: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    shadowColor: '#2F8E45',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 14,
+    elevation: 4,
+  },
   saveBtnText: { color: Colors.white, fontWeight: '800', fontSize: FontSize.sm },
 });

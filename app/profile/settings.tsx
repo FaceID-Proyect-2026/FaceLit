@@ -9,6 +9,7 @@ import { useAuth, type UserRole } from '@/shared/contexts/AuthContext';
 import type { Language } from '@/shared/contexts/I18nContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
+import { subscribeRealtime } from '@/shared/services/realtime';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -26,43 +27,40 @@ const LANGUAGES: { code: Language; label: string }[] = [
 function getAccessRights(role?: UserRole | null) {
   if (role === 'INSTRUCTOR') {
     return {
-      label: 'Instructor',
-      summary: 'Puede consultar y gestionar la asistencia solo de las fichas que tiene asignadas.',
+      summary: 'profile.accessRights.instructor.summary',
       rights: [
-        'Consultar sus propios datos registrados.',
-        'Visualizar asistencias de sus fichas asignadas.',
-        'Consultar solo fichas y aprendices autorizados.',
-        'Registrar o gestionar asistencia de las fichas correspondientes.',
+        'profile.accessRights.instructor.right1',
+        'profile.accessRights.instructor.right2',
+        'profile.accessRights.instructor.right3',
+        'profile.accessRights.instructor.right4',
       ],
-      restriction: 'No puede modificar directamente datos personales de usuarios.',
+      restriction: 'profile.accessRights.instructor.restriction',
     };
   }
 
   if (role === 'APPRENTICE') {
     return {
-      label: 'Aprendiz',
-      summary: 'Puede consultar su informacion personal, academica y sus propias asistencias.',
+      summary: 'profile.accessRights.apprentice.summary',
       rights: [
-        'Consultar sus propios datos registrados.',
-        'Visualizar sus propias asistencias.',
-        'Consultar solo la informacion academica que le corresponda.',
-        'Solicitar al Coordinador la correccion o actualizacion de sus datos.',
+        'profile.accessRights.apprentice.right1',
+        'profile.accessRights.apprentice.right2',
+        'profile.accessRights.apprentice.right3',
+        'profile.accessRights.apprentice.right4',
       ],
-      restriction: 'No puede modificar directamente sus datos personales registrados.',
+      restriction: 'profile.accessRights.apprentice.restriction',
     };
   }
 
   return {
-    label: role === 'COORDINATOR_REGISTER' ? 'Coordinador de registro' : 'Coordinador',
-    summary: 'Puede gestionar usuarios, roles, fichas y datos administrativos segun sus permisos.',
+    summary: 'profile.accessRights.coordinator.summary',
     rights: [
-      'Consultar informacion de usuarios para gestion administrativa.',
-      'Crear, actualizar, activar o desactivar usuarios.',
-      'Actualizar o corregir datos personales de usuarios.',
-      'Gestionar aprendices, instructores y fichas.',
-      'Asignar roles y gestionar relaciones Instructor-Ficha.',
+      'profile.accessRights.coordinator.right1',
+      'profile.accessRights.coordinator.right2',
+      'profile.accessRights.coordinator.right3',
+      'profile.accessRights.coordinator.right4',
+      'profile.accessRights.coordinator.right5',
     ],
-    restriction: 'Las modificaciones relevantes deben quedar registradas para trazabilidad.',
+    restriction: 'profile.accessRights.coordinator.restriction',
   };
 }
 
@@ -74,8 +72,8 @@ export default function SettingsScreen() {
   const { alert, DialogUI } = useAppDialog();
   const {
     saving, saved, draft,
-    loadAndApply,
-    setDraftTheme, setDraftLanguage, setDraftNotifications, saveChanges,
+    loadAndApply, reloadAndApply,
+    setDraftTheme, setDraftLanguage, saveChanges,
   } = useUserSettings();
 
   const [showLanguages, setShowLanguages] = useState(false);
@@ -90,15 +88,28 @@ export default function SettingsScreen() {
 
   const currentLangLabel = LANGUAGES.find(l => l.code === draft.language)?.label ?? 'Español';
   const accessRights = getAccessRights(user?.role);
+  const accessRoleLabel = user?.role
+    ? t(`users.roles.${user.role}`, { defaultValue: user.role })
+    : '';
 
   useEffect(() => {
     loadAndApply();
   }, []);
 
+  useEffect(() => subscribeRealtime(message => {
+    if (message.type === 'data.changed'
+      && message.resource === 'user-configuration'
+      && message.actorId === user?.id) {
+      void reloadAndApply().catch(error => {
+        console.warn('[Realtime] No se pudo actualizar la configuración de usuario:', error);
+      });
+    }
+  }), [reloadAndApply, user?.id]);
+
   const handleSave = async () => {
     const result = await saveChanges();
     if (result.success) {
-      alert('✓', t('profile.settingsOptions.saved') ?? 'Cambios guardados');
+      alert('✓', t('profile.settingsOptions.saved'));
     } else {
       alert(t('common.error'), result.error);
     }
@@ -129,7 +140,7 @@ export default function SettingsScreen() {
           </View>
           <Text style={[ss.headerTitle, { color: text }]}>{t('profile.settings')}</Text>
           <Text style={[ss.headerSubtitle, { color: muted }]}>
-            {t('profile.settingsOptions.subtitle') ?? 'Personaliza tu experiencia en la app'}
+            {t('profile.settingsOptions.subtitle')}
           </Text>
         </View>
 
@@ -139,7 +150,7 @@ export default function SettingsScreen() {
             <Ionicons name="color-palette-outline" size={14} color={theme.primary} />
           </View>
           <Text style={[ss.sectionTitle, { color: text }]}>
-            {t('profile.settingsOptions.preferences') ?? 'Preferencias'}
+            {t('profile.settingsOptions.preferences')}
           </Text>
         </View>
 
@@ -209,24 +220,6 @@ export default function SettingsScreen() {
             />
           </View>
 
-          {/* Notificaciones */}
-          <View style={ss.row}>
-            <View style={ss.rowLeft}>
-              <View style={[ss.rowIconWrap, { backgroundColor: iconBg }]}>
-                <Ionicons name="notifications-outline" size={17} color={theme.primary} />
-              </View>
-              <Text style={[ss.rowLabel, { color: text }]}>
-                {t('profile.settingsOptions.notifications')}
-              </Text>
-            </View>
-            <Switch
-              value={draft.notificationsActive}
-              onValueChange={setDraftNotifications}
-              trackColor={{ false: '#ccc', true: theme.primary }}
-              thumbColor={Colors.white}
-            />
-          </View>
-
         </View>
 
         {/* ── Botón Guardar ── */}
@@ -234,7 +227,7 @@ export default function SettingsScreen() {
           <View style={[ss.sectionIconWrap, { backgroundColor: theme.primary + '18' }]}>
             <Ionicons name="shield-checkmark-outline" size={14} color={theme.primary} />
           </View>
-          <Text style={[ss.sectionTitle, { color: text }]}>Derechos de acceso</Text>
+          <Text style={[ss.sectionTitle, { color: text }]}>{t('profile.accessRights.title')}</Text>
         </View>
 
         <View style={[ss.accessCard, { backgroundColor: cardBg, borderColor: border }]}>
@@ -243,8 +236,8 @@ export default function SettingsScreen() {
               <Ionicons name="key-outline" size={20} color={theme.primary} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[ss.accessTitle, { color: text }]}>{accessRights.label}</Text>
-              <Text style={[ss.accessSummary, { color: muted }]}>{accessRights.summary}</Text>
+              <Text style={[ss.accessTitle, { color: text }]}>{accessRoleLabel}</Text>
+              <Text style={[ss.accessSummary, { color: muted }]}>{t(accessRights.summary)}</Text>
             </View>
           </View>
 
@@ -252,14 +245,14 @@ export default function SettingsScreen() {
             {accessRights.rights.map((right) => (
               <View key={right} style={ss.accessItem}>
                 <Ionicons name="checkmark-circle-outline" size={17} color={theme.primary} />
-                <Text style={[ss.accessText, { color: text }]}>{right}</Text>
+                <Text style={[ss.accessText, { color: text }]}>{t(right)}</Text>
               </View>
             ))}
           </View>
 
           <View style={[ss.restrictionBox, { backgroundColor: theme.primary + '10', borderColor: theme.primary + '30' }]}>
             <Ionicons name="lock-closed-outline" size={17} color={theme.primary} />
-            <Text style={[ss.restrictionText, { color: muted }]}>{accessRights.restriction}</Text>
+            <Text style={[ss.restrictionText, { color: muted }]}>{t(accessRights.restriction)}</Text>
           </View>
         </View>
 
@@ -284,7 +277,7 @@ export default function SettingsScreen() {
                 color={saved ? theme.primary : Colors.white}
               />
               <Text style={[ss.saveBtnText, { color: saved ? theme.primary : Colors.white }]}>
-                {saved ? (t('profile.settingsOptions.saved') ?? 'Guardado') : (t('profile.settingsOptions.saveChanges') ?? 'Guardar cambios')}
+                {saved ? t('profile.settingsOptions.saved') : t('profile.settingsOptions.saveChanges')}
               </Text>
             </>
           )}
@@ -308,6 +301,7 @@ const ss = StyleSheet.create({
     borderRadius: 22, borderWidth: 1, alignItems: 'center',
     paddingVertical: 28, paddingHorizontal: 20, marginBottom: 24,
     overflow: 'hidden',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.14, shadowRadius: 12, elevation: 5,
   },
   headerDeco: {
     position: 'absolute', top: -60, left: -60,
@@ -325,7 +319,7 @@ const ss = StyleSheet.create({
   sectionIconWrap: { width: 26, height: 26, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   sectionTitle: { fontSize: FontSize.md, fontWeight: FontWeight.black },
 
-  card: { borderRadius: 18, borderWidth: 1, padding: 6, marginBottom: 20 },
+  card: { borderRadius: 18, borderWidth: 1, padding: 6, marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 10, elevation: 4 },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, paddingHorizontal: 10 },
   rowLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
   rowRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
@@ -337,7 +331,7 @@ const ss = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingVertical: 11, paddingHorizontal: 12, borderRadius: 10, marginVertical: 1, marginRight: 8,
   },
-  accessCard: { borderRadius: 18, borderWidth: 1, padding: 16, marginBottom: 20 },
+  accessCard: { borderRadius: 18, borderWidth: 1, padding: 16, marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 10, elevation: 4 },
   accessHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 },
   accessIconWrap: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   accessTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.black },

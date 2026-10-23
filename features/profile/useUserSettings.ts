@@ -38,7 +38,6 @@ const DEFAULT_USER_CONFIG = {
 interface Draft {
   darkMode: boolean;
   language: Language;
-  notificationsActive: boolean;
 }
 
 export function useUserSettings() {
@@ -53,21 +52,17 @@ export function useUserSettings() {
   const [draft, setDraftState] = useState<Draft>({
     darkMode: isDark,
     language,
-    notificationsActive: true,
   });
 
   const applyConfig = useCallback((config: any) => {
     const backendLanguage = String(config?.language ?? DEFAULT_USER_CONFIG.language).trim().toUpperCase();
     const lang = LANG_BACKEND_TO_APP[backendLanguage] ?? 'es';
     const darkMode = Boolean(config?.darkMode ?? DEFAULT_USER_CONFIG.darkMode);
-    const notificationsActive = config?.notificationsActive ?? DEFAULT_USER_CONFIG.notificationsActive;
-
     if (isDark !== darkMode) setDarkMode(darkMode);
     if (language !== lang) changeLanguage(lang);
     setDraftState({
       darkMode,
       language: lang,
-      notificationsActive,
     });
     setSaved(true);
   }, [changeLanguage, isDark, language, setDarkMode]);
@@ -78,16 +73,31 @@ export function useUserSettings() {
       const config = await getUserConfiguration();
       setHasConfig(true);
       applyConfig(config);
-    } catch {
+    } catch (error: any) {
+      if (error.response?.status !== 404) {
+        console.warn('[Settings] No se pudo cargar la configuración del usuario:', error);
+        return;
+      }
+
       setHasConfig(false);
       applyConfig(DEFAULT_USER_CONFIG);
       try {
         await createUserConfiguration(DEFAULT_USER_CONFIG);
         setHasConfig(true);
-      } catch {
-        // La primera visita puede fallar por backend sin configuración; el usuario
-        // conserva la configuración por defecto local hasta el siguiente intento.
+      } catch (createError) {
+        console.warn('[Settings] No se pudo crear la configuración inicial:', createError);
       }
+    } finally {
+      setLoading(false);
+    }
+  }, [applyConfig]);
+
+  const reloadAndApply = useCallback(async () => {
+    setLoading(true);
+    try {
+      const config = await getUserConfiguration();
+      setHasConfig(true);
+      applyConfig(config);
     } finally {
       setLoading(false);
     }
@@ -105,24 +115,25 @@ export function useUserSettings() {
     setSaved(false);
   }, [changeLanguage]);
 
-  const setDraftNotifications = useCallback((active: boolean) => {
-    setDraftState((prev) => ({ ...prev, notificationsActive: active }));
-    setSaved(false);
-  }, []);
-
   const saveChanges = useCallback(async () => {
     setSaving(true);
     try {
       const payload = {
         language: LANG_APP_TO_BACKEND[draft.language] ?? DEFAULT_USER_CONFIG.language,
         darkMode: draft.darkMode,
-        notificationsActive: draft.notificationsActive,
+        notificationsActive: true,
       };
 
       if (hasConfig) {
         await updateUserConfiguration(payload);
       } else {
-        await createUserConfiguration(payload);
+        try {
+          await getUserConfiguration();
+          await updateUserConfiguration(payload);
+        } catch (error: any) {
+          if (error.response?.status !== 404) throw error;
+          await createUserConfiguration(payload);
+        }
         setHasConfig(true);
       }
 
@@ -136,7 +147,9 @@ export function useUserSettings() {
       const status = err.response?.status;
       return {
         success: false,
-        error: serverError || (status ? `Error del servidor (${status})` : 'No se pudo guardar la configuración'),
+        error: serverError || (status
+          ? `Error del servidor (${status})`
+          : 'No se pudo conectar con el backend. Verifica que esté iniciado en el puerto 8080.'),
       };
     } finally {
       setSaving(false);
@@ -149,9 +162,9 @@ export function useUserSettings() {
     saved,
     draft,
     loadAndApply,
+    reloadAndApply,
     setDraftTheme,
     setDraftLanguage,
-    setDraftNotifications,
     saveChanges,
   };
 }

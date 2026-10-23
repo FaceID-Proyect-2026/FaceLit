@@ -20,8 +20,6 @@ import {
     subscribeAttendanceUI,
 } from "@/features/attendance/attendanceUIStore";
 import {
-    dateRange,
-    useAttendanceRF6,
     type DayCell,
     type FichaDaySummary,
     type FichaTableRow,
@@ -31,14 +29,16 @@ import AppButton from "@/shared/components/ui/AppButton";
 import DateField from "@/shared/components/ui/DateField";
 import { Colors } from "@/shared/constants/colors";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
+import { useAuth } from "@/shared/contexts/AuthContext";
 import { useTheme } from "@/shared/contexts/ThemeContext";
+import { fetchAttendanceMatrix, updateFacialEventExcuse } from "@/shared/services/facialAttendanceService";
 import {
     exportReport,
     type ExportData,
     type ExportOptions,
 } from "@/shared/utils/export";
 import { Ionicons } from "@expo/vector-icons";
-import { useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 import {
     Modal,
@@ -56,6 +56,14 @@ const CELL_LATE = Colors.warning + "30";
 const BORDER_ABSENT = Colors.error + "80";
 const BORDER_LATE = Colors.warning + "80";
 
+const todayBogota = () =>
+  new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Bogota",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+
 export default function AttendanceByFichaScreen({
   directFichaOnly = false,
   allowedFichaIds,
@@ -64,9 +72,9 @@ export default function AttendanceByFichaScreen({
   allowedFichaIds?: string[];
 }) {
   const { isDark, theme } = useTheme();
+  const { role } = useAuth();
   const { t, i18n } = useTranslation();
-  const { programs, allFichas } = useAcademic();
-  const { getFichaCardsForProgram, getFichaTable } = useAttendanceRF6();
+  const { programs, allFichas, allInstructors } = useAcademic();
 
   // ── Estado persistido desde el store ─────────
   const ui = useSyncExternalStore(
@@ -80,10 +88,18 @@ export default function AttendanceByFichaScreen({
     cell: DayCell;
     learnerName: string;
   } | null>(null);
+  const [realTableRows, setRealTableRows] = useState<FichaTableRow[]>([]);
+  const [realDates, setRealDates] = useState<string[]>([]);
+  const [realFichaCards, setRealFichaCards] = useState<FichaDaySummary[]>([]);
+  const [loadingFichaCards, setLoadingFichaCards] = useState(false);
+  const [loadingMatrix, setLoadingMatrix] = useState(false);
+  const [matrixError, setMatrixError] = useState<string | null>(null);
+  const [excuseError, setExcuseError] = useState<string | null>(null);
+  const [savingExcuse, setSavingExcuse] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const dateHeaderRef = useRef<ScrollView>(null);
-  const dateGridRef = useRef<ScrollView>(null);
-  const dateGridX = useRef(0);
+  const learnerHeaderRef = useRef<ScrollView>(null);
+  const learnerGridRef = useRef<ScrollView>(null);
+  const learnerGridX = useRef(0);
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -122,35 +138,156 @@ export default function AttendanceByFichaScreen({
     [visibleFichas],
   );
 
-  const fichaCards: FichaDaySummary[] = useMemo(
-    () => (selectedProgramId ? getFichaCardsForProgram(selectedProgramId).filter(card => !allowedFichaSet || allowedFichaSet.has(card.fichaId)) : []),
-    [selectedProgramId, getFichaCardsForProgram, allowedFichaSet],
+  const selectedProgramFichas = useMemo(
+    () => visibleFichas.filter((ficha) => ficha.programId === selectedProgramId),
+    [selectedProgramId, visibleFichas],
   );
+  const fichaCards: FichaDaySummary[] = realFichaCards;
 
   const selectedFicha = useMemo(
     () => visibleFichas.find((f) => f.id === selectedFichaId),
     [visibleFichas, selectedFichaId],
+  );
+  const responsibleInstructors = useMemo(
+    () => allInstructors.filter(instructor =>
+      instructor.status === "active" && instructor.fichaIds.includes(selectedFichaId ?? ""),
+    ),
+    [allInstructors, selectedFichaId],
   );
   const selectedProgram = useMemo(
     () => programs.find((p) => p.id === selectedProgramId),
     [programs, selectedProgramId],
   );
 
-  const tableRows: FichaTableRow[] = useMemo(
-    () =>
-      selectedFichaId && dateFrom && dateTo && dateFrom <= dateTo
-        ? getFichaTable(selectedFichaId, dateFrom, dateTo)
-        : [],
-    [selectedFichaId, dateFrom, dateTo, getFichaTable],
-  );
+  useEffect(() => {
+    let cancelled = false;
 
-  const dates: string[] = useMemo(
-    () =>
-      dateFrom && dateTo && dateFrom <= dateTo
-        ? dateRange(dateFrom, dateTo)
-        : [],
-    [dateFrom, dateTo],
-  );
+    async function loadFichaCards() {
+      if (!selectedProgramId || selectedProgramFichas.length === 0) {
+        setRealFichaCards([]);
+        return;
+      }
+
+      const today = todayBogota();
+      setLoadingFichaCards(true);
+      try {
+        const cards = await Promise.all(
+          selectedProgramFichas.map(async (ficha) => {
+            try {
+              const matrix = await fetchAttendanceMatrix({
+                idChip: ficha.id,
+                dateFrom: today,
+                dateTo: today,
+              });
+
+              const dayCells = matrix.learners.flatMap((learner) => learner.days);
+              const totalLearners = matrix.learners.length || ficha.learners.filter((learner) => learner.status === "active").length;
+              const absentToday = dayCells.filter((day) => day.status === "absent").length;
+              const lateToday = dayCells.filter((day) => day.status === "late").length;
+
+              return {
+                fichaId: ficha.id,
+                fichaNumber: matrix.chipCode ?? ficha.number,
+                programId: selectedProgramId,
+                programName: matrix.programName ?? selectedProgram?.name ?? "",
+                totalLearners,
+                absentToday,
+                lateToday,
+                absentPct: totalLearners > 0 ? Math.round((absentToday / totalLearners) * 100) : 0,
+                latePct: totalLearners > 0 ? Math.round((lateToday / totalLearners) * 100) : 0,
+              } satisfies FichaDaySummary;
+            } catch {
+              const totalLearners = ficha.learners.filter((learner) => learner.status === "active").length;
+
+              return {
+                fichaId: ficha.id,
+                fichaNumber: ficha.number,
+                programId: selectedProgramId,
+                programName: selectedProgram?.name ?? "",
+                totalLearners,
+                absentToday: 0,
+                lateToday: 0,
+                absentPct: 0,
+                latePct: 0,
+              } satisfies FichaDaySummary;
+            }
+          }),
+        );
+
+        if (!cancelled) setRealFichaCards(cards);
+      } catch {
+        if (!cancelled) setRealFichaCards([]);
+      } finally {
+        if (!cancelled) setLoadingFichaCards(false);
+      }
+    }
+
+    loadFichaCards();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedProgramFichas, selectedProgramId, selectedProgram]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadMatrix() {
+      if (!selectedFichaId || !dateFrom || !dateTo || dateFrom > dateTo) {
+        setRealTableRows([]);
+        setRealDates([]);
+        setMatrixError(null);
+        return;
+      }
+
+      setLoadingMatrix(true);
+      setMatrixError(null);
+      try {
+        const matrix = await fetchAttendanceMatrix({
+          idChip: selectedFichaId,
+          dateFrom,
+          dateTo,
+        });
+        if (cancelled) return;
+
+        setRealDates(matrix.sessions.map((session) => session.date));
+        setRealTableRows(matrix.learners.map((learner) => ({
+          learnerId: learner.learnerId,
+          learnerName: learner.learnerName,
+          learnerDocument: learner.learnerDocument,
+          days: learner.days.map((day) => ({
+            idFacialEvent: day.idFacialEvent ?? null,
+            idRecordEnvironment: day.idRecordEnvironment,
+            apprenticeId: learner.apprenticeId,
+            date: day.date,
+            status: day.status,
+            entryTime: day.entryTime,
+            delayMinutes: day.delayMinutes,
+            environmentName: day.environmentName,
+            instructorName: day.instructorName,
+            fichaNumber: day.fichaNumber,
+            programName: day.programName,
+            exitRegistered: day.exitRegistered,
+            excuse: day.excuse ?? null,
+          })),
+        })));
+      } catch (error: any) {
+        if (cancelled) return;
+        setRealTableRows([]);
+        setRealDates([]);
+        setMatrixError(error?.response?.data?.message ?? "No fue posible cargar la asistencia registrada.");
+      } finally {
+        if (!cancelled) setLoadingMatrix(false);
+      }
+    }
+
+    loadMatrix();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedFichaId, dateFrom, dateTo]);
+
+  const tableRows: FichaTableRow[] = realTableRows;
+  const dates: string[] = realDates;
 
   // ── Formato ───────────────────────────────────
   const fmtDate = (d: string) =>
@@ -171,12 +308,62 @@ export default function AttendanceByFichaScreen({
         }).format(new Date(`1970-01-01T${v}:00`))
       : "—";
 
-  // ── Exportación ───────────────────────────────
-  const handleDateGridScroll = (event: any) => {
-    dateGridX.current = event.nativeEvent.contentOffset.x;
-    dateHeaderRef.current?.scrollTo({ x: dateGridX.current, animated: false });
+  const canEditExcuse = role === "INSTRUCTOR";
+
+  const handleUpdateExcuse = async (excuse: boolean) => {
+    if (!cellDetail?.cell.idRecordEnvironment || !cellDetail.cell.apprenticeId) return;
+
+    setSavingExcuse(true);
+    setExcuseError(null);
+    try {
+      const event = await updateFacialEventExcuse({
+        idRecordEnvironment: cellDetail.cell.idRecordEnvironment,
+        idApprentice: cellDetail.cell.apprenticeId,
+        excuse,
+      });
+
+      setRealTableRows((rows) =>
+        rows.map((row) => ({
+          ...row,
+          days: row.days.map((day) =>
+            day.idRecordEnvironment === cellDetail.cell.idRecordEnvironment &&
+            day.apprenticeId === cellDetail.cell.apprenticeId
+              ? {
+                  ...day,
+                  idFacialEvent: event.idFacialEvent,
+                  excuse: event.excuse ?? excuse,
+                  status: "absent",
+                }
+              : day,
+          ),
+        })),
+      );
+      setCellDetail((current) =>
+        current
+          ? {
+              ...current,
+              cell: {
+                ...current.cell,
+                idFacialEvent: event.idFacialEvent,
+                excuse: event.excuse ?? excuse,
+                status: "absent",
+              },
+            }
+          : current,
+      );
+    } catch (error: any) {
+      setExcuseError(error?.response?.data?.message ?? "No fue posible guardar la excusa.");
+    } finally {
+      setSavingExcuse(false);
+    }
   };
-  const handleDateGridWheel = (event: any) => {
+
+  // ── Exportación ───────────────────────────────
+  const handleLearnerGridScroll = (event: any) => {
+    learnerGridX.current = event.nativeEvent.contentOffset.x;
+    learnerHeaderRef.current?.scrollTo({ x: learnerGridX.current, animated: false });
+  };
+  const handleLearnerGridWheel = (event: any) => {
     if (Platform.OS !== "web") return;
     const nativeEvent = event?.nativeEvent ?? event;
     const delta = Math.abs(nativeEvent.deltaX) > Math.abs(nativeEvent.deltaY)
@@ -184,11 +371,11 @@ export default function AttendanceByFichaScreen({
       : nativeEvent.deltaY;
     if (!delta) return;
     nativeEvent.preventDefault?.();
-    const nextX = Math.max(0, dateGridX.current + delta);
-    dateGridX.current = nextX;
-    dateGridRef.current?.scrollTo({ x: nextX, animated: false });
+    const nextX = Math.max(0, learnerGridX.current + delta);
+    learnerGridX.current = nextX;
+    learnerGridRef.current?.scrollTo({ x: nextX, animated: false });
   };
-  const dateGridWheelProps = Platform.OS === "web" ? ({ onWheel: handleDateGridWheel } as any) : {};
+  const learnerGridWheelProps = Platform.OS === "web" ? ({ onWheel: handleLearnerGridWheel } as any) : {};
 
   const handleExport = async (format: "excel" | "csv") => {
     if (!tableRows.length || !selectedFicha || !selectedProgram) return;
@@ -249,9 +436,9 @@ export default function AttendanceByFichaScreen({
             <Ionicons name="map-outline" size={22} color={theme.primary} />
           </View>
           <View style={s.guideCopy}>
-            <Text style={[s.guideTitle, { color: text }]}>Consulta por programa y ficha</Text>
+            <Text style={[s.guideTitle, { color: text }]}>{t("attendance.programFichaGuideTitle")}</Text>
             <Text style={[s.guideText, { color: muted }]}>
-              Selecciona un programa de formación para ver sus fichas asociadas. Luego entra a una ficha para revisar la asistencia de sus aprendices por rango de fechas.
+              {t("attendance.programFichaGuideDescription")}
             </Text>
           </View>
         </View>
@@ -310,8 +497,15 @@ export default function AttendanceByFichaScreen({
         </View>
       )}
 
+      {Boolean(selectedProgramId) && !Boolean(selectedFichaId) && loadingFichaCards && (
+        <View style={s.emptyBox}>
+          <Ionicons name="sync-outline" size={28} color={muted} />
+          <Text style={[s.emptyText, { color: muted }]}>{t("common.loading")}</Text>
+        </View>
+      )}
+
       {/* Programa sin fichas */}
-      {Boolean(selectedProgramId) && !Boolean(selectedFichaId) && fichaCards.length === 0 && (
+      {Boolean(selectedProgramId) && !Boolean(selectedFichaId) && !loadingFichaCards && fichaCards.length === 0 && (
         <View style={s.emptyBox}>
           <Ionicons name="document-outline" size={28} color={muted} />
           <Text style={[s.emptyText, { color: muted }]}>
@@ -331,7 +525,12 @@ export default function AttendanceByFichaScreen({
               <TouchableOpacity
                 key={card.fichaId}
                 activeOpacity={0.75}
-                onPress={() => setByFichaFicha(card.fichaId)}
+                onPress={() => {
+                  const today = todayBogota();
+                  setByFichaFicha(card.fichaId);
+                  setByFichaDateFrom(today);
+                  setByFichaDateTo(today);
+                }}
                 style={[
                   s.fichaCard,
                   { backgroundColor: cardBg, borderColor: border },
@@ -423,6 +622,20 @@ export default function AttendanceByFichaScreen({
             </Text>
           </TouchableOpacity>
 
+          {Boolean(selectedFichaId) && (
+            <View style={[s.responsibleRow, { backgroundColor: cardBg, borderColor: border }]}>
+              <Ionicons name="person-circle-outline" size={18} color={theme.primary} />
+              <Text style={[s.responsibleLabel, { color: muted }]}>
+                {t("attendance.rf6.responsibleInstructor")}:
+              </Text>
+              <Text style={[s.responsibleName, { color: text }]} numberOfLines={2}>
+                {responsibleInstructors.length
+                  ? responsibleInstructors.map(instructor => `${instructor.name} ${instructor.lastname}`.trim()).join(", ")
+                  : "—"}
+              </Text>
+            </View>
+          )}
+
           {/* Selectores de fecha con DateField */}
           <View
             style={[s.card, { backgroundColor: cardBg, borderColor: border }]}
@@ -462,23 +675,42 @@ export default function AttendanceByFichaScreen({
           </View>
 
           {/* ── Tabla ── */}
-          {tableRows.length > 0 && dates.length > 0 && (
+          {loadingMatrix && (
+            <View style={s.emptyBox}>
+              <Ionicons name="sync-outline" size={28} color={muted} />
+              <Text style={[s.emptyText, { color: muted }]}>
+                {t("common.loading")}
+              </Text>
+            </View>
+          )}
+
+          {matrixError && !loadingMatrix && (
+            <View style={s.emptyBox}>
+              <Ionicons name="alert-circle-outline" size={28} color={Colors.error} />
+              <Text style={[s.emptyText, { color: Colors.error }]}>
+                {matrixError}
+              </Text>
+            </View>
+          )}
+
+          {!loadingMatrix && !matrixError && tableRows.length > 0 && dates.length > 0 && (
             <View style={[s.tableShell, { borderColor: border, backgroundColor: cardBg }]}>
               <View style={s.tableHeaderPinned}>
-                <View style={[s.cellName, s.thCell, { backgroundColor: theme.primary + "20", borderColor: border }]}>
-                  <Text style={[s.thText, { color: theme.primary }]}>{t("attendance.rf6.learner")}</Text>
+                <View style={[s.dateRowLabel, s.transposedHeaderCell, { backgroundColor: theme.primary + "20", borderColor: border }]}>
+                  <Text style={[s.thText, { color: theme.primary }]}>{t("reports.table.date")}</Text>
                 </View>
                 <ScrollView
-                  ref={dateHeaderRef}
+                  ref={learnerHeaderRef}
                   horizontal
                   scrollEnabled={false}
                   showsHorizontalScrollIndicator={false}
-                  style={s.dateGridScroll}
+                  style={s.learnerGridScroll}
                 >
                   <View style={s.tableHeaderRow}>
-                    {dates.map((d) => (
-                      <View key={d} style={[s.cellDay, s.thCell, { backgroundColor: theme.primary + "20", borderColor: border }]}>
-                        <Text style={[s.thText, { color: theme.primary }]}>{fmtDate(d)}</Text>
+                    {tableRows.map((row) => (
+                      <View key={row.learnerId} style={[s.learnerHeaderCell, s.transposedHeaderCell, { backgroundColor: theme.primary + "20", borderColor: border }]}>
+                        <Text style={[s.thText, { color: theme.primary }]} numberOfLines={2}>{row.learnerName}</Text>
+                        <Text style={[s.cellDocText, { color: muted }]} numberOfLines={1}>{row.learnerDocument}</Text>
                       </View>
                     ))}
                   </View>
@@ -486,53 +718,61 @@ export default function AttendanceByFichaScreen({
               </View>
               <ScrollView style={s.tableBodyScroll} nestedScrollEnabled showsVerticalScrollIndicator>
                 <View style={s.tableBodyRow}>
-                  <View style={s.fixedLearners}>
-                    {tableRows.map((row, rIdx) => (
+                  <View style={s.fixedDates}>
+                    {dates.map((date, dateIdx) => (
                       <View
-                        key={row.learnerId}
+                        key={date}
                         style={[
-                          s.cellName,
+                          s.dateRowLabel,
                           {
                             borderColor: border,
-                            backgroundColor: rIdx % 2 === 0 ? cardBg : theme.primary + "08",
+                            backgroundColor: dateIdx % 2 === 0 ? cardBg : theme.primary + "08",
                           },
                         ]}
                       >
-                        <Text style={[s.cellNameText, { color: text }]} numberOfLines={1}>{row.learnerName}</Text>
-                        <Text style={[s.cellDocText, { color: muted }]} numberOfLines={1}>{row.learnerDocument}</Text>
+                        <Text style={[s.cellNameText, { color: text }]}>{fmtDateLong(date)}</Text>
                       </View>
                     ))}
                   </View>
                   <ScrollView
-                    ref={dateGridRef}
+                    ref={learnerGridRef}
                     horizontal
                     showsHorizontalScrollIndicator={false}
-                    style={s.dateGridScroll}
-                    onScroll={handleDateGridScroll}
+                    style={s.learnerGridScroll}
+                    onScroll={handleLearnerGridScroll}
                     scrollEventThrottle={16}
-                    {...dateGridWheelProps}
+                    {...learnerGridWheelProps}
                   >
                     <View>
-                      {tableRows.map((row, rIdx) => (
-                        <View key={row.learnerId} style={[s.tableRow, { backgroundColor: rIdx % 2 === 0 ? cardBg : theme.primary + "08" }]}>
-                          {row.days.map((cell, dIdx) => {
+                      {dates.map((date, dateIdx) => (
+                        <View key={date} style={[s.tableRow, { backgroundColor: dateIdx % 2 === 0 ? cardBg : theme.primary + "08" }]}>
+                          {tableRows.map((row) => {
+                            const cell = row.days[dateIdx];
+                            if (!cell) return null;
                             const isAbsent = cell.status === "absent";
                             const isLate = cell.status === "late";
                             const isClickable = isAbsent || isLate;
                             return (
                               <TouchableOpacity
-                                key={dIdx}
+                                key={row.learnerId}
                                 disabled={!isClickable}
-                                onPress={() => isClickable && setCellDetail({ cell, learnerName: row.learnerName })}
+                                onPress={() => {
+                                  if (!isClickable) return;
+                                  setExcuseError(null);
+                                  setCellDetail({ cell, learnerName: row.learnerName });
+                                }}
                                 style={[
-                                  s.cellDay,
+                                  s.learnerAttendanceCell,
                                   { borderColor: border },
                                   isAbsent && { backgroundColor: CELL_ABSENT, borderColor: BORDER_ABSENT },
                                   isLate && { backgroundColor: CELL_LATE, borderColor: BORDER_LATE },
                                 ]}
                                 accessibilityRole={isClickable ? "button" : "none"}
                               >
-                                {isAbsent && <Ionicons name="close-circle" size={16} color={Colors.error} />}
+                                {isAbsent && cell.excuse === true && (
+                                  <Text style={[s.excuseMark, { color: Colors.error }]}>E</Text>
+                                )}
+                                {isAbsent && cell.excuse !== true && <Ionicons name="close-circle" size={16} color={Colors.error} />}
                                 {isLate && <Ionicons name="time" size={16} color={Colors.warning} />}
                                 {cell.status === "punctual" && <View style={[s.punctualDot, { backgroundColor: Colors.success + "60" }]} />}
                                 {!cell.status && <Text style={[s.cellEmpty, { color: muted }]}>-</Text>}
@@ -549,7 +789,7 @@ export default function AttendanceByFichaScreen({
           )}
           {tableRows.length > 0 && dates.length > 0 && (
             <Text style={[s.tableHint, { color: muted }]}>
-              Desplaza las fechas con la rueda o el panel táctil; la columna de aprendices queda fija para no perder la referencia.
+              {t("attendance.rf6.tableHint")}
             </Text>
           )}
           {tableRows.length > 0 && dates.length > 0 && (
@@ -661,10 +901,11 @@ export default function AttendanceByFichaScreen({
                             disabled={!isClickable}
                             onPress={() =>
                               isClickable &&
+                              (setExcuseError(null),
                               setCellDetail({
                                 cell,
                                 learnerName: row.learnerName,
-                              })
+                              }))
                             }
                             style={[
                               s.cellDay,
@@ -680,7 +921,10 @@ export default function AttendanceByFichaScreen({
                             ]}
                             accessibilityRole={isClickable ? "button" : "none"}
                           >
-                            {isAbsent && (
+                            {isAbsent && cell.excuse === true && (
+                              <Text style={[s.excuseMark, { color: Colors.error }]}>E</Text>
+                            )}
+                            {isAbsent && cell.excuse !== true && (
                               <Ionicons
                                 name="close-circle"
                                 size={16}
@@ -781,6 +1025,8 @@ export default function AttendanceByFichaScreen({
           {Boolean(dateFrom) &&
             Boolean(dateTo) &&
             dateFrom <= dateTo &&
+            !loadingMatrix &&
+            !matrixError &&
             tableRows.length === 0 && (
               <View style={s.emptyBox}>
                 <Ionicons
@@ -798,7 +1044,13 @@ export default function AttendanceByFichaScreen({
 
       {/* ── Modal detalle de celda ── */}
       <Modal visible={!!cellDetail} transparent animationType="slide">
-        <Pressable style={s.modalOverlay} onPress={() => setCellDetail(null)}>
+        <Pressable
+          style={s.modalOverlay}
+          onPress={() => {
+            setCellDetail(null);
+            setExcuseError(null);
+          }}
+        >
           <Pressable
             style={[
               s.detailBox,
@@ -831,6 +1083,9 @@ export default function AttendanceByFichaScreen({
                         : Colors.warning
                     }
                   />
+                  {cellDetail.cell.status === "absent" && cellDetail.cell.excuse === true && (
+                    <Text style={[s.detailExcuseMark, { color: Colors.error }]}>E</Text>
+                  )}
                   <Text
                     style={[
                       s.detailStatus,
@@ -900,9 +1155,63 @@ export default function AttendanceByFichaScreen({
                     </Text>
                   </View>
                 ))}
+                {cellDetail.cell.status === "absent" && (
+                  <View style={[s.excusePanel, { borderColor: border, backgroundColor: theme.primary + "08" }]}>
+                    <View style={s.excuseHeader}>
+                      <View style={s.detailLabel}>
+                        <Ionicons name="document-text-outline" size={15} color={muted} />
+                        <Text style={[s.detailLabelText, { color: muted }]}>Excusa</Text>
+                      </View>
+                      <Text style={[s.detailValue, { color: text }]}>
+                        {cellDetail.cell.excuse === null || cellDetail.cell.excuse === undefined
+                          ? "-"
+                          : cellDetail.cell.excuse
+                            ? "Sí"
+                            : "No"}
+                      </Text>
+                    </View>
+                    {canEditExcuse && (
+                      <View style={s.excuseActions}>
+                        <TouchableOpacity
+                          activeOpacity={0.75}
+                          disabled={savingExcuse}
+                          onPress={() => handleUpdateExcuse(true)}
+                          style={[
+                            s.excuseOption,
+                            {
+                              borderColor: cellDetail.cell.excuse === true ? Colors.error : border,
+                              backgroundColor: cellDetail.cell.excuse === true ? Colors.error + "15" : cardBg,
+                            },
+                          ]}
+                        >
+                          <Text style={[s.excuseOptionText, { color: cellDetail.cell.excuse === true ? Colors.error : text }]}>Sí</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          activeOpacity={0.75}
+                          disabled={savingExcuse}
+                          onPress={() => handleUpdateExcuse(false)}
+                          style={[
+                            s.excuseOption,
+                            {
+                              borderColor: cellDetail.cell.excuse === false ? Colors.error : border,
+                              backgroundColor: cellDetail.cell.excuse === false ? Colors.error + "15" : cardBg,
+                            },
+                          ]}
+                        >
+                          <Text style={[s.excuseOptionText, { color: cellDetail.cell.excuse === false ? Colors.error : text }]}>No</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                    {savingExcuse && <Text style={[s.excuseFeedback, { color: muted }]}>Guardando...</Text>}
+                    {excuseError && <Text style={[s.excuseFeedback, { color: Colors.error }]}>{excuseError}</Text>}
+                  </View>
+                )}
                 <AppButton
                   title={t("common.close")}
-                  onPress={() => setCellDetail(null)}
+                  onPress={() => {
+                    setCellDetail(null);
+                    setExcuseError(null);
+                  }}
                   variant="outline"
                   style={{ marginTop: 14 }}
                 />
@@ -1016,6 +1325,9 @@ const s = StyleSheet.create({
   backProgram: { fontSize: FontSize.xs, flex: 1 },
   backFicha: { fontSize: FontSize.sm, fontWeight: FontWeight.black },
 
+  responsibleRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 7, borderWidth: 1, borderRadius: 12, padding: 11 },
+  responsibleLabel: { fontSize: FontSize.sm },
+  responsibleName: { flexShrink: 1, fontSize: FontSize.sm, fontWeight: FontWeight.bold },
   rangeLabel: { fontSize: FontSize.sm, marginBottom: 10 },
   rangeRow: {
     flexDirection: "row",
@@ -1051,7 +1363,12 @@ const s = StyleSheet.create({
     width: 190,
     zIndex: 2,
   },
+  fixedDates: {
+    width: 140,
+    zIndex: 2,
+  },
   dateGridScroll: { flex: 1 },
+  learnerGridScroll: { flex: 1 },
   tableHint: { fontSize: FontSize.xs, lineHeight: 18, marginTop: -2 },
   tableHeaderRow: { flexDirection: "row" },
   tableRow: { flexDirection: "row" },
@@ -1067,6 +1384,10 @@ const s = StyleSheet.create({
     fontWeight: FontWeight.black,
     textAlign: "center",
   },
+  transposedHeaderCell: { height: 76, justifyContent: "center", alignItems: "center", borderWidth: 0.5, padding: 8 },
+  dateRowLabel: { width: 140, height: 60, borderWidth: 0.5, paddingHorizontal: 10, justifyContent: "center" },
+  learnerHeaderCell: { width: 180 },
+  learnerAttendanceCell: { width: 180, height: 60, borderWidth: 0.5, alignItems: "center", justifyContent: "center" },
   cellName: {
     width: 190,
     height: 64,
@@ -1083,6 +1404,7 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  excuseMark: { fontSize: FontSize.base, fontWeight: FontWeight.black },
   punctualDot: { width: 8, height: 8, borderRadius: 4 },
   cellEmpty: { fontSize: FontSize.xs },
 
@@ -1115,6 +1437,7 @@ const s = StyleSheet.create({
     gap: 8,
     marginBottom: 16,
   },
+  detailExcuseMark: { fontSize: 34, fontWeight: FontWeight.black, lineHeight: 36 },
   detailStatus: { fontSize: FontSize.xl, fontWeight: FontWeight.black },
   detailRow: {
     flexDirection: "row",
@@ -1130,4 +1453,17 @@ const s = StyleSheet.create({
     flex: 1,
     textAlign: "right",
   },
+  excusePanel: { borderWidth: 1, borderRadius: 12, padding: 12, marginTop: 12, gap: 10 },
+  excuseHeader: { flexDirection: "row", alignItems: "center" },
+  excuseActions: { flexDirection: "row", gap: 8 },
+  excuseOption: {
+    flex: 1,
+    minHeight: 38,
+    borderWidth: 1,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  excuseOptionText: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
+  excuseFeedback: { fontSize: FontSize.xs, textAlign: "center" },
 });

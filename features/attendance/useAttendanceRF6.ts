@@ -42,6 +42,9 @@ export interface FichaDaySummary {
 
 /** Una celda de la tabla diaria de un aprendiz (RF-6.1 detalle / RF-6.2) */
 export interface DayCell {
+  idFacialEvent?: string | null;
+  idRecordEnvironment?: string;
+  apprenticeId?: string;
   date: string; // YYYY-MM-DD
   status: 'punctual' | 'late' | 'absent' | null; // null = sin registro
   entryTime: string;
@@ -50,6 +53,8 @@ export interface DayCell {
   instructorName: string;
   fichaNumber: string;
   programName: string;
+  exitRegistered?: boolean;
+  excuse?: boolean | null;
 }
 
 /** Fila de la tabla de detalle de ficha (RF-6.1 pantalla 2) */

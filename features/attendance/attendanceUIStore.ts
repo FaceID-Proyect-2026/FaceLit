@@ -27,6 +27,7 @@ export interface ByUserUIState {
     learnerId: string;
     name: string;
     document: string;
+    fichaId: string;
     fichaNumber: string;
   } | null;
   dateFrom: string;

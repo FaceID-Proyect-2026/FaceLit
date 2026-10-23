@@ -1,5 +1,6 @@
 import { api } from './api';
 import type { Notification, NotificationCategory, NotificationChannel } from '@/features/notifications/types';
+import { parseNotificationMeta } from '@/features/notifications/localizeNotification';
 
 type BackendNotification = {
   id: string;
@@ -37,7 +38,7 @@ function mapEmailStatus(status?: string | null): Notification['emailStatus'] {
 function mapNotification(item: BackendNotification): Notification {
   const created = new Date(item.createdAt);
   const iso = Number.isNaN(created.getTime()) ? new Date().toISOString() : created.toISOString();
-  const meta = item.meta ? JSON.parse(item.meta) : undefined;
+  const meta = parseNotificationMeta(item.meta);
   const category = item.type.startsWith('csv_') ? 'csv' : (categoryMap[item.category] ?? 'academic');
 
   return {

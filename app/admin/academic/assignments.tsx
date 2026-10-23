@@ -199,7 +199,7 @@ export default function AcademicAssignmentsScreen() {
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={[s.title, { color: text }]}>{t('academic.assignTitle')}</Text>
-          <Text style={[s.subtitle, { color: muted }]}>{t('academic.assignSubtitle')}</Text>
+          <Text style={[s.subtitle, { color: muted }]}>{t('academic.assignManualSubtitle')}</Text>
         </View>
       </View>
 
@@ -215,6 +215,10 @@ export default function AcademicAssignmentsScreen() {
               <Ionicons name="person-outline" size={18} color={theme.primary} />
             </View>
             <Text style={[s.sectionTitle, { color: text }]}>{t('academic.assignSectionLearner')}</Text>
+          </View>
+          <View style={[s.infoNote, { backgroundColor: theme.primary + '10', borderColor: theme.primary + '35', marginBottom: 14 }]}>
+            <Ionicons name="information-circle-outline" size={16} color={theme.primary} />
+            <Text style={[s.infoNoteText, { color: text }]}>{t('academic.assignOneFichaNotice')}</Text>
           </View>
 
           {/* Documento */}
@@ -396,7 +400,7 @@ export default function AcademicAssignmentsScreen() {
         <View style={[s.infoNote, { backgroundColor: inputBg, borderColor: border }]}>
           <Ionicons name="information-circle-outline" size={15} color={muted} />
           <Text style={[s.infoNoteText, { color: muted }]}>
-            {t('academic.assignInfoNote')}
+            {t('academic.assignManualNotice')}
           </Text>
         </View>
       </ScrollView>
@@ -413,7 +417,7 @@ const s = StyleSheet.create({
   title:    { fontSize: FontSize.xl,  fontWeight: FontWeight.black },
   subtitle: { fontSize: FontSize.xs,  marginTop: 2 },
 
-  section:       { borderRadius: 16, borderWidth: 1, padding: 16, gap: 4 },
+  section:       { borderRadius: 16, borderWidth: 1, padding: 16, gap: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 10, elevation: 4 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
   sectionIcon:   { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   sectionTitle:  { fontSize: FontSize.base, fontWeight: FontWeight.black },
@@ -447,7 +451,7 @@ const s = StyleSheet.create({
 
   // Resultado exitoso
   resultScroll:  { flexGrow: 1, alignItems: 'center', justifyContent: 'center', padding: 20 },
-  resultCard:    { width: '100%', maxWidth: 480, borderRadius: 22, borderWidth: 1, padding: 26, alignItems: 'center', gap: 4 },
+  resultCard:    { width: '100%', maxWidth: 480, borderRadius: 22, borderWidth: 1, padding: 26, alignItems: 'center', gap: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 10, elevation: 4 },
   resultIcon:    { width: 80, height: 80, borderRadius: 40, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
   resultTitle:   { fontSize: FontSize['2xl'], fontWeight: FontWeight.black, textAlign: 'center', marginBottom: 8 },
   resultSubtitle:{ fontSize: FontSize.base, lineHeight: 22, textAlign: 'center', marginBottom: 18 },

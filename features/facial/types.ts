@@ -27,10 +27,29 @@ export interface FacialConfig {
   fichaNumber: string | number;
 }
 
+export interface FacialSectionDraft {
+  environmentId?: string;
+  environmentName?: string;
+  instructorId?: string;
+  fichaId?: string;
+}
+
 export interface FacialSettings {
   registrationMinutes: number;
   exitTime: string;
   shutdownTime: string;
+}
+
+export interface FacialSession {
+  idRecordEnvironment: string;
+  idEnvironment: string;
+  environmentName: string;
+  idDevice: string;
+  deviceCode: string;
+  idChip: string;
+  chipCode: string;
+  shutdownTime: string;
+  active: boolean;
 }
 
 // Estructura lista para el módulo de asistencias. El reconocimiento no crea

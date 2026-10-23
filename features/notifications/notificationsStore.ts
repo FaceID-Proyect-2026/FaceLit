@@ -50,7 +50,7 @@ export async function loadNotifications(): Promise<void> {
     loadedRemote = true;
     emit();
   } catch {
-    loadedRemote = false;
+    // Keep the last successful remote snapshot when a later refresh fails.
   }
 }
 
@@ -131,11 +131,13 @@ export function markAllNotificationsRead(): void {
 }
 
 // ── RF-8.4 — Resolver solicitud de re-registro ──
-export function resolveFacialRequest(
+export async function resolveFacialRequest(
   notificationId: string,
   decision: 'accepted' | 'rejected',
   decidedBy: string,
-): void {
+): Promise<void> {
+  // Apply the decision only after the server validates the actor, state and scope.
+  await resolveFacialNotificationRemote(notificationId, decision);
   const now = new Date().toISOString();
   notifications = notifications.map(n =>
     n.id === notificationId
@@ -152,9 +154,7 @@ export function resolveFacialRequest(
       : n,
   );
   emit();
-  if (loadedRemote) {
-    resolveFacialNotificationRemote(notificationId, decision).catch(() => undefined);
-  }
+  await loadNotifications();
 }
 
 // ── RF-8.3 — Marcar correo como enviado ──────
@@ -168,4 +168,11 @@ export function markEmailSent(id: string): void {
 // ── Unread count (para badge en sidebar/campana) ──
 export function getUnreadCount(): number {
   return notifications.filter(n => !n.read).length;
+}
+
+export function getRemoteUnreadCount(recipientUserId?: string): number {
+  if (!loadedRemote || !recipientUserId) return 0;
+  return notifications.filter(
+    notification => notification.recipientUserId === recipientUserId && !notification.read,
+  ).length;
 }

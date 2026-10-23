@@ -73,8 +73,8 @@ export default function ExcusesReviewScreen() {
 
   const fichaOptions = useMemo(() => [
     { value: '', label: t('reports.filters.all') },
-    ...userFichas.map(f => ({ value: f.number, label: `Ficha ${f.number}` })),
-  ], [userFichas]);
+    ...userFichas.map(f => ({ value: f.number, label: `${t('attendance.rf6.ficha')} ${f.number}` })),
+  ], [t, userFichas]);
 
   const statusOptions = [
     { value: '', label: t('reports.filters.all') },
