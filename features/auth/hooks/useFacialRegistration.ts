@@ -35,18 +35,13 @@ const LIVENESS_START_DELAY_MS = 650;
 const LIVENESS_FRAME_DELAY_MS = 380;
 
 export type LivenessChallenge = {
-  code: 'BLINK' | 'WINK' | 'RAISE_ONE_EYEBROW' | 'RAISE_BOTH_EYEBROWS' | 'SMILE_WITH_TEETH' | 'OPEN_CLOSE_MOUTH' | 'STICK_TONGUE' | 'MOVE_LEFT' | 'MOVE_RIGHT' | 'MOVE_UP' | 'MOVE_DOWN' | 'MOVE_CLOSER' | 'MOVE_AWAY';
+  code: 'BLINK' | 'OPEN_CLOSE_MOUTH' | 'MOVE_LEFT' | 'MOVE_RIGHT' | 'MOVE_UP' | 'MOVE_DOWN' | 'MOVE_CLOSER' | 'MOVE_AWAY';
   label: string;
 };
 
 export const LIVENESS_CHALLENGES: LivenessChallenge[] = [
   { code: 'BLINK', label: 'Pestañea una vez' },
-  { code: 'WINK', label: 'Guiña un ojo' },
-  { code: 'RAISE_ONE_EYEBROW', label: 'Levanta una ceja' },
-  { code: 'RAISE_BOTH_EYEBROWS', label: 'Levanta las dos cejas' },
-  { code: 'SMILE_WITH_TEETH', label: 'Sonríe mostrando los dientes' },
   { code: 'OPEN_CLOSE_MOUTH', label: 'Abre y cierra la boca' },
-  { code: 'STICK_TONGUE', label: 'Saca la lengua un momento' },
   { code: 'MOVE_LEFT', label: 'Mueve tu rostro hacia la izquierda' },
   { code: 'MOVE_RIGHT', label: 'Mueve tu rostro hacia la derecha' },
   { code: 'MOVE_UP', label: 'Gira tu rostro hacia arriba' },
