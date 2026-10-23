@@ -35,13 +35,16 @@ const LIVENESS_START_DELAY_MS = 650;
 const LIVENESS_FRAME_DELAY_MS = 380;
 
 export type LivenessChallenge = {
-  code: 'BLINK' | 'OPEN_CLOSE_MOUTH' | 'MOVE_LEFT' | 'MOVE_RIGHT' | 'MOVE_UP' | 'MOVE_DOWN' | 'MOVE_CLOSER' | 'MOVE_AWAY';
+  code: 'BLINK' | 'OPEN_CLOSE_MOUTH' | 'NOD' | 'SHAKE_HEAD' | 'KISS_CAMERA' | 'MOVE_LEFT' | 'MOVE_RIGHT' | 'MOVE_UP' | 'MOVE_DOWN' | 'MOVE_CLOSER' | 'MOVE_AWAY';
   label: string;
 };
 
 export const LIVENESS_CHALLENGES: LivenessChallenge[] = [
   { code: 'BLINK', label: 'Pestañea una vez' },
   { code: 'OPEN_CLOSE_MOUTH', label: 'Abre y cierra la boca' },
+  { code: 'NOD', label: 'Asiente con la cabeza' },
+  { code: 'SHAKE_HEAD', label: 'Niega con la cabeza' },
+  { code: 'KISS_CAMERA', label: 'Da un beso a la cámara' },
   { code: 'MOVE_LEFT', label: 'Mueve tu rostro hacia la izquierda' },
   { code: 'MOVE_RIGHT', label: 'Mueve tu rostro hacia la derecha' },
   { code: 'MOVE_UP', label: 'Gira tu rostro hacia arriba' },
