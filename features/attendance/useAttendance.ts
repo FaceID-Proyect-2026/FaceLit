@@ -1,52 +1,41 @@
-import { useSyncExternalStore } from 'react';
-import { getFichasSnapshot, getProgramsSnapshot, subscribe as subscribeAcademic } from '@/features/academic/academicStore';
-import { getSnapshot as getEnvironmentsSnapshot, subscribe as subscribeEnvironments } from '@/features/environments/environmentsStore';
-import { ATTENDANCE_EVENTS, AttendanceEvent } from './types';
+import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
+import { getAcademicMetaSnapshot, getFichasSnapshot, subscribe as subscribeAcademic } from '@/features/academic/academicStore';
+import { refreshAcademicStoreFromBackend } from '@/features/academic/useAcademic';
+import { useAuth } from '@/shared/contexts/AuthContext';
+import { fetchAttendanceMatrix } from '@/shared/services/facialAttendanceService';
+import { subscribeRealtime } from '@/shared/services/realtime';
+import { createAttendanceDataStore } from './attendanceData';
 
-export interface ResolvedAttendance extends AttendanceEvent {
-  userName: string;
-  userDocument: string;
-  userEmail: string;
-  fichaId: string;
-  fichaNumber: string;
-  programId: string;
-  programName: string;
-  environmentName: string;
-  instructorName: string;
-}
-
-/** Resolves an event only when every required cross-module relationship exists. */
-export function resolveAttendance(events = ATTENDANCE_EVENTS): ResolvedAttendance[] {
-  const fichas = getFichasSnapshot();
-  const programs = getProgramsSnapshot();
-  const environments = getEnvironmentsSnapshot();
-
-  return events.flatMap(event => {
-    const ficha = fichas.find(item => item.id === event.fichaId);
-    const learner = ficha?.learners.find(item => item.id === event.userId);
-    const program = ficha && programs.find(item => item.id === ficha.programId);
-    const environment = environments.find(item => item.id === event.environmentId);
-
-    if (!ficha || !learner || !program || !environment || Number.isNaN(Date.parse(event.date))) {
-      return [];
-    }
-
-    return [{
-      ...event,
-      userName: `${learner.name} ${learner.lastname}`,
-      userDocument: learner.document,
-      userEmail: learner.email,
-      fichaId: ficha.id,
-      fichaNumber: ficha.number,
-      programId: program.id,
-      programName: program.name,
-      environmentName: environment.code,
-    }];
-  });
-}
+export type { ResolvedAttendance } from './attendanceData';
+export { resolveAttendance } from './attendanceData';
+const attendanceData = createAttendanceDataStore(fetchAttendanceMatrix);
 
 export function useAttendance() {
-  useSyncExternalStore(subscribeAcademic, getFichasSnapshot);
-  useSyncExternalStore(subscribeEnvironments, getEnvironmentsSnapshot);
-  return resolveAttendance();
+  const { user } = useAuth();
+  const fichas = useSyncExternalStore(subscribeAcademic, getFichasSnapshot);
+  const academic = useSyncExternalStore(subscribeAcademic, getAcademicMetaSnapshot);
+  const snapshot = useSyncExternalStore(attendanceData.subscribe, attendanceData.getSnapshot);
+  const owner = user ? `${user.id}:${user.role}` : '';
+  const key = attendanceData.keyFor(owner, fichas);
+  const retry = useCallback(() => {
+    void (async () => {
+      if (academic.loadError) {
+        try { await refreshAcademicStoreFromBackend(user?.role); } catch { return; }
+      }
+      await attendanceData.load(owner, getFichasSnapshot(), true);
+    })();
+  }, [owner, academic.loadError, user]);
+  useEffect(() => { void attendanceData.load(owner, fichas); }, [owner, fichas]);
+  useEffect(() => subscribeRealtime(message => {
+    if (message.type === 'sync' || message.type === 'data.changed') retry();
+  }), [retry]);
+  return useMemo(() => {
+    const records = snapshot.key === key ? snapshot.records : [];
+    const visible = user?.role === 'APPRENTICE' ? records.filter(row => row.userId === user.id) : records;
+    return Object.assign([...visible], {
+      loading: academic.loading || (!!owner && snapshot.key !== key) || snapshot.loading,
+      error: !!academic.loadError || (snapshot.key === key && snapshot.error),
+      retry,
+    });
+  }, [snapshot, key, academic, owner, user, retry]);
 }

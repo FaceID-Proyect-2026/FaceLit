@@ -2,6 +2,15 @@ import { notificationTemplates } from '../notificationTemplates';
 import { landingFr } from '../landing';
 
 const fr = {
+  dataState: {
+    "loading": "Chargement des données…",
+    "error": "Impossible de charger les données. Veuillez réessayer.",
+    "retry": "Réessayer",
+    "empty": "Aucun enregistrement à afficher.",
+    "pending": "Cette opération nécessite une API. Aucun changement enregistré.",
+    "environmentLimit": "L’API actuelle permet de consulter les espaces actifs et de les créer avec le rôle formateur. Les autres opérations sont en attente.",
+    "assignmentsUnavailable": "L’API actuelle ne permet pas de consulter ou modifier les affectations des espaces."
+  },
   landingPage: landingFr,
   common: {
     cancel: "Annuler",
@@ -1065,7 +1074,7 @@ const fr = {
     fichaRegisterSubtitle:
       "Enregistrez une nouvelle ficha de formation et associez-la à un programme actif.",
     fichaEditSubtitle:
-      "Corrigez le numéro, la plage horaire ou le programme associé à cette ficha.",
+      "Corrigez le numéro ou le programme associé à cette fiche.",
     programDetailSubtitle:
       "Informations générales et fichas de formation associées à ce programme.",
     fichaDetailSubtitle:
@@ -1506,7 +1515,7 @@ const fr = {
       date: "Date",
       entryTime: "Heure d'arrivée",
       exitTime: "Heure de sortie",
-      scheduledTime: "Horaire prévu",
+      sessionPeriod: "Période de la session",
       instructor: "Formateur",
       status: "Statut",
       delay: "Retard",
@@ -1946,7 +1955,7 @@ const fr = {
       entryTime: "Heure d’arrivée",
       exitTime: "Heure de sortie",
       timeInClass: "Temps en cours",
-      scheduledHours: "Horaire prévu",
+
       environmentLabel: "Environnement",
       instructorLabel: "Formateur",
       delay: "Retard",

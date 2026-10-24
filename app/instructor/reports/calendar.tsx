@@ -1,3 +1,4 @@
+import RemoteDataState from '@/shared/components/ui/RemoteDataState';
 import { getFichasSnapshot, subscribe as subscribeAcademic } from '@/features/academic/academicStore';
 import type { AttendanceStatus } from '@/features/attendance/types';
 import { useAttendance } from '@/features/attendance/useAttendance';
@@ -243,6 +244,7 @@ export default function CalendarReportScreen() {
     }
   };
 
+  if (attendance.loading || attendance.error) return <RemoteDataState loading={attendance.loading} error={attendance.error} onRetry={attendance.retry} />;
   return (
     <View style={[crs.safe, { backgroundColor: bg }]}>
       <TouchableOpacity onPress={() => router.back()} style={crs.backBtn}>

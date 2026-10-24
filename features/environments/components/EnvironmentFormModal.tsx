@@ -62,14 +62,17 @@ export default function EnvironmentFormModal({ visible, onClose, editId }: Envir
     return Object.keys(e).length === 0;
   };
 
-  const handleSave = () => {
+  const [saving, setSaving] = useState(false);
+  const handleSave = async () => {
+    if (saving) return;
     if (!validate()) return;
     const quantityValue = Number(quantity.trim());
-    if (existing) {
-      update(existing.id, { code, status, quantity: quantityValue });
-    } else {
-      register({ code, status: 'active', quantity: quantityValue });
-    }
+    setSaving(true);
+    const result = existing
+      ? await update(existing.id, { code, status, quantity: quantityValue })
+      : await register({ code, status: 'active', quantity: quantityValue });
+    setSaving(false);
+    if (!result.success) { setErrors(previous => ({ ...previous, request: t(result.error ?? 'dataState.error') })); return; }
     onClose();
   };
 
@@ -84,13 +87,14 @@ export default function EnvironmentFormModal({ visible, onClose, editId }: Envir
           <TouchableOpacity onPress={onClose} style={[efm.footerBtn, { borderColor: inputBorder }]} activeOpacity={0.7}>
             <Text style={{ color: text, fontWeight: '700' }}>{t('common.cancel')}</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={handleSave} style={[efm.footerBtn, { backgroundColor: theme.primary, flexDirection: 'row', gap: 6 }]} activeOpacity={0.85}>
+          <TouchableOpacity onPress={handleSave} disabled={saving} style={[efm.footerBtn, { backgroundColor: theme.primary, flexDirection: 'row', gap: 6, opacity: saving ? 0.5 : 1 }]} activeOpacity={0.85}>
             <Ionicons name="checkmark-outline" size={18} color={Colors.white} />
             <Text style={{ color: Colors.white, fontWeight: '700' }}>{t('common.save')}</Text>
           </TouchableOpacity>
         </>
       }
     >
+      {errors.request ? <Text accessibilityRole="alert" style={efm.error}>{errors.request}</Text> : null}
       <Text style={[efm.label, { color: text }]}>{t('environments.fields.name')}</Text>
       <TextInput
         style={[efm.input, { backgroundColor: inputBg, borderColor: errors.code ? Colors.error : inputBorder, color: text }] as any}

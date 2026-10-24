@@ -2,6 +2,15 @@ import { notificationTemplates } from '../notificationTemplates';
 import { landingDe } from '../landing';
 
 const de = {
+  dataState: {
+    "loading": "Daten werden geladen…",
+    "error": "Daten konnten nicht geladen werden. Bitte erneut versuchen.",
+    "retry": "Erneut versuchen",
+    "empty": "Keine Einträge vorhanden.",
+    "pending": "Für diesen Vorgang fehlt eine API. Es wurden keine Änderungen gespeichert.",
+    "environmentLimit": "Die aktuelle API unterstützt aktive Räume und deren Erstellung durch Lehrkräfte. Weitere Vorgänge stehen noch aus.",
+    "assignmentsUnavailable": "Die aktuelle API unterstützt keine Abfrage oder Änderung von Raumzuordnungen."
+  },
   landingPage: landingDe,
   common: {
     cancel: "Abbrechen",
@@ -1149,7 +1158,7 @@ const de = {
     fichaRegisterSubtitle:
       "Eine neue Ausbildungs-Ficha registrieren und einem aktiven Programm zuordnen.",
     fichaEditSubtitle:
-      "Nummer, Schicht oder zugehöriges Programm dieser Ficha korrigieren.",
+      "Nummer oder zugeordnetes Programm dieser Lerngruppe bearbeiten.",
     programDetailSubtitle:
       "Allgemeine Informationen und diesem Programm zugehörige Fichas.",
     fichaDetailSubtitle:
@@ -1449,7 +1458,7 @@ const de = {
       date: "Datum",
       entryTime: "Eintrittszeit",
       exitTime: "Austrittszeit",
-      scheduledTime: "Geplante Zeit",
+      sessionPeriod: "Zeitraum der Sitzung",
       instructor: "Ausbilder",
       status: "Status",
       delay: "Verspätung",
@@ -1894,7 +1903,7 @@ const de = {
       entryTime: "Eintrittszeit",
       exitTime: "Austrittszeit",
       timeInClass: "Unterrichtszeit",
-      scheduledHours: "Geplante Zeiten",
+
       environmentLabel: "Umgebung",
       instructorLabel: "Ausbilder",
       delay: "Verspätung",

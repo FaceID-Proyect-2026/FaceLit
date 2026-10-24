@@ -1,3 +1,4 @@
+import RemoteDataState from '@/shared/components/ui/RemoteDataState';
 // ─────────────────────────────────────────────
 //  app/admin/environments/index.tsx
 //  Listado de ambientes con búsqueda y filtro
@@ -8,7 +9,7 @@ import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
-import { isRecent, wasEditedRecently } from '@/shared/utils/dates';
+import { formatDateTime, isRecent, wasEditedRecently } from '@/shared/utils/dates';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -18,7 +19,7 @@ import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimen
 export default function EnvironmentsListScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
-  const { environments, search, setSearch, statusFilter, setStatusFilter, deactivate, reactivate, deletePermanently } = useEnvironments();
+  const { environments, search, setSearch, statusFilter, setStatusFilter, deactivate, reactivate, deletePermanently, loading, error, retry } = useEnvironments();
   const { alert, DialogUI } = useAppDialog();
   const { width } = useWindowDimensions();
   const isMobile = width < 480;
@@ -123,7 +124,7 @@ export default function EnvironmentsListScreen() {
         <Text style={[els.cardTitle, { color: text }]}>{t('environments.cardTitle', { code: item.code })}</Text>
       </View>
       <Text style={[els.cardSub, { color: muted }]}>{t('environments.fields.quantity')}: {item.quantity}</Text>
-      <Text style={[els.cardDates, { color: muted }]}>{t('environments.detail.createdAt')}: {new Date(item.createdAt).toLocaleString()} · {t('environments.detail.updatedAt')}: {new Date(item.updatedAt).toLocaleString()}</Text>
+      <Text style={[els.cardDates, { color: muted }]}>{t('environments.detail.createdAt')}: {formatDateTime(item.createdAt, '—')} · {t('environments.detail.updatedAt')}: {formatDateTime(item.updatedAt, '—')}</Text>
       <View style={els.cardActions}>
         <TouchableOpacity
           onPress={() => router.push(`/admin/environments/${item.id}` as any)}
@@ -155,6 +156,7 @@ export default function EnvironmentsListScreen() {
     </TouchableOpacity>
   );
 
+  if (loading || error) return <RemoteDataState loading={loading} error={error} onRetry={retry} />;
   return (
     <View style={[els.safe, { backgroundColor: isDark ? Colors.dark.background : Colors.light.background }]}>
       <View style={[els.header, isMobile && els.headerMobile]}>
@@ -205,6 +207,7 @@ export default function EnvironmentsListScreen() {
       </View>
       <Text style={[els.filterHelp, { color: muted }]}>{t('environments.filterHelp', 'Inactive environments are unavailable for training groups.')}</Text>
 
+      <Text style={{ color: muted, padding: 12 }}>{t('dataState.environmentLimit')}</Text>
       <FlatList
         data={environments}
         keyExtractor={item => item.id}

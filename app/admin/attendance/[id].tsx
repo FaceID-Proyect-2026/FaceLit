@@ -1,3 +1,4 @@
+import RemoteDataState from '@/shared/components/ui/RemoteDataState';
 import { getProgramDisplayName } from '@/features/academic/types';
 import { useAttendance } from '@/features/attendance/useAttendance';
 import { Colors } from '@/shared/constants/colors';
@@ -12,12 +13,15 @@ export default function AttendanceDetailScreen() {
   const { theme, isDark } = useTheme();
   const { t, i18n } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const record = useAttendance().find(item => item.id === id);
+  const attendance = useAttendance();
+  const record = attendance.find(item => item.id === id);
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
   const cardBg = theme.surface;
   const border = theme.border;
   const bg = isDark ? Colors.dark.background : Colors.light.background;
+  if (attendance.loading || attendance.error) return <RemoteDataState loading={attendance.loading} error={attendance.error} onRetry={attendance.retry} />;
+
   if (!record) return <View style={[ads.safe, { backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }]}><Text style={{ color: muted }}>{t('attendance.notFound')}</Text></View>;
 
   const statusConfig = { punctual: { color: Colors.success, label: t('attendance.statuses.punctual'), icon: 'checkmark-circle' }, late: { color: Colors.warning, label: t('attendance.statuses.late'), icon: 'time' }, absent: { color: Colors.error, label: t('attendance.statuses.absent'), icon: 'close-circle' }, invalidEnv: { color: Colors.info, label: t('attendance.statuses.invalidEnv'), icon: 'alert-circle' } } as const;
@@ -39,7 +43,7 @@ export default function AttendanceDetailScreen() {
         ['flag-outline', t('attendance.fields.status'), status.label, status.color],
         ['calendar-outline', t('attendance.fields.date'), formatDate],
         ['log-in-outline', t('attendance.fields.entryTime'), formatTime(record.entryTime)],
-        ['time-outline', t('attendance.fields.scheduledTime'), `${formatTime(record.sessionStartTime)} – ${formatTime(record.sessionEndTime)}`],
+        ['time-outline', t('attendance.fields.sessionPeriod'), `${formatTime(record.sessionStartTime)} – ${formatTime(record.sessionEndTime)}`],
         ...(record.delayMinutes > 0 ? [['timer-outline', t('attendance.fields.delay'), `${record.delayMinutes} min`, Colors.warning] as [string, string, string, string]] : []),
       ],
     },

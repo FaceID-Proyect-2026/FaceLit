@@ -2,6 +2,15 @@ import { notificationTemplates } from '../notificationTemplates';
 import { landingEn } from '../landing';
 
 const en = {
+  dataState: {
+    "loading": "Loading data…",
+    "error": "Unable to load data. Please try again.",
+    "retry": "Retry",
+    "empty": "No records to display.",
+    "pending": "This operation needs an API. No changes were saved.",
+    "environmentLimit": "The current API supports listing active environments and creating them as an instructor. Other operations are pending.",
+    "assignmentsUnavailable": "The current API does not support reading or modifying environment assignments."
+  },
   landingPage: landingEn,
   // ─────────────────────────────────────────────
   //  Module 1 - Authentication
@@ -1113,7 +1122,7 @@ const en = {
     fichaRegisterSubtitle:
       "Register a new training ficha and link it to an active program.",
     fichaEditSubtitle:
-      "Correct the number, shift, or associated program of this ficha.",
+      "Update the number or program assigned to this training group.",
     programDetailSubtitle:
       "General information and training fichas associated with this program.",
     fichaDetailSubtitle:
@@ -1547,7 +1556,7 @@ const en = {
       date: "Date",
       entryTime: "Entry time",
       exitTime: "Exit time",
-      scheduledTime: "Scheduled time",
+      sessionPeriod: "Session period",
       instructor: "Instructor",
       status: "Status",
       delay: "Delay",
@@ -1985,7 +1994,7 @@ const en = {
       entryTime: "Entry time",
       exitTime: "Exit time",
       timeInClass: "Time in class",
-      scheduledHours: "Scheduled hours",
+
       environmentLabel: "Environment",
       instructorLabel: "Instructor",
       delay: "Delay",

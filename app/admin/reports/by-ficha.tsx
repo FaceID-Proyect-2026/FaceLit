@@ -1,3 +1,4 @@
+import RemoteDataState from '@/shared/components/ui/RemoteDataState';
 import { useMemo, useState, useSyncExternalStore } from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -54,6 +55,7 @@ export default function ReportByFichaScreen() {
   const chart = stats ? [{ label: t('reports.summary.present'), value: stats.attendances, color: Colors.success }, { label: t('reports.summary.lateCount'), value: stats.lateCount, color: Colors.warning }, { label: t('reports.summary.absentCount'), value: stats.absences, color: Colors.error }] : [];
   const maxChartValue = Math.max(1, ...chart.map(item => item.value));
 
+  if (attendance.loading || attendance.error) return <RemoteDataState loading={attendance.loading} error={attendance.error} onRetry={attendance.retry} />;
   return <View style={[s.safe, { backgroundColor: bg }]}><FlatList data={stats?.learners || []} keyExtractor={item => item.id} contentContainerStyle={s.list}
     ListHeaderComponent={<>
       <View style={s.header}><TouchableOpacity onPress={() => router.back()} hitSlop={8}><Ionicons name="arrow-back" size={22} color={text} /></TouchableOpacity><Text style={[s.title, { color: text }]}>{t('reports.byFicha')}</Text></View>

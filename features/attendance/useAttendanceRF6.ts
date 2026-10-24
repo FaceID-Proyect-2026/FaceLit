@@ -15,11 +15,7 @@ import {
   getProgramsSnapshot,
   subscribe as subscribeAcademic,
 } from '@/features/academic/academicStore';
-import {
-  getSnapshot as getEnvironmentsSnapshot,
-  subscribe as subscribeEnvironments,
-} from '@/features/environments/environmentsStore';
-import { resolveAttendance, type ResolvedAttendance } from './useAttendance';
+import { useAttendance, type ResolvedAttendance } from './useAttendance';
 
 // ── Tipos derivados ──────────────────────────────────────────────────────────
 
@@ -101,11 +97,10 @@ export function todayISO(): string {
 // ── Hook principal ───────────────────────────────────────────────────────────
 
 export function useAttendanceRF6() {
-  // Subscribe to the remaining academic and environment data sources.
+  // Keep academic summaries in sync with the real attendance source.
   useSyncExternalStore(subscribeAcademic, getFichasSnapshot);
-  useSyncExternalStore(subscribeEnvironments, getEnvironmentsSnapshot);
 
-  const allResolved = useMemo(() => resolveAttendance(), []);
+  const allResolved = useAttendance();
 
   // ── RF-6.1 — Tarjetas por programa ────────────────────────────────────────
 
@@ -282,6 +277,9 @@ export function useAttendanceRF6() {
   }, [allResolved]);
 
   return {
+    loading: allResolved.loading,
+    error: allResolved.error,
+    retry: allResolved.retry,
     allResolved,
     getFichaCardsForProgram,
     getFichaTable,

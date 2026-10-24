@@ -2,6 +2,15 @@ import { notificationTemplates } from '../notificationTemplates';
 import { landingEs } from '../landing';
 
 const es = {
+  dataState: {
+    "loading": "Cargando información…",
+    "error": "No se pudo consultar la información. Intenta nuevamente.",
+    "retry": "Reintentar",
+    "empty": "No hay registros para mostrar.",
+    "pending": "Esta operación está pendiente de una API. No se guardaron cambios.",
+    "environmentLimit": "La API actual permite consultar ambientes activos y crearlos con rol instructor. Las demás operaciones están pendientes.",
+    "assignmentsUnavailable": "La API actual no permite consultar ni modificar las asignaciones de ambientes."
+  },
   landingPage: landingEs,
   // ─────────────────────────────────────────────
   //  Modulo 1- auth
@@ -1134,7 +1143,7 @@ const es = {
     fichaRegisterSubtitle:
       "Registra una nueva ficha de formación y asóciala a un programa activo.",
     fichaEditSubtitle:
-      "Corrige el número, la jornada o el programa asociado a esta ficha.",
+      "Corrige el número o el programa asociado a esta ficha.",
     programDetailSubtitle:
       "Información general y fichas de formación asociadas a este programa.",
     fichaDetailSubtitle:
@@ -1622,7 +1631,7 @@ const es = {
       status: "Estado",
       delay: "Retraso",
       program: "Programa de formación",
-      scheduledTime: "Horario programado",
+      sessionPeriod: "Periodo de la sesión",
       instructor: "Instructor",
     },
     statuses: {
@@ -2066,7 +2075,7 @@ const es = {
       entryTime: "Hora de entrada",
       exitTime: "Hora de salida",
       timeInClass: "Tiempo en clase",
-      scheduledHours: "Horario programado",
+
       environmentLabel: "Ambiente",
       instructorLabel: "Instructor",
       delay: "Retraso",

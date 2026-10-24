@@ -1,3 +1,4 @@
+import RemoteDataState from '@/shared/components/ui/RemoteDataState';
 import { getFichasSnapshot, getInstructorsSnapshot, subscribe as subscribeAcademic } from '@/features/academic/academicStore';
 import { useAttendance } from '@/features/attendance/useAttendance';
 import AppButton from '@/shared/components/ui/AppButton';
@@ -156,6 +157,7 @@ export default function ExcusesReviewScreen() {
     }
   };
 
+  if (attendance.loading || attendance.error) return <RemoteDataState loading={attendance.loading} error={attendance.error} onRetry={attendance.retry} />;
   return (
     <View style={[ers.safe, { backgroundColor: bg }]}>
       <View style={ers.pageWrap}>
