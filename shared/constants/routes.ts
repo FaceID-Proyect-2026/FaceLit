@@ -49,17 +49,6 @@ export const Routes = {
     LEARNERS_BY_FICHA: "/admin/academic/fichas/[id]",
   },
 
-  // Módulo 4: Gestión de Horarios
-  SCHEDULES: {
-    LIST: "/admin/schedules",
-    REGISTER: "/admin/schedules/register",
-    DETAIL: "/admin/schedules/[id]",
-    EDIT: "/admin/schedules/[id]/edit",
-    EXCEPTIONS: "/admin/schedules/exceptions",
-    INSTRUCTOR: "/instructor/schedules",
-    APPRENTICE: "/apprentice/schedules",
-  },
-
   // Módulo 5: Reconocimiento Facial
   FACIAL: {
     MANAGEMENT: "/instructor/facial",

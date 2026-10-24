@@ -32,19 +32,10 @@
 | Aprendiz | Solo 1 ficha activa a la vez. Código de ficha debe existir y estar activo. |
 | Desvinculación | Solo admin. No elimina al aprendiz, solo la relación. |
 
-## Horarios (Módulo 4)
-
-| Conflicto | Validación |
-|-----------|-----------|
-| Ambiente ocupado | No puede haber 2 horarios mismo ambiente + misma franja. |
-| Instructor ocupado | No puede estar en 2 horarios que se crucen. |
-| Ficha requerida | No registrar sin ficha. |
-| Instructor requerido | No registrar sin instructor. |
-
 ## Asistencias (Módulo 6)
 
 | Validación | Descripción |
 |-----------|------------|
-| Ambiente correcto | El usuario debe estar en el ambiente asignado según su horario. |
-| Cálculo retraso | `HoraIngreso - HoraProgramada`. Si > 0 = retraso. |
+| Environment validation | The user must belong to the configured environment session. |
+| Delay calculation | Use the configured session entry time and attendance window. |
 | Registro automático | Fecha y hora se registran sin intervención manual. |

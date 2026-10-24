@@ -19,10 +19,6 @@ import {
   getSnapshot as getEnvironmentsSnapshot,
   subscribe as subscribeEnvironments,
 } from '@/features/environments/environmentsStore';
-import {
-  getSchedulesSnapshot,
-  subscribe as subscribeSchedules,
-} from '@/features/schedules/schedulesStore';
 import { resolveAttendance, type ResolvedAttendance } from './useAttendance';
 
 // ── Tipos derivados ──────────────────────────────────────────────────────────
@@ -105,9 +101,8 @@ export function todayISO(): string {
 // ── Hook principal ───────────────────────────────────────────────────────────
 
 export function useAttendanceRF6() {
-  // Suscribirse a los 3 stores para que el hook se actualice cuando cambian
+  // Subscribe to the remaining academic and environment data sources.
   useSyncExternalStore(subscribeAcademic, getFichasSnapshot);
-  useSyncExternalStore(subscribeSchedules, getSchedulesSnapshot);
   useSyncExternalStore(subscribeEnvironments, getEnvironmentsSnapshot);
 
   const allResolved = useMemo(() => resolveAttendance(), []);

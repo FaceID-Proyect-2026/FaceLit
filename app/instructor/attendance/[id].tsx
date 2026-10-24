@@ -39,7 +39,7 @@ export default function AttendanceDetailScreen() {
         ['flag-outline', t('attendance.fields.status'), status.label, status.color],
         ['calendar-outline', t('attendance.fields.date'), formatDate],
         ['log-in-outline', t('attendance.fields.entryTime'), formatTime(record.entryTime)],
-        ['time-outline', t('attendance.fields.scheduledTime'), `${formatTime(record.scheduleStartTime)} – ${formatTime(record.scheduleEndTime)}`],
+        ['time-outline', t('attendance.fields.scheduledTime'), `${formatTime(record.sessionStartTime)} – ${formatTime(record.sessionEndTime)}`],
         ...(record.delayMinutes > 0 ? [['timer-outline', t('attendance.fields.delay'), `${record.delayMinutes} min`, Colors.warning] as [string, string, string, string]] : []),
       ],
     },

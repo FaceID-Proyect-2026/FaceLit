@@ -127,7 +127,7 @@ const en = {
     char2: "Capture and storage of facial biometric data",
     char3: "Real-time detection and identification",
     char4: "Automatic entry and exit logging",
-    char5: "Validation of environments and schedules",
+    char5: "Environment validation",
     char6: "Automatic report generation",
     char7: "Smart notifications",
     char8: "System logs and traceability",
@@ -510,7 +510,7 @@ const en = {
     userManagement: "User management",
     environments: "Environments",
     academic: "Academic",
-    schedules: "Schedules",
+
     facial: "Facial Recognition",
     attendance: "Attendance",
     reports: "Reports",
@@ -519,8 +519,8 @@ const en = {
     profile: "Profile",
     settings: "Settings",
     logout: "Log out",
-    mySchedules: "My Schedules",
-    mySchedule: "My Schedule",
+
+
     myAttendance: "My Attendance",
     myReports: "My Reports",
     joinFicha: "Join Ficha",
@@ -813,10 +813,10 @@ const en = {
     listSubtitle:
       "View, filter, and manage the institution's registered training environments.",
     registerSubtitle:
-      "Create a new physical space to assign to fichas and schedules.",
+      "Create a new physical space for training groups.",
     editSubtitle: "Correct this environment's name, quantity, or status.",
     filterHelp:
-      "Inactive environments are unavailable for schedules and fichas.",
+      "Inactive environments are unavailable for training groups.",
     register: "Register Environment",
     edit: "Edit Environment",
     delete: "Delete",
@@ -1075,8 +1075,7 @@ const en = {
     selectProgram: "Select a program",
     fichaHasLearnersUnlink:
       "You cannot unlink this ficha from the program because it has learners.",
-    fichaHasSchedules:
-      "You cannot delete this ficha because it has schedules associated.",
+
     desvincularReasonNoSena: "No longer enrolled (delete)",
     desvincularReasonTransfer: "Transfer (leaves without ficha)",
     transferMovedTitle: "Learner without ficha",
@@ -1384,132 +1383,7 @@ const en = {
     instructorActionDelete: "Delete",
     instructorActionDeactivate: "Deactivate",
   },
-  schedules: {
-    title: "Schedule Management",
-    register: "Register Schedule",
-    registerSubtitle:
-      "Create a new official schedule for a training group, with its environment and instructor.",
-    edit: "Edit Schedule",
-    editSubtitle:
-      "Fix the day, time, environment or instructor of this schedule.",
-    delete: "Delete Schedule",
-    deactivate: "Deactivate",
-    deactivateConfirm:
-      "Deactivate this schedule? You can reactivate or permanently delete it later.",
-    deactivateSuccess: "Schedule deactivated successfully",
-    reactivate: "Reactivate",
-    reactivateSuccess: "Schedule reactivated successfully",
-    deletePermanently: "Delete permanently",
-    deletePermanentlyConfirm:
-      "This action is permanent and cannot be undone. Continue?",
-    noDeleteActive:
-      "You cannot delete an active schedule. Deactivate it first.",
-    noDeleteHasAssignments:
-      "You cannot delete this schedule because it still has an instructor or environment assigned. Unassign them first.",
-    noDeleteHasExceptions:
-      "You cannot delete this schedule because it has exceptions registered.",
-    unassigned: "Unassigned",
-    unassignInstructor: "Unassign instructor",
-    unassignInstructorConfirm:
-      "The instructor is not removed from the system, only their relation to this schedule. Continue?",
-    unassignInstructorSuccess:
-      "The instructor has been successfully unassigned from the schedule.",
-    noInstructorAssigned: "This schedule has no instructor assigned.",
-    unassignEnvironment: "Unassign environment",
-    unassignEnvironmentConfirm:
-      "The environment is not removed from the system, only its relation to this schedule. Continue?",
-    unassignEnvironmentSuccess:
-      "The environment has been successfully unassigned from the schedule.",
-    noEnvironmentAssigned: "This schedule has no environment assigned.",
-    listSubtitle:
-      "Consult and manage the training schedules registered in the system.",
-    empty: "No schedules registered",
-    detail: "Schedule Detail",
-    exceptions: "Exceptions",
-    exceptionRegister: "Register Exception",
-    notFound: "Schedule not found",
-    deleteConfirm: "Delete this schedule? This action cannot be undone.",
-    registerSuccess: "Schedule registered successfully",
-    updateSuccess: "Schedule updated successfully",
-    deleteSuccess: "Schedule deleted successfully",
-    searchPlaceholder: "Search by training group, environment or instructor",
-    selectSchedule: "Select the schedule",
-    noSchedulesForException: "You must register a schedule first",
-    noExceptions: "No exceptions registered for this schedule",
-    exceptionsNoSchedule:
-      "Select a schedule from the list to manage its exceptions.",
-    exceptionDeleteConfirm: "Delete this exception?",
-    exceptionRegisterSuccess: "Exception registered successfully",
-    exceptionDeleteSuccess: "Exception deleted successfully",
-    exceptionDeleteBlocked:
-      "An exception in Active status cannot be deleted. Wait for it to end, or delete it once it is Inactive.",
-    exceptionDuplicateDate:
-      "An exception is already registered for this schedule on the selected date.",
-    exceptionSameEnvironment:
-      "The alternate environment must be different from the schedule's original environment.",
-    fields: {
-      ficha: "Training group",
-      program: "Program",
-      day: "Day",
-      startTime: "Start Time",
-      endTime: "End Time",
-      environment: "Environment",
-      instructor: "Instructor",
-    },
-    placeholders: {
-      ficha: "Select a training group",
-      day: "Select day",
-      time: "Select time",
-      environment: "Select environment",
-      instructor: "Select instructor",
-      alternateEnv: "Select alternate environment",
-    },
-    days: {
-      monday: "Monday",
-      tuesday: "Tuesday",
-      wednesday: "Wednesday",
-      thursday: "Thursday",
-      friday: "Friday",
-      saturday: "Saturday",
-    },
-    conflicts: {
-      envOccupied: "Environment occupied at this time",
-      instructorBusy: "Instructor assigned at another time",
-      noFicha: "Select a training group",
-      noInstructor: "Select an instructor",
-      noEnv: "Select an environment",
-      invalidTime: "End time must be after start time",
-      invalidFormat: "Invalid format (HH:MM)",
-      envNotFound: "Environment not found",
-    },
-    exceptionTypes: {
-      instructorChange: "Instructor change",
-      envChange: "Environment change",
-      cancel: "Cancellation",
-      reschedule: "Reschedule",
-    },
-    exceptionStatus: { active: "Active", inactive: "Inactive" },
-    exceptionFields: {
-      type: "Exception Type",
-      startDate: "Exception Date",
-      duration: "Exception Duration",
-      durationAmount: "Amount",
-      durationUnit: "Unit",
-      durationUnits: {
-        hours: "Hours",
-        days: "Days",
-        weeks: "Weeks",
-        months: "Months",
-      },
-      reason: "Reason",
-      status: "Status",
-      statusHint:
-        "Status is calculated automatically on save and turns Inactive once the defined duration ends.",
-      activeUntil: "Active until {{date}}",
-      replacement: "Replacement Instructor",
-      alternateEnv: "Alternate Environment",
-    },
-  },
+
   facial: {
     management: "Facial Recognition Management",
     register: "Register Face",
@@ -1840,7 +1714,7 @@ const en = {
     markAllRead: "Mark all as read",
     categories: {
       attendance: "Attendance",
-      schedule: "Schedule",
+
       environment: "Environment",
       system: "System",
       facial: "Facial Recognition",

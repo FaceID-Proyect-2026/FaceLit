@@ -367,8 +367,6 @@ El sistema genera automáticamente notificaciones para el aprendiz según los si
 | `attendance` | Asistencia registrada correctamente | "Tu asistencia del [fecha] en [Ambiente] fue registrada." |
 | `attendance` | Llegada tarde | "Registraste llegada tarde: [N] min de retraso en [Ambiente]." |
 | `attendance` | Ausencia registrada automáticamente | "Quedaste marcado como ausente en la clase del [fecha]." |
-| `schedule` | Cambio de horario en su ficha | "El horario del [día] fue modificado: ahora es de [H inicio] a [H fin]." |
-| `schedule` | Excepción de horario activa | "La clase del [fecha] cambia de horario temporalmente." |
 | `environment` | Cambio de ambiente | "Tu clase del [fecha] se dicta en [Nuevo Ambiente] en lugar de [Ambiente original]." |
 | `environment` | Ingreso a ambiente incorrecto detectado | "Ingresaste a [Ambiente], pero tu clase corresponde a [Ambiente correcto]." |
 | `facial` | Registro facial pendiente | "Aún no has completado tu registro facial. Complétalo para poder registrar asistencia." |

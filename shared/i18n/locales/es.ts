@@ -128,7 +128,7 @@ const es = {
     char2: "Captura y almacenamiento de datos biométricos faciales",
     char3: "Detección e identificación en tiempo real",
     char4: "Registro automático de entradas y salidas",
-    char5: "Validación de ambientes y horarios",
+    char5: "Environment validation",
     char6: "Generación automática de reportes",
     char7: "Notificaciones inteligentes",
     char8: "Bitácoras y trazabilidad del sistema",
@@ -523,7 +523,7 @@ const es = {
     userManagement: "Gestión de usuarios",
     environments: "Ambientes",
     academic: "Gestión Académica",
-    schedules: "Horarios",
+
     facial: "Reconocimiento Facial",
     attendance: "Asistencias",
     reports: "Reportes",
@@ -532,8 +532,8 @@ const es = {
     profile: "Perfil",
     settings: "Configuración",
     logout: "Cerrar sesión",
-    mySchedules: "Mis Horarios",
-    mySchedule: "Mi Horario",
+
+
     myAttendance: "Mi Asistencia",
     myReports: "Mis Reportes",
     joinFicha: "Unirse a Ficha",
@@ -826,11 +826,11 @@ const es = {
     listSubtitle:
       "Consulta, filtra y administra los ambientes de formación registrados en la institución.",
     registerSubtitle:
-      "Crea un nuevo espacio físico para asignarlo a fichas y horarios.",
+      "Create a new physical space for training groups.",
     editSubtitle:
       "Corrige la información del ambiente: nombre, cantidad o estado.",
     filterHelp:
-      "Los ambientes inactivos no están disponibles para horarios ni fichas.",
+      "Inactive environments are unavailable for training groups.",
     register: "Registrar Ambiente",
     edit: "Editar Ambiente",
     delete: "Eliminar",
@@ -1095,8 +1095,7 @@ const es = {
     selectProgram: "Selecciona un programa",
     fichaHasLearnersUnlink:
       "No puedes desvincular esta ficha del programa porque tiene aprendices asociados.",
-    fichaHasSchedules:
-      "No puedes eliminar esta ficha porque tiene horarios asociados.",
+
     desvincularReasonNoSena: "Ya no pertenece (eliminar)",
     desvincularReasonTransfer: "Traslado (queda sin ficha)",
     transferMovedTitle: "Aprendiz sin ficha",
@@ -1452,134 +1451,7 @@ const es = {
     instructorActionDelete: "Eliminar",
     instructorActionDeactivate: "Desactivar",
   },
-  schedules: {
-    title: "Gestión de Horarios",
-    register: "Registrar Horario",
-    registerSubtitle:
-      "Crea un nuevo horario oficial para una ficha, con su ambiente e instructor.",
-    edit: "Editar Horario",
-    editSubtitle: "Corrige día, hora, ambiente o instructor de este horario.",
-    delete: "Eliminar Horario",
-    deactivate: "Desactivar",
-    deactivateConfirm:
-      "¿Desactivar este horario? Podrás reactivarlo o eliminarlo definitivamente después.",
-    deactivateSuccess: "Horario desactivado correctamente",
-    reactivate: "Reactivar",
-    reactivateSuccess: "Horario reactivado correctamente",
-    deletePermanently: "Eliminar definitivamente",
-    deletePermanentlyConfirm:
-      "Esta acción es permanente y no se puede deshacer. ¿Deseas continuar?",
-    noDeleteActive:
-      "No puedes eliminar un horario activo. Desactívalo primero.",
-    noDeleteHasAssignments:
-      "No puedes eliminar este horario porque todavía tiene instructor o ambiente asignado. Desvincúlalos primero.",
-    noDeleteHasExceptions:
-      "No puedes eliminar este horario porque tiene excepciones registradas.",
-    unassigned: "Sin asignar",
-    unassignInstructor: "Desvincular instructor",
-    unassignInstructorConfirm:
-      "El instructor no se elimina del sistema, solo se quita su relación con este horario. ¿Continuar?",
-    unassignInstructorSuccess:
-      "El instructor ha sido desvinculado correctamente del horario.",
-    noInstructorAssigned: "Este horario no tiene un instructor asignado.",
-    unassignEnvironment: "Desvincular ambiente",
-    unassignEnvironmentConfirm:
-      "El ambiente no se elimina del sistema, solo se quita su relación con este horario. ¿Continuar?",
-    unassignEnvironmentSuccess:
-      "El ambiente ha sido desvinculado correctamente del horario.",
-    noEnvironmentAssigned: "Este horario no tiene un ambiente asignado.",
-    listSubtitle:
-      "Consulta y administra los horarios de formación registrados en el sistema.",
-    empty: "No hay horarios registrados",
-    detail: "Detalle del Horario",
-    exceptions: "Excepciones",
-    exceptionRegister: "Registrar Excepción",
-    notFound: "Horario no encontrado",
-    deleteConfirm: "¿Eliminar este horario? Esta acción no se puede deshacer.",
-    registerSuccess: "Horario registrado correctamente",
-    updateSuccess: "Horario actualizado correctamente",
-    deleteSuccess: "Horario eliminado correctamente",
-    searchPlaceholder: "Buscar por ficha, ambiente o instructor",
-    selectSchedule: "Selecciona el horario",
-    noSchedulesForException: "Primero debes registrar un horario",
-    noExceptions: "No hay excepciones registradas para este horario",
-    exceptionsNoSchedule:
-      "Selecciona un horario desde el listado para gestionar sus excepciones.",
-    exceptionDeleteConfirm: "¿Eliminar esta excepción?",
-    exceptionRegisterSuccess: "Excepción registrada correctamente",
-    exceptionDeleteSuccess: "Excepción eliminada correctamente",
-    exceptionDeleteBlocked:
-      "No se puede eliminar una excepción en estado Activo. Espera a que finalice o cancélala cuando esté Inactiva.",
-    exceptionDuplicateDate:
-      "Ya existe una excepción registrada para este horario en la fecha seleccionada.",
-    exceptionSameEnvironment:
-      "El ambiente alterno debe ser diferente al ambiente original del horario.",
-    fields: {
-      ficha: "Ficha de Formación",
-      program: "Programa",
-      day: "Día",
-      startTime: "Hora de Inicio",
-      endTime: "Hora de Finalización",
-      environment: "Ambiente",
-      instructor: "Instructor",
-    },
-    placeholders: {
-      ficha: "Seleccionar ficha",
-      day: "Seleccionar día",
-      time: "Seleccionar hora",
-      environment: "Seleccionar ambiente",
-      instructor: "Seleccionar instructor",
-      alternateEnv: "Seleccionar ambiente alterno",
-    },
-    days: {
-      monday: "Lunes",
-      tuesday: "Martes",
-      wednesday: "Miércoles",
-      thursday: "Jueves",
-      friday: "Viernes",
-      saturday: "Sábado",
-    },
-    conflicts: {
-      envOccupied: "Ambiente ocupado en este horario",
-      instructorBusy: "Instructor asignado en otro horario",
-      noFicha: "Selecciona una ficha",
-      noInstructor: "Selecciona un instructor",
-      noEnv: "Selecciona un ambiente",
-      invalidTime: "La hora de fin debe ser posterior a la de inicio",
-      invalidFormat: "Formato inválido (HH:MM)",
-      envNotFound: "Ambiente no encontrado",
-    },
-    exceptionTypes: {
-      instructorChange: "Cambio de instructor",
-      envChange: "Cambio de ambiente",
-      cancel: "Cancelación",
-      reschedule: "Reprogramación",
-    },
-    exceptionStatus: {
-      active: "Activo",
-      inactive: "Inactivo",
-    },
-    exceptionFields: {
-      type: "Tipo de Excepción",
-      startDate: "Fecha de la Excepción",
-      duration: "Duración de la Excepción",
-      durationAmount: "Cantidad",
-      durationUnit: "Unidad",
-      durationUnits: {
-        hours: "Horas",
-        days: "Días",
-        weeks: "Semanas",
-        months: "Meses",
-      },
-      reason: "Motivo",
-      status: "Estado",
-      statusHint:
-        "El estado se calculará automáticamente al guardar y pasará a Inactivo al finalizar la duración definida.",
-      activeUntil: "Activo hasta {{date}}",
-      replacement: "Instructor de Reemplazo",
-      alternateEnv: "Ambiente Alterno",
-    },
-  },
+
   facial: {
     management: "Gestión de Reconocimiento Facial",
     register: "Registrar Rostro",
@@ -1924,7 +1796,7 @@ const es = {
     markAllRead: "Marcar todas como leídas",
     categories: {
       attendance: "Asistencia",
-      schedule: "Horario",
+
       environment: "Ambiente",
       system: "Sistema",
       facial: "Reconocimiento Facial",

@@ -40,7 +40,6 @@ Construir TODAS las pantallas de TODOS los módulos especificados en el SRS (Sof
 | RF-1 | Acceso al Sistema | 11 pantallas (Login, Registro, Verificación email, Recuperación, Registro biométrico, etc.) | ✅ Existente (referencia) |
 | RF-2 | Gestión de Ambientes | 3 pantallas (Lista, Registro/Edición, Detalle/Asignación) | ✅ Completado |
 | RF-3 | Gestión Académica | 7 pantallas (Programas CRUD, Fichas CRUD, Unirse a Ficha, Gestión Aprendices) | ✅ Tipos/Hook listos, pantallas en proceso |
-| RF-4 | Gestión de Horarios | 5 pantallas (Lista, Registro, Detalle, Excepciones, Vistas por rol) | 🔄 En progreso |
 | RF-5 | Reconocimiento Facial | 3 pantallas (Dashboard admin, Registro facial, Verificación) | 🔄 En progreso |
 | RF-6 | Asistencias y Validaciones | 3 pantallas (Lista, Detalle, Vistas por rol) | 🔄 En progreso |
 | RF-7 | Reportes y Consultas | 4 pantallas (Dashboard, Por Usuario, Por Ficha, Calendario) | 🔄 En progreso |
@@ -186,7 +185,6 @@ FaceLit-fixed/
 │   │   │   ├── fichas/[id].tsx
 │   │   │   └── fichas/[id]/learners.tsx
 │   │   │
-│   │   ├── schedules/            # ⏰ Módulo 4: Horarios
 │   │   │   ├── index.tsx
 │   │   │   ├── register.tsx
 │   │   │   ├── [id].tsx
@@ -233,7 +231,6 @@ FaceLit-fixed/
 │   │   ├── types.ts
 │   │   └── useAcademic.ts
 │   │
-│   ├── schedules/                # Módulo 4
 │   │   └── types.ts
 │   │
 │   ├── facial/                   # Módulo 5
@@ -354,26 +351,6 @@ FaceLit-fixed/
 
 ---
 
-### Módulo 4: Gestión de Horarios 🔄
-
-**Objetivo:** CRUD de horarios académicos con validación de conflictos.
-
-**Pantallas planificadas:** 5
-
-| Pantalla | Ruta | Rol |
-|----------|------|-----|
-| Lista Horarios | `/admin/schedules` | Admin |
-| Registrar Horario | `/admin/schedules/register` | Admin |
-| Detalle Horario | `/admin/schedules/[id]` | Admin |
-| Excepciones | `/admin/schedules/exceptions` | Admin |
-| Mis Horarios | `/instructor/schedules` | Instructor |
-| Mi Horario | `/apprentice/schedules` | Aprendiz |
-
-**Validaciones:** Disponibilidad de ambiente, disponibilidad de instructor, conflictos de horario  
-**Datos mock:** 3 horarios, 4 instructores, 1 excepción
-
----
-
 ### Módulo 5: Reconocimiento Facial 🔄
 
 **Objetivo:** Gestión de registros faciales biométricos.
@@ -430,7 +407,7 @@ FaceLit-fixed/
 |----------|------|
 | Centro Notificaciones | `/notifications` |
 
-**Categorías:** Asistencia, Horario, Ambiente, Sistema, Reconocimiento Facial  
+**Categories:** Attendance, Environment, System, Facial Recognition
 **Datos mock:** 6 notificaciones (3 no leídas)
 
 ---
@@ -605,19 +582,6 @@ Lista Ambientes (/admin/environments)
 4. Sistema valida código, estado de ficha, no duplicado
 5. Asociación exitosa → opción deshabilitada
 
-### CU-04: Instructor consulta sus horarios
-1. Instructor inicia sesión
-2. Dashboard muestra solo sus fichas
-3. Sidebar → "Mis Horarios"
-4. Ve día, hora, ambiente, ficha, aprendices
-5. Sin permisos de edición
-
-### CU-05: Admin gestiona horarios
-1. Admin → Horarios → Registrar
-2. Selecciona: ficha, día, hora inicio/fin, ambiente, instructor
-3. Sistema valida: disponibilidad ambiente + instructor
-4. Registro exitoso o error de conflicto
-
 ### CU-06: Registro de asistencia por reconocimiento facial
 1. Usuario frente a cámara
 2. Sistema captura rostro y compara con referencia
@@ -649,8 +613,6 @@ Lista Ambientes (/admin/environments)
 | Programas (CRUD) | ✅ | ❌ | ❌ |
 | Fichas (CRUD) | ✅ | ❌ | ❌ |
 | Unirse a Ficha | ❌ | ❌ | ✅ |
-| Horarios (CRUD) | ✅ | ❌ | ❌ |
-| Ver Horarios | ✅ Todos | ✅ Asignados | ✅ Solo su ficha |
 | Reconocimiento Facial | ✅ Dashboard | ❌ | ✅ Registro |
 | Asistencias | ✅ Todas | ✅ Sus fichas | ✅ Personales |
 | Reportes | ✅ Globales | ✅ Sus fichas | ✅ Personales |
@@ -716,7 +678,6 @@ Lista Ambientes (/admin/environments)
 2. **Filtros de reportes**: Los filtros son visuales pero no realizan consultas reales a base de datos
 3. **Notificaciones**: Son estáticas (mock), no hay push notifications reales
 4. **Roles**: La asignación de rol es mock. En producción debe venir del backend
-5. **Validación de conflictos de horario**: Implementada en lógica pero no probada exhaustivamente
 
 ### ⚠️ De Proyecto
 1. **Sin CI/CD configurado**: No hay pipeline de build/test/deploy

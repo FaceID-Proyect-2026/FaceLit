@@ -78,7 +78,7 @@ export default function EnvironmentFormModal({ visible, onClose, editId }: Envir
       visible={visible}
       onClose={onClose}
       title={isEditing ? t('environments.edit') : t('environments.register')}
-      subtitle={t(isEditing ? 'environments.editSubtitle' : 'environments.registerSubtitle', isEditing ? 'Corrige la información del ambiente: nombre, cantidad o estado.' : 'Crea un nuevo espacio físico para asignarlo a fichas y horarios.')}
+      subtitle={t(isEditing ? 'environments.editSubtitle' : 'environments.registerSubtitle', isEditing ? 'Corrige la información del ambiente: nombre, cantidad o estado.' : 'Create a new physical space for training groups.')}
       footer={
         <>
           <TouchableOpacity onPress={onClose} style={[efm.footerBtn, { borderColor: inputBorder }]} activeOpacity={0.7}>

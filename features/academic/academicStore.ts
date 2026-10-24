@@ -4,7 +4,6 @@
 //  Programas · Fichas · Aprendices · Instructores
 // ─────────────────────────────────────────────
 import { pushNotification } from '../notifications/notificationsStore';
-import { getSchedulesSnapshot } from '../schedules/schedulesStore';
 import {
     DocumentChangeLogEntry,
     Ficha,
@@ -260,15 +259,6 @@ export function deleteFichaStore(id: string) {
       { entityType: 'ficha', entityId: id },
     );
     return { success: false, error: 'academic.fichaHasLearners' };
-  }
-  if (getSchedulesSnapshot().some(s => s.fichaId === id)) {
-    pushNotification(
-      'academic_delete_blocked',
-      'Intento de eliminación bloqueado',
-      `No fue posible eliminar la ficha ${ficha.number} porque tiene horarios registrados.`,
-      { entityType: 'ficha', entityId: id },
-    );
-    return { success: false, error: 'academic.fichaHasSchedules' };
   }
   fichas   = fichas.filter(f => f.id !== id);
   programs = programs.map(p => ({ ...p, fichas: p.fichas.filter(fid => fid !== id) }));

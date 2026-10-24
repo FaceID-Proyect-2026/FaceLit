@@ -3,7 +3,7 @@
 ## Administrador
 
 - Dashboard global con estadísticas
-- CRUD de ambientes, programas, fichas, horarios
+- Manage environments, programs and training groups
 - Gestión de reconocimiento facial
 - Consulta de todas las asistencias
 - Reportes globales (por usuario, ficha, calendario)
@@ -14,7 +14,6 @@
 ## Instructor
 
 - Dashboard con sus fichas asignadas
-- Consulta de horarios donde está asignado (solo lectura)
 - Consulta de asistencias de sus aprendices
 - Reportes de sus fichas
 - Notificaciones de sus grupos
@@ -23,7 +22,6 @@
 
 - Dashboard personal
 - Unirse a una ficha mediante código
-- Consulta de su horario (solo lectura)
 - Consulta de su historial de asistencia
 - Reportes personales
 - Registro facial biométrico

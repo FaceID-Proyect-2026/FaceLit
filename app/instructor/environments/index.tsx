@@ -203,7 +203,7 @@ export default function EnvironmentsListScreen() {
           </TouchableOpacity>
         ))}
       </View>
-      <Text style={[els.filterHelp, { color: muted }]}>{t('environments.filterHelp', 'Los ambientes inactivos no están disponibles para horarios ni fichas.')}</Text>
+      <Text style={[els.filterHelp, { color: muted }]}>{t('environments.filterHelp', 'Inactive environments are unavailable for training groups.')}</Text>
 
       <FlatList
         data={environments}
