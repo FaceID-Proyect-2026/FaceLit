@@ -1,3 +1,4 @@
+import RemoteDataState from '@/shared/components/ui/RemoteDataState';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
@@ -44,7 +45,7 @@ export default function MyPerformanceScreen() {
     const absences = userAttendance.filter(r => r.status === 'absent').length;
     const avgDelay = userAttendance.filter(r => r.status === 'late').reduce((sum, r) => sum + r.delayMinutes, 0) / Math.max(lateCount, 1);
     const percentage = total > 0 ? Math.round((attendances / total) * 100) : 0;
-    
+
     const daysNoAttendance = new Set(userAttendance.filter(r => r.status === 'absent').map(r => r.date)).size;
 
     return { total, attendances, lateCount, absences, avgDelay: Math.round(avgDelay), percentage, daysNoAttendance, totalClasses: total };
@@ -74,13 +75,14 @@ export default function MyPerformanceScreen() {
     return date.toLocaleDateString(i18n.language, { month: 'short', year: '2-digit' });
   };
 
+  if (attendance.loading || attendance.error) return <RemoteDataState loading={attendance.loading} error={attendance.error} onRetry={attendance.retry} />;
   return (
     <View style={[mps.safe, { backgroundColor: bg }]}>
       <TouchableOpacity onPress={() => router.back()} style={mps.backBtn}>
         <Ionicons name="arrow-back" size={20} color={text} />
         <Text style={[mps.backText, { color: text }]}>{t('common.back')}</Text>
       </TouchableOpacity>
-      
+
       <Text style={[mps.title, { color: text, paddingHorizontal: 16, marginTop: 8 }]}>{t('reports.myPerformance')}</Text>
 
       {user && (

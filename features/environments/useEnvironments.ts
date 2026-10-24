@@ -6,12 +6,14 @@
 //  mismos datos, sin importar cuántas veces se
 //  invoque este hook.
 // ─────────────────────────────────────────────
-import { useState, useCallback, useMemo, useSyncExternalStore } from 'react';
+import { useState, useCallback, useMemo, useSyncExternalStore, useEffect } from 'react';
+import { useAuth } from '@/shared/contexts/AuthContext';
 import { EnvironmentStatus } from './types';
 import {
   subscribe,
+  getMetaSnapshot,
+  loadEnvironments,
   getSnapshot,
-  getById as storeGetById,
   registerEnvironment,
   updateEnvironment,
   deactivateEnvironment,
@@ -24,12 +26,17 @@ import {
 export type EnvironmentStatusFilter = 'all' | EnvironmentStatus;
 
 export function useEnvironments() {
+  const { user } = useAuth();
+  const owner = user ? `${user.id}:${user.role}` : '';
+  const meta = useSyncExternalStore(subscribe, getMetaSnapshot);
+  const retry = useCallback(() => { void loadEnvironments(owner, true); }, [owner]);
+  useEffect(() => { void loadEnvironments(owner); }, [owner]);
   const environments = useSyncExternalStore(subscribe, getSnapshot);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<EnvironmentStatusFilter>('all');
 
   const filtered = useMemo(() => {
-    let list = environments;
+    let list = meta.owner === owner ? environments : [];
 
     if (statusFilter !== 'all') {
       list = list.filter(e => e.status === statusFilter);
@@ -41,19 +48,22 @@ export function useEnvironments() {
     }
 
     return list;
-  }, [environments, search, statusFilter]);
+  }, [environments, search, statusFilter, meta.owner, owner]);
 
-  const getById = useCallback((id: string) => storeGetById(id), [environments]);
+  const getById = useCallback((id: string) => meta.owner === owner ? environments.find(environment => environment.id === id) : undefined, [environments, meta.owner, owner]);
 
-  const register = useCallback(registerEnvironment, []);
-  const update = useCallback(updateEnvironment, []);
-  const deactivate = useCallback(deactivateEnvironment, []);
-  const reactivate = useCallback(reactivateEnvironment, []);
-  const deletePermanently = useCallback(deleteEnvironmentPermanently, []);
-  const assignFicha = useCallback(assignFichaToEnvironment, []);
-  const unassignFicha = useCallback(unassignFichaFromEnvironment, []);
+  const register = registerEnvironment;
+  const update = updateEnvironment;
+  const deactivate = deactivateEnvironment;
+  const reactivate = reactivateEnvironment;
+  const deletePermanently = deleteEnvironmentPermanently;
+  const assignFicha = assignFichaToEnvironment;
+  const unassignFicha = unassignFichaFromEnvironment;
 
   return {
+    loading: meta.loading || meta.owner !== owner,
+    error: meta.owner === owner && meta.error,
+    retry,
     environments: filtered,
     search,
     setSearch,

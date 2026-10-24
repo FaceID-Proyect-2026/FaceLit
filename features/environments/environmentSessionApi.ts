@@ -20,6 +20,8 @@ async function getDeviceCode() {
 }
 
 export interface EnvironmentOption {
+  createdAt?: string;
+  updatedAt?: string;
   idEnvironment: string;
   environmentName: string;
   capacity?: number;
@@ -69,9 +71,10 @@ export async function searchSessionEnvironments(search: string) {
   return data;
 }
 
-export async function getOrCreateSessionEnvironment(environmentName: string) {
+export async function getOrCreateSessionEnvironment(environmentName: string, capacity?: number) {
   const { data } = await api.post<EnvironmentOption>('/api/environment/environments', {
     environmentName,
+    ...(capacity === undefined ? {} : { capacity }),
   });
   return data;
 }
