@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { notifySessionRejected } from './sessionEvents';
 import { API_URL } from '../constants/api';
 import { getToken, removeToken } from './tokenStorage';
 
@@ -14,7 +15,8 @@ if (__DEV__) {
 
 api.interceptors.request.use(async (config) => {
   const token = await getToken();
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  const publicAuth = ['/api/auth/login', '/api/auth/request-recovery', '/api/auth/verify-token', '/api/auth/reset-password', '/api/auth/complete-access', '/api/auth/privacy-acceptance-status'];
+  if (token && !publicAuth.includes(config.url)) config.headers.Authorization = `Bearer ${token}`;
 
   // Si el body es FormData, dejar que axios genere el Content-Type
   // con el boundary correcto — nunca forzar application/json en multipart.
@@ -34,6 +36,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !isLoginRequest) {
       console.warn('Token inválido o expirado — cerrando sesión local');
       removeToken();
+      notifySessionRejected();
       // Nota: esto solo limpia el storage. Para reflejar el logout en la UI
       // de inmediato (sin esperar a un reinicio de la app), AuthContext
       // debería exponer un "forceLogout" que este interceptor pueda llamar.

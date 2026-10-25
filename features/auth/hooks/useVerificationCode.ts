@@ -150,6 +150,11 @@ export function useVerificationCode({
       logSuccess('PASSWORD_RESET_SUCCESS', { detail: 'Código verificado' });
       attemptsRef.current = 0; // éxito — resetear contador
     } catch (err: any) {
+      if (err.response?.status === 429) {
+        setExhausted(true);
+        setError(err.response?.data?.message ?? t(`${namespace}.errors.exhausted`));
+        return;
+      }
       attemptsRef.current += 1;
 
       const backendMessage: string = err.response?.data?.message ?? err.message ?? '';

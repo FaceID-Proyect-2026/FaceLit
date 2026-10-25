@@ -1,3 +1,5 @@
+import { onSessionRejected } from '@/shared/services/sessionEvents';
+import { logout as revokeServerSession } from '@/shared/services/authService';
 // ─────────────────────────────────────────────
 //  shared/contexts/AuthContext.tsx
 //  Maneja sesión, rol y datos del usuario
@@ -392,20 +394,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  useEffect(() => onSessionRejected(() => setUser(null)), []);
+
   const logout = useCallback(async () => {
-    if (user) {
-      logSuccess('LOGOUT', {
-        userDocument: user.document,
-        userRole: user.role,
-      });
+    try { await revokeServerSession(); }
+    catch {
+      alert(t('common.error'), t('profile.logoutFailed'));
+      return;
     }
-    await removeToken();
+    if (user) {
+      logSuccess('LOGOUT', { userDocument: user.document, userRole: user.role });
+    }
     setUser(null);
     // No navegamos aquí: los layouts de cada rol (useRoleGuard) detectan
     // isAuthenticated=false y redirigen a login ellos mismos, una vez el
     // router raíz ya está listo. Navegar aquí directamente corría el
     // riesgo de hacerlo antes de que React confirmara el nuevo estado.
-  }, [user]);
+  }, [user, alert, t]);
 
   return (
     <AuthContext.Provider

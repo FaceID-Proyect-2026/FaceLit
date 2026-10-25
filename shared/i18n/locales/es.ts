@@ -2024,6 +2024,7 @@ const es = {
       },
     },
     logout: "Cerrar Sesión",
+    logoutFailed: 'No se pudo cerrar la sesión en el servidor. Revisa la conexión y vuelve a intentar.',
     logoutConfirm: "¿Estás seguro de cerrar sesión?",
   },
 
