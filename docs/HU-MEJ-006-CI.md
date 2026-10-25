@@ -1,5 +1,7 @@
 # HU-MEJ-006 — Corrección de lint en registro facial
 
+Este documento conserva la evidencia del ajuste inicial de lint. La ampliación posterior a Jest/Testing Library, sus resultados y pendientes se documenta en [Pruebas automatizadas del frontend](HU-MEJ-006-PRUEBAS-FRONTEND.md).
+
 ## Motivo y autorización
 
 Durante la preparación de CI, `npm run lint` encontró en `app/apprentice/facial.tsx:100` el error «Compilation Skipped: Existing memoization could not be preserved». React Compiler infiere que `handleRegistrationSaved` depende de `resetState`, porque el cuerpo de la función lee ese objeto. La lista manual solo declaraba `resetState?.requestId`.

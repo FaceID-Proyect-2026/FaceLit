@@ -42,3 +42,7 @@ app-example
 # generated native folders
 /ios
 /android
+
+# Generated automated test reports
+coverage/
+coverage-v8/
