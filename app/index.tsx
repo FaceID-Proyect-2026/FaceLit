@@ -4,6 +4,7 @@
 import { LanguageSelector, ThemeToggle } from '@/shared/components/ui';
 import { Colors } from '@/shared/constants/colors';
 import { Routes } from '@/shared/constants/routes';
+import { ROLE_VIDEO_SOURCES } from '@/shared/constants/roleVideoSources';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAuth } from '@/shared/contexts/AuthContext';
@@ -335,12 +336,6 @@ function LandingScreen() {
   const contactItems = [
     { icon: 'mail-outline', text: t('landing.contactEmail') },
   ];
-  const roleVideoSources = {
-    'landingPage.roles.coordinator': require('@/assets/videos/coordinator.mp4'),
-    'landingPage.roles.instructor': require('@/assets/videos/instructor.mp4'),
-    'landingPage.roles.apprentice': require('@/assets/videos/apprentice.mp4'),
-  } as const;
-
   const resolveVideoUri = (source: unknown) =>
     typeof source === 'string'
       ? source
@@ -348,7 +343,7 @@ function LandingScreen() {
 
   // Replace this reserved tile with the tutorial player when its asset is ready.
   const videoTile = (key: string, general = false) => {
-    const roleVideoUri = resolveVideoUri(roleVideoSources[key as keyof typeof roleVideoSources]);
+    const roleVideoUri = resolveVideoUri(ROLE_VIDEO_SOURCES[key]);
     const hasRoleVideo = Platform.OS === 'web' && Boolean(roleVideoUri);
 
     return (
