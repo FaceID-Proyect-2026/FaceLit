@@ -14,7 +14,7 @@ import { clearRecoveryAuthorization } from './recoveryAuthorization';
 // POST /api/auth/request-recovery { email } -> { message }
 export const requestRecovery = async (email) => {
   clearRecoveryAuthorization();
-  const { data } = await api.post('/api/auth/request-recovery', { email });
+  const { data } = await api.post('/api/auth/request-recovery', { email }, { timeout: 30000 });
   return data;
 };
 
@@ -25,7 +25,7 @@ export const requestRecovery = async (email) => {
 //   400/404/410   → código incorrecto, expirado o ya usado
 //   429           → límite de intentos o de tasa; respetar Retry-After
 export const verifyToken = async (email, token) => {
-  const { data } = await api.post('/api/auth/verify-token', { email, token });
+  const { data } = await api.post('/api/auth/verify-token', { email, token }, { timeout: 15000 });
   return data;
 };
 

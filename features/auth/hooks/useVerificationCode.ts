@@ -60,6 +60,7 @@ export function useVerificationCode({
 
   /** Intentos fallidos de verificación en esta sesión del código */
   const attemptsRef   = useRef(0);
+  const requestInFlight = useRef(false);
   /** true cuando se agotaron los intentos — el código quedó invalidado */
   const [exhausted, setExhausted]   = useState(false);
 
@@ -88,12 +89,14 @@ export function useVerificationCode({
 
   // ── Reenviar código ───────────────────────────
   const handleResend = async () => {
+    if (requestInFlight.current) return;
     // Cooldown activo
     if (resendCooldown > 0) {
       setError(t(`${namespace}.errors.resendCooldown`));
       return;
     }
 
+    requestInFlight.current = true;
     setResending(true);
     setError('');
     try {
@@ -109,17 +112,20 @@ export function useVerificationCode({
       logSuccess('PASSWORD_RECOVERY_REQUESTED', { detail: 'Código reenviado' });
     } catch (err: any) {
       setError(
-        err.response?.data?.message
+        (!err.response && err.isAxiosError ? t('passwordRecovery.errors.networkError') : undefined)
+          ?? err.response?.data?.message
           ?? t(`${namespace}.errors.resendFailed`)
           ?? 'No se pudo reenviar el código',
       );
     } finally {
+      requestInFlight.current = false;
       setResending(false);
     }
   };
 
   // ── Verificar código ──────────────────────────
   const handleVerify = async () => {
+    if (requestInFlight.current) return;
     // Código ya expirado por timer (solo si checkExpired=true)
     if (checkExpired && expired) {
       setError(t(`${namespace}.errors.expired`));
@@ -142,6 +148,7 @@ export function useVerificationCode({
       return;
     }
 
+    requestInFlight.current = true;
     setLoading(true);
     setError('');
 
@@ -150,6 +157,11 @@ export function useVerificationCode({
       logSuccess('PASSWORD_RESET_SUCCESS', { detail: 'Código verificado' });
       attemptsRef.current = 0; // éxito — resetear contador
     } catch (err: any) {
+      // A transport/server failure does not prove the submitted code was wrong.
+      if ((!err.response && err.isAxiosError) || err.response?.status >= 500) {
+        setError(t(err.response ? 'passwordRecovery.errors.serverError' : 'passwordRecovery.errors.networkError'));
+        return;
+      }
       if (err.response?.status === 429) {
         setExhausted(true);
         setError(err.response?.data?.message ?? t(`${namespace}.errors.exhausted`));
@@ -220,6 +232,7 @@ export function useVerificationCode({
         detail: `Intento ${attemptsRef.current}/${MAX_VERIFY_ATTEMPTS}`,
       });
     } finally {
+      requestInFlight.current = false;
       setLoading(false);
     }
   };

@@ -9,6 +9,7 @@ import { useAuth, type UserRole } from '@/shared/contexts/AuthContext';
 import type { Language } from '@/shared/contexts/I18nContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
+import { useAuthGuard } from '@/shared/hooks/useAuthGuard';
 import { subscribeRealtime } from '@/shared/services/realtime';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -65,7 +66,8 @@ function getAccessRights(role?: UserRole | null) {
 }
 
 export default function SettingsScreen() {
-  const { user } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { canRenderContent } = useAuthGuard(isAuthenticated, '/auth/login', authLoading);
   const { theme, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
@@ -93,8 +95,8 @@ export default function SettingsScreen() {
     : '';
 
   useEffect(() => {
-    loadAndApply();
-  }, []);
+    if (canRenderContent) loadAndApply();
+  }, [canRenderContent, loadAndApply]);
 
   useEffect(() => subscribeRealtime(message => {
     if (message.type === 'data.changed'
@@ -122,6 +124,8 @@ export default function SettingsScreen() {
     }
     router.replace(Routes.PROFILE.VIEW as any);
   };
+
+  if (!canRenderContent) return null;
 
   return (
     <View style={[ss.safe, { backgroundColor: bg }]}>

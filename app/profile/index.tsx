@@ -10,6 +10,7 @@ import RoleTopbar from '@/shared/components/layout/RoleTopbar';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
+import { useAuthGuard } from '@/shared/hooks/useAuthGuard';
 import { getMyProfile } from '@/shared/services/authService';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -31,7 +32,8 @@ function pickValue(...values: (string | undefined | null)[]): string {
 }
 
 export default function ProfileScreen() {
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthenticated, loading: authLoading } = useAuth();
+  const { canRenderContent } = useAuthGuard(isAuthenticated, '/auth/login', authLoading);
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const { alert, DialogUI } = useAppDialog();
@@ -47,6 +49,7 @@ export default function ProfileScreen() {
   const headerBg = theme.surface;
 
   useEffect(() => {
+    if (!canRenderContent) return;
     let active = true;
 
     const fetchProfile = async () => {
@@ -62,9 +65,9 @@ export default function ProfileScreen() {
 
     fetchProfile();
     return () => { active = false; };
-  }, [user?.id]);
+  }, [user?.id, canRenderContent]);
 
-  if (!user) return null;
+  if (!canRenderContent || !user) return null;
 
   const displayName = pickValue(profile.firstName, user.firstName, user.name);
   const displayLastName = pickValue(profile.lastName, user.lastName, user.lastname);

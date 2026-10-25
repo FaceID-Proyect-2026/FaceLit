@@ -266,8 +266,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 firstName: readStringField(profile, ['firstName', 'name']) ?? restoredUser.firstName,
                 lastName: readStringField(profile, ['lastName', 'lastname']) ?? restoredUser.lastName,
               });
-            } catch {
-              setUser(restoredUser);
+            } catch (error: any) {
+              if (error.response?.status === 401) {
+                await removeToken();
+                setUser(null);
+              } else {
+                setUser(restoredUser);
+              }
             }
             // No registrar auditoría aquí — no es un login nuevo,
             // es una restauración silenciosa de sesión existente.
