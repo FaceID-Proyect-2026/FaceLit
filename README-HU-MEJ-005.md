@@ -1,6 +1,6 @@
 # HU-05 / HU-MEJ-005 — Retirar secretos del frontend y proteger micro-facial
 
-Responsable: **Mariana Valenzuela Penagos**. Rama: `hu-mej-005`.
+Responsable: **Mariana Valenzuela Penagos**. Rama: `hu-40-dev`.
 Hallazgos: **H-03, H-15, H-48**. Plan de cierre: **punto 4**.
 
 El cliente usa el interceptor JWT existente de [api.ts](shared/services/api.ts) para
