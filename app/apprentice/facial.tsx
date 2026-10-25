@@ -109,7 +109,7 @@ export default function ApprenticeFacialScreen() {
     setConfirmed(false);
     setCaptureWarningVisible(false);
     setServerRegistrationDate(new Date().toISOString());
-  }, [resetState?.requestId]);
+  }, [resetState]);
 
   useEffect(() => {
     let cancelled = false;
