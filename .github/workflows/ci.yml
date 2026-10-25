@@ -1,0 +1,66 @@
+name: FaceLit Frontend CI
+
+on:
+  pull_request:
+  push:
+    branches: [dev, qa, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  frontend-tests:
+    name: Frontend tests and lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout frontend
+        uses: actions/checkout@v4
+        with:
+          path: FaceLit
+
+      # One existing frontend test imports NotificationCatalog.java as an external fixture.
+      - name: Checkout backend test fixture
+        uses: actions/checkout@v4
+        with:
+          repository: FaceID-Proyect-2026/FaceLit-Backend
+          ref: 626d25f962edb861f5b0d3964ce6e2953382cec4
+          path: FaceLit-Backend
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: FaceLit/package-lock.json
+
+      - name: Install locked dependencies
+        working-directory: FaceLit
+        run: npm ci
+
+      - name: Run existing frontend tests and collect V8 coverage
+        working-directory: FaceLit
+        env:
+          NODE_V8_COVERAGE: coverage-v8
+        run: npm test
+
+      - name: Check TypeScript
+        working-directory: FaceLit
+        run: npx --no-install tsc --noEmit
+
+      - name: Run lint
+        working-directory: FaceLit
+        run: npm run lint
+
+      - name: Build web application
+        working-directory: FaceLit
+        run: npx --no-install expo export --platform web --output-dir .expo/ci-web
+
+      - name: Upload frontend coverage data
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-v8-coverage
+          path: FaceLit/coverage-v8
+          if-no-files-found: warn
