@@ -1,45 +1,6 @@
-=== INSTRUCCIONES PARA EJECUTAR ===
+FaceLit setup
 
-1. Abre la carpeta en VS Code
-
-2. Abre la terminal y corre:
-   npm install
-
-3. Luego corre:
-   npx expo start --clear
-
-4. Desde movil
-npx expo login
-
-npx expo start --lan --clear
-
-4. Escanea el QR con Expo Go
-
-=== IMAGENES REQUERIDAS ===
-Coloca estas imágenes en assets/images/:
-- logo.png       → Logo del splash screen
-- seguridad.png  → Icono recuperar contraseña
-- token.png      → Icono token enviado
-- candado.png    → Icono nueva contraseña
-- check.png      → Icono contraseña restablecida
-
-=== CREDENCIALES DE PRUEBA ===
-Email:    admin@facelit.com
-Password: Admin123!
-
-=== CÓDIGO DE VERIFICACIÓN ===
-Token:    264255
-
-=== COMO EJECUTAR  ===
-Ctrl + C
-npx expo install expo@~54.0.37 expo-constants@~18.0.14
-npx expo start -c
-
-
-# ENV
-```
-EXPO_PUBLIC_API_URL=http://localhost:8080
-EXPO_PUBLIC_EMBEDDING_API_URL=http://localhost:8090
-EXPO_PUBLIC_EMBEDDING_API_KEY=change-me
-
-```
+Read README.md for current setup, public environment variables and validation commands.
+Use .env.example for a new local configuration; preserve an existing .env.
+Use an account provisioned for the target environment.
+Do not downgrade Expo or use historical sample credentials or verification codes.

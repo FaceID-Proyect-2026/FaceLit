@@ -1,49 +1,42 @@
-# Welcome to your Expo app 👋
+# FaceLit frontend
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+FaceLit is the SENA academic attendance application. This repository contains the Expo Router web and mobile interface for apprentices, instructors and coordinators. The REST API, PostgreSQL migrations and facial embedding service are maintained in separate repositories.
 
-## Get started
+## Requirements and versions
 
-1. Install dependencies
+Use Node.js and npm compatible with the versions declared in [package.json](package.json) and the committed lockfile. The current manifest declares Expo ~57.0.25, React 19.2.3, React Native 0.86.3 and TypeScript ~6.0.3. Do not downgrade dependencies using historical setup notes.
 
-   ```bash
-   npm install
-   ```
+## Local setup
 
-2. Start the app
+1. Run `npm ci` from this repository to install the locked dependency tree.
+2. Copy [.env.example](.env.example) to `.env` only if no local file exists. Set the API URLs for your environment; keep your existing local values when updating a checkout.
+3. Start the configured backend and required facial service. Database migrations belong to FaceLit-DB.
+4. Run `npm run web` for web, `npm run start:lan` for a device on the same network, or `npm start` for the tunnel workflow. Native builds use `npm run android` or `npm run ios` with their platform toolchains.
 
-   ```bash
-   npx expo start
-   ```
+On a physical device, use reachable server addresses rather than the device's own localhost. URL resolution is implemented in [shared/constants/api.js](shared/constants/api.js). Login requires an account provisioned in the target environment; no shared test credentials are documented here.
 
-In the output, you'll find options to open the app in a
+## Public environment configuration
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+All EXPO_PUBLIC variables are visible in the delivered client. They are not a private secret store. The example preserves the existing variable names without copying local values. The legacy embedding API key field remains for compatibility; changing authentication or migrating that integration belongs to the security workstream.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+`.env` and environment-specific variants are ignored. For a fresh CI or Vercel build, configure the required values in that environment before building; an ignored local file is not uploaded by Git. Restart Expo after changing environment values. Before accepting a deployment, verify login and the three tutorial videos against its configured services.
 
-## Get a fresh project
+## Validation and build
 
-When you're ready, run:
+- `npm run lint`: existing lint command.
+- `npx expo export --platform web`: static web export to `dist/`.
+- `npm run web`: interactive web verification.
 
-```bash
-npm run reset-project
-```
+An export is a build check, not proof of successful login or every application flow. The landing tutorials are public [release assets](https://github.com/FaceID-Proyect-2026/FaceLit/releases/tag/tutorial-media-v1), not tracked MP4 files. See [media maintenance and playback evidence](docs/media-assets.md).
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Structure and documentation
 
-## Learn more
+- `app/`: Expo Router screens and layouts.
+- `features/`: feature hooks, stores, API adapters and components.
+- `shared/`: shared UI, contexts, translations, configuration and services.
+- `assets/`: application images, fonts and other bundled resources.
+- [Documentation inventory](docs/documentation-inventory.md): current guides, preserved notes and HU-MEJ-018 follow-up.
+- [Frontend architecture](docs-repo/architecture.md) and [translation guide](docs-repo/i18n.md).
+- [Backend](https://github.com/FaceID-Proyect-2026/FaceLit-Backend), [database](https://github.com/FaceID-Proyect-2026/FaceLit-DB) and [facial service](https://github.com/FaceID-Proyect-2026/micro-facial).
 
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Historical notes do not define current routes, implemented features or supported versions. Application source and manifests take precedence; this cleanup does not change application permissions or business logic.
