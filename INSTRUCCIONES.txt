@@ -39,7 +39,5 @@ npx expo start -c
 # ENV
 ```
 EXPO_PUBLIC_API_URL=http://localhost:8080
-EXPO_PUBLIC_EMBEDDING_API_URL=http://localhost:8090
-EXPO_PUBLIC_EMBEDDING_API_KEY=change-me
 
 ```
