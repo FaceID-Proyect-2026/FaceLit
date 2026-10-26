@@ -1,3 +1,4 @@
+import RemoteDataState from '@/shared/components/ui/RemoteDataState';
 import { getFichasSnapshot, getProgramsSnapshot, subscribe as subscribeAcademic } from '@/features/academic/academicStore';
 import { useAttendance } from '@/features/attendance/useAttendance';
 import { getSnapshot as getEnvironmentsSnapshot, subscribe as subscribeEnvironments } from '@/features/environments/environmentsStore';
@@ -46,6 +47,7 @@ export default function ReportByUserScreen() {
   };
   const colorFor = (status: string) => status === 'punctual' ? Colors.success : status === 'late' ? Colors.warning : status === 'absent' ? Colors.error : Colors.info;
   const options = (items: { value: string; label: string }[]) => [{ value: '', label: t('reports.filters.all') }, ...items];
+  if (attendance.loading || attendance.error) return <RemoteDataState loading={attendance.loading} error={attendance.error} onRetry={attendance.retry} />;
   return <View style={[s.safe, { backgroundColor: bg }]}><FlatList data={results} keyExtractor={x => x.id} contentContainerStyle={s.list}
     ListHeaderComponent={<>
       <View style={s.header}><TouchableOpacity onPress={() => router.back()} hitSlop={8}><Ionicons name="arrow-back" size={22} color={text} /></TouchableOpacity><Text style={[s.title, { color: text }]}>{t('reports.byUser')}</Text></View>

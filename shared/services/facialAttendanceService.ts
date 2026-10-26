@@ -44,6 +44,10 @@ export interface AttendanceMatrixSession {
 }
 
 export interface AttendanceMatrixDay {
+  sessionStartTime?: string;
+  sessionEndTime?: string;
+  exitTime?: string;
+  idEnvironment?: string;
   idFacialEvent?: string | null;
   idRecordEnvironment: string;
   date: string;

@@ -8,7 +8,6 @@ import {
     FacialSession,
     FacialSettings,
     FacialUser,
-    MOCK_FACIAL_RECORDS,
     VALID_FACIAL_ROLES,
 } from "./types";
 
@@ -17,7 +16,7 @@ type RegistrationResult =
   | { success: true; record: FacialRecord }
   | { success: false; error: string };
 
-let records: FacialRecord[] = MOCK_FACIAL_RECORDS;
+let records: FacialRecord[] = [];
 let events: FacialEvent[] = [];
 let activeOwnerId = "anonymous";
 let facialCameraGuardActive = false;

@@ -1,3 +1,4 @@
+import RemoteDataState from '@/shared/components/ui/RemoteDataState';
 import { findCurrentInstructor, getFichasForInstructor } from "@/features/academic/currentAcademic";
 import { getProgramDisplayName } from "@/features/academic/types";
 import { useAcademic } from "@/features/academic/useAcademic";
@@ -116,6 +117,7 @@ export default function InstructorDashboard() {
 
   const displayName = user?.firstName ?? user?.name ?? user?.email?.split("@")[0] ?? t("users.roles.INSTRUCTOR");
 
+  if (attendanceRecords.loading || attendanceRecords.error) return <RemoteDataState loading={attendanceRecords.loading} error={attendanceRecords.error} onRetry={attendanceRecords.retry} />;
   return (
     <View style={[ads.safe, { backgroundColor: bg }]}>
       <ScrollView contentContainerStyle={ads.scroll} showsVerticalScrollIndicator={false}>

@@ -1,6 +1,0 @@
-FaceLit setup
-
-Read README.md for current setup, public environment variables and validation commands.
-Use .env.example for a new local configuration; preserve an existing .env.
-Use an account provisioned for the target environment.
-Do not downgrade Expo or use historical sample credentials or verification codes.

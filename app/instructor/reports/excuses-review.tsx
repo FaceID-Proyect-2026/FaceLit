@@ -1,6 +1,6 @@
-import { getFichasSnapshot, subscribe as subscribeAcademic } from '@/features/academic/academicStore';
+import RemoteDataState from '@/shared/components/ui/RemoteDataState';
+import { getFichasSnapshot, getInstructorsSnapshot, subscribe as subscribeAcademic } from '@/features/academic/academicStore';
 import { useAttendance } from '@/features/attendance/useAttendance';
-import { useSchedules } from '@/features/schedules/useSchedules';
 import AppButton from '@/shared/components/ui/AppButton';
 import AppDialog from '@/shared/components/ui/AppDialog';
 import DateField from '@/shared/components/ui/DateField';
@@ -35,9 +35,9 @@ export default function ExcusesReviewScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const attendance = useAttendance();
-  const { allSchedules } = useSchedules();
 
   useSyncExternalStore(subscribeAcademic, getFichasSnapshot);
+  const instructors = useSyncExternalStore(subscribeAcademic, getInstructorsSnapshot);
 
   const fichas = getFichasSnapshot();
 
@@ -63,13 +63,13 @@ export default function ExcusesReviewScreen() {
     if (!user) return [];
     if (user.role === 'COORDINATOR' || user.role === 'ADMINISTRATOR') return fichas;
     if (user.role === 'INSTRUCTOR') {
-      // Las fichas de un instructor son las de sus horarios asignados,
-      // no aquellas donde figura como aprendiz (learner).
-      const ownFichaIds = new Set(allSchedules.filter(s => s.instructorId === user.id).map(s => s.fichaId));
+      // Use the existing academic assignment without widening instructor access.
+      const instructor = instructors.find(item => item.userId === user.id);
+      const ownFichaIds = new Set(instructor?.fichaIds ?? []);
       return fichas.filter(f => ownFichaIds.has(f.id));
     }
     return fichas.filter(f => f.learners.some(l => l.id === user.id));
-  }, [fichas, user, allSchedules]);
+  }, [fichas, user, instructors]);
 
   const fichaOptions = useMemo(() => [
     { value: '', label: t('reports.filters.all') },
@@ -119,7 +119,7 @@ export default function ExcusesReviewScreen() {
 
   const confirmReview = () => {
     if (!selectedExcuse) return;
-    
+
     setExcuses(prev => prev.map(e => {
       if (e.id === selectedExcuse.id) {
         return {
@@ -132,7 +132,7 @@ export default function ExcusesReviewScreen() {
       }
       return e;
     }));
-    
+
     setReviewDialogVisible(false);
     setSelectedExcuse(null);
     setReviewComment('');
@@ -157,6 +157,7 @@ export default function ExcusesReviewScreen() {
     }
   };
 
+  if (attendance.loading || attendance.error) return <RemoteDataState loading={attendance.loading} error={attendance.error} onRetry={attendance.retry} />;
   return (
     <View style={[ers.safe, { backgroundColor: bg }]}>
       <View style={ers.pageWrap}>
@@ -243,7 +244,7 @@ export default function ExcusesReviewScreen() {
                 </Text>
               </View>
             </View>
-            
+
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16, marginTop: 8 }}>
               <Text style={{ color: muted, fontSize: 12 }}>{item.date}</Text>
               <Text style={{ color: muted, fontSize: 12 }}>
@@ -279,7 +280,7 @@ export default function ExcusesReviewScreen() {
                 <Ionicons name="document-text-outline" size={16} color={theme.primary} />
                 <Text style={{ color: theme.primary, fontSize: 12, marginLeft: 4 }}>{t('reports.excuses.attachPdf')}</Text>
               </TouchableOpacity>
-              
+
               {item.status === 'pending' && (
                 <>
                   <AppButton

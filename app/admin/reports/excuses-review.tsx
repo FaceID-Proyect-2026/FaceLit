@@ -1,3 +1,4 @@
+import RemoteDataState from '@/shared/components/ui/RemoteDataState';
 import { getFichasSnapshot, subscribe as subscribeAcademic } from '@/features/academic/academicStore';
 import { useAttendance } from '@/features/attendance/useAttendance';
 import AppButton from '@/shared/components/ui/AppButton';
@@ -34,7 +35,7 @@ export default function ExcusesReviewScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const attendance = useAttendance();
-  
+
   useSyncExternalStore(subscribeAcademic, getFichasSnapshot);
 
   const fichas = getFichasSnapshot();
@@ -114,7 +115,7 @@ export default function ExcusesReviewScreen() {
 
   const confirmReview = () => {
     if (!selectedExcuse) return;
-    
+
     setExcuses(prev => prev.map(e => {
       if (e.id === selectedExcuse.id) {
         return {
@@ -127,7 +128,7 @@ export default function ExcusesReviewScreen() {
       }
       return e;
     }));
-    
+
     setReviewDialogVisible(false);
     setSelectedExcuse(null);
     setReviewComment('');
@@ -152,6 +153,7 @@ export default function ExcusesReviewScreen() {
     }
   };
 
+  if (attendance.loading || attendance.error) return <RemoteDataState loading={attendance.loading} error={attendance.error} onRetry={attendance.retry} />;
   return (
     <View style={[ers.safe, { backgroundColor: bg }]}>
       <View style={ers.pageWrap}>
@@ -238,7 +240,7 @@ export default function ExcusesReviewScreen() {
                 </Text>
               </View>
             </View>
-            
+
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16, marginTop: 8 }}>
               <Text style={{ color: muted, fontSize: 12 }}>{item.date}</Text>
               <Text style={{ color: muted, fontSize: 12 }}>
@@ -274,7 +276,7 @@ export default function ExcusesReviewScreen() {
                 <Ionicons name="document-text-outline" size={16} color={theme.primary} />
                 <Text style={{ color: theme.primary, fontSize: 12, marginLeft: 4 }}>{t('reports.excuses.attachPdf')}</Text>
               </TouchableOpacity>
-              
+
               {item.status === 'pending' && (
                 <>
                   <AppButton

@@ -1,9 +1,11 @@
+import { formatDateTime } from '@/shared/utils/dates';
 // ─────────────────────────────────────────────
 //  app/admin/environments/[id].tsx
 //  Detalle de ambiente + edición + asignación
 // ─────────────────────────────────────────────
+import RemoteDataState from '@/shared/components/ui/RemoteDataState';
 import EnvironmentFormModal from '@/features/environments/components/EnvironmentFormModal';
-import { MOCK_FICHAS } from '@/features/environments/types';
+import { useAcademic } from '@/features/academic/useAcademic';
 import { useEnvironments } from '@/features/environments/useEnvironments';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
@@ -19,7 +21,13 @@ export default function EnvironmentDetailScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { getById, assignFicha, unassignFicha } = useEnvironments();
+  const { getById, assignFicha, unassignFicha, loading, error, retry } = useEnvironments();
+  const { allFichas, allPrograms } = useAcademic();
+  const availableGroups = allFichas.filter(ficha => ficha.status === 'active').map(ficha => ({
+    id: ficha.id, code: ficha.number, name: ficha.number,
+    program: allPrograms.find(program => program.id === ficha.programId)?.name ?? '',
+    learners: ficha.learners.length,
+  }));
   const { alert, DialogUI } = useAppDialog();
   const [editModalOpen, setEditModalOpen] = useState(false);
   const env = getById(id ?? '');
@@ -29,6 +37,8 @@ export default function EnvironmentDetailScreen() {
   const cardBg = theme.surface;
   const border = theme.border;
   const bg = isDark ? Colors.dark.background : Colors.light.background;
+
+  if (loading || error) return <RemoteDataState loading={loading} error={error} onRetry={retry} />;
 
   if (!env) {
     return (
@@ -49,8 +59,8 @@ export default function EnvironmentDetailScreen() {
 
   const activeAssignments = env.assignedFichas.filter(item => !item.unassignedAt);
   const historicalAssignments = env.assignedFichas.filter(item => item.unassignedAt);
-  const assignedFichasData = MOCK_FICHAS.filter(f => activeAssignments.some(item => item.fichaCode === f.code));
-  const availableFichas = MOCK_FICHAS.filter(f => !activeAssignments.some(item => item.fichaCode === f.code));
+  const assignedFichasData = availableGroups.filter(f => activeAssignments.some(item => item.fichaCode === f.code));
+  const availableFichas = availableGroups.filter(f => !activeAssignments.some(item => item.fichaCode === f.code));
 
   const handleRemoveFicha = (fichaId: string, fichaName: string) => {
     alert(
@@ -64,6 +74,7 @@ export default function EnvironmentDetailScreen() {
           onPress: () => {
             const result = unassignFicha(env.id, fichaId);
             if (result.success) alert('✓', t('environments.detail.removeFichaSuccess'));
+            else alert(t('common.error'), t(result.error ?? 'dataState.pending'));
           },
         },
       ]
@@ -96,7 +107,7 @@ export default function EnvironmentDetailScreen() {
           </View>
           <View style={eds.infoRow}>
             <Text style={[eds.infoLabel, { color: muted }]}>{t('environments.fields.quantity')}</Text>
-            <Text style={[eds.infoValue, { color: text }]}>{env.quantity}</Text>
+            <Text style={[eds.infoValue, { color: text }]}>{env.quantity ?? '—'}</Text>
           </View>
           <View style={eds.infoRow}>
             <Text style={[eds.infoLabel, { color: muted }]}>{t('environments.fields.status')}</Text>
@@ -107,11 +118,11 @@ export default function EnvironmentDetailScreen() {
           </View>
           <View style={eds.infoRow}>
             <Text style={[eds.infoLabel, { color: muted }]}>{t('environments.detail.createdAt')}</Text>
-            <Text style={[eds.infoValue, { color: text }]}>{new Date(env.createdAt).toLocaleString()}</Text>
+            <Text style={[eds.infoValue, { color: text }]}>{formatDateTime(env.createdAt, '—')}</Text>
           </View>
           <View style={[eds.infoRow, { borderBottomWidth: 0 }]}>
             <Text style={[eds.infoLabel, { color: muted }]}>{t('environments.detail.updatedAt')}</Text>
-            <Text style={[eds.infoValue, { color: text }]}>{new Date(env.updatedAt).toLocaleString()}</Text>
+            <Text style={[eds.infoValue, { color: text }]}>{formatDateTime(env.updatedAt, '—')}</Text>
           </View>
         </View>
 
@@ -136,7 +147,7 @@ export default function EnvironmentDetailScreen() {
           </View>
         </View>
         {assignedFichasData.length === 0 ? (
-          <Text style={[eds.empty, { color: muted }]}>{t('environments.detail.noFichas')}</Text>
+          <Text style={[eds.empty, { color: muted }]}>{t(env.assignmentsAvailable ? 'environments.detail.noFichas' : 'dataState.assignmentsUnavailable')}</Text>
         ) : (
           assignedFichasData.map(f => {
             const relation = activeAssignments.find(item => item.fichaCode === f.code);
@@ -176,6 +187,7 @@ export default function EnvironmentDetailScreen() {
                 onPress={() => {
                   const result = assignFicha(env.id, f.code);
                   if (result.success) alert('✓', t('environments.assign.successMsg'));
+                  else alert(t('common.error'), t(result.error ?? 'dataState.pending'));
                 }}
                 style={[eds.assignCard, { backgroundColor: cardBg, borderColor: theme.primary + '40' }]}
                 activeOpacity={0.7}
@@ -194,7 +206,7 @@ export default function EnvironmentDetailScreen() {
           <>
             <Text style={[eds.sectionTitle, { color: text, marginTop: 20 }]}>{t('environments.detail.assignmentHistory')}</Text>
             {historicalAssignments.map(assignment => {
-              const ficha = MOCK_FICHAS.find(item => item.code === assignment.fichaCode);
+              const ficha = availableGroups.find(item => item.code === assignment.fichaCode);
               return (
                 <View key={`${assignment.fichaCode}-${assignment.assignedAt}`} style={[eds.historyCard, { backgroundColor: cardBg, borderColor: border }]}>
                   <View style={{ flex: 1 }}>
