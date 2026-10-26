@@ -39,7 +39,7 @@ jobs:
         working-directory: FaceLit
         run: npm ci
 
-      - name: Run existing frontend tests and collect V8 coverage
+      - name: Run frontend scripts and component tests with coverage
         working-directory: FaceLit
         env:
           NODE_V8_COVERAGE: coverage-v8
@@ -61,6 +61,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: frontend-v8-coverage
-          path: FaceLit/coverage-v8
+          name: frontend-test-coverage
+          path: |
+            FaceLit/coverage-v8/
+            FaceLit/coverage/
           if-no-files-found: warn
