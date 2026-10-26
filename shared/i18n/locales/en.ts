@@ -1942,6 +1942,7 @@ const en = {
       },
     },
     logout: "Log out",
+    logoutFailed: 'Could not close the server session. Check your connection and try again.',
     logoutConfirm: "Are you sure you want to log out?",
   },
 

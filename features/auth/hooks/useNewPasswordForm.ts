@@ -1,3 +1,4 @@
+import { readRecoveryAuthorization, clearRecoveryAuthorization } from '@/shared/services/recoveryAuthorization';
 // ─────────────────────────────────────────────
 //  features/auth/hooks/useNewPasswordForm.ts
 //
@@ -35,7 +36,7 @@ export interface PasswordRequirement {
 
 export function useNewPasswordForm() {
   const { t } = useTranslation();
-  const { token, email, accessToken } = useLocalSearchParams<{ token: string; email?: string; accessToken?: string }>();
+  const { email, accessToken } = useLocalSearchParams<{ token: string; email?: string; accessToken?: string }>();
 
   const [password, setPasswordValue]              = useState('');
   const [confirmPassword, setConfirmPasswordValue] = useState('');
@@ -117,7 +118,7 @@ export function useNewPasswordForm() {
     setErrors(validationErrors);
     if (Object.keys(validationErrors).length > 0) return;
 
-    if (!token && !accessToken) {
+    if ((!email || !readRecoveryAuthorization(email)) && !accessToken) {
       setErrors({ code: t('newPassword.errors.tokenMissing') });
       return;
     }
@@ -127,7 +128,10 @@ export function useNewPasswordForm() {
 
     try {
       if (accessToken) await completeAccountAccess(accessToken, password, confirmPassword);
-      else await resetPassword(token, password, confirmPassword);
+      else {
+        await resetPassword(email!, readRecoveryAuthorization(email!)!, password, confirmPassword);
+        clearRecoveryAuthorization();
+      }
       logSuccess('PASSWORD_RESET_SUCCESS');
       setShowSuccess(true);
     } catch (error: any) {

@@ -1,4 +1,5 @@
 import { localizeNotification, normalizeNotificationMeta, notificationDecisionActorName, profileChangeDetails } from '@/features/notifications/localizeNotification';
+import { useAuthGuard } from '@/shared/hooks/useAuthGuard';
 // ─────────────────────────────────────────────
 //  app/notifications/index.tsx
 //  RF-8.2 — Bandeja de notificaciones (Coordinador)
@@ -57,7 +58,8 @@ const APPRENTICE_CATEGORIES: (NotificationCategory | 'all')[] = [
 export default function NotificationsScreen() {
   const { isDark, theme } = useTheme();
   const { t, i18n }         = useTranslation();
-  const { user }           = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { canRenderContent } = useAuthGuard(isAuthenticated, '/auth/login', authLoading);
 
   const [statusFilter,   setStatusFilter]   = useState<StatusFilter>('all');
   const [categoryFilter, setCategoryFilter] = useState<NotificationCategory | 'all'>('all');
@@ -313,6 +315,8 @@ export default function NotificationsScreen() {
   };
 
   // ── Render principal ──────────────────────
+  if (!canRenderContent) return null;
+
   return (
     <SafeAreaView style={[ns.root, { backgroundColor: bg }]} edges={['top', 'left', 'right']}>
       <RoleTopbar />

@@ -65,4 +65,8 @@ export const getMyProfile = async () => {
   return data; // { idUser, firstName, lastName, documentType, documentNumber, email }
 };
 
-export const logout = () => removeToken();
+export const logout = async () => {
+  try { await api.post('/api/auth/logout'); }
+  catch (error) { if (error.response?.status !== 401) throw error; }
+  await removeToken();
+};
