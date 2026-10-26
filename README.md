@@ -28,7 +28,7 @@ Schedule management and schedule exceptions were removed from the project scope.
 
 ## Versions and prerequisites
 
-[package.json](package.json) currently declares Expo `~57.0.25`, React `19.2.3`, React Native `0.86.3` and TypeScript `~6.0.3`. Use a compatible Node.js/npm environment and the committed [package-lock.json](package-lock.json). Android/iOS native builds also require their platform toolchains; iOS builds require the appropriate Apple environment.
+[package.json](package.json) currently declares Expo `~57.0.25`, React `19.2.3`, React Native `0.86.3` and TypeScript `~6.0.3`. Use a compatible Node.js/npm environment and the committed [package-lock.json](package-lock.json). The documented platforms are Android and web. Android native builds also require the Android development toolchain.
 
 The backend and its database must be available before testing authenticated flows. A real account must be provisioned through the project's current coordinator/CSV process; no shared password or fixed verification code is provided here.
 
@@ -48,7 +48,6 @@ Copy [.env.example](.env.example) to `.env` only when no local configuration exi
 | `npm run start:lan` | Expo development over the local network |
 | `npm start` | Existing tunnel workflow |
 | `npm run android` | Android native development build |
-| `npm run ios` | iOS native development build |
 | `npm run lint` | Existing Expo lint configuration |
 
 On a physical device, localhost means the device itself. Address resolution and Android emulator handling are implemented in [shared/constants/api.js](shared/constants/api.js). Restart Expo after environment changes. The project-reset utility is not an installation or upgrade step.
