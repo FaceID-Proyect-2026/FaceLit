@@ -46,3 +46,7 @@ app-example
 
 # Tutorial videos are distributed as GitHub release assets.
 /assets/videos/
+
+# Generated automated test reports
+coverage/
+coverage-v8/

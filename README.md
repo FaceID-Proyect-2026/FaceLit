@@ -87,6 +87,8 @@ To replace a video, publish a new tagged release, compare file hashes, update on
 ## Build and automated checks
 
 ```bash
+npm test
+npm run lint
 npx --no-install tsc --noEmit
 npx --no-install expo export --platform web --output-dir dist
 node scripts/test-apprentice-attendance-state.cjs
@@ -97,6 +99,12 @@ node scripts/test-notification-i18n.cjs
 ```
 
 These checks cover types, compilation, entry/platform logic, account-isolated attendance state, supported API-backed screens, facial-registration access and notification translations. They use controlled dependencies where applicable. A build or simulated test does not certify physical devices, PostgreSQL persistence, SMTP delivery or camera recognition.
+
+`npm test` runs the five existing scripts and four Jest/Testing Library suites. Use `npm run test:scripts` or `npm run test:components` to run either group separately. The suites cover shared loading/error UI, the login hook, authentication/role guard hooks and Axios service contracts. Coverage reports are generated in `coverage/`, including `coverage/lcov-report/index.html`; they cover six selected source files rather than the whole application. Generated reports stay ignored.
+
+The [CI workflow](.github/workflows/ci.yml) runs on pull requests and pushes to dev, qa and main, with optional manual dispatch. Its `Frontend tests and lint` job uses Node.js 22, `npm ci`, tests, TypeScript, lint and a web export. It checks out a pinned backend fixture for the notification script and uploads the `frontend-test-coverage` artifact. The existing facial registration callback dependency correction from dev is preserved without disabling lint rules.
+
+Tests use controlled authentication, navigation and HTTP dependencies. Role-guard hook tests do not prove that layouts currently using the authentication-only guard enforce role restrictions. Authorization/ownership and recovery fixes remain coordinated responsibilities of HU-MEJ-001/HU-MEJ-002; CI automation from HU-MEJ-006 does not close those findings. Check the exact head's run, artifacts, required-check rules and independent review before acceptance; historical runs do not certify a newer commit.
 
 For a static web deployment, serve `dist/` with HTTPS and routing compatible with Expo's exported paths. Set the backend URL before exporting. Do not use a development tunnel as the production hosting process.
 
