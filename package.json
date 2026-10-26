@@ -11,7 +11,7 @@
     "lint": "expo lint",
     "test:security": "node scripts/test-recovery-session.cjs",
     "test": "npm run test:scripts && npm run test:components",
-    "test:scripts": "node scripts/test-apprentice-attendance-state.cjs && node scripts/test-attendance-module-removal.cjs && node scripts/test-entry-platform.cjs && node scripts/test-facial-registration-access.cjs && node scripts/test-notification-i18n.cjs",
+    "test:scripts": "node scripts/test-apprentice-attendance-state.cjs && node scripts/test-attendance-module-removal.cjs && node scripts/test-entry-platform.cjs && node scripts/test-facial-registration-access.cjs && node scripts/test-notification-i18n.cjs && node scripts/test-recovery-session.cjs",
     "test:components": "jest --runInBand --coverage"
   },
   "dependencies": {

@@ -58,14 +58,14 @@ export function useUserSettings() {
     const backendLanguage = String(config?.language ?? DEFAULT_USER_CONFIG.language).trim().toUpperCase();
     const lang = LANG_BACKEND_TO_APP[backendLanguage] ?? 'es';
     const darkMode = Boolean(config?.darkMode ?? DEFAULT_USER_CONFIG.darkMode);
-    if (isDark !== darkMode) setDarkMode(darkMode);
-    if (language !== lang) changeLanguage(lang);
+    setDarkMode(darkMode);
+    changeLanguage(lang);
     setDraftState({
       darkMode,
       language: lang,
     });
     setSaved(true);
-  }, [changeLanguage, isDark, language, setDarkMode]);
+  }, [changeLanguage, setDarkMode]);
 
   const loadAndApply = useCallback(async () => {
     setLoading(true);

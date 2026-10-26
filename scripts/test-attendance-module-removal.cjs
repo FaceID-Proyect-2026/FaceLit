@@ -5,6 +5,11 @@ const path = require('node:path');
 const ts = require('typescript');
 const root = path.resolve(__dirname, '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
+function routeSource(file) {
+  const source = read(file);
+  const shared = source.match(/export \{ default \} from ['"]@\/(.*?)['"]/);
+  return shared ? read(`${shared[1]}.tsx`) : source;
+}
 function load(file, dependencies = {}) {
   const result = { exports: {} };
   const compiled = ts.transpileModule(read(file), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
@@ -109,8 +114,8 @@ async function run() {
   }
   for (const role of ['admin', 'instructor']) {
     for (const name of ['index', 'register', '[id]', 'exceptions']) assert.equal(fs.existsSync(path.join(root, `app/${role}/schedules/${name}.tsx`)), false);
-    assert.match(read(`app/${role}/attendance/[id].tsx`), /attendance.fields.sessionPeriod/);
-    assert.doesNotMatch(read(`app/${role}/environments/[id].tsx`), /MOCK_FICHAS/);
+    assert.match(routeSource(`app/${role}/attendance/[id].tsx`), /attendance.fields.sessionPeriod/);
+    assert.doesNotMatch(routeSource(`app/${role}/environments/[id].tsx`), /MOCK_FICHAS/);
   }
   for (const file of ['features/attendance/types.ts', 'features/academic/types.ts', 'features/environments/types.ts', 'features/facial/types.ts', 'features/reports/types.ts']) {
     assert.doesNotMatch(read(file), /export const (MOCK_|ATTENDANCE_EVENTS)/);

@@ -8,7 +8,7 @@ import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
-import { useAuthGuard } from '@/shared/hooks/useAuthGuard';
+import { useRoleGuard } from '@/shared/hooks/useRoleGuard';
 import { useNotifications } from '@/features/notifications/useNotifications';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, router } from 'expo-router';
@@ -20,7 +20,7 @@ export default function ApprenticeLayout() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const { theme, isDark } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { canRenderContent } = useAuthGuard(isAuthenticated, '/auth/login', authLoading);
+  const { canRenderContent } = useRoleGuard({ isAuthenticated, role: user?.role ?? null, allowedRoles: ['APPRENTICE'], authLoading });
   const { unreadCount } = useNotifications({ recipientUserId: user?.id });
 
   if (!canRenderContent) {

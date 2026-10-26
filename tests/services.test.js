@@ -2,6 +2,8 @@ import axios from 'axios';
 import { api } from '@/shared/services/api';
 import { login } from '@/shared/services/authService';
 import { saveToken } from '@/shared/services/tokenStorage';
+import { registerFacialEmbeddingFromImage, validateFacialLiveness } from '@/shared/services/facialEmbeddingService';
+import { setLearnerAccountState } from '@/features/academic/academicApi';
 import {
   fetchAttendanceMatrix, registerFacialAttendanceEvent,
   registerFacialAttendanceFromImage, initializeFacialSessionAbsences, updateFacialEventExcuse,
@@ -84,4 +86,27 @@ test('updates an excuse using PATCH and the agreed identifiers', async () => {
   await updateFacialEventExcuse(payload);
   expect(requests[0]).toMatchObject({ method: 'patch', url: '/api/facial/events/excuse' });
   expect(JSON.parse(requests[0].data)).toEqual(payload);
+});
+
+test('enrolment uses the authenticated backend and sends no service credential or claimed audit author', async () => {
+  await registerFacialEmbeddingFromImage({ userId: 'owner', imageBase64: 'synthetic',
+    imageFrames: ['one', 'two', 'three'], livenessChallenges: ['BLINK'], resetToken: 'grant', createdBy: 'spoofed' });
+  expect(requests[0].url).toBe('/api/facial/embeddings/from-image');
+  expect(requests[0].headers.get('X-API-Key')).toBeUndefined();
+  expect(JSON.parse(requests[0].data)).toMatchObject({ user_id: 'owner', reset_token: 'grant', image_frames: ['one', 'two', 'three'] });
+  expect(JSON.parse(requests[0].data)).not.toHaveProperty('created_by');
+});
+
+test('liveness also uses the backend without exposing the internal key', async () => {
+  respond({ live: true, reason: 'LIVE_OK' });
+  await expect(validateFacialLiveness({ imageFrames: ['one', 'two', 'three'], livenessChallenge: 'BLINK' })).resolves.toEqual({ live: true, reason: 'LIVE_OK' });
+  expect(requests[0].url).toBe('/api/facial/embeddings/liveness-check');
+  expect(requests[0].headers.get('X-API-Key')).toBeUndefined();
+});
+
+test('learner lifecycle is persisted using existing user management without changing identity or role', async () => {
+  respond({ documentNumber: '12345678', firstName: 'Test', lastName: 'Learner', email: 'test@example.invalid', role: 'APPRENTICE' });
+  await setLearnerAccountState('learner-id', false);
+  expect(requests.map(request => request.method)).toEqual(['get', 'put']);
+  expect(JSON.parse(requests[1].data)).toEqual({ numberDocument: '12345678', firstName: 'Test', lastName: 'Learner', email: 'test@example.invalid', role: 'APPRENTICE', accountStatus: 'INACTIVE' });
 });

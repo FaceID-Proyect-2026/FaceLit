@@ -14,7 +14,6 @@
 //  la UI las distinga.
 // ─────────────────────────────────────────────
 import {
-  MOCK_NOTIFICATIONS_RF8,
   NOTIFICATION_CHANNELS,
   Notification,
   NotificationMeta,
@@ -29,7 +28,9 @@ import {
 
 type Listener = () => void;
 
-let notifications: Notification[] = [...MOCK_NOTIFICATIONS_RF8];
+let notifications: Notification[] = [];
+let owner = '';
+let generation = 0;
 const listeners = new Set<Listener>();
 let loadedRemote = false;
 
@@ -44,9 +45,22 @@ export function getNotificationsSnapshot(): Notification[] {
   return notifications;
 }
 
+export function setNotificationsOwner(nextOwner: string): void {
+  if (owner === nextOwner) return;
+  owner = nextOwner;
+  generation += 1;
+  notifications = [];
+  loadedRemote = false;
+  emit();
+}
+
 export async function loadNotifications(): Promise<void> {
+  if (!owner) return;
+  const requestGeneration = generation;
   try {
-    notifications = await fetchNotifications();
+    const result = await fetchNotifications();
+    if (requestGeneration !== generation) return;
+    notifications = result.filter(notification => notification.recipientUserId === owner);
     loadedRemote = true;
     emit();
   } catch {
@@ -107,11 +121,11 @@ export function pushNotification(
 
 // ── RF-8.2 — Marcar como leída ────────────────
 export function markNotificationRead(id: string): void {
-  notifications = notifications.map(n => n.id === id ? { ...n, read: true } : n);
-  emit();
+  const requestGeneration = generation;
   if (loadedRemote) {
     markNotificationReadRemote(id)
       .then(remote => {
+        if (requestGeneration !== generation) return;
         notifications = notifications.map(n => n.id === id ? remote : n);
         emit();
       })
@@ -120,11 +134,11 @@ export function markNotificationRead(id: string): void {
 }
 
 export function markAllNotificationsRead(): void {
-  notifications = notifications.map(n => ({ ...n, read: true }));
-  emit();
+  const requestGeneration = generation;
   if (loadedRemote) {
     markAllNotificationsReadRemote()
       .then(remote => {
+        if (requestGeneration !== generation) return;
         notifications = remote;
         emit();
       })
@@ -139,8 +153,10 @@ export async function resolveFacialRequest(
   decidedBy: string,
   decidedByName?: string,
 ): Promise<void> {
+  const requestGeneration = generation;
   // Apply the decision only after the server validates the actor, state and scope.
   await resolveFacialNotificationRemote(notificationId, decision);
+  if (requestGeneration !== generation) return;
   const now = new Date().toISOString();
   notifications = notifications.map(n =>
     n.id === notificationId

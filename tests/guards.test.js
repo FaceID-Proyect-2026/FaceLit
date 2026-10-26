@@ -73,3 +73,13 @@ test('role guard hides content until navigation is ready', async () => {
   expect(result.current.canRenderContent).toBe(false);
   expect(router.replace).not.toHaveBeenCalled();
 });
+
+test('role guard waits for session restoration before redirecting', async () => {
+  const view = await renderHook(({ loading }) => useRoleGuard({
+    isAuthenticated: false, role: null, allowedRoles: ['APPRENTICE'], authLoading: loading,
+  }), { initialProps: { loading: true } });
+  expect(view.result.current.canRenderContent).toBe(false);
+  expect(router.replace).not.toHaveBeenCalled();
+  await view.rerender({ loading: false });
+  expect(router.replace).toHaveBeenCalledWith('/auth/login');
+});

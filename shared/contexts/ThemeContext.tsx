@@ -5,6 +5,7 @@
 import { Colors } from '@/shared/constants/colors';
 import React, {
     createContext,
+    useCallback,
     ReactNode,
     useContext,
     useEffect,
@@ -174,7 +175,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     } catch { }
   }, []);
 
-  const toggleTheme = () => {
+  const toggleTheme = useCallback(() => {
     setIsDark(prev => {
       const next = !prev;
       try {
@@ -182,14 +183,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       } catch { }
       return next;
     });
-  };
+  }, []);
 
-  const setDarkMode = (value: boolean) => {
+  const setDarkMode = useCallback((value: boolean) => {
     setIsDark(value);
     try {
       globalThis.localStorage?.setItem(STORAGE_KEY, value ? 'dark' : 'light');
     } catch { }
-  };
+  }, []);
 
   return (
     <ThemeContext.Provider value={{

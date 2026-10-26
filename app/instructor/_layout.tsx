@@ -12,7 +12,7 @@ import { Colors } from "@/shared/constants/colors";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { useAuth } from "@/shared/contexts/AuthContext";
 import { useTheme } from "@/shared/contexts/ThemeContext";
-import { useAuthGuard } from "@/shared/hooks/useAuthGuard";
+import { useRoleGuard } from "@/shared/hooks/useRoleGuard";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, router, usePathname } from "expo-router";
 import { useEffect, useRef, useState } from "react";
@@ -30,7 +30,7 @@ export default function AdminLayout() {
   const { isAuthenticated, loading: authLoading, user } = useAuth();
   const { theme, isDark } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { canRenderContent } = useAuthGuard(isAuthenticated, '/auth/login', authLoading);
+  const { canRenderContent } = useRoleGuard({ isAuthenticated, role: user?.role ?? null, allowedRoles: ['INSTRUCTOR'], authLoading });
   const { unreadCount } = useNotifications();
   const pathname = usePathname();
   const { setActiveSession } = useFacialRegistry(user?.id);

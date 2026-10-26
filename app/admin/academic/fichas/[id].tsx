@@ -232,8 +232,8 @@ export default function FichaDetailScreen() {
           {
             text: t('academic.deactivateLearnerAction'),
             style: 'destructive',
-            onPress: () => {
-              const r = deactivateLearner(ficha.id, learnerId);
+            onPress: async () => {
+              const r = await deactivateLearner(ficha.id, learnerId);
               if (!r.success && r.error) alert(t('common.error'), t(r.error as any, { defaultValue: r.error }));
             },
           },
@@ -255,8 +255,8 @@ export default function FichaDetailScreen() {
           { text: t('common.cancel'), style: 'cancel' },
           {
             text: t('academic.reactivateLearnerAction'),
-            onPress: () => {
-              const r = reactivateLearner(ficha.id, learnerId);
+            onPress: async () => {
+              const r = await reactivateLearner(ficha.id, learnerId);
               if (!r.success && r.error) alert(t('common.error'), t(r.error as any, { defaultValue: r.error }));
             },
           },
