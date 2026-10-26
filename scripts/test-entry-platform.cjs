@@ -122,6 +122,7 @@ async function testExistingAuthServices(platform) {
     },
     './api': { api: {
       post: async (url, data) => {
+        if (url === '/api/auth/logout') return { data: null };
         if (url === '/api/admin/users') {
           assert.deepEqual(data, account);
           if (created) throw Object.assign(new Error('Duplicate'), { response: { status: 409 } });

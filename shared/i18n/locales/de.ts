@@ -1850,6 +1850,7 @@ const de = {
       },
     },
     logout: "Abmelden",
+    logoutFailed: 'Die Serversitzung konnte nicht beendet werden. Prüfe die Verbindung und versuche es erneut.',
     logoutConfirm: "Wirklich abmelden?",
   },
 

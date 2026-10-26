@@ -1903,6 +1903,7 @@ const fr = {
       },
     },
     logout: "Déconnexion",
+    logoutFailed: 'Impossible de fermer la session sur le serveur. Vérifiez la connexion et réessayez.',
     logoutConfirm: "Voulez-vous vous déconnecter ?",
   },
 
