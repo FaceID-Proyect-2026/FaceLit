@@ -1,12 +1,13 @@
 import {
+  LIVENESS_SEQUENCE_LENGTH, LIVENESS_FRAME_COUNT, LIVENESS_FRAME_DELAY_MS, LIVENESS_PREPARATION_MS,
+  LIVENESS_CHALLENGES, buildLivenessSequence, replaceLivenessChallengeAtIndex,
+  formatLivenessStep, buildChallengeFailureMessage, clampLivenessIndex,
+} from '@/features/facial/livenessChallenges';
+import type { LivenessChallenge } from '@/features/facial/livenessChallenges';
+import {
   MIN_BRIGHTNESS_SCORE,
   ScreenState,
   CaptureQuality,
-  LIVENESS_FRAME_COUNT,
-  LIVENESS_CHALLENGES,
-  LivenessChallenge,
-  buildLivenessSequence,
-  replaceLivenessChallengeAtIndex,
 } from '@/features/auth/hooks/useFacialRegistration';
 import { FacialSession } from '@/features/facial/types';
 import { registerFacialAttendanceFromImage } from '@/shared/services/facialAttendanceService';
@@ -18,24 +19,6 @@ import { useTranslation } from 'react-i18next';
 import { Platform } from 'react-native';
 
 const POSITIONING_DELAY_MS = 1500;
-const LIVENESS_SEQUENCE_LENGTH = 3;
-const LIVENESS_START_DELAY_MS = 650;
-const LIVENESS_FRAME_DELAY_MS = 380;
-
-function formatLivenessStep(challenge: LivenessChallenge, index: number): string {
-  return `Paso ${index + 1}/${LIVENESS_SEQUENCE_LENGTH}: ${challenge.label}`;
-}
-
-function buildChallengeFailureMessage(challenge: LivenessChallenge, reason?: string): string {
-  const detail = reason?.match(/El reto era[^.]*\./)?.[0]
-    ?? `El reto era ${challenge.label.toLowerCase()}.`;
-  return `Detalle: ${detail}`;
-}
-
-function clampLivenessIndex(index: number): number {
-  return Math.min(Math.max(index, 0), LIVENESS_SEQUENCE_LENGTH - 1);
-}
-
 interface UseSessionAttendanceCaptureOptions {
   session?: FacialSession;
   eventType?: 'ENTRY' | 'EXIT';
@@ -68,7 +51,9 @@ export function useSessionAttendanceCapture({ session, eventType }: UseSessionAt
   const canFinish = screenState === 'captured' && quality === 'good' && !isRegistering;
   const safeChallengeIndex = clampLivenessIndex(activeChallengeIndex);
   const livenessChallenge = livenessSequence[safeChallengeIndex] ?? livenessSequence[0] ?? LIVENESS_CHALLENGES[0];
-  const livenessInstruction = formatLivenessStep(livenessChallenge, safeChallengeIndex);
+  const livenessInstruction = screenState === 'captured'
+    ? 'Dos retos correctos. Validando el registro…'
+    : formatLivenessStep(livenessChallenge, safeChallengeIndex);
 
   const clearPositioningTimer = useCallback(() => {
     if (positioningTimer.current) {
@@ -101,6 +86,7 @@ export function useSessionAttendanceCapture({ session, eventType }: UseSessionAt
   useEffect(() => {
     return () => {
       clearPositioningTimer();
+      livenessGroupRef.current += 1;
     };
   }, [clearPositioningTimer]);
 
@@ -152,6 +138,9 @@ export function useSessionAttendanceCapture({ session, eventType }: UseSessionAt
   }, [startPositioningSimulation]);
 
   const handleCancelCamera = useCallback(() => {
+    livenessGroupRef.current += 1;
+    livenessValidationRef.current = false;
+    setIsValidatingLiveness(false);
     setScreenState('idle');
     setPhotoUri(null);
     setPhotoUris([]);
@@ -176,9 +165,8 @@ export function useSessionAttendanceCapture({ session, eventType }: UseSessionAt
       return;
     }
     const challenge = livenessChallenge;
-    const imageFrames = await Promise.all(frames.map((uri) => imageUriToDataUri(uri)));
-
     try {
+      const imageFrames = await Promise.all(frames.map((uri) => imageUriToDataUri(uri)));
       const result = await validateFacialLiveness({
         imageFrames,
         livenessChallenge: challenge.code,
@@ -234,19 +222,20 @@ export function useSessionAttendanceCapture({ session, eventType }: UseSessionAt
 
   const handleTakePhotoNative = useCallback(async () => {
     if (!cameraRef.current || isTaking) return;
+    const groupId = livenessGroupRef.current;
     setIsTaking(true);
     try {
       const captures: string[] = [];
-      await new Promise((resolve) => setTimeout(resolve, LIVENESS_START_DELAY_MS));
       for (let index = 0; index < LIVENESS_FRAME_COUNT; index += 1) {
-        const photo = await cameraRef.current.takePictureAsync({ quality: 0.7, skipProcessing: true });
+        const photo = await cameraRef.current.takePictureAsync({ quality: 0.7, skipProcessing: false });
+        if (groupId !== livenessGroupRef.current) return;
         if (photo?.uri) captures.push(photo.uri);
         if (index < LIVENESS_FRAME_COUNT - 1) {
           await new Promise((resolve) => setTimeout(resolve, LIVENESS_FRAME_DELAY_MS));
         }
       }
       if (captures.length === LIVENESS_FRAME_COUNT) {
-        handleLivenessCapture(captures);
+        await handleLivenessCapture(captures);
       }
     } catch {
       alert(t('facialReg.captureError'));
@@ -328,7 +317,7 @@ export function useSessionAttendanceCapture({ session, eventType }: UseSessionAt
 
     const timer = setTimeout(() => {
       handleTakePhotoNative();
-    }, 900);
+    }, LIVENESS_PREPARATION_MS);
     return () => clearTimeout(timer);
   }, [
     errorModalMessage,

@@ -1,4 +1,4 @@
-import { localizeNotification, normalizeNotificationMeta, notificationDecisionActorName, profileChangeDetails } from '@/features/notifications/localizeNotification';
+import { localizeNotification, normalizeNotificationMeta, notificationDecisionActorName, profileChangeDetails, formatNotificationDate } from '@/features/notifications/localizeNotification';
 import { useAuthGuard } from '@/shared/hooks/useAuthGuard';
 // ─────────────────────────────────────────────
 //  app/notifications/index.tsx
@@ -83,10 +83,7 @@ export default function NotificationsScreen() {
   const inputBg = theme.inputBg;
 
   const formatLocalizedDate = (value: string) => {
-    const parsed = new Date(`${value}T12:00:00`);
-    return Number.isNaN(parsed.getTime())
-      ? value
-      : new Intl.DateTimeFormat(i18n.resolvedLanguage ?? i18n.language, { dateStyle: 'medium' }).format(parsed);
+    return value ? formatNotificationDate(value, i18n.resolvedLanguage ?? i18n.language) : '—';
   };
 
   const getLocalizedText = (notif: Notification) =>

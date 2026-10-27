@@ -1398,6 +1398,8 @@ const en = {
     register: "Register Face",
     verify: "Verify Identity",
     setup: {
+      chipsLoadFailed: "Training groups could not be loaded. Check the connection and retry.",
+      noChips: "This instructor has no active training groups available in their programs.",
       title: "Session setup",
       subtitle:
         "Select the environment, instructor, and training group for the facial recognition session.",

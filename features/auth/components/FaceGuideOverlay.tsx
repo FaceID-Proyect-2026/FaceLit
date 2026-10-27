@@ -26,6 +26,7 @@ interface FaceGuideOverlayProps {
   liveWarning?:  LiveWarning;
   requiresLiveness?: boolean;
   livenessCaptureActive?: boolean;
+  isProcessing?: boolean;
   livenessInstruction?: string;
   /** Frames consecutivos sin advertencias acumulados */
   stableFrames?:   number;
@@ -79,7 +80,7 @@ const POSITIONING_FALLBACKS = [
 
 export default function FaceGuideOverlay({
   primaryColor, isPositioning, screenState, quality,
-  liveWarning, requiresLiveness = false, livenessCaptureActive = false,
+  liveWarning, requiresLiveness = false, livenessCaptureActive = false, isProcessing = false,
   livenessInstruction,
   stableFrames = 0, requiredFrames = 5, onConfirm, onCancel,
 }: FaceGuideOverlayProps) {
@@ -119,7 +120,7 @@ export default function FaceGuideOverlay({
           <View style={[s.oval, guideStyle, { borderColor: color, borderStyle }]} />
           <View style={[s.badge, { backgroundColor: color + 'F2', bottom: guideBottom }]}>
             <Ionicons name={icon as any} size={16} color={Colors.white} />
-            <Text style={s.badgeText} numberOfLines={2}>{message}</Text>
+            <Text style={s.badgeText} numberOfLines={requiresLiveness ? 4 : 2}>{message}</Text>
           </View>
         </View>
         {showStability && (
@@ -205,11 +206,20 @@ export default function FaceGuideOverlay({
     );
   }
 
+  if (isProcessing) {
+    return renderOvalMessage(
+      STATE_BLUE,
+      'hourglass-outline',
+      'Captura terminada. Validando el reto…',
+      'solid',
+    );
+  }
+
   if (requiresLiveness && livenessCaptureActive) {
     return renderOvalMessage(
       STATE_GREEN,
       'sync-outline',
-      livenessInstruction || t('facialReg.livenessCapturing', 'Mueve la cabeza suavemente hacia un lado'),
+      livenessInstruction ? `${livenessInstruction}. Hazlo ahora.` : 'Haz el reto ahora',
       'solid',
     );
   }
@@ -264,7 +274,7 @@ export default function FaceGuideOverlay({
       return renderOvalMessage(
         STATE_GREEN,
         'body-outline',
-        livenessInstruction || t('facialReg.livenessReady', 'Pulsa capturar y mueve la cabeza suavemente'),
+        'Prepárate con el rostro relajado. Espera a que aparezca «Hazlo ahora».',
         'solid',
       );
     }

@@ -1,6 +1,7 @@
 import { api } from './api';
 import type { Notification, NotificationCategory, NotificationChannel } from '@/features/notifications/types';
 import { parseNotificationMeta } from '@/features/notifications/localizeNotification';
+import { getBogotaDateTimeParts } from '@/shared/utils/dates';
 
 type BackendNotification = {
   id: string;
@@ -17,6 +18,12 @@ type BackendNotification = {
 };
 
 const categoryMap: Record<string, NotificationCategory> = {
+  ACADEMIC: 'academic',
+  ATTENDANCE: 'attendance',
+  FACIAL_RECOGNITION: 'facial',
+  SECURITY: 'security',
+  TRANSFER: 'transfer',
+  // Read historical responses during an expand/contract rollout as well.
   ACADEMICO: 'academic',
   ASISTENCIA: 'attendance',
   RECONOCIMIENTO_FACIAL: 'facial',
@@ -37,7 +44,8 @@ function mapEmailStatus(status?: string | null): Notification['emailStatus'] {
 
 function mapNotification(item: BackendNotification): Notification {
   const created = new Date(item.createdAt);
-  const iso = Number.isNaN(created.getTime()) ? new Date().toISOString() : created.toISOString();
+  const iso = Number.isNaN(created.getTime()) ? undefined : created.toISOString();
+  const local = getBogotaDateTimeParts(created);
   const meta = parseNotificationMeta(item.meta);
   const category = item.type.startsWith('csv_') ? 'csv' : (categoryMap[item.category] ?? 'academic');
 
@@ -49,8 +57,9 @@ function mapNotification(item: BackendNotification): Notification {
     channel: mapChannel(item.channel),
     title: item.title,
     message: item.message,
-    date: iso.slice(0, 10),
-    time: iso.slice(11, 16),
+    createdAt: iso,
+    date: local?.date ?? '',
+    time: local?.time ?? '',
     read: item.read,
     meta,
     emailStatus: mapEmailStatus(item.emailStatus),

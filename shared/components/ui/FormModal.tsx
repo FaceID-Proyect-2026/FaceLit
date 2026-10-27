@@ -28,7 +28,7 @@ export default function FormModal({ visible, onClose, closeOnBackdropPress = fal
   const { isDark } = useTheme();
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
-  const cardBg = isDark ? '#0D1F14' : Colors.white;
+  const cardBg = isDark ? '#0D1F14' : Colors.light.surface;
   const border = isDark ? 'rgba(101,179,97,0.18)' : 'rgba(101,179,97,0.20)';
 
   if (!visible) return null;

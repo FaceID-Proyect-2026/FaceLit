@@ -29,7 +29,7 @@ export default function EnvironmentsListScreen() {
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
   const cardBg = theme.surface;
   const border = theme.border;
-  const inputBg = isDark ? 'rgba(255,255,255,0.05)' : '#FAFAFA';
+  const inputBg = isDark ? 'rgba(255,255,255,0.05)' : Colors.light.inputBg;
 
   const statusColors: Record<string, string> = {
     active: Colors.success,

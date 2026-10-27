@@ -7,12 +7,6 @@ const defaultApiUrl = Platform.select({
   default: 'http://localhost:8080',
 });
 
-const defaultEmbeddingApiUrl = Platform.select({
-  android: 'http://10.0.2.2:8090',
-  ios: 'http://localhost:8090',
-  default: 'http://localhost:8090',
-});
-
 const getExpoHost = () => {
   const hostUri =
     Constants.expoConfig?.hostUri ||
@@ -56,8 +50,3 @@ const resolveLocalUrl = (configuredUrl, fallbackUrl) => {
 };
 
 export const API_URL = resolveLocalUrl(process.env.EXPO_PUBLIC_API_URL, defaultApiUrl);
-export const EMBEDDING_API_URL = resolveLocalUrl(
-  process.env.EXPO_PUBLIC_EMBEDDING_API_URL,
-  defaultEmbeddingApiUrl,
-);
-export const EMBEDDING_API_KEY = process.env.EXPO_PUBLIC_EMBEDDING_API_KEY || 'change-me';

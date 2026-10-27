@@ -4,6 +4,7 @@
 //  Programas · Fichas · Aprendices · Instructores
 // ─────────────────────────────────────────────
 import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
+import { useAuth } from '@/shared/contexts/AuthContext';
 import {
   createFicha as createFichaApi,
   createProgram as createProgramApi,
@@ -14,12 +15,12 @@ import {
   updateApprentice as updateApprenticeApi,
   updateFicha as updateFichaApi,
   updateProgram as updateProgramApi,
+  setLearnerAccountState,
 } from './academicApi';
 import {
   addLearnerStore,
   assignInstructorToFichaStore,
   deactivateInstructorStore,
-  deactivateLearnerStore,
   deleteOrphanLearnerStore,
   generateTransferCode,
   getFichaById,
@@ -38,7 +39,6 @@ import {
   markLearnerValidation,
   moveLearnerToOrphanPoolStore,
   reactivateInstructorStore,
-  reactivateLearnerStore,
   regenerateTransferCodeStore,
   registerInstructorStore,
   removeLearnerStore,
@@ -86,6 +86,7 @@ export async function refreshAcademicStoreFromBackend(role?: string | null) {
 }
 
 export function useAcademic() {
+  const { user } = useAuth();
   const programs    = useSyncExternalStore(subscribe, getProgramsSnapshot);
   const fichas      = useSyncExternalStore(subscribe, getFichasSnapshot);
   const instructors = useSyncExternalStore(subscribe, getInstructorsSnapshot);
@@ -96,8 +97,8 @@ export function useAcademic() {
   const [statusFilter, setStatusFilter]         = useState<ProgramStatusFilter>('all');
   const [instructorFilter, setInstructorFilter] = useState<InstructorStatusFilter>('all');
   const refreshAcademic = useCallback(async () => {
-    await refreshAcademicStoreFromBackend();
-  }, []);
+    await refreshAcademicStoreFromBackend(user?.role);
+  }, [user?.role]);
 
   // ── Programas filtrados ───────────────────
   const filteredPrograms = useMemo(() => {
@@ -230,8 +231,17 @@ export function useAcademic() {
   // ── Acciones — Aprendices ─────────────────
   const addLearner          = useCallback((fichaId: string, learner: Ficha['learners'][0]) => addLearnerStore(fichaId, learner), []);
   const removeLearner       = useCallback((fichaId: string, learnerId: string) => removeLearnerStore(fichaId, learnerId), []);
-  const deactivateLearner   = useCallback((fichaId: string, learnerId: string) => deactivateLearnerStore(fichaId, learnerId), []);
-  const reactivateLearner   = useCallback((fichaId: string, learnerId: string) => reactivateLearnerStore(fichaId, learnerId), []);
+  const setLearnerActive = useCallback(async (learnerId: string, active: boolean) => {
+    try {
+      await setLearnerAccountState(learnerId, active);
+      await refreshAcademic();
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error?.response?.data?.message ?? 'dataState.error' };
+    }
+  }, [refreshAcademic]);
+  const deactivateLearner = useCallback((_fichaId: string, learnerId: string) => setLearnerActive(learnerId, false), [setLearnerActive]);
+  const reactivateLearner = useCallback((_fichaId: string, learnerId: string) => setLearnerActive(learnerId, true), [setLearnerActive]);
   const updateLearnerInfo   = useCallback(
     async (fichaId: string, learnerId: string, data: { name?: string; lastname?: string; email?: string; document?: string }) => {
       const learner = await updateApprenticeApi(learnerId, {

@@ -144,7 +144,7 @@ export default function LoginScreen() {
   // ── Colores locales ───────────────────────────
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
-  const cardBg = isDark ? Colors.dark.surface : Colors.white;
+  const cardBg = isDark ? Colors.dark.surface : Colors.light.surface;
   const inputBg = isDark ? Colors.dark.inputBg : Colors.light.inputBg;
   const inputBorder = isDark ? Colors.dark.inputBorder : Colors.light.inputBorder;
   const cardBorder = isDark ? Colors.dark.border : Colors.light.border;

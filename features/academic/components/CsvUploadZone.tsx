@@ -31,7 +31,7 @@ export default function CsvUploadZone({ onFileRead, isDark, disabled }: CsvUploa
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
-  const cardBg = isDark ? '#0D1F14' : Colors.white;
+  const cardBg = isDark ? '#0D1F14' : Colors.light.surface;
 
   const readWebFile = (file: File) => {
     setLoading(true);

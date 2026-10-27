@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 
 const DATA_URI_PATTERN = /^data:image\/[a-zA-Z0-9.+-]+;base64,/;
 

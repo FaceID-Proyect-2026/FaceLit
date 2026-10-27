@@ -205,7 +205,7 @@ function SelectFieldMobile({
       >
         <Pressable style={s.backdrop} onPress={() => setOpen(false)}>
           <View style={[s.modal, {
-            backgroundColor: isDark ? Colors.dark.surface : Colors.white,
+            backgroundColor: isDark ? Colors.dark.surface : Colors.light.surface,
             borderColor: theme.border,
           }]}>
             <ScrollView style={{ maxHeight: 320 }}>

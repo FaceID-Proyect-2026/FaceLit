@@ -1,3 +1,4 @@
+import { LIVENESS_FRAME_COUNT, LIVENESS_FRAME_DELAY_MS, LIVENESS_PREPARATION_MS } from '@/features/facial/livenessChallenges';
 // ─────────────────────────────────────────────
 //  features/auth/components/WebCamera.tsx
 //  Cámara web con análisis en tiempo real.
@@ -54,9 +55,6 @@ export type LiveWarning =
 const MOTION_THRESHOLD      = 12;   // 0-255 — sensibilidad media
 // Frames consecutivos sin advertencias necesarios para "listo"
 const REQUIRED_STABLE_FRAMES = 5;
-const LIVENESS_FRAME_COUNT = 5;
-const LIVENESS_START_DELAY_MS = 650;
-const LIVENESS_FRAME_DELAY_MS = 380;
 
 // Zona válida de reconocimiento: corresponde al óvalo centrado de la guía.
 // Se usa una elipse para evitar aceptar rostros ubicados en las esquinas.
@@ -176,13 +174,14 @@ interface WebCameraProps {
   requiresLiveness?: boolean;
   autoCapture?: boolean;
   paused?: boolean;
+  isProcessing?: boolean;
   livenessInstruction?: string;
 }
 
 export default function WebCamera({
   primaryColor, isTaking, isPositioning, screenState, quality,
   onCapture, onShutter, onConfirm, onCancel, onFaceReady, requiresLiveness = false, autoCapture = false,
-  paused = false, livenessInstruction,
+  paused = false, isProcessing = false, livenessInstruction,
 }: WebCameraProps) {
   const { t } = useTranslation();
   const videoRef      = useRef<HTMLVideoElement>(null);
@@ -192,6 +191,7 @@ export default function WebCamera({
   // Buffer del frame anterior (luminancias) para detección de movimiento
   const prevLumRef    = useRef<Float32Array | null>(null);
   const faceReadyRef  = useRef(false);
+  const captureVersionRef = useRef(0);
   // Contador de frames consecutivos sin ninguna advertencia
   const stableCount   = useRef(0);
 
@@ -202,6 +202,11 @@ export default function WebCamera({
   const warningRef = useRef<LiveWarning>('noSkin');
   // stableFrames: cuántos frames OK consecutivos hay (0 a REQUIRED_STABLE_FRAMES)
   const [stableFrames, setStableFrames] = useState(0);
+
+  useEffect(() => {
+    captureVersionRef.current += 1;
+    return () => { captureVersionRef.current += 1; };
+  }, [paused, screenState, livenessInstruction]);
 
   useEffect(() => {
     if (typeof document !== 'undefined') {
@@ -216,7 +221,6 @@ export default function WebCamera({
       stableCount.current = 0;
       setStableFrames(0);
       if (paused) {
-        setWarning('noSkin');
         faceReadyRef.current = false;
       }
       return;
@@ -345,9 +349,10 @@ export default function WebCamera({
 
   const capture = useCallback(async () => {
     if (paused || capturingSequence) return;
-    const invalidPosition = () =>
+    const captureVersion = captureVersionRef.current;
+    const invalidPosition = (duringChallenge = false) =>
       warningRef.current === 'noSkin' ||
-      warningRef.current === 'skinOffCenter' ||
+      (!duringChallenge && warningRef.current === 'skinOffCenter') ||
       warningRef.current === 'skinTooClose';
 
     setCapturingSequence(true);
@@ -355,16 +360,14 @@ export default function WebCamera({
     const frames: string[] = [];
     let brightness = 0;
     try {
-      if (requiresLiveness) {
-        await new Promise((resolve) => setTimeout(resolve, LIVENESS_START_DELAY_MS));
-      }
       if (invalidPosition()) return;
 
       const frameCount = requiresLiveness ? LIVENESS_FRAME_COUNT : 1;
       for (let index = 0; index < frameCount; index += 1) {
+        if (captureVersion !== captureVersionRef.current) return;
         // Si el rostro sale del centro durante la secuencia, se descarta todo
         // y no se envía el evento al backend.
-        if (invalidPosition()) return;
+        if (invalidPosition(requiresLiveness && index > 0)) return;
         const frame = captureFrame();
         if (frame) {
           frames.push(frame.dataUri);
@@ -374,7 +377,7 @@ export default function WebCamera({
           await new Promise((resolve) => setTimeout(resolve, LIVENESS_FRAME_DELAY_MS));
         }
       }
-      if (frames.length === 0 || invalidPosition()) return;
+      if (captureVersion !== captureVersionRef.current || frames.length !== frameCount || invalidPosition(requiresLiveness)) return;
       onCapture(requiresLiveness ? frames : frames[0]!, brightness);
     } finally {
       setCapturingSequence(false);
@@ -408,9 +411,9 @@ export default function WebCamera({
     if (paused || !autoCapture || shutterDisabled || screenState !== 'ready' || warning !== 'none') return;
     const timer = setTimeout(() => {
       capture();
-    }, 650);
+    }, requiresLiveness ? LIVENESS_PREPARATION_MS : 650);
     return () => clearTimeout(timer);
-  }, [autoCapture, capture, livenessInstruction, paused, screenState, shutterDisabled, warning]);
+  }, [autoCapture, capture, livenessInstruction, paused, requiresLiveness, screenState, shutterDisabled, warning]);
 
   if (error) {
     return (
@@ -448,6 +451,7 @@ export default function WebCamera({
           liveWarning={warning}
           requiresLiveness={requiresLiveness}
           livenessCaptureActive={capturingSequence}
+          isProcessing={isProcessing}
           livenessInstruction={livenessInstruction}
           stableFrames={stableFrames}
           requiredFrames={REQUIRED_STABLE_FRAMES}

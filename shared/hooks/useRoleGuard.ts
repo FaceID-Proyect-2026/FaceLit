@@ -43,6 +43,7 @@ interface UseRoleGuardOptions {
   role: UserRole | null;
   /** Roles que tienen acceso a este layout */
   allowedRoles: UserRole[];
+  authLoading?: boolean;
   /** Ruta a la que redirigir si no está autenticado (default: /auth/login) */
   loginRoute?: string;
 }
@@ -57,6 +58,7 @@ export function useRoleGuard({
   isAuthenticated,
   role,
   allowedRoles,
+  authLoading = false,
   loginRoute = '/auth/login',
 }: UseRoleGuardOptions): UseRoleGuardResult {
   const rootNavigationState = useRootNavigationState();
@@ -64,7 +66,7 @@ export function useRoleGuard({
   const hasRedirected = useRef(false);
 
   useEffect(() => {
-    if (!isReady) return;
+    if (!isReady || authLoading) return;
 
     // Resetear el flag cuando el usuario sí tiene acceso
     if (isAuthenticated && role && isRoleAllowed(role, allowedRoles)) {
@@ -94,11 +96,11 @@ export function useRoleGuard({
       // Sin rol asignado — RF-1.4 escenario alternativo 1.1
       router.replace(loginRoute as any);
     }
-  }, [isReady, isAuthenticated, role, allowedRoles, loginRoute]);
+  }, [isReady, authLoading, isAuthenticated, role, allowedRoles, loginRoute]);
 
   const roleAllowed = isAuthenticated && role !== null && isRoleAllowed(role, allowedRoles);
   return {
-    canRenderContent: isReady && roleAllowed,
+    canRenderContent: isReady && !authLoading && roleAllowed,
     isReady,
   };
 }

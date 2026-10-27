@@ -66,7 +66,7 @@ export default function AttendanceHistoryScreen({ selectedProgramId }: Props) {
   const cardBg  = theme.surface;
   const border  = theme.border;
   const bg      = isDark ? Colors.dark.background  : Colors.light.background;
-  const inputBg = isDark ? 'rgba(255,255,255,0.05)' : '#FAFAFA';
+  const inputBg = isDark ? 'rgba(255,255,255,0.05)' : Colors.light.inputBg;
 
   // ── IDs de fichas del programa seleccionado ──
   const fichaIdsInProgram = useMemo(() => {

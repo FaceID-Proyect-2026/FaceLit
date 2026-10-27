@@ -1297,6 +1297,8 @@ const de = {
     register: "Gesicht registrieren",
     verify: "Identität prüfen",
     setup: {
+      chipsLoadFailed: "Die Ausbildungsgruppen konnten nicht geladen werden. Prüfe die Verbindung und versuche es erneut.",
+      noChips: "Für diesen Ausbilder sind keine aktiven Ausbildungsgruppen in seinen Programmen verfügbar.",
       title: "Sitzungseinstellungen",
       subtitle:
         "Wähle Umgebung, Ausbilder und Ausbildungsgruppe für die Gesichtserkennungssitzung aus.",

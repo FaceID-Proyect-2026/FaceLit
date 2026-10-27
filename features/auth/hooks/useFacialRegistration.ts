@@ -1,3 +1,9 @@
+import {
+  LIVENESS_SEQUENCE_LENGTH, LIVENESS_FRAME_COUNT, LIVENESS_FRAME_DELAY_MS, LIVENESS_PREPARATION_MS,
+  LIVENESS_CHALLENGES, buildLivenessSequence, replaceLivenessChallengeAtIndex,
+  formatLivenessStep, buildChallengeFailureMessage, clampLivenessIndex,
+} from '@/features/facial/livenessChallenges';
+import type { LivenessChallenge } from '@/features/facial/livenessChallenges';
 // ─────────────────────────────────────────────
 //  features/auth/hooks/useFacialRegistration.ts
 //  Lógica del registro facial separada de la
@@ -24,34 +30,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Platform } from 'react-native';
 
+export { LIVENESS_FRAME_COUNT, LIVENESS_CHALLENGES, buildLivenessSequence, replaceLivenessChallengeAtIndex } from '@/features/facial/livenessChallenges';
+export type { LivenessChallenge } from '@/features/facial/livenessChallenges';
+
 export type ScreenState = 'idle' | 'requesting' | 'confirmationRequired' | 'positioning' | 'ready' | 'captured';
 export type CaptureQuality = 'checking' | 'good' | 'lowLight';
 
 const POSITIONING_DELAY_MS  = 1500; // tiempo simulado de "acércate más"
 export const MIN_BRIGHTNESS_SCORE = 60; // umbral de brillo (0–255)
-export const LIVENESS_FRAME_COUNT = 5;
-const LIVENESS_SEQUENCE_LENGTH = 3;
-const LIVENESS_START_DELAY_MS = 650;
-const LIVENESS_FRAME_DELAY_MS = 380;
-
-export type LivenessChallenge = {
-  code: 'BLINK' | 'OPEN_CLOSE_MOUTH' | 'NOD' | 'SHAKE_HEAD' | 'KISS_CAMERA' | 'MOVE_LEFT' | 'MOVE_RIGHT' | 'MOVE_UP' | 'MOVE_DOWN' | 'MOVE_CLOSER' | 'MOVE_AWAY';
-  label: string;
-};
-
-export const LIVENESS_CHALLENGES: LivenessChallenge[] = [
-  { code: 'BLINK', label: 'Pestañea una vez' },
-  { code: 'OPEN_CLOSE_MOUTH', label: 'Abre y cierra la boca' },
-  { code: 'NOD', label: 'Asiente con la cabeza' },
-  { code: 'SHAKE_HEAD', label: 'Niega con la cabeza' },
-  { code: 'KISS_CAMERA', label: 'Da un beso a la cámara' },
-  { code: 'MOVE_LEFT', label: 'Mueve tu rostro hacia la izquierda' },
-  { code: 'MOVE_RIGHT', label: 'Mueve tu rostro hacia la derecha' },
-  { code: 'MOVE_UP', label: 'Gira tu rostro hacia arriba' },
-  { code: 'MOVE_DOWN', label: 'Gira tu rostro hacia abajo' },
-  { code: 'MOVE_CLOSER', label: 'Acércate un poco a la cámara' },
-  { code: 'MOVE_AWAY', label: 'Aléjate un poco de la cámara' },
-];
 
 const ALREADY_REGISTERED_ERROR = 'facial.validation.alreadyRegistered';
 const DUPLICATE_FACE_ERROR_STATUS = 409;
@@ -87,54 +73,6 @@ function buildPhotoReference(photoUri: string, isWeb: boolean): string {
     return `capture://${isWeb ? 'web' : 'native'}-facial-registration-${Date.now()}.jpg`;
   }
   return photoUri.length > 500 ? photoUri.slice(0, 500) : photoUri;
-}
-
-export function buildLivenessSequence(previousCodes: string[] = []): LivenessChallenge[] {
-  const blocked = new Set(previousCodes);
-  const shuffled = [...LIVENESS_CHALLENGES]
-    .filter((challenge) => !blocked.has(challenge.code))
-    .sort(() => Math.random() - 0.5);
-  const sequence = shuffled.slice(0, LIVENESS_SEQUENCE_LENGTH);
-  if (sequence.length === LIVENESS_SEQUENCE_LENGTH) return sequence;
-
-  const fallback = [...LIVENESS_CHALLENGES]
-    .filter((challenge) => !sequence.some((item) => item.code === challenge.code))
-    .sort(() => Math.random() - 0.5);
-  return [...sequence, ...fallback].slice(0, LIVENESS_SEQUENCE_LENGTH);
-}
-
-/** Sustituye solo el reto fallido y conserva el mismo número de paso. */
-export function replaceLivenessChallengeAtIndex(
-  sequence: LivenessChallenge[],
-  index: number,
-): LivenessChallenge[] {
-  const currentCode = sequence[index]?.code;
-  const usedCodes = new Set(
-    sequence.filter((_, challengeIndex) => challengeIndex !== index).map((challenge) => challenge.code),
-  );
-  const replacement = [...LIVENESS_CHALLENGES]
-    .filter((challenge) => challenge.code !== currentCode && !usedCodes.has(challenge.code))
-    .sort(() => Math.random() - 0.5)[0]
-    ?? LIVENESS_CHALLENGES.find((challenge) => challenge.code !== currentCode)
-    ?? LIVENESS_CHALLENGES[0];
-
-  return sequence.map((challenge, challengeIndex) => (
-    challengeIndex === index ? replacement : challenge
-  ));
-}
-
-function formatLivenessStep(challenge: LivenessChallenge, index: number): string {
-  return `Paso ${index + 1}/${LIVENESS_SEQUENCE_LENGTH}: ${challenge.label}`;
-}
-
-function buildChallengeFailureMessage(challenge: LivenessChallenge, reason?: string): string {
-  const detail = reason?.match(/El reto era[^.]*\./)?.[0]
-    ?? `El reto era ${challenge.label.toLowerCase()}.`;
-  return `Detalle: ${detail}`;
-}
-
-function clampLivenessIndex(index: number): number {
-  return Math.min(Math.max(index, 0), LIVENESS_SEQUENCE_LENGTH - 1);
 }
 
 export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
@@ -175,7 +113,9 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
   const canFinish         = screenState === 'captured' && quality === 'good' && !isRegistering;
   const safeChallengeIndex = clampLivenessIndex(activeChallengeIndex);
   const livenessChallenge = livenessSequence[safeChallengeIndex] ?? livenessSequence[0] ?? LIVENESS_CHALLENGES[0];
-  const livenessInstruction = formatLivenessStep(livenessChallenge, safeChallengeIndex);
+  const livenessInstruction = screenState === 'captured'
+    ? 'Dos retos correctos. Validando el registro…'
+    : formatLivenessStep(livenessChallenge, safeChallengeIndex);
 
   const clearPositioningTimer = useCallback(() => {
     if (positioningTimer.current) {
@@ -208,6 +148,7 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
   useEffect(() => {
     return () => {
       clearPositioningTimer();
+      livenessGroupRef.current += 1;
     };
   }, [clearPositioningTimer]);
 
@@ -275,6 +216,9 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
 
   // ── Cancelar desde la confirmación → vuelve a idle ──
   const handleCancelCamera = useCallback(() => {
+    livenessGroupRef.current += 1;
+    livenessValidationRef.current = false;
+    setIsValidatingLiveness(false);
     setScreenState('idle');
     setPhotoUri(null);
     setPhotoUris([]);
@@ -300,9 +244,8 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
       return;
     }
     const challenge = livenessChallenge;
-    const imageFrames = await Promise.all(frames.map((uri) => imageUriToDataUri(uri)));
-
     try {
+      const imageFrames = await Promise.all(frames.map((uri) => imageUriToDataUri(uri)));
       const result = await validateFacialLiveness({
         imageFrames,
         livenessChallenge: challenge.code,
@@ -359,19 +302,20 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
   // ── Captura nativa (expo-camera) ──────────────
   const handleTakePhotoNative = useCallback(async () => {
     if (!cameraRef.current || isTaking) return;
+    const groupId = livenessGroupRef.current;
     setIsTaking(true);
     try {
       const captures: string[] = [];
-      await new Promise((resolve) => setTimeout(resolve, LIVENESS_START_DELAY_MS));
       for (let index = 0; index < LIVENESS_FRAME_COUNT; index += 1) {
-        const photo = await cameraRef.current.takePictureAsync({ quality: 0.7, skipProcessing: true });
+        const photo = await cameraRef.current.takePictureAsync({ quality: 0.7, skipProcessing: false });
+        if (groupId !== livenessGroupRef.current) return;
         if (photo?.uri) captures.push(photo.uri);
         if (index < LIVENESS_FRAME_COUNT - 1) {
           await new Promise((resolve) => setTimeout(resolve, LIVENESS_FRAME_DELAY_MS));
         }
       }
       if (captures.length === LIVENESS_FRAME_COUNT) {
-        handleLivenessCapture(captures);
+        await handleLivenessCapture(captures);
       }
     } catch {
       alert(t('facialReg.captureError'));
@@ -506,7 +450,7 @@ export function useFacialRegistration(options: FacialRegistrationOptions = {}) {
     }
     const timer = setTimeout(() => {
       handleTakePhotoNative();
-    }, 900);
+    }, LIVENESS_PREPARATION_MS);
     return () => clearTimeout(timer);
   }, [errorModalMessage, handleTakePhotoNative, isRegistering, isTaking, isWeb, photoUri, screenState, successModalVisible]);
 

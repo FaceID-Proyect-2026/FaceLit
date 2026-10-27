@@ -3,6 +3,7 @@
 //  RF-8.2 — Hook reactivo de notificaciones
 // ─────────────────────────────────────────────
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
+import { useAuth } from '@/shared/contexts/AuthContext';
 import {
   getNotificationsSnapshot,
   getRemoteUnreadCount,
@@ -12,6 +13,7 @@ import {
   pushNotification,
   resolveFacialRequest,
   subscribeNotifications,
+  setNotificationsOwner,
 } from './notificationsStore';
 import type { NotificationCategory, NotificationMeta, NotificationType } from './types';
 
@@ -30,21 +32,25 @@ export function useNotifications(opts?: {
   /** Limita la bandeja a las notificaciones personales del destinatario. */
   recipientUserId?: string;
 }) {
-  const { statusFilter, categoryFilter, recipientUserId } = opts ?? {};
+  const { user } = useAuth();
+  const { statusFilter, categoryFilter } = opts ?? {};
+  const recipientUserId = opts?.recipientUserId ?? user?.id;
   const all = useSyncExternalStore(subscribeNotifications, getNotificationsSnapshot);
 
   useEffect(() => {
+    setNotificationsOwner(user?.id ?? '');
+    if (!user?.id) return;
     loadNotifications();
     const timer = setInterval(() => {
       loadNotifications();
     }, 15000);
     return () => clearInterval(timer);
-  }, []);
+  }, [user?.id]);
 
   const filtered = useMemo(() => {
     let list = recipientUserId
       ? all.filter(n => n.recipientUserId === recipientUserId)
-      : all;
+      : [];
 
     // Filtro por estado
     const sf = statusFilter ?? 'all';
@@ -57,6 +63,7 @@ export function useNotifications(opts?: {
 
     // Siempre más reciente primero
     return [...list].sort((a, b) => {
+      if (a.createdAt && b.createdAt) return Date.parse(b.createdAt) - Date.parse(a.createdAt);
       const ta = `${a.date}T${a.time}`;
       const tb = `${b.date}T${b.time}`;
       return tb.localeCompare(ta);
@@ -64,7 +71,7 @@ export function useNotifications(opts?: {
   }, [all, statusFilter, categoryFilter, recipientUserId]);
 
   const unreadCount = useMemo(
-    () => (recipientUserId ? all.filter(n => n.recipientUserId === recipientUserId) : all)
+    () => (recipientUserId ? all.filter(n => n.recipientUserId === recipientUserId) : [])
       .filter(n => !n.read).length,
     [all, recipientUserId],
   );

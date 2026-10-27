@@ -74,10 +74,6 @@ export interface User {
   lastname?: string;
 }
 
-export function getSystemUsers(): User[] {
-  return [];
-}
-
 export type SystemUser = User;
 
 // ── RNF-1.3: límite de intentos fallidos ──────
