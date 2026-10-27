@@ -25,6 +25,7 @@ import {
   markNotificationReadRemote,
   resolveFacialNotificationRemote,
 } from '@/shared/services/notificationService';
+import { getBogotaDateTimeParts } from '@/shared/utils/dates';
 
 type Listener = () => void;
 
@@ -91,6 +92,7 @@ export function pushNotification(
   meta?: NotificationMeta,
 ): Notification {
   const now     = new Date();
+  const local = getBogotaDateTimeParts(now)!;
   const channel = NOTIFICATION_CHANNELS[type];
 
   const notification: Notification = {
@@ -100,8 +102,9 @@ export function pushNotification(
     channel,
     title,
     message,
-    date: now.toISOString().slice(0, 10),
-    time: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
+    createdAt: now.toISOString(),
+    date: local.date,
+    time: local.time,
     read:   false,
     meta,
     // RF-8.3: marcar como pendiente si el canal incluye correo

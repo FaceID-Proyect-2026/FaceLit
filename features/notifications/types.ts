@@ -190,9 +190,11 @@ export interface Notification {
   channel: NotificationChannel;
   title: string;
   message: string;
-  /** ISO date YYYY-MM-DD */
+  /** Original instant for ordering; display date/time use America/Bogota. */
+  createdAt?: string;
+  /** Colombia calendar date YYYY-MM-DD */
   date: string;
-  /** HH:MM */
+  /** Colombia clock time HH:MM */
   time: string;
   read: boolean;
   /** Metadatos específicos del evento */

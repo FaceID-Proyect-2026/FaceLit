@@ -63,6 +63,7 @@ export function useNotifications(opts?: {
 
     // Siempre más reciente primero
     return [...list].sort((a, b) => {
+      if (a.createdAt && b.createdAt) return Date.parse(b.createdAt) - Date.parse(a.createdAt);
       const ta = `${a.date}T${a.time}`;
       const tb = `${b.date}T${b.time}`;
       return tb.localeCompare(ta);

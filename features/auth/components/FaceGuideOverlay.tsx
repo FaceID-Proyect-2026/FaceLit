@@ -119,7 +119,7 @@ export default function FaceGuideOverlay({
           <View style={[s.oval, guideStyle, { borderColor: color, borderStyle }]} />
           <View style={[s.badge, { backgroundColor: color + 'F2', bottom: guideBottom }]}>
             <Ionicons name={icon as any} size={16} color={Colors.white} />
-            <Text style={s.badgeText} numberOfLines={2}>{message}</Text>
+            <Text style={s.badgeText} numberOfLines={requiresLiveness ? 4 : 2}>{message}</Text>
           </View>
         </View>
         {showStability && (
@@ -209,7 +209,7 @@ export default function FaceGuideOverlay({
     return renderOvalMessage(
       STATE_GREEN,
       'sync-outline',
-      livenessInstruction || t('facialReg.livenessCapturing', 'Mueve la cabeza suavemente hacia un lado'),
+      `Realiza ahora: ${livenessInstruction || 'el reto indicado'}`,
       'solid',
     );
   }
@@ -264,7 +264,7 @@ export default function FaceGuideOverlay({
       return renderOvalMessage(
         STATE_GREEN,
         'body-outline',
-        livenessInstruction || t('facialReg.livenessReady', 'Pulsa capturar y mueve la cabeza suavemente'),
+        `Prepárate con el rostro relajado. ${livenessInstruction || ''}`,
         'solid',
       );
     }

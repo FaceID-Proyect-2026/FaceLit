@@ -552,6 +552,7 @@ export default function ApprenticeFacialScreen() {
                     ref={cameraRef}
                     style={StyleSheet.absoluteFill}
                     facing="front"
+                    mirror
                   />
                   <FaceGuideOverlay
                     primaryColor={theme.primary}

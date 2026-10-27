@@ -167,6 +167,7 @@ export default function InstructorFacialCameraScreen() {
                   ref={cameraRef}
                   style={StyleSheet.absoluteFill}
                   facing="front"
+                  mirror
                 />
                 <FaceGuideOverlay
                   primaryColor={theme.primary}

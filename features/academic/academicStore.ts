@@ -398,7 +398,7 @@ export function markLearnerValidation(learnerId: string, status: ValidationStatu
 export function updateLearnerInfoStore(
   fichaId: string,
   learnerId: string,
-  data: { name?: string; lastname?: string; email?: string; document?: string },
+  data: { name?: string; lastname?: string; email?: string; document?: string; updatedAt?: string },
 ) {
   const ficha   = fichas.find(f => f.id === fichaId);
   const learner = ficha?.learners.find(l => l.id === learnerId);
@@ -417,7 +417,6 @@ export function updateLearnerInfoStore(
     return { success: false, error: 'academic.invalidEmail' };
   }
 
-  const now = new Date().toISOString();
   fichas = fichas.map(f =>
     f.id === fichaId
       ? {
@@ -430,11 +429,10 @@ export function updateLearnerInfoStore(
                   lastname: data.lastname?.trim() ?? l.lastname,
                   email:    nextEmail             ?? l.email,
                   document: nextDoc               ?? l.document,
-                  updatedAt: now,
+                  updatedAt: data.updatedAt ?? l.updatedAt,
                 }
               : l,
           ),
-          updatedAt: now,
         }
       : f,
   );
