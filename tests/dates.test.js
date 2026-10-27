@@ -35,6 +35,16 @@ const notification = {
   id: 'n-date', recipientUserId: 'date-test-owner', type: 'user_profile_updated', category: 'SEGURIDAD',
   channel: 'APP', title: 'Actualización', message: 'Cambios guardados', read: false,
 };
+test.each([
+  ['SECURITY', 'security'], ['SEGURIDAD', 'security'],
+  ['ACADEMIC', 'academic'], ['ACADEMICO', 'academic'],
+  ['ATTENDANCE', 'attendance'], ['ASISTENCIA', 'attendance'],
+  ['FACIAL_RECOGNITION', 'facial'], ['RECONOCIMIENTO_FACIAL', 'facial'],
+  ['TRANSFER', 'transfer'], ['TRASLADO', 'transfer'],
+])('keeps notification category %s readable during the schema migration', async (category, expected) => {
+  api.get.mockResolvedValue({ data: [{ ...notification, category, createdAt: '2026-10-26T02:15:30Z' }] });
+  expect(await fetchNotifications()).toEqual([expect.objectContaining({ category: expected })]);
+});
 test('remote notifications preserve the instant and show Colombia date and clock', async () => {
   api.get.mockResolvedValue({ data: [{ ...notification, createdAt: '2026-10-26T02:15:30Z' }] });
   expect(await fetchNotifications()).toEqual([expect.objectContaining({

@@ -26,7 +26,7 @@ export default function ProgramFormModal({ visible, onClose, editId }: ProgramFo
   const existing = editId ? getProgram(editId) : null;
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
-  const inputBg = isDark ? 'rgba(255,255,255,0.05)' : '#FAFAFA';
+  const inputBg = isDark ? 'rgba(255,255,255,0.05)' : Colors.light.inputBg;
   const inputBorder = isDark ? 'rgba(255,255,255,0.30)' : '#BBBBBB';
 
   const [name, setName] = useState('');

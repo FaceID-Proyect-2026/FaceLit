@@ -4,6 +4,18 @@ FaceLit is the SENA academic attendance application for apprentices, instructors
 
 ## Architecture and repository structure
 
+The frontend keeps three logical layers: Expo Router entries and feature components
+present the UI; feature hooks coordinate application flows; HTTP services and stores
+provide external access and state. Large academic, attendance, facial and password
+screens delegate to `features/*/screens`, `hooks` and `components`. Route URLs remain
+the public boundary. `academicStore.ts` and `csvImport.ts` preserve their public
+exports while separating state ownership, operations, parsing and preview rules.
+
+Keep dependencies pointing from a view to its feature hook, then to services/state.
+Feature hooks must not import their own screens. Reuse shared components and rules
+instead of duplicating role-specific screens. The observer stores keep one state and
+subscription lifecycle across the extracted operation modules.
+
 ```text
 Expo Router screens -> feature hooks/stores -> API adapters -> FaceLit backend
                                 |

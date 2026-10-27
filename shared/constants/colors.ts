@@ -35,20 +35,20 @@ export const Colors = {
 
   // ── NEUTROS (Light Theme) ───────────────────────────────────────
   light: {
-    background:        '#FAFAFA',     // Fondo blanco/gris muy claro neutro
-    surface:           '#FFFFFF',     // Tarjetas principales en blanco puro
-    surfaceSecondary:  '#F1F5F9',     // Fondo sutil para el contenedor del teléfono
-    card:              '#FFFFFF',     // Alias de compatibilidad para tarjetas
-    border:            '#E2E8F0',     // Bordes limpios en gris claro
-    borderStrong:      '#CBD5E1',     // Bordes destacados
-    inputBg:           '#FFFFFF',
-    inputBorder:       '#D1D5DB',
+    background:        '#F4F1EA',     // Blanco hueso suave para el fondo global
+    surface:           '#FBF8F1',     // Tarjetas marfil, diferenciadas del fondo
+    surfaceSecondary:  '#EDE7DC',     // Superficies secundarias cálidas
+    card:              '#FBF8F1',     // Alias de compatibilidad para tarjetas
+    border:            '#DED7CC',     // Bordes cálidos para separar superficies
+    borderStrong:      '#CEC4B5',     // Bordes destacados
+    inputBg:           '#F8F5EE',
+    inputBorder:       '#CEC4B5',
     text:              '#0F172A',     // Títulos principales en gris oscuro/grafito
     textSecondary:     '#475569',     // Texto del párrafo descriptivo
     textMuted:         '#64748B',     // Texto apagado
     placeholder:       '#94A3B8',
     link:              '#D97706',     // Ámbar para links y acciones secundarias
-    gradient:          ['#FAFAFA', '#FFFFFF', '#F1F5F9'] as const,
+    gradient:          ['#F4F1EA', '#FBF8F1', '#EDE7DC'] as const,
   },
 
   // ── SUPERFICIES (Dark Theme - Carbón con tinte verde) ───────────

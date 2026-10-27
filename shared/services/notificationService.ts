@@ -18,6 +18,12 @@ type BackendNotification = {
 };
 
 const categoryMap: Record<string, NotificationCategory> = {
+  ACADEMIC: 'academic',
+  ATTENDANCE: 'attendance',
+  FACIAL_RECOGNITION: 'facial',
+  SECURITY: 'security',
+  TRANSFER: 'transfer',
+  // Read historical responses during an expand/contract rollout as well.
   ACADEMICO: 'academic',
   ASISTENCIA: 'attendance',
   RECONOCIMIENTO_FACIAL: 'facial',

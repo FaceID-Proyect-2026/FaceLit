@@ -68,7 +68,7 @@ function RejectModal({
   const [reason, setReason] = useState('');
   const text    = isDark ? Colors.dark.text      : Colors.light.text;
   const muted   = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
-  const cardBg  = isDark ? Colors.dark.surface   : Colors.white;
+  const cardBg  = isDark ? Colors.dark.surface   : Colors.light.surface;
   const border  = isDark ? Colors.dark.border    : Colors.light.border;
 
   if (!visible) return null;
@@ -86,7 +86,7 @@ function RejectModal({
           placeholder={t('academic.transferRejectReason')}
           placeholderTextColor={muted}
           multiline
-          style={[rm.input, { color: text, borderColor: border, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#FAFAFA' } as any]}
+          style={[rm.input, { color: text, borderColor: border, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : Colors.light.inputBg } as any]}
         />
         <View style={rm.actions}>
           <TouchableOpacity onPress={onCancel} style={[rm.btn, { borderColor: border }]} activeOpacity={0.8}>

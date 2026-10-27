@@ -93,13 +93,22 @@ assert.equal(entry({ platform: 'android', ready: false }).result, null);
 view = entry({ platform: 'android', auth: { loading: false, isAuthenticated: true, role: 'APPRENTICE' } });
 assert.equal(view.result.props.href, '/apprentice');
 
-// Ensure the actual landing body (including its existing login button) is unchanged.
-function landingBody(text) {
+// Preserve the landing behavior while allowing the approved light-palette tokens.
+function landingBody(text, readDependency) {
   const ast = ts.createSourceFile('index.tsx', text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
-  return ast.statements.find(node => ts.isFunctionDeclaration(node) && node.name?.text === 'LandingScreen').body.getText(ast).replace(/\r\n/g, '\n');
+  const declaration = ast.statements.find(node => ts.isFunctionDeclaration(node) && node.name?.text === 'LandingScreen');
+  if (declaration) return declaration.body.getText(ast).replace(/\r\n/g, '\n');
+  const imported = ast.statements.find(node => ts.isImportDeclaration(node) && node.importClause?.name?.text === 'LandingScreen');
+  assert.ok(imported, 'The entry route must resolve the existing landing screen');
+  return landingBody(readDependency(imported.moduleSpecifier.text.replace(/^@\//, '') + '.tsx'), readDependency);
 }
-assert.equal(landingBody(fs.readFileSync(path.join(root, 'app/index.tsx'), 'utf8')),
-  landingBody(execFileSync('git', ['show', 'HEAD:app/index.tsx'], { cwd: root, encoding: 'utf8' })));
+const readCurrent = file => fs.readFileSync(path.join(root, file), 'utf8');
+const readHead = file => execFileSync('git', ['show', `HEAD:${file}`], { cwd: root, encoding: 'utf8' });
+const expectedLandingBody = landingBody(readHead('app/index.tsx'), readHead)
+  .replace("backgroundColor: isDark ? '#02180E' : Colors.white", "backgroundColor: isDark ? '#02180E' : Colors.light.surface")
+  .replace(": ['#FAFAFA', '#FFFFFF', '#F1F5F9']", ': Colors.light.gradient')
+  .replace("backgroundColor: isDark ? '#1A1A1A' : '#FFFFFF'", "backgroundColor: isDark ? '#1A1A1A' : Colors.light.surface");
+assert.equal(landingBody(readCurrent('app/index.tsx'), readCurrent), expectedLandingBody);
 
 if (process.argv.includes('--exported-web')) {
   const entryHtml = fs.readFileSync(path.join(root, '.expo/entry-validation/index.html'), 'utf8');

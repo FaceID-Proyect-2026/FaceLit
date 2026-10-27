@@ -56,7 +56,7 @@ export default function CalendarReportScreen() {
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
-  const cardBg = isDark ? Colors.dark.card : Colors.white;
+  const cardBg = isDark ? Colors.dark.card : Colors.light.surface;
   const border = isDark ? Colors.dark.border : Colors.light.border;
   const bg = isDark ? Colors.dark.background : Colors.light.background;
 
