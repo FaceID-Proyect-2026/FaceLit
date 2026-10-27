@@ -70,7 +70,7 @@ test('registers an attendance event using the explicit timestamp and score', asy
 
 test('preserves challenge frames in a facial capture request', async () => {
   const payload = { idRecordEnvironment: 'qa-session', idDevice: 'qa-device', imageBase64: 'synthetic-placeholder',
-    imageFrames: ['synthetic-frame-1', 'synthetic-frame-2'], livenessChallenge: 'BLINK', livenessChallenges: ['BLINK'], origin: 'PC' };
+    imageFrames: ['synthetic-frame-1', 'synthetic-frame-2'], livenessChallenge: 'MOVE_UP', livenessChallenges: ['MOVE_UP'], origin: 'PC' };
   await registerFacialAttendanceFromImage(payload);
   expect(requests[0].url).toBe('/api/facial/events/from-image');
   expect(JSON.parse(requests[0].data)).toEqual(payload);
@@ -90,7 +90,7 @@ test('updates an excuse using PATCH and the agreed identifiers', async () => {
 
 test('enrolment uses the authenticated backend and sends no service credential or claimed audit author', async () => {
   await registerFacialEmbeddingFromImage({ userId: 'owner', imageBase64: 'synthetic',
-    imageFrames: ['one', 'two', 'three'], livenessChallenges: ['BLINK'], resetToken: 'grant', createdBy: 'spoofed' });
+    imageFrames: ['one', 'two', 'three'], livenessChallenges: ['MOVE_UP'], resetToken: 'grant', createdBy: 'spoofed' });
   expect(requests[0].url).toBe('/api/facial/embeddings/from-image');
   expect(requests[0].headers.get('X-API-Key')).toBeUndefined();
   expect(JSON.parse(requests[0].data)).toMatchObject({ user_id: 'owner', reset_token: 'grant', image_frames: ['one', 'two', 'three'] });
@@ -99,7 +99,7 @@ test('enrolment uses the authenticated backend and sends no service credential o
 
 test('liveness also uses the backend without exposing the internal key', async () => {
   respond({ live: true, reason: 'LIVE_OK' });
-  await expect(validateFacialLiveness({ imageFrames: ['one', 'two', 'three'], livenessChallenge: 'BLINK' })).resolves.toEqual({ live: true, reason: 'LIVE_OK' });
+  await expect(validateFacialLiveness({ imageFrames: ['one', 'two', 'three'], livenessChallenge: 'MOVE_UP' })).resolves.toEqual({ live: true, reason: 'LIVE_OK' });
   expect(requests[0].url).toBe('/api/facial/embeddings/liveness-check');
   expect(requests[0].headers.get('X-API-Key')).toBeUndefined();
 });

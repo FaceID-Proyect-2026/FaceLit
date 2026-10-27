@@ -210,7 +210,7 @@ export default function FaceGuideOverlay({
     return renderOvalMessage(
       STATE_BLUE,
       'hourglass-outline',
-      'Validando… Relaja el rostro.',
+      'Captura terminada. Validando el reto…',
       'solid',
     );
   }
@@ -219,7 +219,7 @@ export default function FaceGuideOverlay({
     return renderOvalMessage(
       STATE_GREEN,
       'sync-outline',
-      livenessInstruction || 'Haz el reto ahora',
+      livenessInstruction ? `${livenessInstruction}. Hazlo ahora.` : 'Haz el reto ahora',
       'solid',
     );
   }
@@ -274,7 +274,7 @@ export default function FaceGuideOverlay({
       return renderOvalMessage(
         STATE_GREEN,
         'body-outline',
-        `Espera sin moverte. ${livenessInstruction || ''}`,
+        'Prepárate con el rostro relajado. Espera a que aparezca «Hazlo ahora».',
         'solid',
       );
     }

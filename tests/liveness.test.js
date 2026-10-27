@@ -2,7 +2,8 @@ import { act, renderHook } from '@testing-library/react-native';
 import { Platform } from 'react-native';
 import { useFacialRegistration } from '@/features/auth/hooks/useFacialRegistration';
 import { useSessionAttendanceCapture } from '@/features/facial/useSessionAttendanceCapture';
-import { LIVENESS_FRAME_COUNT, LIVENESS_FRAME_DELAY_MS, LIVENESS_PREPARATION_MS, buildLivenessSequence, replaceLivenessChallengeAtIndex } from '@/features/facial/livenessChallenges';
+import { LIVENESS_CHALLENGES, LIVENESS_FRAME_COUNT, LIVENESS_FRAME_DELAY_MS, LIVENESS_PREPARATION_MS, buildLivenessSequence, replaceLivenessChallengeAtIndex } from '@/features/facial/livenessChallenges';
+import * as challengeRules from '@/features/facial/livenessChallenges';
 import { validateFacialLiveness, registerFacialEmbeddingFromImage } from '@/shared/services/facialEmbeddingService';
 import { registerFacialAttendanceFromImage } from '@/shared/services/facialAttendanceService';
 
@@ -45,6 +46,9 @@ async function capture(view, label) {
 }
 
 test('selects two distinct challenges and replaces only the failed challenge', () => {
+  expect(LIVENESS_CHALLENGES.map(challenge => challenge.code)).toEqual([
+    'MOVE_UP', 'MOVE_DOWN', 'MOVE_CLOSER', 'MOVE_AWAY',
+  ]);
   for (let index = 0; index < 100; index += 1) {
     const sequence = buildLivenessSequence();
     expect(new Set(sequence.map(item => item.code)).size).toBe(2);
@@ -56,6 +60,25 @@ test('selects two distinct challenges and replaces only the failed challenge', (
 });
 
 describe.each(modes)('%s challenge flow', (_name, hook, save) => {
+  test.each(LIVENESS_CHALLENGES)('forwards $code and its complete frames through both validations', async challenge => {
+    const partner = LIVENESS_CHALLENGES.find(item => item.code !== challenge.code);
+    jest.spyOn(challengeRules, 'buildLivenessSequence').mockReturnValue([challenge, partner]);
+    const view = await start(hook);
+    expect(view.result.current.livenessChallenge.code).toBe(challenge.code);
+    await capture(view, 'requested');
+    expect(validateFacialLiveness).toHaveBeenNthCalledWith(1, {
+      imageFrames: frames('requested'), livenessChallenge: challenge.code,
+    });
+    expect(save).not.toHaveBeenCalled();
+    await capture(view, 'partner');
+    expect(validateFacialLiveness).toHaveBeenNthCalledWith(2, {
+      imageFrames: frames('partner'), livenessChallenge: partner.code,
+    });
+    expect(save).toHaveBeenCalledWith(expect.objectContaining({
+      imageFrames: [...frames('requested'), ...frames('partner')],
+      livenessChallenges: [challenge.code, partner.code],
+    }));
+  });
   test('waits for preparation and finishes capturing the action before requesting validation', async () => {
     jest.replaceProperty(Platform, 'OS', 'android');
     const view = await start(hook);

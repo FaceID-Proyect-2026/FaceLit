@@ -6,18 +6,11 @@ export const LIVENESS_FRAME_DELAY_MS = 500;
 export const LIVENESS_PREPARATION_MS = 2000;
 
 export type LivenessChallenge = {
-  code: 'BLINK' | 'OPEN_CLOSE_MOUTH' | 'NOD' | 'SHAKE_HEAD' | 'KISS_CAMERA' | 'MOVE_LEFT' | 'MOVE_RIGHT' | 'MOVE_UP' | 'MOVE_DOWN' | 'MOVE_CLOSER' | 'MOVE_AWAY';
+  code: 'MOVE_UP' | 'MOVE_DOWN' | 'MOVE_CLOSER' | 'MOVE_AWAY';
   label: string;
 };
 
 export const LIVENESS_CHALLENGES: LivenessChallenge[] = [
-  { code: 'BLINK', label: 'Cierra y abre los ojos despacio' },
-  { code: 'OPEN_CLOSE_MOUTH', label: 'Abre y cierra la boca' },
-  { code: 'NOD', label: 'Asiente y vuelve al centro' },
-  { code: 'SHAKE_HEAD', label: 'Niega y vuelve al centro' },
-  { code: 'KISS_CAMERA', label: 'Lanza un beso y relaja los labios' },
-  { code: 'MOVE_LEFT', label: 'Muévete a la izquierda y quédate ahí' },
-  { code: 'MOVE_RIGHT', label: 'Muévete a la derecha y quédate ahí' },
   { code: 'MOVE_UP', label: 'Mira arriba y mantén la posición' },
   { code: 'MOVE_DOWN', label: 'Mira abajo y mantén la posición' },
   { code: 'MOVE_CLOSER', label: 'Acércate un poco a la cámara' },
