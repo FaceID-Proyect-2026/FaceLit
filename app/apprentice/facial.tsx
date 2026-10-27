@@ -154,6 +154,7 @@ export default function ApprenticeFacialScreen() {
     screenState,
     isTaking,
     isValidatingLiveness,
+    isRegistering,
     quality,
     successModalVisible,
     errorModalVisible,
@@ -539,7 +540,8 @@ export default function ApprenticeFacialScreen() {
               onCancel={handleCancelAndReturn}
               requiresLiveness
               autoCapture
-              paused={isValidatingLiveness || errorModalVisible || successModalVisible}
+              isProcessing={isValidatingLiveness || isRegistering}
+              paused={isValidatingLiveness || isRegistering || errorModalVisible || successModalVisible}
               livenessInstruction={livenessInstruction}
             />
           ) : (
@@ -561,6 +563,7 @@ export default function ApprenticeFacialScreen() {
                     quality={quality}
                     requiresLiveness
                     livenessCaptureActive={isTaking}
+                    isProcessing={isValidatingLiveness || isRegistering}
                     livenessInstruction={livenessInstruction}
                     onConfirm={handleConfirmCamera}
                     onCancel={handleCancelAndReturn}

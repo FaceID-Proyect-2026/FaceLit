@@ -1353,6 +1353,8 @@ const fr = {
     register: "Enregistrer Visage",
     verify: "Vérifier Identité",
     setup: {
+      chipsLoadFailed: "Impossible de charger les groupes. Vérifiez la connexion et réessayez.",
+      noChips: "Ce formateur ne dispose d’aucun groupe actif dans ses programmes.",
       title: "Configuration de la session",
       subtitle:
         "Sélectionnez l’environnement, le formateur et le groupe de formation pour la session de reconnaissance faciale.",

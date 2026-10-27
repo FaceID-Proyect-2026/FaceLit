@@ -41,6 +41,7 @@ export default function InstructorFacialCameraScreen() {
     screenState,
     isTaking,
     isValidatingLiveness,
+    isRegistering,
     quality,
     successModalVisible,
     errorModalVisible,
@@ -154,7 +155,8 @@ export default function InstructorFacialCameraScreen() {
             onCancel={handleCancelAndReturn}
             requiresLiveness
             autoCapture
-            paused={isValidatingLiveness || errorModalVisible || successModalVisible}
+            isProcessing={isValidatingLiveness || isRegistering}
+            paused={isValidatingLiveness || isRegistering || errorModalVisible || successModalVisible}
             livenessInstruction={livenessInstruction}
           />
         ) : (
@@ -176,6 +178,7 @@ export default function InstructorFacialCameraScreen() {
                   quality={quality}
                   requiresLiveness
                   livenessCaptureActive={isTaking}
+                  isProcessing={isValidatingLiveness || isRegistering}
                   livenessInstruction={livenessInstruction}
                   onConfirm={handleConfirmCamera}
                   onCancel={handleCancelAndReturn}

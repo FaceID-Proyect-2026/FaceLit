@@ -174,13 +174,14 @@ interface WebCameraProps {
   requiresLiveness?: boolean;
   autoCapture?: boolean;
   paused?: boolean;
+  isProcessing?: boolean;
   livenessInstruction?: string;
 }
 
 export default function WebCamera({
   primaryColor, isTaking, isPositioning, screenState, quality,
   onCapture, onShutter, onConfirm, onCancel, onFaceReady, requiresLiveness = false, autoCapture = false,
-  paused = false, livenessInstruction,
+  paused = false, isProcessing = false, livenessInstruction,
 }: WebCameraProps) {
   const { t } = useTranslation();
   const videoRef      = useRef<HTMLVideoElement>(null);
@@ -220,7 +221,6 @@ export default function WebCamera({
       stableCount.current = 0;
       setStableFrames(0);
       if (paused) {
-        setWarning('noSkin');
         faceReadyRef.current = false;
       }
       return;
@@ -451,6 +451,7 @@ export default function WebCamera({
           liveWarning={warning}
           requiresLiveness={requiresLiveness}
           livenessCaptureActive={capturingSequence}
+          isProcessing={isProcessing}
           livenessInstruction={livenessInstruction}
           stableFrames={stableFrames}
           requiredFrames={REQUIRED_STABLE_FRAMES}

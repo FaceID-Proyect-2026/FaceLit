@@ -10,7 +10,7 @@ import { useTheme } from "@/shared/contexts/ThemeContext";
 import { useAppDialog } from "@/shared/hooks/useAppDialog";
 import MobileFacialNotice from "@/shared/components/facial/MobileFacialNotice";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
@@ -43,12 +43,16 @@ export default function FacialManagementScreen() {
     selectedInstructorId,
     setSelectedInstructorId,
     chips,
+    chipsLoading,
+    chipsError,
+    reloadChips,
     selectedChipId,
     setSelectedChipId,
     loading,
     saving,
     saveSession,
   } = useEnvironmentSession();
+  useFocusEffect(useCallback(() => { reloadChips(); }, [reloadChips]));
   const restoredConfigRef = useRef(false);
   const remoteSessionKeyRef = useRef<string | null>(null);
 
@@ -229,7 +233,7 @@ export default function FacialManagementScreen() {
   ];
 
   const hasSettings = !!settings;
-  const canSave = !!selectedEnvironment && !!selectedInstructor && !!selectedChip && hasSettings && !saving;
+  const canSave = !!selectedEnvironment && !!selectedInstructor && !!selectedChip && hasSettings && !saving && !chipsLoading && !chipsError;
   const handleContinueSession = () => router.replace(Routes.INSTRUCTOR.FACIAL_CAMERA as any);
 
   const handleCreateEnvironment = async () => {
@@ -262,6 +266,7 @@ export default function FacialManagementScreen() {
   };
 
   const handleSelectInstructor = (idInstructor: string) => {
+    if (idInstructor === selectedInstructorId) return;
     setSelectedInstructorId(idInstructor);
     void saveSectionDraft({ instructorId: idInstructor || undefined, fichaId: undefined });
   };
@@ -447,12 +452,20 @@ export default function FacialManagementScreen() {
               value={selectedChipId}
               options={fichaOptions}
               onSelect={handleSelectChip}
+              error={chipsError ? t("facial.setup.chipsLoadFailed") : undefined}
               placeholder={
-                selectedInstructorId
+                chipsLoading ? t("common.loading") : selectedInstructorId
                   ? t("facial.setup.placeholders.ficha")
                   : t("facial.setup.placeholders.instructorFirst")
               }
             />
+
+            {selectedInstructorId && !chipsLoading && (chipsError || chips.length === 0) ? (
+              <View>
+                {!chipsError ? <Text style={{ color: muted }}>{t("facial.setup.noChips")}</Text> : null}
+                <AppButton title={t("dataState.retry")} variant="outline" onPress={reloadChips} />
+              </View>
+            ) : null}
 
             <AppButton
               title={t("facial.setup.settingsButton")}

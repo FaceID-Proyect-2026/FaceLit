@@ -78,7 +78,7 @@ describe.each(modes)('%s challenge flow', (_name, hook, save) => {
     const firstCode = view.result.current.livenessChallenge.code;
     await capture(view, 'first');
     expect(view.result.current.activeChallengeIndex).toBe(1);
-    expect(view.result.current.livenessInstruction).toContain('Primer reto correcto');
+    expect(view.result.current.livenessInstruction).toContain('Reto 2/2');
     expect(save).not.toHaveBeenCalled();
     const failedCode = view.result.current.livenessChallenge.code;
     expect(failedCode).not.toBe(firstCode);

@@ -1466,6 +1466,8 @@ const es = {
     register: "Registrar Rostro",
     verify: "Verificar Identidad",
     setup: {
+      chipsLoadFailed: "No se pudieron cargar las fichas. Comprueba la conexión y reintenta.",
+      noChips: "Este instructor no tiene fichas activas disponibles en sus programas.",
       title: "Configuración de sesión",
       subtitle:
         "Selecciona el ambiente, instructor y ficha para la jornada de reconocimiento facial.",

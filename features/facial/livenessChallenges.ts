@@ -11,15 +11,15 @@ export type LivenessChallenge = {
 };
 
 export const LIVENESS_CHALLENGES: LivenessChallenge[] = [
-  { code: 'BLINK', label: 'Pestañea una vez' },
+  { code: 'BLINK', label: 'Cierra y abre los ojos despacio' },
   { code: 'OPEN_CLOSE_MOUTH', label: 'Abre y cierra la boca' },
-  { code: 'NOD', label: 'Asiente con la cabeza' },
-  { code: 'SHAKE_HEAD', label: 'Niega con la cabeza' },
-  { code: 'KISS_CAMERA', label: 'Da un beso a la cámara' },
-  { code: 'MOVE_LEFT', label: 'Mueve tu rostro hacia la izquierda' },
-  { code: 'MOVE_RIGHT', label: 'Mueve tu rostro hacia la derecha' },
-  { code: 'MOVE_UP', label: 'Gira tu rostro hacia arriba' },
-  { code: 'MOVE_DOWN', label: 'Gira tu rostro hacia abajo' },
+  { code: 'NOD', label: 'Asiente y vuelve al centro' },
+  { code: 'SHAKE_HEAD', label: 'Niega y vuelve al centro' },
+  { code: 'KISS_CAMERA', label: 'Lanza un beso y relaja los labios' },
+  { code: 'MOVE_LEFT', label: 'Muévete a la izquierda y quédate ahí' },
+  { code: 'MOVE_RIGHT', label: 'Muévete a la derecha y quédate ahí' },
+  { code: 'MOVE_UP', label: 'Mira arriba y mantén la posición' },
+  { code: 'MOVE_DOWN', label: 'Mira abajo y mantén la posición' },
   { code: 'MOVE_CLOSER', label: 'Acércate un poco a la cámara' },
   { code: 'MOVE_AWAY', label: 'Aléjate un poco de la cámara' },
 ];
@@ -59,11 +59,11 @@ export function replaceLivenessChallengeAtIndex(
 }
 
 export function formatLivenessStep(challenge: LivenessChallenge, index: number): string {
-  return `${index > 0 ? 'Primer reto correcto. ' : ''}Paso ${index + 1}/${LIVENESS_SEQUENCE_LENGTH}: ${challenge.label}`;
+  return `Reto ${index + 1}/${LIVENESS_SEQUENCE_LENGTH}: ${challenge.label}`;
 }
 
 export function buildChallengeFailureMessage(challenge: LivenessChallenge, reason?: string): string {
-  const detail = reason?.match(/El reto era[^.]*\./)?.[0]
+  const detail = reason?.trim()
     ?? `El reto era ${challenge.label.toLowerCase()}.`;
   return `Detalle: ${detail}`;
 }

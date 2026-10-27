@@ -26,6 +26,7 @@ interface FaceGuideOverlayProps {
   liveWarning?:  LiveWarning;
   requiresLiveness?: boolean;
   livenessCaptureActive?: boolean;
+  isProcessing?: boolean;
   livenessInstruction?: string;
   /** Frames consecutivos sin advertencias acumulados */
   stableFrames?:   number;
@@ -79,7 +80,7 @@ const POSITIONING_FALLBACKS = [
 
 export default function FaceGuideOverlay({
   primaryColor, isPositioning, screenState, quality,
-  liveWarning, requiresLiveness = false, livenessCaptureActive = false,
+  liveWarning, requiresLiveness = false, livenessCaptureActive = false, isProcessing = false,
   livenessInstruction,
   stableFrames = 0, requiredFrames = 5, onConfirm, onCancel,
 }: FaceGuideOverlayProps) {
@@ -205,11 +206,20 @@ export default function FaceGuideOverlay({
     );
   }
 
+  if (isProcessing) {
+    return renderOvalMessage(
+      STATE_BLUE,
+      'hourglass-outline',
+      'Validando… Relaja el rostro.',
+      'solid',
+    );
+  }
+
   if (requiresLiveness && livenessCaptureActive) {
     return renderOvalMessage(
       STATE_GREEN,
       'sync-outline',
-      `Realiza ahora: ${livenessInstruction || 'el reto indicado'}`,
+      livenessInstruction || 'Haz el reto ahora',
       'solid',
     );
   }
@@ -264,7 +274,7 @@ export default function FaceGuideOverlay({
       return renderOvalMessage(
         STATE_GREEN,
         'body-outline',
-        `Prepárate con el rostro relajado. ${livenessInstruction || ''}`,
+        `Espera sin moverte. ${livenessInstruction || ''}`,
         'solid',
       );
     }
