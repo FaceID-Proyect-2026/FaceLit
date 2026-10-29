@@ -15,15 +15,7 @@ import {
   getProgramsSnapshot,
   subscribe as subscribeAcademic,
 } from '@/features/academic/academicStore';
-import {
-  getSnapshot as getEnvironmentsSnapshot,
-  subscribe as subscribeEnvironments,
-} from '@/features/environments/environmentsStore';
-import {
-  getSchedulesSnapshot,
-  subscribe as subscribeSchedules,
-} from '@/features/schedules/schedulesStore';
-import { resolveAttendance, type ResolvedAttendance } from './useAttendance';
+import { useAttendance, type ResolvedAttendance } from './useAttendance';
 
 // ── Tipos derivados ──────────────────────────────────────────────────────────
 
@@ -105,12 +97,10 @@ export function todayISO(): string {
 // ── Hook principal ───────────────────────────────────────────────────────────
 
 export function useAttendanceRF6() {
-  // Suscribirse a los 3 stores para que el hook se actualice cuando cambian
+  // Keep academic summaries in sync with the real attendance source.
   useSyncExternalStore(subscribeAcademic, getFichasSnapshot);
-  useSyncExternalStore(subscribeSchedules, getSchedulesSnapshot);
-  useSyncExternalStore(subscribeEnvironments, getEnvironmentsSnapshot);
 
-  const allResolved = useMemo(() => resolveAttendance(), []);
+  const allResolved = useAttendance();
 
   // ── RF-6.1 — Tarjetas por programa ────────────────────────────────────────
 
@@ -287,6 +277,9 @@ export function useAttendanceRF6() {
   }, [allResolved]);
 
   return {
+    loading: allResolved.loading,
+    error: allResolved.error,
+    retry: allResolved.retry,
     allResolved,
     getFichaCardsForProgram,
     getFichaTable,

@@ -1,7 +1,9 @@
+import RemoteDataState from '@/shared/components/ui/RemoteDataState';
 import { findCurrentInstructor, getFichasForInstructor } from "@/features/academic/currentAcademic";
 import { getProgramDisplayName } from "@/features/academic/types";
 import { useAcademic } from "@/features/academic/useAcademic";
 import { useAttendance } from "@/features/attendance/useAttendance";
+import { consumeFacialCameraGuard } from "@/features/facial/facialStore";
 import { Colors } from "@/shared/constants/colors";
 import { Routes } from "@/shared/constants/routes";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
@@ -10,7 +12,7 @@ import { useTheme } from "@/shared/contexts/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, useWindowDimensions } from "react-native";
 
@@ -34,6 +36,12 @@ export default function InstructorDashboard() {
   const { allFichas, allInstructors, allPrograms } = useAcademic();
   const attendanceRecords = useAttendance();
   const [fichaSearch, setFichaSearch] = useState("");
+
+  useEffect(() => {
+    if (consumeFacialCameraGuard()) {
+      router.replace(Routes.INSTRUCTOR.FACIAL_EXIT as any);
+    }
+  }, []);
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
@@ -109,6 +117,7 @@ export default function InstructorDashboard() {
 
   const displayName = user?.firstName ?? user?.name ?? user?.email?.split("@")[0] ?? t("users.roles.INSTRUCTOR");
 
+  if (attendanceRecords.loading || attendanceRecords.error) return <RemoteDataState loading={attendanceRecords.loading} error={attendanceRecords.error} onRetry={attendanceRecords.retry} />;
   return (
     <View style={[ads.safe, { backgroundColor: bg }]}>
       <ScrollView contentContainerStyle={ads.scroll} showsVerticalScrollIndicator={false}>

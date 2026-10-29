@@ -144,7 +144,7 @@ export default function LoginScreen() {
   // ── Colores locales ───────────────────────────
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
-  const cardBg = isDark ? Colors.dark.surface : Colors.white;
+  const cardBg = isDark ? Colors.dark.surface : Colors.light.surface;
   const inputBg = isDark ? Colors.dark.inputBg : Colors.light.inputBg;
   const inputBorder = isDark ? Colors.dark.inputBorder : Colors.light.inputBorder;
   const cardBorder = isDark ? Colors.dark.border : Colors.light.border;
@@ -274,6 +274,9 @@ export default function LoginScreen() {
                     <TouchableOpacity
                       onPress={() => setShowPassword(v => !v)}
                       style={s.eyeBtn}
+                      accessibilityRole="button"
+                      accessibilityLabel={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                      accessibilityState={{ checked: showPassword }}
                     >
                       <Ionicons
                         name={showPassword ? 'eye-off-outline' : 'eye-outline'}
@@ -463,8 +466,8 @@ const s = StyleSheet.create({
     paddingHorizontal: 14, flexDirection: 'row',
     alignItems: 'center', gap: 10,
   },
-  input: { flex: 1, fontSize: FontSize.lg, outlineStyle: 'none' } as any,
-  eyeBtn: { padding: 4 },
+  input: { flex: 1, minWidth: 0, flexShrink: 1, fontSize: FontSize.lg, outlineStyle: 'none' } as any,
+  eyeBtn: { width: 36, height: 40, flexShrink: 0, alignItems: 'center', justifyContent: 'center' },
   errorText: { color: Colors.error, fontSize: FontSize.xs, marginTop: 3 },
   helperText: { fontSize: FontSize.xs, marginTop: 4 },
   policyCard: { borderRadius: 14, borderWidth: 1, padding: 14, marginTop: 4, marginBottom: 4 },

@@ -9,7 +9,7 @@ import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
-import { useAuthGuard } from '@/shared/hooks/useAuthGuard';
+import { useRoleGuard } from '@/shared/hooks/useRoleGuard';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, router } from 'expo-router';
 import { useState } from 'react';
@@ -17,10 +17,10 @@ import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function AdminLayout() {
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const { theme, isDark } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { canRenderContent } = useAuthGuard(isAuthenticated, '/auth/login', authLoading);
+  const { canRenderContent } = useRoleGuard({ isAuthenticated, role: user?.role ?? null, allowedRoles: ['COORDINATOR', 'ADMINISTRATOR'], authLoading });
   const { unreadCount } = useNotifications();
 
   if (!canRenderContent) {
@@ -116,10 +116,6 @@ export default function AdminLayout() {
           }}
         />
         <Stack.Screen name="academic/fichas/[id]" />
-        <Stack.Screen name="schedules/index" />
-        <Stack.Screen name="schedules/register" />
-        <Stack.Screen name="schedules/[id]" />
-        <Stack.Screen name="schedules/exceptions" />
         <Stack.Screen name="attendance/index" />
         <Stack.Screen name="attendance/[id]" />
         <Stack.Screen name="reports/index" />

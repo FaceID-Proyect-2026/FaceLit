@@ -1,3 +1,4 @@
+import RemoteDataState from '@/shared/components/ui/RemoteDataState';
 // ─────────────────────────────────────────────
 //  app/admin/attendance/history.tsx
 //  RF-6.3 — Historial de asistencia tipo bandeja
@@ -11,10 +12,7 @@
 //  IMPORTANTE: este componente NO gestiona historial de
 //  navegación de la app. Solo muestra EVENTOS DE ASISTENCIA
 //  (inasistencias/retrasos reales) del store de asistencia.
-//  Los datos quemados de ATTENDANCE_EVENTS viven en
-//  features/attendance/types.ts y son solo datos de prueba
-//  hasta conectar la API real; no representan historial de
-//  acciones del usuario.
+//  Attendance history is loaded from the existing backend matrix.
 // ─────────────────────────────────────────────
 import { getFichasSnapshot } from '@/features/academic/academicStore';
 import {
@@ -53,7 +51,8 @@ function subtractMonths(months: number): string {
 export default function AttendanceHistoryScreen({ selectedProgramId }: Props) {
   const { isDark, theme } = useTheme();
   const { t, i18n }       = useTranslation();
-  const { getHistory }    = useAttendanceRF6();
+  const historyState = useAttendanceRF6();
+  const { getHistory } = historyState;
 
   // ── Estado persistido desde el store ─────────
   const ui = useSyncExternalStore(subscribeAttendanceUI, getAttendanceUISnapshot);
@@ -67,7 +66,7 @@ export default function AttendanceHistoryScreen({ selectedProgramId }: Props) {
   const cardBg  = theme.surface;
   const border  = theme.border;
   const bg      = isDark ? Colors.dark.background  : Colors.light.background;
-  const inputBg = isDark ? 'rgba(255,255,255,0.05)' : '#FAFAFA';
+  const inputBg = isDark ? 'rgba(255,255,255,0.05)' : Colors.light.inputBg;
 
   // ── IDs de fichas del programa seleccionado ──
   const fichaIdsInProgram = useMemo(() => {
@@ -200,6 +199,7 @@ export default function AttendanceHistoryScreen({ selectedProgramId }: Props) {
   // ─────────────────────────────────────────────
   //  RENDER
   // ─────────────────────────────────────────────
+  if (historyState.loading || historyState.error) return <RemoteDataState loading={historyState.loading} error={historyState.error} onRetry={historyState.retry} />;
   return (
     <View style={[s.root, { backgroundColor: bg }]}>
       {/* Barra de búsqueda */}

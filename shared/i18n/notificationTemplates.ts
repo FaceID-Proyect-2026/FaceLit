@@ -1,6 +1,9 @@
+import { notificationLifecycleTemplates } from './notificationLifecycleTemplates';
 // App-only templates for events added to the backend notification catalog.
 export const notificationTemplates = {
   es: {
+    ...notificationLifecycleTemplates.es,
+    sessionUi: { configuredBy: 'Instructor que configuró la sesión', responsibleInstructor: 'Instructor responsable seleccionado', coordinator: 'Coordinador' },
     resetUi: {
       sentTitle: 'Solicitud enviada', sentMessage: 'Tu solicitud fue enviada al coordinador. Cuando la apruebe podrás registrar tu rostro nuevamente.',
       requestButton: 'Solicitar restablecimiento facial', errorTitle: 'No se pudo completar la solicitud', errorMessage: 'No se pudo guardar el cambio. Intenta nuevamente.',
@@ -26,6 +29,8 @@ export const notificationTemplates = {
     context: { date: 'Fecha de la sesión', start: 'Hora de inicio (Colombia)', end: 'Hora de salida (Colombia)' },
   },
   en: {
+    ...notificationLifecycleTemplates.en,
+    sessionUi: { configuredBy: 'Instructor who configured the session', responsibleInstructor: 'Selected responsible instructor', coordinator: 'Coordinator' },
     resetUi: {
       sentTitle: 'Request sent', sentMessage: 'Your request was sent to the coordinator. Once approved, you can register your face again.',
       requestButton: 'Request facial registration reset', errorTitle: 'Unable to complete the request', errorMessage: 'The change could not be saved. Please try again.',
@@ -51,6 +56,8 @@ export const notificationTemplates = {
     context: { date: 'Session date', start: 'Start time (Colombia)', end: 'Check-out time (Colombia)' },
   },
   fr: {
+    ...notificationLifecycleTemplates.fr,
+    sessionUi: { configuredBy: 'Formateur ayant configuré la séance', responsibleInstructor: 'Formateur responsable sélectionné', coordinator: 'Coordinateur' },
     resetUi: {
       sentTitle: 'Demande envoyée', sentMessage: 'Votre demande a été envoyée au coordinateur. Après approbation, vous pourrez enregistrer votre visage à nouveau.',
       requestButton: 'Demander la réinitialisation du visage', errorTitle: 'Impossible de terminer la demande', errorMessage: 'La modification n’a pas pu être enregistrée. Réessayez.',
@@ -76,6 +83,8 @@ export const notificationTemplates = {
     context: { date: 'Date de la séance', start: 'Heure de début (Colombie)', end: 'Heure de départ (Colombie)' },
   },
   de: {
+    ...notificationLifecycleTemplates.de,
+    sessionUi: { configuredBy: 'Lehrkraft, die die Sitzung eingerichtet hat', responsibleInstructor: 'Ausgewählte verantwortliche Lehrkraft', coordinator: 'Koordinator' },
     resetUi: {
       sentTitle: 'Antrag gesendet', sentMessage: 'Ihr Antrag wurde an den Koordinator gesendet. Nach der Genehmigung können Sie Ihr Gesicht erneut registrieren.',
       requestButton: 'Zurücksetzen der Gesichtsregistrierung beantragen', errorTitle: 'Antrag konnte nicht abgeschlossen werden', errorMessage: 'Die Änderung konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.',

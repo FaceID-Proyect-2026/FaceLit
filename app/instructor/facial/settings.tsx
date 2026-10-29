@@ -89,7 +89,12 @@ export default function FacialSettingsScreen() {
     });
 
     if (result.success) {
-      alert('✓', t('facial.settings.saveSuccess'));
+      alert('✓', t('facial.settings.saveSuccess'), [
+        {
+          text: t('common.ok'),
+          onPress: () => router.replace(Routes.INSTRUCTOR.FACIAL as any),
+        },
+      ]);
     } else {
       alert(t('common.error'), t(result.error));
     }

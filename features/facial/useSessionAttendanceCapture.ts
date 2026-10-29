@@ -1,11 +1,13 @@
 import {
+  LIVENESS_SEQUENCE_LENGTH, LIVENESS_FRAME_COUNT, LIVENESS_FRAME_DELAY_MS, LIVENESS_PREPARATION_MS,
+  LIVENESS_CHALLENGES, buildLivenessSequence, replaceLivenessChallengeAtIndex,
+  formatLivenessStep, buildChallengeFailureMessage, clampLivenessIndex,
+} from '@/features/facial/livenessChallenges';
+import type { LivenessChallenge } from '@/features/facial/livenessChallenges';
+import {
   MIN_BRIGHTNESS_SCORE,
   ScreenState,
   CaptureQuality,
-  LIVENESS_FRAME_COUNT,
-  LIVENESS_CHALLENGES,
-  LivenessChallenge,
-  buildLivenessSequence,
 } from '@/features/auth/hooks/useFacialRegistration';
 import { FacialSession } from '@/features/facial/types';
 import { registerFacialAttendanceFromImage } from '@/shared/services/facialAttendanceService';
@@ -17,28 +19,12 @@ import { useTranslation } from 'react-i18next';
 import { Platform } from 'react-native';
 
 const POSITIONING_DELAY_MS = 1500;
-const LIVENESS_SEQUENCE_LENGTH = 3;
-const LIVENESS_START_DELAY_MS = 650;
-const LIVENESS_FRAME_DELAY_MS = 380;
-
-function formatLivenessStep(challenge: LivenessChallenge, index: number): string {
-  return `Paso ${index + 1}/${LIVENESS_SEQUENCE_LENGTH}: ${challenge.label}`;
-}
-
-function buildChallengeFailureMessage(challenge: LivenessChallenge, reason?: string): string {
-  const detail = reason && reason !== 'LIVE_OK' ? `\n\nDetalle: ${reason}` : '';
-  return `No se completó la acción solicitada: ${challenge.label}.${detail}`;
-}
-
-function clampLivenessIndex(index: number): number {
-  return Math.min(Math.max(index, 0), LIVENESS_SEQUENCE_LENGTH - 1);
-}
-
 interface UseSessionAttendanceCaptureOptions {
   session?: FacialSession;
+  eventType?: 'ENTRY' | 'EXIT';
 }
 
-export function useSessionAttendanceCapture({ session }: UseSessionAttendanceCaptureOptions) {
+export function useSessionAttendanceCapture({ session, eventType }: UseSessionAttendanceCaptureOptions) {
   const { t } = useTranslation();
   const [permission, requestPermission] = useCameraPermissions();
   const [screenState, setScreenState] = useState<ScreenState>('idle');
@@ -51,6 +37,7 @@ export function useSessionAttendanceCapture({ session }: UseSessionAttendanceCap
   const [successModalVisible, setSuccessModalVisible] = useState(false);
   const [errorModalTitle, setErrorModalTitle] = useState('No se pudo registrar');
   const [errorModalMessage, setErrorModalMessage] = useState<string | null>(null);
+  const [errorRecoveryMode, setErrorRecoveryMode] = useState<'challenge' | 'capture'>('challenge');
   const [livenessSequence, setLivenessSequence] = useState<LivenessChallenge[]>(() => buildLivenessSequence());
   const [activeChallengeIndex, setActiveChallengeIndex] = useState(0);
   const [livenessFrames, setLivenessFrames] = useState<string[]>([]);
@@ -64,7 +51,9 @@ export function useSessionAttendanceCapture({ session }: UseSessionAttendanceCap
   const canFinish = screenState === 'captured' && quality === 'good' && !isRegistering;
   const safeChallengeIndex = clampLivenessIndex(activeChallengeIndex);
   const livenessChallenge = livenessSequence[safeChallengeIndex] ?? livenessSequence[0] ?? LIVENESS_CHALLENGES[0];
-  const livenessInstruction = formatLivenessStep(livenessChallenge, safeChallengeIndex);
+  const livenessInstruction = screenState === 'captured'
+    ? 'Dos retos correctos. Validando el registro…'
+    : formatLivenessStep(livenessChallenge, safeChallengeIndex);
 
   const clearPositioningTimer = useCallback(() => {
     if (positioningTimer.current) {
@@ -82,7 +71,7 @@ export function useSessionAttendanceCapture({ session }: UseSessionAttendanceCap
     setLivenessFrames([]);
   }, []);
 
-  const resetFailedLivenessGroup = useCallback(() => {
+  const resetFailedLivenessGroup = useCallback((failedChallengeIndex: number) => {
     clearPositioningTimer();
     livenessGroupRef.current += 1;
     livenessValidationRef.current = false;
@@ -90,21 +79,20 @@ export function useSessionAttendanceCapture({ session }: UseSessionAttendanceCap
     setScreenState('idle');
     setPhotoUri(null);
     setPhotoUris([]);
-    setLivenessFrames([]);
-    setActiveChallengeIndex(0);
-    setLivenessSequence((current) => buildLivenessSequence(current.map((challenge) => challenge.code)));
+    setLivenessSequence((current) => replaceLivenessChallengeAtIndex(current, failedChallengeIndex));
     setQuality('checking');
   }, [clearPositioningTimer]);
 
   useEffect(() => {
     return () => {
       clearPositioningTimer();
+      livenessGroupRef.current += 1;
     };
   }, [clearPositioningTimer]);
 
-  const startPositioningSimulation = useCallback(() => {
+  const startPositioningSimulation = useCallback((resetSequence = true) => {
     clearPositioningTimer();
-    randomizeLivenessChallenge();
+    if (resetSequence) randomizeLivenessChallenge();
     setScreenState('positioning');
     positioningTimer.current = setTimeout(() => {
       setScreenState('ready');
@@ -150,6 +138,9 @@ export function useSessionAttendanceCapture({ session }: UseSessionAttendanceCap
   }, [startPositioningSimulation]);
 
   const handleCancelCamera = useCallback(() => {
+    livenessGroupRef.current += 1;
+    livenessValidationRef.current = false;
+    setIsValidatingLiveness(false);
     setScreenState('idle');
     setPhotoUri(null);
     setPhotoUris([]);
@@ -174,16 +165,16 @@ export function useSessionAttendanceCapture({ session }: UseSessionAttendanceCap
       return;
     }
     const challenge = livenessChallenge;
-    const imageFrames = await Promise.all(frames.map((uri) => imageUriToDataUri(uri)));
-
     try {
+      const imageFrames = await Promise.all(frames.map((uri) => imageUriToDataUri(uri)));
       const result = await validateFacialLiveness({
         imageFrames,
         livenessChallenge: challenge.code,
       });
       if (groupId !== livenessGroupRef.current) return;
       if (!result.live) {
-        resetFailedLivenessGroup();
+        resetFailedLivenessGroup(activeChallengeIndex);
+        setErrorRecoveryMode('challenge');
         setErrorModalTitle('Acción no realizada');
         setErrorModalMessage(buildChallengeFailureMessage(challenge, result.reason));
         return;
@@ -192,7 +183,8 @@ export function useSessionAttendanceCapture({ session }: UseSessionAttendanceCap
       if (groupId !== livenessGroupRef.current) return;
       const message = getFacialEmbeddingErrorMessage(error);
       const normalized = message.toLowerCase();
-      resetFailedLivenessGroup();
+      resetFailedLivenessGroup(activeChallengeIndex);
+      setErrorRecoveryMode('challenge');
       setErrorModalTitle(normalized.includes('más de un rostro') || normalized.includes('mas de un rostro')
         ? 'Más de un rostro detectado'
         : 'No se pudo validar la acción');
@@ -230,19 +222,20 @@ export function useSessionAttendanceCapture({ session }: UseSessionAttendanceCap
 
   const handleTakePhotoNative = useCallback(async () => {
     if (!cameraRef.current || isTaking) return;
+    const groupId = livenessGroupRef.current;
     setIsTaking(true);
     try {
       const captures: string[] = [];
-      await new Promise((resolve) => setTimeout(resolve, LIVENESS_START_DELAY_MS));
       for (let index = 0; index < LIVENESS_FRAME_COUNT; index += 1) {
-        const photo = await cameraRef.current.takePictureAsync({ quality: 0.7, skipProcessing: true });
+        const photo = await cameraRef.current.takePictureAsync({ quality: 0.7, skipProcessing: false });
+        if (groupId !== livenessGroupRef.current) return;
         if (photo?.uri) captures.push(photo.uri);
         if (index < LIVENESS_FRAME_COUNT - 1) {
           await new Promise((resolve) => setTimeout(resolve, LIVENESS_FRAME_DELAY_MS));
         }
       }
       if (captures.length === LIVENESS_FRAME_COUNT) {
-        handleLivenessCapture(captures);
+        await handleLivenessCapture(captures);
       }
     } catch {
       alert(t('facialReg.captureError'));
@@ -270,12 +263,22 @@ export function useSessionAttendanceCapture({ session }: UseSessionAttendanceCap
     startPositioningSimulation();
   }, [startPositioningSimulation]);
 
+  // Reintenta únicamente el reto que falló y conserva los retos ya aprobados.
+  const handleRetryCurrentChallenge = useCallback(() => {
+    setPhotoUri(null);
+    setPhotoUris([]);
+    setQuality('checking');
+    startPositioningSimulation(false);
+  }, [startPositioningSimulation]);
+
   const handleFinish = useCallback(async () => {
     if (!session) {
+      setErrorRecoveryMode('capture');
       setErrorModalMessage('No hay una sesión activa para registrar asistencia.');
       return;
     }
     if (!photoUri) {
+      setErrorRecoveryMode('capture');
       setErrorModalMessage(t('facial.validation.noFace'));
       return;
     }
@@ -288,6 +291,7 @@ export function useSessionAttendanceCapture({ session }: UseSessionAttendanceCap
       const imageFrames = await Promise.all(sourceFrames.map((uri) => imageUriToDataUri(uri)));
       await registerFacialAttendanceFromImage({
         idRecordEnvironment: session.idRecordEnvironment,
+        eventType,
         idDevice: session.idDevice,
         imageBase64,
         imageFrames,
@@ -298,11 +302,13 @@ export function useSessionAttendanceCapture({ session }: UseSessionAttendanceCap
 
       setSuccessModalVisible(true);
     } catch (error: any) {
+      // Reiniciar la captura evita concatenar frames nuevos con los ya enviados.
+      setErrorRecoveryMode('capture');
       setErrorModalMessage(getFacialEmbeddingErrorMessage(error));
     } finally {
       setIsRegistering(false);
     }
-  }, [isRegistering, isWeb, livenessChallenge.code, livenessSequence, photoUri, photoUris, quality, screenState, session, t]);
+  }, [eventType, isRegistering, isWeb, livenessChallenge.code, livenessSequence, photoUri, photoUris, quality, screenState, session, t]);
 
   useEffect(() => {
     if (isWeb || screenState !== 'ready' || photoUri || isTaking || isRegistering || errorModalMessage || successModalVisible) {
@@ -311,7 +317,7 @@ export function useSessionAttendanceCapture({ session }: UseSessionAttendanceCap
 
     const timer = setTimeout(() => {
       handleTakePhotoNative();
-    }, 900);
+    }, LIVENESS_PREPARATION_MS);
     return () => clearTimeout(timer);
   }, [
     errorModalMessage,
@@ -332,15 +338,6 @@ export function useSessionAttendanceCapture({ session }: UseSessionAttendanceCap
     handleFinish();
   }, [errorModalMessage, handleFinish, isRegistering, quality, screenState, successModalVisible]);
 
-  useEffect(() => {
-    if (!successModalVisible) return;
-    const timer = setTimeout(() => {
-      setSuccessModalVisible(false);
-      handleRetake();
-    }, 1600);
-    return () => clearTimeout(timer);
-  }, [handleRetake, successModalVisible]);
-
   const handleCloseSuccessModal = useCallback(() => {
     setSuccessModalVisible(false);
     handleRetake();
@@ -349,8 +346,12 @@ export function useSessionAttendanceCapture({ session }: UseSessionAttendanceCap
   const handleCloseErrorModal = useCallback(() => {
     setErrorModalMessage(null);
     setErrorModalTitle('No se pudo registrar');
-    handleRetake();
-  }, [handleRetake]);
+    if (errorRecoveryMode === 'capture') {
+      handleRetake();
+      return;
+    }
+    handleRetryCurrentChallenge();
+  }, [errorRecoveryMode, handleRetake, handleRetryCurrentChallenge]);
 
   return {
     screenState,

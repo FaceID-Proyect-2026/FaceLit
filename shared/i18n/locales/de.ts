@@ -2,6 +2,15 @@ import { notificationTemplates } from '../notificationTemplates';
 import { landingDe } from '../landing';
 
 const de = {
+  dataState: {
+    "loading": "Daten werden geladen…",
+    "error": "Daten konnten nicht geladen werden. Bitte erneut versuchen.",
+    "retry": "Erneut versuchen",
+    "empty": "Keine Einträge vorhanden.",
+    "pending": "Für diesen Vorgang fehlt eine API. Es wurden keine Änderungen gespeichert.",
+    "environmentLimit": "Die aktuelle API unterstützt aktive Räume und deren Erstellung durch Lehrkräfte. Weitere Vorgänge stehen noch aus.",
+    "assignmentsUnavailable": "Die aktuelle API unterstützt keine Abfrage oder Änderung von Raumzuordnungen."
+  },
   landingPage: landingDe,
   common: {
     cancel: "Abbrechen",
@@ -454,7 +463,7 @@ const de = {
     userManagement: "Benutzerverwaltung",
     environments: "Umgebungen",
     academic: "Akademisch",
-    schedules: "Stundenpläne",
+
     facial: "Gesichtserkennung",
     attendance: "Anwesenheit",
     reports: "Berichte",
@@ -463,8 +472,8 @@ const de = {
     profile: "Profil",
     settings: "Einstellungen",
     logout: "Abmelden",
-    mySchedules: "Meine Stundenpläne",
-    mySchedule: "Mein Stundenplan",
+
+
     myAttendance: "Meine Anwesenheit",
     myReports: "Meine Berichte",
     joinFicha: "Ficha beitreten",
@@ -748,10 +757,10 @@ const de = {
     subtitle: "Verwalten Sie institutionelle Umgebungen",
     listSubtitle:
       "Registrierte Ausbildungsräume anzeigen, filtern und verwalten.",
-    registerSubtitle: "Einen neuen Raum für Fichas und Stundenpläne erstellen.",
+    registerSubtitle: "Create a new physical space for training groups.",
     editSubtitle: "Name, Menge oder Status dieser Umgebung korrigieren.",
     filterHelp:
-      "Inaktive Umgebungen sind für Stundenpläne und Fichas nicht verfügbar.",
+      "Inactive environments are unavailable for training groups.",
     register: "Umgebung registrieren",
     edit: "Umgebung bearbeiten",
     delete: "Löschen",
@@ -1109,8 +1118,7 @@ const de = {
     selectProgram: "Wähle ein Programm",
     fichaHasLearnersUnlink:
       "Diese Ficha kann nicht vom Programm getrennt werden, da sie Lernende hat.",
-    fichaHasSchedules:
-      "Diese Ficha kann nicht gelöscht werden, da ihr Stundenpläne zugeordnet sind.",
+
     desvincularReasonNoSena: "Nicht mehr eingeschrieben (löschen)",
     desvincularReasonTransfer: "Versetzung (bleibt ohne Ficha)",
     transferMovedTitle: "Lernender ohne Ficha",
@@ -1150,7 +1158,7 @@ const de = {
     fichaRegisterSubtitle:
       "Eine neue Ausbildungs-Ficha registrieren und einem aktiven Programm zuordnen.",
     fichaEditSubtitle:
-      "Nummer, Schicht oder zugehöriges Programm dieser Ficha korrigieren.",
+      "Nummer oder zugeordnetes Programm dieser Lerngruppe bearbeiten.",
     programDetailSubtitle:
       "Allgemeine Informationen und diesem Programm zugehörige Fichas.",
     fichaDetailSubtitle:
@@ -1283,138 +1291,14 @@ const de = {
     instructorActionDelete: "Löschen",
     instructorActionDeactivate: "Deaktivieren",
   },
-  schedules: {
-    title: "Stundenplanverwaltung",
-    register: "Stundenplan registrieren",
-    registerSubtitle:
-      "Erstelle einen neuen offiziellen Stundenplan für eine Ausbildungsgruppe, mit Umgebung und Ausbilder.",
-    edit: "Bearbeiten",
-    editSubtitle:
-      "Korrigiere Tag, Zeit, Umgebung oder Ausbilder dieses Stundenplans.",
-    delete: "Löschen",
-    deactivate: "Deaktivieren",
-    deactivateConfirm:
-      "Diesen Stundenplan deaktivieren? Du kannst ihn später reaktivieren oder endgültig löschen.",
-    deactivateSuccess: "Stundenplan erfolgreich deaktiviert",
-    reactivate: "Reaktivieren",
-    reactivateSuccess: "Stundenplan erfolgreich reaktiviert",
-    deletePermanently: "Endgültig löschen",
-    deletePermanentlyConfirm:
-      "Diese Aktion ist endgültig und kann nicht rückgängig gemacht werden. Fortfahren?",
-    noDeleteActive:
-      "Ein aktiver Stundenplan kann nicht gelöscht werden. Zuerst deaktivieren.",
-    noDeleteHasAssignments:
-      "Dieser Stundenplan kann nicht gelöscht werden, da noch ein Ausbilder oder eine Umgebung zugewiesen ist. Zuerst trennen.",
-    noDeleteHasExceptions:
-      "Dieser Stundenplan kann nicht gelöscht werden, da Ausnahmen registriert sind.",
-    unassigned: "Nicht zugewiesen",
-    unassignInstructor: "Ausbilder trennen",
-    unassignInstructorConfirm:
-      "Der Ausbilder wird nicht aus dem System entfernt, nur seine Beziehung zu diesem Stundenplan. Fortfahren?",
-    unassignInstructorSuccess:
-      "Der Ausbilder wurde erfolgreich vom Stundenplan getrennt.",
-    noInstructorAssigned: "Diesem Stundenplan ist kein Ausbilder zugewiesen.",
-    unassignEnvironment: "Umgebung trennen",
-    unassignEnvironmentConfirm:
-      "Die Umgebung wird nicht aus dem System entfernt, nur ihre Beziehung zu diesem Stundenplan. Fortfahren?",
-    unassignEnvironmentSuccess:
-      "Die Umgebung wurde erfolgreich vom Stundenplan getrennt.",
-    noEnvironmentAssigned: "Diesem Stundenplan ist keine Umgebung zugewiesen.",
-    listSubtitle:
-      "Konsultiere und verwalte die im System registrierten Stundenpläne.",
-    empty: "Keine Stundenpläne",
-    detail: "Details",
-    exceptions: "Ausnahmen",
-    exceptionRegister: "Ausnahme registrieren",
-    notFound: "Stundenplan nicht gefunden",
-    deleteConfirm:
-      "Diesen Stundenplan löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
-    registerSuccess: "Stundenplan erfolgreich registriert",
-    updateSuccess: "Stundenplan erfolgreich aktualisiert",
-    deleteSuccess: "Stundenplan erfolgreich gelöscht",
-    searchPlaceholder: "Suche nach Ausbildungsgruppe, Umgebung oder Ausbilder",
-    selectSchedule: "Stundenplan auswählen",
-    noSchedulesForException: "Zuerst muss ein Stundenplan registriert werden",
-    noExceptions: "Keine Ausnahmen für diesen Stundenplan registriert",
-    exceptionsNoSchedule:
-      "Wähle einen Stundenplan aus der Liste, um dessen Ausnahmen zu verwalten.",
-    exceptionDeleteConfirm: "Diese Ausnahme löschen?",
-    exceptionRegisterSuccess: "Ausnahme erfolgreich registriert",
-    exceptionDeleteSuccess: "Ausnahme erfolgreich gelöscht",
-    exceptionDeleteBlocked:
-      "Eine aktive Ausnahme kann nicht gelöscht werden. Warte, bis sie endet, oder lösche sie, sobald sie inaktiv ist.",
-    exceptionDuplicateDate:
-      "Für diesen Stundenplan ist am gewählten Datum bereits eine Ausnahme registriert.",
-    exceptionSameEnvironment:
-      "Die alternative Umgebung muss sich von der ursprünglichen Umgebung des Stundenplans unterscheiden.",
-    fields: {
-      ficha: "Ausbildungsgruppe",
-      program: "Programm",
-      day: "Tag",
-      startTime: "Beginn",
-      endTime: "Ende",
-      environment: "Umgebung",
-      instructor: "Ausbilder",
-    },
-    placeholders: {
-      ficha: "Ausbildungsgruppe auswählen",
-      day: "Tag auswählen",
-      time: "Uhrzeit auswählen",
-      environment: "Umgebung auswählen",
-      instructor: "Ausbilder auswählen",
-      alternateEnv: "Alternative Umgebung auswählen",
-    },
-    days: {
-      monday: "Montag",
-      tuesday: "Dienstag",
-      wednesday: "Mittwoch",
-      thursday: "Donnerstag",
-      friday: "Freitag",
-      saturday: "Samstag",
-    },
-    conflicts: {
-      envOccupied: "Umgebung belegt",
-      instructorBusy: "Ausbilder belegt",
-      noFicha: "Ausbildungsgruppe auswählen",
-      noInstructor: "Ausbilder wählen",
-      noEnv: "Umgebung wählen",
-      invalidTime: "Die Endzeit muss nach der Startzeit liegen",
-      invalidFormat: "Ungültiges Format (HH:MM)",
-      envNotFound: "Umgebung nicht gefunden",
-    },
-    exceptionTypes: {
-      instructorChange: "Ausbilderwechsel",
-      envChange: "Umgebungswechsel",
-      cancel: "Stornierung",
-      reschedule: "Neuplanung",
-    },
-    exceptionStatus: { active: "Aktiv", inactive: "Inaktiv" },
-    exceptionFields: {
-      type: "Typ",
-      startDate: "Datum der Ausnahme",
-      duration: "Dauer der Ausnahme",
-      durationAmount: "Anzahl",
-      durationUnit: "Einheit",
-      durationUnits: {
-        hours: "Stunden",
-        days: "Tage",
-        weeks: "Wochen",
-        months: "Monate",
-      },
-      reason: "Grund",
-      status: "Status",
-      statusHint:
-        "Der Status wird beim Speichern automatisch berechnet und nach Ablauf der Dauer inaktiv.",
-      activeUntil: "Aktiv bis {{date}}",
-      replacement: "Ersatzausbilder",
-      alternateEnv: "Alternative Umgebung",
-    },
-  },
+
   facial: {
     management: "Gesichtserkennung",
     register: "Gesicht registrieren",
     verify: "Identität prüfen",
     setup: {
+      chipsLoadFailed: "Die Ausbildungsgruppen konnten nicht geladen werden. Prüfe die Verbindung und versuche es erneut.",
+      noChips: "Für diesen Ausbilder sind keine aktiven Ausbildungsgruppen in seinen Programmen verfügbar.",
       title: "Sitzungseinstellungen",
       subtitle:
         "Wähle Umgebung, Ausbilder und Ausbildungsgruppe für die Gesichtserkennungssitzung aus.",
@@ -1513,6 +1397,7 @@ const de = {
       noLearnerFound: "Kein Lernender gefunden.",
       selectRange: "Zeitraum auswählen",
       selectRangePrompt: "Wählen Sie einen Lernenden und einen Zeitraum aus.",
+      selectRangePromptApprentice: "Wählen Sie einen Zeitraum aus, um Ihre Anwesenheit anzuzeigen.",
       noRecordsRange: "Keine Einträge im ausgewählten Zeitraum.",
       exportExcel: "Excel exportieren",
       exportCsv: "CSV exportieren",
@@ -1575,7 +1460,7 @@ const de = {
       date: "Datum",
       entryTime: "Eintrittszeit",
       exitTime: "Austrittszeit",
-      scheduledTime: "Geplante Zeit",
+      sessionPeriod: "Zeitraum der Sitzung",
       instructor: "Ausbilder",
       status: "Status",
       delay: "Verspätung",
@@ -1748,7 +1633,7 @@ const de = {
     markAllRead: "Alle als gelesen",
     categories: {
       attendance: "Anwesenheit",
-      schedule: "Stundenplan",
+
       environment: "Umgebung",
       system: "System",
       facial: "Gesichtserkennung",
@@ -1877,8 +1762,8 @@ const de = {
         message: "{{learnerName}} möchte das Gesicht erneut registrieren.",
       },
       facial_session_substitution: {
-        title: "Vertretung bei einer Gesichtserkennungssitzung",
-        message: "Für eine Gesichtserkennungssitzung wurde eine Vertretung registriert.",
+        title: "Sitzung für eine andere Lehrkraft eingerichtet",
+        message: "Eine Lehrkraft hat eine Anwesenheitssitzung für eine andere verantwortliche Lehrkraft eingerichtet. Prüfen Sie, wer sie eingerichtet hat und wer verantwortlich ist.",
       },
     },
     detail: {
@@ -1967,6 +1852,7 @@ const de = {
       },
     },
     logout: "Abmelden",
+    logoutFailed: 'Die Serversitzung konnte nicht beendet werden. Prüfe die Verbindung und versuche es erneut.',
     logoutConfirm: "Wirklich abmelden?",
   },
 
@@ -2020,7 +1906,7 @@ const de = {
       entryTime: "Eintrittszeit",
       exitTime: "Austrittszeit",
       timeInClass: "Unterrichtszeit",
-      scheduledHours: "Geplante Zeiten",
+
       environmentLabel: "Umgebung",
       instructorLabel: "Ausbilder",
       delay: "Verspätung",

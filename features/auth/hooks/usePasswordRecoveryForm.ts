@@ -58,6 +58,10 @@ export function usePasswordRecoveryForm(initialEmail = '') {
     } catch (err: any) {
       const status = err.response?.status;
 
+      if (status === 429) {
+        setError(err.response?.data?.message ?? t('passwordRecovery.errors.networkError'));
+        return;
+      }
       if (status === 404 || status === 400) {
         // RF-1 V4 §1 — mensaje genérico: no confirmar si el correo existe o no
         // Mostramos el modal igual para no revelar la existencia de la cuenta.

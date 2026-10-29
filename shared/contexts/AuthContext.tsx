@@ -1,3 +1,5 @@
+import { onSessionRejected } from '@/shared/services/sessionEvents';
+import { logout as revokeServerSession } from '@/shared/services/authService';
 // ─────────────────────────────────────────────
 //  shared/contexts/AuthContext.tsx
 //  Maneja sesión, rol y datos del usuario
@@ -70,10 +72,6 @@ export interface User {
   permissions: string[];
   name?: string;
   lastname?: string;
-}
-
-export function getSystemUsers(): User[] {
-  return [];
 }
 
 export type SystemUser = User;
@@ -264,8 +262,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 firstName: readStringField(profile, ['firstName', 'name']) ?? restoredUser.firstName,
                 lastName: readStringField(profile, ['lastName', 'lastname']) ?? restoredUser.lastName,
               });
-            } catch {
-              setUser(restoredUser);
+            } catch (error: any) {
+              if (error.response?.status === 401) {
+                await removeToken();
+                setUser(null);
+              } else {
+                setUser(restoredUser);
+              }
             }
             // No registrar auditoría aquí — no es un login nuevo,
             // es una restauración silenciosa de sesión existente.
@@ -392,20 +395,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  useEffect(() => onSessionRejected(() => setUser(null)), []);
+
   const logout = useCallback(async () => {
-    if (user) {
-      logSuccess('LOGOUT', {
-        userDocument: user.document,
-        userRole: user.role,
-      });
+    try { await revokeServerSession(); }
+    catch {
+      alert(t('common.error'), t('profile.logoutFailed'));
+      return;
     }
-    await removeToken();
+    if (user) {
+      logSuccess('LOGOUT', { userDocument: user.document, userRole: user.role });
+    }
     setUser(null);
     // No navegamos aquí: los layouts de cada rol (useRoleGuard) detectan
     // isAuthenticated=false y redirigen a login ellos mismos, una vez el
     // router raíz ya está listo. Navegar aquí directamente corría el
     // riesgo de hacerlo antes de que React confirmara el nuevo estado.
-  }, [user]);
+  }, [user, alert, t]);
 
   return (
     <AuthContext.Provider

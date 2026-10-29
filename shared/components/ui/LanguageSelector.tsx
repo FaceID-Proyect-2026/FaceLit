@@ -82,7 +82,7 @@ function LanguageSelectorWeb({ style }: LanguageSelectorProps) {
   const [btnRect, setBtnRect] = useState<{ top: number; right: number } | null>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
 
-  const bg      = isDark ? '#262626' : '#FFFFFF';
+  const bg      = isDark ? '#262626' : Colors.light.surface;
   const border  = isDark ? '#404040' : '#E2E8F0';
   const textCol = isDark ? '#FFFFFF' : '#0F172A';
   const activeBg = isDark ? '#404040' : '#E5E7EB';
@@ -248,7 +248,7 @@ function LanguageSelectorMobile({ style }: LanguageSelectorProps) {
       >
         <Pressable style={s.backdrop} onPress={() => setOpen(false)}>
           <View style={[s.modal, {
-            backgroundColor: isDark ? '#262626' : '#FFFFFF',
+            backgroundColor: isDark ? '#262626' : Colors.light.surface,
             borderColor:     isDark ? '#404040' : '#E2E8F0',
           }]}>
             {LANGUAGES.map((lang) => {

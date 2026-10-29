@@ -2,6 +2,15 @@ import { notificationTemplates } from '../notificationTemplates';
 import { landingFr } from '../landing';
 
 const fr = {
+  dataState: {
+    "loading": "Chargement des données…",
+    "error": "Impossible de charger les données. Veuillez réessayer.",
+    "retry": "Réessayer",
+    "empty": "Aucun enregistrement à afficher.",
+    "pending": "Cette opération nécessite une API. Aucun changement enregistré.",
+    "environmentLimit": "L’API actuelle permet de consulter les espaces actifs et de les créer avec le rôle formateur. Les autres opérations sont en attente.",
+    "assignmentsUnavailable": "L’API actuelle ne permet pas de consulter ou modifier les affectations des espaces."
+  },
   landingPage: landingFr,
   common: {
     cancel: "Annuler",
@@ -464,7 +473,7 @@ const fr = {
     userManagement: "Gestion des utilisateurs",
     environments: "Environnements",
     academic: "Académique",
-    schedules: "Horaires",
+
     facial: "Reconnaissance Faciale",
     attendance: "Présences",
     reports: "Rapports",
@@ -473,8 +482,8 @@ const fr = {
     profile: "Profil",
     settings: "Paramètres",
     logout: "Déconnexion",
-    mySchedules: "Mes Horaires",
-    mySchedule: "Mon Horaire",
+
+
     myAttendance: "Ma Présence",
     myReports: "Mes Rapports",
     joinFicha: "Rejoindre Ficha",
@@ -760,11 +769,11 @@ const fr = {
     listSubtitle:
       "Consultez, filtrez et gérez les espaces de formation enregistrés.",
     registerSubtitle:
-      "Créez un espace physique à assigner aux fichas et horaires.",
+      "Create a new physical space for training groups.",
     editSubtitle:
       "Corrigez le nom, la quantité ou le statut de cet environnement.",
     filterHelp:
-      "Les environnements inactifs ne sont pas disponibles pour les horaires et les fichas.",
+      "Inactive environments are unavailable for training groups.",
     register: "Enregistrer",
     edit: "Modifier",
     delete: "Supprimer",
@@ -1025,8 +1034,7 @@ const fr = {
     selectProgram: "Sélectionne un programme",
     fichaHasLearnersUnlink:
       "Impossible de dissocier cette ficha du programme car elle a des apprenants associés.",
-    fichaHasSchedules:
-      "Impossible de supprimer cette ficha car elle a des horaires associés.",
+
     desvincularReasonNoSena: "N\u2019appartient plus (supprimer)",
     desvincularReasonTransfer: "Transfert (reste sans ficha)",
     transferMovedTitle: "Apprenant sans ficha",
@@ -1066,7 +1074,7 @@ const fr = {
     fichaRegisterSubtitle:
       "Enregistrez une nouvelle ficha de formation et associez-la à un programme actif.",
     fichaEditSubtitle:
-      "Corrigez le numéro, la plage horaire ou le programme associé à cette ficha.",
+      "Corrigez le numéro ou le programme associé à cette fiche.",
     programDetailSubtitle:
       "Informations générales et fichas de formation associées à ce programme.",
     fichaDetailSubtitle:
@@ -1339,137 +1347,14 @@ const fr = {
     instructorActionDelete: "Supprimer",
     instructorActionDeactivate: "Désactiver",
   },
-  schedules: {
-    title: "Gestion des Horaires",
-    register: "Enregistrer",
-    registerSubtitle:
-      "Créez un nouvel horaire officiel pour un groupe de formation, avec son environnement et son formateur.",
-    edit: "Modifier",
-    editSubtitle:
-      "Corrige le jour, l'heure, l'environnement ou le formateur de cet horaire.",
-    delete: "Supprimer",
-    deactivate: "Désactiver",
-    deactivateConfirm:
-      "Désactiver cet horaire ? Vous pourrez le réactiver ou le supprimer définitivement plus tard.",
-    deactivateSuccess: "Horaire désactivé avec succès",
-    reactivate: "Réactiver",
-    reactivateSuccess: "Horaire réactivé avec succès",
-    deletePermanently: "Supprimer définitivement",
-    deletePermanentlyConfirm:
-      "Cette action est définitive et ne peut pas être annulée. Continuer ?",
-    noDeleteActive:
-      "Impossible de supprimer un horaire actif. Désactivez-le d'abord.",
-    noDeleteHasAssignments:
-      "Impossible de supprimer cet horaire car il a encore un formateur ou un environnement assigné. Dissociez-les d'abord.",
-    noDeleteHasExceptions:
-      "Impossible de supprimer cet horaire car des exceptions y sont enregistrées.",
-    unassigned: "Non assigné",
-    unassignInstructor: "Dissocier le formateur",
-    unassignInstructorConfirm:
-      "Le formateur n'est pas supprimé du système, seule sa relation avec cet horaire l'est. Continuer ?",
-    unassignInstructorSuccess:
-      "Le formateur a été dissocié avec succès de l'horaire.",
-    noInstructorAssigned: "Cet horaire n'a pas de formateur assigné.",
-    unassignEnvironment: "Dissocier l'environnement",
-    unassignEnvironmentConfirm:
-      "L'environnement n'est pas supprimé du système, seule sa relation avec cet horaire l'est. Continuer ?",
-    unassignEnvironmentSuccess:
-      "L'environnement a été dissocié avec succès de l'horaire.",
-    noEnvironmentAssigned: "Cet horaire n'a pas d'environnement assigné.",
-    listSubtitle:
-      "Consultez et gérez les horaires de formation enregistrés dans le système.",
-    empty: "Aucun horaire",
-    detail: "Détail",
-    exceptions: "Exceptions",
-    exceptionRegister: "Enregistrer Exception",
-    notFound: "Horaire introuvable",
-    deleteConfirm: "Supprimer cet horaire ? Cette action est irréversible.",
-    registerSuccess: "Horaire enregistré avec succès",
-    updateSuccess: "Horaire mis à jour avec succès",
-    deleteSuccess: "Horaire supprimé avec succès",
-    searchPlaceholder: "Rechercher par groupe de formation, environnement ou formateur",
-    selectSchedule: "Sélectionner l'horaire",
-    noSchedulesForException: "Vous devez d'abord enregistrer un horaire",
-    noExceptions: "Aucune exception enregistrée pour cet horaire",
-    exceptionsNoSchedule:
-      "Sélectionnez un horaire dans la liste pour gérer ses exceptions.",
-    exceptionDeleteConfirm: "Supprimer cette exception ?",
-    exceptionRegisterSuccess: "Exception enregistrée avec succès",
-    exceptionDeleteSuccess: "Exception supprimée avec succès",
-    exceptionDeleteBlocked:
-      "Une exception à l'état Actif ne peut pas être supprimée. Attendez sa fin, ou supprimez-la une fois Inactive.",
-    exceptionDuplicateDate:
-      "Une exception est déjà enregistrée pour cet horaire à la date sélectionnée.",
-    exceptionSameEnvironment:
-      "L'environnement alternatif doit être différent de l'environnement original de l'horaire.",
-    fields: {
-      ficha: "Groupe de formation",
-      program: "Programme",
-      day: "Jour",
-      startTime: "Début",
-      endTime: "Fin",
-      environment: "Environnement",
-      instructor: "Formateur",
-    },
-    placeholders: {
-      ficha: "Sélectionner un groupe de formation",
-      day: "Sélectionner jour",
-      time: "Sélectionner l'heure",
-      environment: "Sélectionner environnement",
-      instructor: "Sélectionner formateur",
-      alternateEnv: "Sélectionner environnement alternatif",
-    },
-    days: {
-      monday: "Lundi",
-      tuesday: "Mardi",
-      wednesday: "Mercredi",
-      thursday: "Jeudi",
-      friday: "Vendredi",
-      saturday: "Samedi",
-    },
-    conflicts: {
-      envOccupied: "Environnement occupé",
-      instructorBusy: "Formateur occupé",
-      noFicha: "Sélectionnez un groupe de formation",
-      noInstructor: "Sélectionner formateur",
-      noEnv: "Sélectionner environnement",
-      invalidTime: "L'heure de fin doit être postérieure à celle de début",
-      invalidFormat: "Format invalide (HH:MM)",
-      envNotFound: "Environnement introuvable",
-    },
-    exceptionTypes: {
-      instructorChange: "Changement formateur",
-      envChange: "Changement environnement",
-      cancel: "Annulation",
-      reschedule: "Report",
-    },
-    exceptionStatus: { active: "Actif", inactive: "Inactif" },
-    exceptionFields: {
-      type: "Type",
-      startDate: "Date de l'exception",
-      duration: "Durée de l'exception",
-      durationAmount: "Quantité",
-      durationUnit: "Unité",
-      durationUnits: {
-        hours: "Heures",
-        days: "Jours",
-        weeks: "Semaines",
-        months: "Mois",
-      },
-      reason: "Motif",
-      status: "Statut",
-      statusHint:
-        "Le statut est calculé automatiquement à l'enregistrement et passe à Inactif une fois la durée définie écoulée.",
-      activeUntil: "Actif jusqu'au {{date}}",
-      replacement: "Formateur Remplaçant",
-      alternateEnv: "Environnement Alternatif",
-    },
-  },
+
   facial: {
     management: "Reconnaissance Faciale",
     register: "Enregistrer Visage",
     verify: "Vérifier Identité",
     setup: {
+      chipsLoadFailed: "Impossible de charger les groupes. Vérifiez la connexion et réessayez.",
+      noChips: "Ce formateur ne dispose d’aucun groupe actif dans ses programmes.",
       title: "Configuration de la session",
       subtitle:
         "Sélectionnez l’environnement, le formateur et le groupe de formation pour la session de reconnaissance faciale.",
@@ -1569,6 +1454,7 @@ const fr = {
       noLearnerFound: "Aucun apprenant trouvé.",
       selectRange: "Sélectionnez une période",
       selectRangePrompt: "Sélectionnez un apprenant et une période.",
+      selectRangePromptApprentice: "Sélectionnez une période pour consulter vos présences.",
       noRecordsRange: "Aucun enregistrement pour cette période.",
       exportExcel: "Exporter Excel",
       exportCsv: "Exporter CSV",
@@ -1631,7 +1517,7 @@ const fr = {
       date: "Date",
       entryTime: "Heure d'arrivée",
       exitTime: "Heure de sortie",
-      scheduledTime: "Horaire prévu",
+      sessionPeriod: "Période de la session",
       instructor: "Formateur",
       status: "Statut",
       delay: "Retard",
@@ -1800,7 +1686,7 @@ const fr = {
     markAllRead: "Tout marquer comme lu",
     categories: {
       attendance: "Présence",
-      schedule: "Horaire",
+
       environment: "Environnement",
       system: "Système",
       facial: "Reconnaissance faciale",
@@ -1929,8 +1815,8 @@ const fr = {
         message: "{{learnerName}} demande à enregistrer de nouveau son visage.",
       },
       facial_session_substitution: {
-        title: "Remplacement pour une session de reconnaissance faciale",
-        message: "Un remplacement a été enregistré pour une session de reconnaissance faciale.",
+        title: "Séance configurée pour un autre formateur",
+        message: "Un formateur a configuré une séance de présence pour un autre formateur responsable. Consultez qui l’a configurée et qui en est responsable.",
       },
     },
     detail: {
@@ -2019,6 +1905,7 @@ const fr = {
       },
     },
     logout: "Déconnexion",
+    logoutFailed: 'Impossible de fermer la session sur le serveur. Vérifiez la connexion et réessayez.',
     logoutConfirm: "Voulez-vous vous déconnecter ?",
   },
 
@@ -2071,7 +1958,7 @@ const fr = {
       entryTime: "Heure d’arrivée",
       exitTime: "Heure de sortie",
       timeInClass: "Temps en cours",
-      scheduledHours: "Horaire prévu",
+
       environmentLabel: "Environnement",
       instructorLabel: "Formateur",
       delay: "Retard",

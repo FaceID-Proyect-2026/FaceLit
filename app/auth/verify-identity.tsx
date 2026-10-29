@@ -12,6 +12,7 @@ import { formatTime, useVerificationCode } from '@/features/auth/hooks/useVerifi
 import { Colors } from '@/shared/constants/colors';
 import { Routes } from '@/shared/constants/routes';
 import { useTheme } from '@/shared/contexts/ThemeContext';
+import { rememberRecoveryAuthorization } from '@/shared/services/recoveryAuthorization';
 import { requestRecovery, verifyToken } from '@/shared/services/passwordRecoveryService';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -58,43 +59,10 @@ export default function VerifyIdentityScreen() {
     namespace: 'verifyIdentity',
     checkExpired: false,
     onVerify: async (enteredCode) => {
-      // ── Validación real con el backend ──────────────────────────────
-      // POST /api/auth/verify-token { token: enteredCode }
-      // 200  → código válido  → navegar a new-password
-      // 4xx/5xx → código incorrecto/expirado → el hook captura el error
-      //           y lo muestra en esta pantalla (no navega)
-      try {
-        await verifyToken(enteredCode);
-      } catch (err: any) {
-        const status: number = err?.response?.status ?? 0;
-        const msg: string    = err?.response?.data?.message ?? '';
-
-        // Construir mensaje legible según el tipo de error
-        if (
-          status === 410 ||
-          msg.toLowerCase().includes('expir') ||
-          msg.toLowerCase().includes('vencid')
-        ) {
-          throw new Error(t('verifyIdentity.errors.expired'));
-        }
-
-        if (
-          status === 409 ||
-          msg.toLowerCase().includes('utilizado') ||
-          msg.toLowerCase().includes('used')
-        ) {
-          throw new Error(t('verifyIdentity.errors.alreadyUsed'));
-        }
-
-        // 400, 404, 500 o cualquier otro → código incorrecto
-        throw new Error(t('verifyIdentity.errors.invalid'));
-      }
-
-      // ── Solo llega aquí si verifyToken respondió 200 ────────────────
-      router.push({
-        pathname: Routes.AUTH.NEW_PASSWORD as any,
-        params: { token: enteredCode, email },
-      });
+      const result = await verifyToken(email, enteredCode);
+      if (!result.resetToken) throw new Error(t('verifyIdentity.errors.invalid'));
+      rememberRecoveryAuthorization(email, result.resetToken);
+      router.push({ pathname: Routes.AUTH.NEW_PASSWORD as any, params: { email } });
     },
     onResend: async () => {
       await requestRecovery(email);
@@ -105,8 +73,8 @@ export default function VerifyIdentityScreen() {
   const text     = isDark ? '#FFFFFF' : '#111111';
   const muted    = isDark ? '#CAD6C8' : '#3D5C3A';
   const controlColor = isDark ? Colors.white : theme.primaryDark;
-  const cardBg   = isDark ? '#07120D' : '#FFFFFF';
-  const inputBg  = isDark ? 'rgba(255,255,255,0.04)' : '#F9FFF9';
+  const cardBg   = isDark ? '#07120D' : Colors.light.surface;
+  const inputBg  = isDark ? 'rgba(255,255,255,0.04)' : Colors.light.inputBg;
   const inputBdr = isDark ? 'rgba(255,255,255,0.20)' : 'rgba(0,0,0,0.15)';
 
   const timerColor = timeLeft <= 60 ? Colors.error : timeLeft <= 120 ? '#E89B2C' : theme.secondary;

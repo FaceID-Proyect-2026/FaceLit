@@ -42,8 +42,8 @@ export default function PasswordRecoveryScreen() {
   // Colores
   const text = isDark ? '#FFFFFF' : '#111111';
   const muted = isDark ? '#CAD6C8' : '#3D5C3A';
-  const cardBg = isDark ? '#07120D' : '#FFFFFF';
-  const inputBg = isDark ? 'rgba(255,255,255,0.04)' : '#F9FFF9';
+  const cardBg = isDark ? '#07120D' : Colors.light.surface;
+  const inputBg = isDark ? 'rgba(255,255,255,0.04)' : Colors.light.inputBg;
   const inputBdr = isDark ? 'rgba(255,255,255,0.20)' : 'rgba(0,0,0,0.15)';
   const errorClr = Colors.error;
   const controlColor = isDark ? Colors.white : theme.primaryDark;

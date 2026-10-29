@@ -62,6 +62,7 @@ type BackendUserChip = {
   email: string;
   state: 'ACTIVE' | 'INACTIVE';
   assignmentDate: string;
+  accountStatus?: 'ACTIVE' | 'INACTIVE';
   createdAt?: string | null;
   updatedAt?: string | null;
 };
@@ -73,7 +74,7 @@ const toLearner = (learner: BackendUserChip): Learner => ({
   document: learner.document ?? '',
   email: learner.email ?? '',
   role: 'aprendiz',
-  status: learner.state === 'ACTIVE' ? 'active' : 'inactive',
+  status: learner.state === 'ACTIVE' && learner.accountStatus !== 'INACTIVE' ? 'active' : 'inactive',
   validationStatus: 'validated',
   initialPassword: null,
   createdAt: learner.createdAt ?? learner.assignmentDate,
@@ -457,6 +458,14 @@ export async function updateApprentice(idUser: string, payload: {
 }) {
   const { data } = await api.put<BackendUserChip>(`/api/academic/users/${idUser}/apprentice`, payload);
   return toLearner(data);
+}
+
+export async function setLearnerAccountState(idUser: string, active: boolean): Promise<void> {
+  const { data: user } = await api.get(`/api/admin/users/${idUser}`);
+  await api.put(`/api/admin/users/${idUser}`, {
+    numberDocument: user.documentNumber, firstName: user.firstName, lastName: user.lastName,
+    email: user.email, role: user.role, accountStatus: active ? 'ACTIVE' : 'INACTIVE',
+  });
 }
 
 export async function fetchActiveChip(idUser: string) {

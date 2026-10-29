@@ -1,4 +1,5 @@
-import { localizeNotification, normalizeNotificationMeta } from '@/features/notifications/localizeNotification';
+import { localizeNotification, normalizeNotificationMeta, notificationDecisionActorName, profileChangeDetails, formatNotificationDate } from '@/features/notifications/localizeNotification';
+import { useAuthGuard } from '@/shared/hooks/useAuthGuard';
 // ─────────────────────────────────────────────
 //  app/notifications/index.tsx
 //  RF-8.2 — Bandeja de notificaciones (Coordinador)
@@ -57,7 +58,8 @@ const APPRENTICE_CATEGORIES: (NotificationCategory | 'all')[] = [
 export default function NotificationsScreen() {
   const { isDark, theme } = useTheme();
   const { t, i18n }         = useTranslation();
-  const { user }           = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { canRenderContent } = useAuthGuard(isAuthenticated, '/auth/login', authLoading);
 
   const [statusFilter,   setStatusFilter]   = useState<StatusFilter>('all');
   const [categoryFilter, setCategoryFilter] = useState<NotificationCategory | 'all'>('all');
@@ -81,10 +83,7 @@ export default function NotificationsScreen() {
   const inputBg = theme.inputBg;
 
   const formatLocalizedDate = (value: string) => {
-    const parsed = new Date(`${value}T12:00:00`);
-    return Number.isNaN(parsed.getTime())
-      ? value
-      : new Intl.DateTimeFormat(i18n.resolvedLanguage ?? i18n.language, { dateStyle: 'medium' }).format(parsed);
+    return value ? formatNotificationDate(value, i18n.resolvedLanguage ?? i18n.language) : '—';
   };
 
   const getLocalizedText = (notif: Notification) =>
@@ -101,7 +100,7 @@ export default function NotificationsScreen() {
     setResolvingId(notifId);
     setDecisionError(null);
     try {
-      await resolveFacial(notifId, decision, user?.id ?? '');
+      await resolveFacial(notifId, decision, user?.id ?? '', [user?.firstName, user?.lastName].filter(Boolean).join(' '));
       setExpandedId(null);
     } catch (error: any) {
       setDecisionError(error?.response?.data?.message || t('notifications.templates.resetUi.errorMessage'));
@@ -112,6 +111,19 @@ export default function NotificationsScreen() {
   const renderDetail = (notif: Notification) => {
     const m = normalizeNotificationMeta(notif.meta);
     const rows: [string, string, string?, string?][] = [];
+    const changes = profileChangeDetails(m, t);
+    for (const change of changes) {
+      rows.push(['arrow-back-outline', `${change.label} · ${t('notifications.templates.profileUi.before')}`, change.before]);
+      rows.push(['arrow-forward-outline', `${change.label} · ${t('notifications.templates.profileUi.after')}`, change.after]);
+    }
+    if (changes.length) {
+      if (m.affectedUserName) rows.push(['person-outline', t('notifications.templates.lifecycleUi.recipient'), m.affectedUserName]);
+      if (m.changedByName) rows.push(['person-outline', t('notifications.templates.lifecycleUi.changedBy'), m.changedByName]);
+      if (m.occurredAt && !Number.isNaN(new Date(m.occurredAt).getTime())) rows.push(['calendar-outline',
+        t('notifications.templates.lifecycleUi.eventDate'), new Intl.DateTimeFormat(i18n.resolvedLanguage ?? i18n.language, {
+          timeZone: 'America/Bogota', dateStyle: 'medium', timeStyle: 'short',
+        }).format(new Date(m.occurredAt))]);
+    }
 
     // Campos comunes según tipo
     if (m.learnerName)      rows.push(['person-outline',       t('notifications.detail.learner'),   m.learnerName]);
@@ -128,7 +140,8 @@ export default function NotificationsScreen() {
     if (m.delayMinutes && m.delayMinutes > 0)
                             rows.push(['timer-outline',        t('attendance.fields.delay'),        `${m.delayMinutes} ${t('notifications.units.minutes')}`]);
     if (m.environmentName)  rows.push(['business-outline',     t('attendance.fields.environment'),  m.environmentName]);
-    if (m.instructorName)   rows.push(['person-circle-outline',t('attendance.fields.instructor'),   m.instructorName]);
+    if (m.configuredByName) rows.push(['person-outline', t('notifications.templates.sessionUi.configuredBy'), m.configuredByName]);
+    if (m.instructorName) rows.push(['person-circle-outline', t(m.configuredByName ? 'notifications.templates.sessionUi.responsibleInstructor' : 'attendance.fields.instructor'), m.instructorName]);
     if (m.failedCount)      rows.push(['alert-circle-outline', t('notifications.detail.failedCount'), `${m.failedCount}`]);
     if (m.lockMinutes)      rows.push(['time-outline',         t('notifications.detail.lockMinutes'), `${m.lockMinutes} ${t('notifications.units.minutes')}`]);
     if (m.csvSummary) {
@@ -138,7 +151,7 @@ export default function NotificationsScreen() {
       rows.push(['alert-circle-outline', t('notifications.detail.blocked'), `${s.blocked}`]);
       rows.push(['close-circle-outline', t('notifications.detail.errors'),  `${s.errors}`]);
     }
-    if (m.entityType) {
+    if (m.entityType && !changes.length) {
       const entityTypeKey = m.entityType === 'program' || m.entityType === 'ficha'
         || m.entityType === 'learner' || m.entityType === 'instructor'
         ? `notifications.entities.${m.entityType}`
@@ -167,7 +180,7 @@ export default function NotificationsScreen() {
         m.facialDecision === 'accepted' ? t('notifications.detail.accepted') : t('notifications.detail.rejected'),
         m.facialDecision === 'accepted' ? Colors.success : Colors.error,
       ] as any);
-      if (m.decidedBy) rows.push(['person-outline', t('notifications.detail.decidedBy'), m.decidedBy]);
+      if (m.decidedBy || m.decidedByName) rows.push(['person-outline', t('notifications.detail.decidedBy'), notificationDecisionActorName(m, t)]);
     }
 
     // Enlace a corregir (para inconsistencias CSV)
@@ -198,7 +211,7 @@ export default function NotificationsScreen() {
         )}
 
         {/* RF-8.4 — Botones Aceptar/Rechazar para re-registro facial sin decisión aún */}
-        {isApprentice && notif.type === 'facial_request_resolved' && m.facialDecision === 'accepted' && (
+        {isApprentice && (notif.type === 'facial_authorization_expired' || (notif.type === 'facial_request_resolved' && m.facialDecision === 'accepted')) && (
           <AppButton title={t('notifications.templates.resetUi.openFacial')}
             onPress={() => router.push('/apprentice/facial')} />
         )}
@@ -299,6 +312,8 @@ export default function NotificationsScreen() {
   };
 
   // ── Render principal ──────────────────────
+  if (!canRenderContent) return null;
+
   return (
     <SafeAreaView style={[ns.root, { backgroundColor: bg }]} edges={['top', 'left', 'right']}>
       <RoleTopbar />
@@ -470,9 +485,9 @@ const ns = StyleSheet.create({
   // Detalle expandido
   detail:     { marginTop: 10, paddingTop: 10, gap: 2 },
   detailRow:  { flexDirection: 'row', alignItems: 'center', paddingVertical: 7, borderBottomWidth: 0.5 },
-  detailLabel: { flexDirection: 'row', alignItems: 'center', gap: 5, flex: 1 },
-  detailLabelText: { fontSize: FontSize.xs },
-  detailValue: { fontSize: FontSize.xs, fontWeight: FontWeight.bold, flex: 1, textAlign: 'right' },
+  detailLabel: { flexDirection: 'row', alignItems: 'center', gap: 5, flex: 1, minWidth: 0 },
+  detailLabelText: { fontSize: FontSize.xs, flexShrink: 1 },
+  detailValue: { fontSize: FontSize.xs, fontWeight: FontWeight.bold, flex: 1, minWidth: 0, textAlign: 'right' },
 
   actionLink:     { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 8, borderWidth: 1, padding: 10, marginTop: 8 },
   actionLinkText: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },

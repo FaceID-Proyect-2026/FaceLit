@@ -21,7 +21,7 @@ export default function PrivacyNoticeModal({ visible, onClose, onAccept, accepte
     const { t } = useTranslation();
     const { isDark } = useTheme();
 
-    const cardBg = isDark ? Colors.dark.surface : Colors.white;
+    const cardBg = isDark ? Colors.dark.surface : Colors.light.surface;
     const textColor = isDark ? Colors.dark.text : Colors.black;
     const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
     const linkColor = isDark ? Colors.primaryLight : Colors.primary;

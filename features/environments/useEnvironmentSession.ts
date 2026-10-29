@@ -37,6 +37,9 @@ export function useEnvironmentSession() {
   const [instructors, setInstructors] = useState<SessionInstructor[]>([]);
   const [selectedInstructorId, setSelectedInstructorIdState] = useState('');
   const [chips, setChips] = useState<SessionChip[]>([]);
+  const [chipsLoading, setChipsLoading] = useState(false);
+  const [chipsError, setChipsError] = useState(false);
+  const [chipsRevision, setChipsRevision] = useState(0);
   const [selectedChipId, setSelectedChipId] = useState('');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -69,12 +72,17 @@ export function useEnvironmentSession() {
     let active = true;
     setSelectedChipId('');
     setChips([]);
+    setChipsError(false);
+    setChipsLoading(!!selectedInstructorId);
     if (!selectedInstructorId) return () => { active = false; };
     fetchChipsForSessionInstructor(selectedInstructorId)
       .then(data => { if (active) setChips(data); })
-      .catch(() => { if (active) setError('facial.setup.validation.loadFailed'); });
+      .catch(() => { if (active) setChipsError(true); })
+      .finally(() => { if (active) setChipsLoading(false); });
     return () => { active = false; };
-  }, [selectedInstructorId]);
+  }, [selectedInstructorId, chipsRevision]);
+
+  const reloadChips = useCallback(() => setChipsRevision(revision => revision + 1), []);
 
   const exactEnvironmentMatch = useMemo(() => {
     const query = environmentQuery.trim().toLowerCase();
@@ -97,10 +105,11 @@ export function useEnvironmentSession() {
   }, []);
 
   const setSelectedInstructorId = useCallback((id: string) => {
+    if (id === selectedInstructorId) return;
     setSelectedInstructorIdState(id);
     setSelectedChipId('');
     setChips([]);
-  }, []);
+  }, [selectedInstructorId]);
 
   const createEnvironment = useCallback(async () => {
     const name = environmentQuery.trim();
@@ -167,6 +176,9 @@ export function useEnvironmentSession() {
     selectedInstructorId,
     setSelectedInstructorId,
     chips,
+    chipsLoading,
+    chipsError,
+    reloadChips,
     selectedChipId,
     setSelectedChipId,
     loading,

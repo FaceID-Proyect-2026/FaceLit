@@ -5,7 +5,7 @@
 import { useUserSettings } from "@/features/profile/useUserSettings";
 import { refreshAcademicStoreFromBackend } from "@/features/academic/useAcademic";
 import { clearAcademicStore } from "@/features/academic/academicStore";
-import { loadNotifications } from "@/features/notifications/notificationsStore";
+import { loadNotifications, setNotificationsOwner } from "@/features/notifications/notificationsStore";
 import { getToken } from "@/shared/services/tokenStorage";
 import {
   requestRealtimeSync,
@@ -64,6 +64,7 @@ function AcademicDataLoader() {
   const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
+    if (!authLoading) setNotificationsOwner(user?.id ?? '');
     if (!authLoading && !user?.id) clearAcademicStore();
   }, [authLoading, user?.id]);
 

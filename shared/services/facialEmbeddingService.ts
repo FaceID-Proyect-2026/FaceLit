@@ -1,6 +1,4 @@
-import axios from 'axios';
-
-import { EMBEDDING_API_KEY, EMBEDDING_API_URL } from '@/shared/constants/api';
+import { api } from './api';
 
 export interface FacialEmbeddingFromImagePayload {
   resetToken?: string | null;
@@ -12,13 +10,6 @@ export interface FacialEmbeddingFromImagePayload {
   photoReference?: string | null;
   replaceExisting?: boolean;
   createdBy?: string;
-}
-
-export interface FacialEmbeddingUpdateFromImagePayload {
-  userId: string;
-  imageBase64: string;
-  photoReference?: string | null;
-  updatedBy?: string;
 }
 
 export interface FacialLivenessCheckPayload {
@@ -34,37 +25,12 @@ export interface FacialLivenessCheckResponse {
 export interface FacialEmbeddingResponse {
   id: string;
   user_id: string;
-  embedding: number[];
   embedding_dimension: number;
   model_name: string;
   photo_reference?: string | null;
   status: string;
-  registered_at: string;
+  created_at: string;
 }
-
-export interface FacialSessionVerificationPayload {
-  recordEnvironmentId: string;
-  imageBase64: string;
-  threshold?: number;
-}
-
-export interface FacialSessionVerificationResponse {
-  match: boolean;
-  id_apprentice?: string | null;
-  similarity?: number | null;
-  threshold: number;
-  model_name: string;
-  reason: string;
-}
-
-const facialEmbeddingApi = axios.create({
-  baseURL: EMBEDDING_API_URL,
-  timeout: 180000,
-  headers: {
-    'Content-Type': 'application/json',
-    'X-API-Key': EMBEDDING_API_KEY,
-  },
-});
 
 function formatApiDetail(detail: unknown): string | null {
   if (typeof detail === 'string') return detail;
@@ -88,7 +54,7 @@ export function getFacialEmbeddingErrorMessage(error: any): string {
   const detail = formatApiDetail(error?.response?.data?.detail);
   if (detail) return detail;
   if (error?.code === 'ERR_NETWORK' || error?.message === 'Network Error') {
-    return `No fue posible conectar con el servicio facial (${EMBEDDING_API_URL}). Verifica que el microservicio de embeddings esté encendido y que el puerto 8090 sea accesible.`;
+    return 'No fue posible conectar con el servidor. Revisa tu conexión e intenta nuevamente.';
   }
   if (error?.code === 'ECONNABORTED') {
     return 'El registro facial tardó demasiado. Intenta nuevamente con buena conexión y el servicio facial encendido.';
@@ -100,8 +66,8 @@ export function getFacialEmbeddingErrorMessage(error: any): string {
 export async function registerFacialEmbeddingFromImage(
   payload: FacialEmbeddingFromImagePayload,
 ): Promise<FacialEmbeddingResponse> {
-  const response = await facialEmbeddingApi.post<FacialEmbeddingResponse>(
-    '/api/v1/facial-embeddings/from-image',
+  const response = await api.post<FacialEmbeddingResponse>(
+    '/api/facial/embeddings/from-image',
     {
       user_id: payload.userId,
       image_base64: payload.imageBase64,
@@ -111,8 +77,8 @@ export async function registerFacialEmbeddingFromImage(
       photo_reference: payload.photoReference ?? null,
       replace_existing: payload.replaceExisting ?? false,
       reset_token: payload.resetToken ?? null,
-      created_by: payload.createdBy ?? 'mobile-app',
     },
+    { timeout: 180000 },
   );
 
   return response.data;
@@ -121,42 +87,13 @@ export async function registerFacialEmbeddingFromImage(
 export async function validateFacialLiveness(
   payload: FacialLivenessCheckPayload,
 ): Promise<FacialLivenessCheckResponse> {
-  const response = await facialEmbeddingApi.post<FacialLivenessCheckResponse>(
-    '/api/v1/facial-embeddings/liveness-check',
+  const response = await api.post<FacialLivenessCheckResponse>(
+    '/api/facial/embeddings/liveness-check',
     {
       image_frames: payload.imageFrames,
       liveness_challenge: payload.livenessChallenge,
     },
-  );
-
-  return response.data;
-}
-
-export async function updateFacialEmbeddingFromImage(
-  payload: FacialEmbeddingUpdateFromImagePayload,
-): Promise<FacialEmbeddingResponse> {
-  const response = await facialEmbeddingApi.patch<FacialEmbeddingResponse>(
-    `/api/v1/facial-embeddings/users/${payload.userId}`,
-    {
-      image_base64: payload.imageBase64,
-      photo_reference: payload.photoReference ?? null,
-      updated_by: payload.updatedBy ?? 'mobile-app',
-    },
-  );
-
-  return response.data;
-}
-
-export async function verifyFacialSessionFromImage(
-  payload: FacialSessionVerificationPayload,
-): Promise<FacialSessionVerificationResponse> {
-  const response = await facialEmbeddingApi.post<FacialSessionVerificationResponse>(
-    '/api/v1/facial-embeddings/verify-session',
-    {
-      record_environment_id: payload.recordEnvironmentId,
-      image_base64: payload.imageBase64,
-      threshold: payload.threshold,
-    },
+    { timeout: 180000 },
   );
 
   return response.data;

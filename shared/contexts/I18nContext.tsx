@@ -3,7 +3,7 @@
 //  Maneja el idioma activo de la app
 // ─────────────────────────────────────────────
 import React, {
-  createContext, useContext, useState,
+  createContext, useContext, useState, useCallback,
   useEffect, ReactNode,
 } from 'react';
 import i18n from '@/shared/i18n/index';
@@ -66,13 +66,13 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const changeLanguage = (lang: Language) => {
-    setLanguage(lang);           // ← agregar esta línea
-    i18n.changeLanguage(lang);
-  try {
-    globalThis.localStorage?.setItem(STORAGE_KEY, lang);
-  } catch {}
-};
+  const changeLanguage = useCallback((lang: Language) => {
+    setLanguage(lang);
+    if (i18n.language !== lang) void i18n.changeLanguage(lang);
+    try {
+      globalThis.localStorage?.setItem(STORAGE_KEY, lang);
+    } catch {}
+  }, []);
 
   return (
     <I18nContext.Provider value={{ language, changeLanguage }}>

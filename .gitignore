@@ -1,4 +1,3 @@
-
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
 # dependencies
@@ -31,8 +30,10 @@ yarn-error.*
 .DS_Store
 *.pem
 
-# local env files
-.env*.local
+# Local environment configuration
+.env
+.env.*
+!.env.example
 
 # typescript
 *.tsbuildinfo
@@ -42,3 +43,11 @@ app-example
 # generated native folders
 /ios
 /android
+
+# Generated test coverage; test sources remain versioned.
+# Tutorial videos are distributed as GitHub release assets.
+/assets/videos/
+
+# Generated automated test reports
+coverage/
+coverage-v8/

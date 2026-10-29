@@ -39,6 +39,7 @@ export interface HistoryUIState {
 }
 
 interface AttendanceUIState {
+  apprentice: Record<string, { dateFrom: string; dateTo: string }>;
   byFicha: ByFichaUIState;
   byUser: ByUserUIState;
   history: HistoryUIState;
@@ -65,6 +66,7 @@ const DEFAULT_HISTORY: HistoryUIState = {
 };
 
 let state: AttendanceUIState = {
+  apprentice: {},
   byFicha: { ...DEFAULT_BY_FICHA },
   byUser: { ...DEFAULT_BY_USER },
   history: { ...DEFAULT_HISTORY },
@@ -82,6 +84,22 @@ export function subscribeAttendanceUI(listener: Listener) {
 
 export function getAttendanceUISnapshot(): AttendanceUIState {
   return state;
+}
+
+// Keep the learner's selected period across route changes, isolated by account.
+export function setApprenticeDateFrom(userId: string, dateFrom: string): void {
+  if (!userId) return;
+  const previous = state.apprentice[userId] ?? { dateFrom: "", dateTo: "" };
+  const dateTo = previous.dateTo && dateFrom > previous.dateTo ? "" : previous.dateTo;
+  state = { ...state, apprentice: { ...state.apprentice, [userId]: { dateFrom, dateTo } } };
+  emit();
+}
+
+export function setApprenticeDateTo(userId: string, dateTo: string): void {
+  if (!userId) return;
+  const previous = state.apprentice[userId] ?? { dateFrom: "", dateTo: "" };
+  state = { ...state, apprentice: { ...state.apprentice, [userId]: { ...previous, dateTo } } };
+  emit();
 }
 
 // ── Mutaciones By Ficha ───────────────────────

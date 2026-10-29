@@ -1,3 +1,4 @@
+import RemoteDataState from '@/shared/components/ui/RemoteDataState';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
@@ -5,7 +6,6 @@ import { useAuth } from '@/shared/contexts/AuthContext';
 import { useAttendance } from '@/features/attendance/useAttendance';
 import type { AttendanceStatus } from '@/features/attendance/types';
 import { getFichasSnapshot, subscribe as subscribeAcademic } from '@/features/academic/academicStore';
-import { getSchedulesSnapshot, subscribe as subscribeSchedules } from '@/features/schedules/schedulesStore';
 import { useSyncExternalStore } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -22,8 +22,8 @@ interface DayRecord {
   id: string;
   userName: string;
   environmentName: string;
-  scheduleStartTime: string;
-  scheduleEndTime: string;
+  sessionStartTime: string;
+  sessionEndTime: string;
   entryTime: string;
   exitTime: string;
   status: AttendanceStatus;
@@ -51,15 +51,12 @@ export default function CalendarReportScreen() {
   const attendance = useAttendance();
   const { width } = useWindowDimensions();
   const isCompact = width < 560;
-  
-  useSyncExternalStore(subscribeAcademic, getFichasSnapshot);
-  useSyncExternalStore(subscribeSchedules, getSchedulesSnapshot);
 
-  const schedules = getSchedulesSnapshot();
+  useSyncExternalStore(subscribeAcademic, getFichasSnapshot);
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
-  const cardBg = isDark ? Colors.dark.card : Colors.white;
+  const cardBg = isDark ? Colors.dark.card : Colors.light.surface;
   const border = isDark ? Colors.dark.border : Colors.light.border;
   const bg = isDark ? Colors.dark.background : Colors.light.background;
 
@@ -94,8 +91,8 @@ export default function CalendarReportScreen() {
       id: r.id,
       userName: r.userName,
       environmentName: r.environmentName,
-      scheduleStartTime: r.scheduleStartTime,
-      scheduleEndTime: r.scheduleEndTime,
+      sessionStartTime: r.sessionStartTime,
+      sessionEndTime: r.sessionEndTime,
       entryTime: r.entryTime,
       exitTime: r.exitTime,
       status: r.status,
@@ -132,7 +129,7 @@ export default function CalendarReportScreen() {
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const prevMonthDays = new Date(year, month, 0).getDate();
-    
+
     const days = [];
     for (let i = firstDay - 1; i >= 0; i--) {
       days.push({ day: prevMonthDays - i, currentMonth: false, date: new Date(year, month - 1, prevMonthDays - i) });
@@ -206,7 +203,7 @@ export default function CalendarReportScreen() {
       return;
     }
     if (!excuseMessage.trim() || !user) return;
-    
+
     setSubmittingExcuse(true);
     setTimeout(() => {
       const newExcuse: Excuse = {
@@ -250,6 +247,7 @@ export default function CalendarReportScreen() {
     }
   };
 
+  if (attendance.loading || attendance.error) return <RemoteDataState loading={attendance.loading} error={attendance.error} onRetry={attendance.retry} />;
   return (
     <View style={[crs.safe, { backgroundColor: bg }]}>
       <TouchableOpacity onPress={() => router.back()} style={crs.backBtn}>
@@ -294,11 +292,11 @@ export default function CalendarReportScreen() {
         {daysInMonth.map((dayData, i) => {
           const status = dayData.currentMonth ? getDayStatus(dayData.date) : 'none';
           const hasExcuse = dayData.currentMonth ? hasExcuseForDate(dayData.date.toISOString().split('T')[0]) : false;
-          
+
           let bgColor = dayData.currentMonth ? cardBg : 'transparent';
           let borderColor = dayData.currentMonth ? border : 'transparent';
           let textColor = dayData.currentMonth ? text : muted;
-          
+
           if (status === 'present') { bgColor = Colors.success + '15'; borderColor = Colors.success; }
           else if (status === 'late') { bgColor = Colors.warning + '15'; borderColor = Colors.warning; }
           else if (status === 'absent') { bgColor = Colors.error + '15'; borderColor = Colors.error; }
@@ -341,7 +339,7 @@ export default function CalendarReportScreen() {
                 <Ionicons name="close" size={24} color={muted} />
               </TouchableOpacity>
             </View>
-            
+
             {dayRecords.length === 0 ? (
               <View style={crs.modalEmpty}>
                 <Ionicons name="calendar-clear-outline" size={48} color={muted} />
@@ -363,10 +361,10 @@ export default function CalendarReportScreen() {
                     <View style={{ gap: 4, marginTop: 8 }}>
                       <Text style={{ color: text, fontWeight: '600' }}>{record.environmentName}</Text>
                       <Text style={{ color: muted, fontSize: 12 }}>
-                        {t('reports.table.entry')}: {record.scheduleStartTime} → {record.entryTime || '--'}
+                        {t('reports.table.entry')}: {record.sessionStartTime} → {record.entryTime || '--'}
                       </Text>
                       <Text style={{ color: muted, fontSize: 12 }}>
-                        {t('reports.table.exit')}: {record.scheduleEndTime} → {record.exitTime || '--'}
+                        {t('reports.table.exit')}: {record.sessionEndTime} → {record.exitTime || '--'}
                       </Text>
                       {record.delayMinutes > 0 && (
                         <Text style={{ color: Colors.warning, fontSize: 12, fontWeight: '600' }}>

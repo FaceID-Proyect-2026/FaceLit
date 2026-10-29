@@ -30,7 +30,7 @@ export default function FichaFormModal({ visible, onClose, editId, defaultProgra
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
   const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
-  const inputBg = isDark ? 'rgba(255,255,255,0.05)' : '#FAFAFA';
+  const inputBg = isDark ? 'rgba(255,255,255,0.05)' : Colors.light.inputBg;
   const inputBorder = isDark ? 'rgba(255,255,255,0.30)' : '#BBBBBB';
 
   const [number, setNumber] = useState('');

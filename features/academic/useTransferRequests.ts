@@ -6,13 +6,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { acceptPendingTransfer, cancelPendingTransfer, fetchPendingTransfers } from './academicApi';
 import type { TransferRequest } from './types';
 import { refreshAcademicStoreFromBackend } from './useAcademic';
-import {
-    approveTransferRequest,
-    createTransferRequest,
-    getTransferRequestsSnapshot,
-    rejectTransferRequest,
-    subscribe
-} from './transferRequestStore';
 
 export function useTransferRequests() {
   const [requests, setRequests] = useState<TransferRequest[]>([]);
@@ -47,8 +40,6 @@ export function useTransferRequests() {
     requests,
     pendingRequests,
     pendingCount,
-    /** Aprendiz crea solicitud ingresando el transferCode de la ficha destino */
-    create:  useCallback(createTransferRequest, []),
     /** Coordinador aprueba el traslado pendiente del CSV en el backend. */
     approve: useCallback(async (id: string) => {
       await acceptPendingTransfer(id);

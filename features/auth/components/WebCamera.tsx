@@ -1,3 +1,4 @@
+import { LIVENESS_FRAME_COUNT, LIVENESS_FRAME_DELAY_MS, LIVENESS_PREPARATION_MS } from '@/features/facial/livenessChallenges';
 // ─────────────────────────────────────────────
 //  features/auth/components/WebCamera.tsx
 //  Cámara web con análisis en tiempo real.
@@ -29,6 +30,12 @@ const ANALYSIS_INTERVAL_MS = 300;
 const MIN_BRIGHTNESS       = 55;   // muy oscuro
 const MAX_BRIGHTNESS       = 235;  // sobreexpuesto
 const MIN_CONTRAST         = 20;   // contraste mínimo (std de luminancia)
+// Permiten detectar un rostro que ocupa menos espacio en la imagen, es decir,
+// una persona sentada a una distancia normal de la cámara.
+const MIN_FACE_WARM_RATIO  = 0.025;
+const MIN_FACE_DENSITY      = 0.22;
+const DENSITY_RATIO_GATE    = 0.12;
+const TOO_CLOSE_WARM_RATIO  = 0.82;
 
 // ── Tipo de advertencia en tiempo real ────────
 export type LiveWarning =
@@ -48,9 +55,13 @@ export type LiveWarning =
 const MOTION_THRESHOLD      = 12;   // 0-255 — sensibilidad media
 // Frames consecutivos sin advertencias necesarios para "listo"
 const REQUIRED_STABLE_FRAMES = 5;
-const LIVENESS_FRAME_COUNT = 5;
-const LIVENESS_START_DELAY_MS = 650;
-const LIVENESS_FRAME_DELAY_MS = 380;
+
+// Zona válida de reconocimiento: corresponde al óvalo centrado de la guía.
+// Se usa una elipse para evitar aceptar rostros ubicados en las esquinas.
+const OVAL_CENTER_X = 0.5;
+const OVAL_CENTER_Y = 0.5;
+const OVAL_RADIUS_X = 0.16;
+const OVAL_RADIUS_Y = 0.25;
 
 // ── Análisis de píxeles ───────────────────────
 function analyzeFrame(ctx: CanvasRenderingContext2D, W: number, H: number) {
@@ -126,21 +137,24 @@ function computeWarning(
   if (brightness > MAX_BRIGHTNESS)  return 'highLight';
   if (contrast   < MIN_CONTRAST)    return 'lowContrast';
 
-  // Sin tono cálido suficiente → no hay rostro
-  // Umbral subido a 0.06 (6%) para evitar falsos positivos con fondos cálidos
-  if (warmRatio  < 0.06)            return 'noSkin';
+  // Sin tono cálido suficiente → no hay rostro. El umbral es bajo para que
+  // una cara alejada no obligue a la persona a acercarse a la cámara.
+  if (warmRatio  < MIN_FACE_WARM_RATIO) return 'noSkin';
 
   // Tono cálido muy disperso (baja densidad) → fondo/objeto, no un rostro concentrado
   // Un rostro real tiene los píxeles de piel agrupados, no distribuidos por todo el frame
-  if (warmDensity < 0.35 && warmRatio < 0.25) return 'noSkin';
+  if (warmDensity < MIN_FACE_DENSITY && warmRatio < DENSITY_RATIO_GATE) return 'noSkin';
 
-  if (warmRatio  > 0.68)            return 'skinTooClose';
+  if (warmRatio  > TOO_CLOSE_WARM_RATIO) return 'skinTooClose';
 
-  // Centro del blob fuera del área central
-  if (
-    warmCenterX < 0.22 || warmCenterX > 0.78 ||
-    warmCenterY < 0.15 || warmCenterY > 0.82
-  ) return 'skinOffCenter';
+  // El rostro solo es válido dentro de la elipse del óvalo. Esto evita que
+  // se habilite el reconocimiento cuando la persona está a los lados,
+  // demasiado arriba o demasiado abajo.
+  const ovalDistance =
+    ((warmCenterX - OVAL_CENTER_X) / OVAL_RADIUS_X) ** 2 +
+    ((warmCenterY - OVAL_CENTER_Y) / OVAL_RADIUS_Y) ** 2;
+
+  if (ovalDistance > 1) return 'skinOffCenter';
 
   return 'none';
 }
@@ -160,13 +174,14 @@ interface WebCameraProps {
   requiresLiveness?: boolean;
   autoCapture?: boolean;
   paused?: boolean;
+  isProcessing?: boolean;
   livenessInstruction?: string;
 }
 
 export default function WebCamera({
   primaryColor, isTaking, isPositioning, screenState, quality,
   onCapture, onShutter, onConfirm, onCancel, onFaceReady, requiresLiveness = false, autoCapture = false,
-  paused = false, livenessInstruction,
+  paused = false, isProcessing = false, livenessInstruction,
 }: WebCameraProps) {
   const { t } = useTranslation();
   const videoRef      = useRef<HTMLVideoElement>(null);
@@ -176,6 +191,7 @@ export default function WebCamera({
   // Buffer del frame anterior (luminancias) para detección de movimiento
   const prevLumRef    = useRef<Float32Array | null>(null);
   const faceReadyRef  = useRef(false);
+  const captureVersionRef = useRef(0);
   // Contador de frames consecutivos sin ninguna advertencia
   const stableCount   = useRef(0);
 
@@ -183,8 +199,14 @@ export default function WebCamera({
   const [error,   setError]   = useState<string | null>(null);
   const [warning, setWarning] = useState<LiveWarning>('noSkin');
   const [capturingSequence, setCapturingSequence] = useState(false);
+  const warningRef = useRef<LiveWarning>('noSkin');
   // stableFrames: cuántos frames OK consecutivos hay (0 a REQUIRED_STABLE_FRAMES)
   const [stableFrames, setStableFrames] = useState(0);
+
+  useEffect(() => {
+    captureVersionRef.current += 1;
+    return () => { captureVersionRef.current += 1; };
+  }, [paused, screenState, livenessInstruction]);
 
   useEffect(() => {
     if (typeof document !== 'undefined') {
@@ -199,7 +221,6 @@ export default function WebCamera({
       stableCount.current = 0;
       setStableFrames(0);
       if (paused) {
-        setWarning('noSkin');
         faceReadyRef.current = false;
       }
       return;
@@ -322,18 +343,31 @@ export default function WebCamera({
     return { dataUri: canvas.toDataURL('image/jpeg', 0.85), brightness };
   }, [ready]);
 
+  useEffect(() => {
+    warningRef.current = warning;
+  }, [warning]);
+
   const capture = useCallback(async () => {
     if (paused || capturingSequence) return;
+    const captureVersion = captureVersionRef.current;
+    const invalidPosition = (duringChallenge = false) =>
+      warningRef.current === 'noSkin' ||
+      (!duringChallenge && warningRef.current === 'skinOffCenter') ||
+      warningRef.current === 'skinTooClose';
+
     setCapturingSequence(true);
     onShutter();
     const frames: string[] = [];
     let brightness = 0;
     try {
-      if (requiresLiveness) {
-        await new Promise((resolve) => setTimeout(resolve, LIVENESS_START_DELAY_MS));
-      }
+      if (invalidPosition()) return;
+
       const frameCount = requiresLiveness ? LIVENESS_FRAME_COUNT : 1;
       for (let index = 0; index < frameCount; index += 1) {
+        if (captureVersion !== captureVersionRef.current) return;
+        // Si el rostro sale del centro durante la secuencia, se descarta todo
+        // y no se envía el evento al backend.
+        if (invalidPosition(requiresLiveness && index > 0)) return;
         const frame = captureFrame();
         if (frame) {
           frames.push(frame.dataUri);
@@ -343,7 +377,7 @@ export default function WebCamera({
           await new Promise((resolve) => setTimeout(resolve, LIVENESS_FRAME_DELAY_MS));
         }
       }
-      if (frames.length === 0) return;
+      if (captureVersion !== captureVersionRef.current || frames.length !== frameCount || invalidPosition(requiresLiveness)) return;
       onCapture(requiresLiveness ? frames : frames[0]!, brightness);
     } finally {
       setCapturingSequence(false);
@@ -377,9 +411,9 @@ export default function WebCamera({
     if (paused || !autoCapture || shutterDisabled || screenState !== 'ready' || warning !== 'none') return;
     const timer = setTimeout(() => {
       capture();
-    }, 650);
+    }, requiresLiveness ? LIVENESS_PREPARATION_MS : 650);
     return () => clearTimeout(timer);
-  }, [autoCapture, capture, livenessInstruction, paused, screenState, shutterDisabled, warning]);
+  }, [autoCapture, capture, livenessInstruction, paused, requiresLiveness, screenState, shutterDisabled, warning]);
 
   if (error) {
     return (
@@ -417,6 +451,7 @@ export default function WebCamera({
           liveWarning={warning}
           requiresLiveness={requiresLiveness}
           livenessCaptureActive={capturingSequence}
+          isProcessing={isProcessing}
           livenessInstruction={livenessInstruction}
           stableFrames={stableFrames}
           requiredFrames={REQUIRED_STABLE_FRAMES}

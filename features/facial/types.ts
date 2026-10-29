@@ -48,6 +48,10 @@ export interface FacialSession {
   deviceCode: string;
   idChip: string;
   chipCode: string;
+  idInstructorScheduled?: string;
+  instructorScheduledName?: string;
+  idInstructorInCharge?: string | null;
+  instructorInChargeName?: string | null;
   shutdownTime: string;
   active: boolean;
 }
@@ -82,22 +86,3 @@ export const FACIAL_TIME_SLOTS = Array.from({ length: 25 }, (_, index) => {
   const minutes = index % 2 === 0 ? "00" : "30";
   return `${String(hour).padStart(2, "0")}:${minutes}`;
 });
-
-export const MOCK_FACIAL_RECORDS: FacialRecord[] = [
-  {
-    id: "f1",
-    userId: "l1",
-    userName: "Juan Pérez",
-    status: "registered",
-    date: "2026-06-01",
-    captureUri: "registered://l1",
-  },
-  {
-    id: "f2",
-    userId: "2",
-    userName: "María González",
-    status: "registered",
-    date: "2026-06-02",
-    captureUri: "registered://2",
-  },
-];

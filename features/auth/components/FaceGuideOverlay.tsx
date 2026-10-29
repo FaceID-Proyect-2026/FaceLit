@@ -16,7 +16,7 @@ import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 
 interface FaceGuideOverlayProps {
   primaryColor:  string;
@@ -26,6 +26,7 @@ interface FaceGuideOverlayProps {
   liveWarning?:  LiveWarning;
   requiresLiveness?: boolean;
   livenessCaptureActive?: boolean;
+  isProcessing?: boolean;
   livenessInstruction?: string;
   /** Frames consecutivos sin advertencias acumulados */
   stableFrames?:   number;
@@ -55,6 +56,9 @@ const WARNING_CONFIG: Record<LiveWarning, { icon: string; key: string; color: st
 
 const ROTATION_MS = 2000;
 
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(Math.max(value, min), max);
+
 // Instrucciones rotativas durante posicionamiento (sin advertencia activa)
 const POSITIONING_KEYS = [
   { icon: 'person-outline',         key: 'facialReg.instr1'        },
@@ -76,13 +80,31 @@ const POSITIONING_FALLBACKS = [
 
 export default function FaceGuideOverlay({
   primaryColor, isPositioning, screenState, quality,
-  liveWarning, requiresLiveness = false, livenessCaptureActive = false,
+  liveWarning, requiresLiveness = false, livenessCaptureActive = false, isProcessing = false,
   livenessInstruction,
   stableFrames = 0, requiredFrames = 5, onConfirm, onCancel,
 }: FaceGuideOverlayProps) {
   const { t } = useTranslation();
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const [posIdx, setPosIdx] = useState(0);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // La guía acompaña el espacio disponible, con límites para conservar un
+  // tamaño mediano tanto en portátiles como en monitores grandes.
+  const availableWidth = Math.max(windowWidth - 32, 160);
+  const minGuideWidth = Math.min(190, availableWidth);
+  const guideWidth = clamp(
+    Math.min(availableWidth, windowWidth * 0.44, windowHeight * 0.42),
+    minGuideWidth,
+    340,
+  );
+  const guideHeight = guideWidth * 1.25;
+  const guideBottom = Math.max(46, guideHeight * 0.18);
+  const guideStyle = {
+    width: guideWidth,
+    height: guideHeight,
+    borderRadius: guideWidth,
+  };
 
   const renderOvalMessage = (
     color: string,
@@ -94,11 +116,11 @@ export default function FaceGuideOverlay({
     const pct = Math.round((stableFrames / requiredFrames) * 100);
     return (
       <View style={[s.container, { pointerEvents: 'none' } as any]}>
-        <View style={s.ovalWrap}>
-          <View style={[s.oval, { borderColor: color, borderStyle }]} />
-          <View style={[s.badge, { backgroundColor: color + 'F2' }]}>
+        <View style={[s.ovalWrap, { height: guideHeight }]}>
+          <View style={[s.oval, guideStyle, { borderColor: color, borderStyle }]} />
+          <View style={[s.badge, { backgroundColor: color + 'F2', bottom: guideBottom }]}>
             <Ionicons name={icon as any} size={16} color={Colors.white} />
-            <Text style={s.badgeText} numberOfLines={2}>{message}</Text>
+            <Text style={s.badgeText} numberOfLines={requiresLiveness ? 4 : 2}>{message}</Text>
           </View>
         </View>
         {showStability && (
@@ -124,6 +146,34 @@ export default function FaceGuideOverlay({
     }
     return () => { if (timer.current) clearInterval(timer.current); };
   }, [isPositioning, noActiveWarning]);
+
+  // Mantener la guía facial como referencia estable en la versión web.
+  // El zoom del navegador escala toda la interfaz, incluido el óvalo, y
+  // puede hacer que la persona deje de usarlo como referencia de posición.
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+
+    const preventBrowserZoom = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey)) return;
+
+      // Incluye Ctrl/⌘ +, -, =, 0 y sus variantes con Shift.
+      if (['+', '=', '-', '_', '0'].includes(event.key)) {
+        event.preventDefault();
+      }
+    };
+
+    const preventPinchZoom = (event: WheelEvent) => {
+      if (event.ctrlKey || event.metaKey) event.preventDefault();
+    };
+
+    document.addEventListener('keydown', preventBrowserZoom);
+    document.addEventListener('wheel', preventPinchZoom, { passive: false });
+
+    return () => {
+      document.removeEventListener('keydown', preventBrowserZoom);
+      document.removeEventListener('wheel', preventPinchZoom);
+    };
+  }, []);
 
   // ── 1. Modal de confirmación (bloqueante) ────
   if (screenState === 'confirmationRequired') {
@@ -156,11 +206,20 @@ export default function FaceGuideOverlay({
     );
   }
 
+  if (isProcessing) {
+    return renderOvalMessage(
+      STATE_BLUE,
+      'hourglass-outline',
+      'Captura terminada. Validando el reto…',
+      'solid',
+    );
+  }
+
   if (requiresLiveness && livenessCaptureActive) {
     return renderOvalMessage(
       STATE_GREEN,
       'sync-outline',
-      livenessInstruction || t('facialReg.livenessCapturing', 'Mueve la cabeza suavemente hacia un lado'),
+      livenessInstruction ? `${livenessInstruction}. Hazlo ahora.` : 'Haz el reto ahora',
       'solid',
     );
   }
@@ -215,7 +274,7 @@ export default function FaceGuideOverlay({
       return renderOvalMessage(
         STATE_GREEN,
         'body-outline',
-        livenessInstruction || t('facialReg.livenessReady', 'Pulsa capturar y mueve la cabeza suavemente'),
+        'Prepárate con el rostro relajado. Espera a que aparezca «Hazlo ahora».',
         'solid',
       );
     }
@@ -231,7 +290,7 @@ export default function FaceGuideOverlay({
   // Fallback — solo óvalo
   return (
     <View style={[s.container, { pointerEvents: 'none' } as any]}>
-      <View style={[s.oval, { borderColor: STATE_BLUE }]} />
+      <View style={[s.oval, guideStyle, { borderColor: STATE_BLUE }]} />
     </View>
   );
 }
@@ -242,20 +301,16 @@ const s = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   oval: {
-    width: 240, height: 300,
-    borderRadius: 130,
     borderWidth: 2.5,
     borderStyle: 'dashed',
   },
   ovalWrap: {
     width: '100%',
-    height: 300,
     alignItems: 'center',
     justifyContent: 'center',
   },
   badge: {
     position:          'absolute',
-    bottom:            56,
     alignSelf:         'center',
     flexDirection:     'row',
     alignItems:        'center',

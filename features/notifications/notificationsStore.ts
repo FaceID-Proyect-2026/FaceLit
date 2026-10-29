@@ -14,7 +14,6 @@
 //  la UI las distinga.
 // ─────────────────────────────────────────────
 import {
-  MOCK_NOTIFICATIONS_RF8,
   NOTIFICATION_CHANNELS,
   Notification,
   NotificationMeta,
@@ -26,10 +25,13 @@ import {
   markNotificationReadRemote,
   resolveFacialNotificationRemote,
 } from '@/shared/services/notificationService';
+import { getBogotaDateTimeParts } from '@/shared/utils/dates';
 
 type Listener = () => void;
 
-let notifications: Notification[] = [...MOCK_NOTIFICATIONS_RF8];
+let notifications: Notification[] = [];
+let owner = '';
+let generation = 0;
 const listeners = new Set<Listener>();
 let loadedRemote = false;
 
@@ -44,9 +46,22 @@ export function getNotificationsSnapshot(): Notification[] {
   return notifications;
 }
 
+export function setNotificationsOwner(nextOwner: string): void {
+  if (owner === nextOwner) return;
+  owner = nextOwner;
+  generation += 1;
+  notifications = [];
+  loadedRemote = false;
+  emit();
+}
+
 export async function loadNotifications(): Promise<void> {
+  if (!owner) return;
+  const requestGeneration = generation;
   try {
-    notifications = await fetchNotifications();
+    const result = await fetchNotifications();
+    if (requestGeneration !== generation) return;
+    notifications = result.filter(notification => notification.recipientUserId === owner);
     loadedRemote = true;
     emit();
   } catch {
@@ -62,7 +77,9 @@ function categoryFromType(type: NotificationType): Notification['category'] {
   if (type.startsWith('academic_'))       return 'academic';
   if (type.startsWith('instructor_'))     return 'academic';
   if (type.startsWith('apprentice_'))     return 'transfer';
-  if (type.startsWith('security_'))       return 'security';
+  if (type.startsWith('security_') || type === 'user_role_changed' || type === 'email_delivery_failed'
+    || type === 'password_changed' || type === 'account_status_changed'
+    || type === 'user_account_created' || type === 'user_profile_updated') return 'security';
   if (type.startsWith('facial_'))         return 'facial';
   return 'academic';
 }
@@ -75,6 +92,7 @@ export function pushNotification(
   meta?: NotificationMeta,
 ): Notification {
   const now     = new Date();
+  const local = getBogotaDateTimeParts(now)!;
   const channel = NOTIFICATION_CHANNELS[type];
 
   const notification: Notification = {
@@ -84,8 +102,9 @@ export function pushNotification(
     channel,
     title,
     message,
-    date: now.toISOString().slice(0, 10),
-    time: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
+    createdAt: now.toISOString(),
+    date: local.date,
+    time: local.time,
     read:   false,
     meta,
     // RF-8.3: marcar como pendiente si el canal incluye correo
@@ -105,11 +124,11 @@ export function pushNotification(
 
 // ── RF-8.2 — Marcar como leída ────────────────
 export function markNotificationRead(id: string): void {
-  notifications = notifications.map(n => n.id === id ? { ...n, read: true } : n);
-  emit();
+  const requestGeneration = generation;
   if (loadedRemote) {
     markNotificationReadRemote(id)
       .then(remote => {
+        if (requestGeneration !== generation) return;
         notifications = notifications.map(n => n.id === id ? remote : n);
         emit();
       })
@@ -118,11 +137,11 @@ export function markNotificationRead(id: string): void {
 }
 
 export function markAllNotificationsRead(): void {
-  notifications = notifications.map(n => ({ ...n, read: true }));
-  emit();
+  const requestGeneration = generation;
   if (loadedRemote) {
     markAllNotificationsReadRemote()
       .then(remote => {
+        if (requestGeneration !== generation) return;
         notifications = remote;
         emit();
       })
@@ -135,9 +154,12 @@ export async function resolveFacialRequest(
   notificationId: string,
   decision: 'accepted' | 'rejected',
   decidedBy: string,
+  decidedByName?: string,
 ): Promise<void> {
+  const requestGeneration = generation;
   // Apply the decision only after the server validates the actor, state and scope.
   await resolveFacialNotificationRemote(notificationId, decision);
+  if (requestGeneration !== generation) return;
   const now = new Date().toISOString();
   notifications = notifications.map(n =>
     n.id === notificationId
@@ -148,6 +170,7 @@ export async function resolveFacialRequest(
             ...n.meta,
             facialDecision: decision,
             decidedBy,
+            decidedByName,
             decidedAt: now,
           },
         }
