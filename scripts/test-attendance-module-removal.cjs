@@ -73,33 +73,6 @@ async function run() {
   assert.deepEqual(isolated.getSnapshot().records, []);
   const academic = load('features/academic/types.ts');
   assert.equal(academic.getProgramDisplayName({ id: '1', name: 'Real program name' }, () => 'Sample translation'), 'Real program name');
-  const api = {
-    searchSessionEnvironments: async () => [{ idEnvironment: 'real-room', environmentName: 'Database room', state: 'ACTIVE', capacity: 18 }],
-    getOrCreateSessionEnvironment: async () => ({}),
-  };
-  const environments = load('features/environments/environmentsStore.ts', { './environmentSessionApi': api });
-  assert.deepEqual(environments.getSnapshot(), []);
-  await environments.loadEnvironments('instructor-a');
-  assert.equal(environments.getSnapshot()[0].id, 'real-room');
-  const original = environments.getSnapshot();
-  assert.equal(environments.updateEnvironment('real-room', { code: 'Changed' }).success, false);
-  assert.equal(environments.assignFichaToEnvironment('real-room', 'group-test').success, false);
-  assert.equal(environments.getSnapshot(), original);
-  api.searchSessionEnvironments = async () => { throw new Error('Forbidden or offline'); };
-  await environments.loadEnvironments('instructor-a', true);
-  assert.equal(environments.getMetaSnapshot().error, true);
-  assert.deepEqual(environments.getSnapshot(), []);
-  api.searchSessionEnvironments = async () => [];
-  await environments.loadEnvironments('instructor-a', true);
-  assert.equal(environments.getMetaSnapshot().error, false);
-  assert.deepEqual(environments.getSnapshot(), []);
-  let finishCreation;
-  api.getOrCreateSessionEnvironment = () => new Promise(resolve => { finishCreation = resolve; });
-  const creation = environments.registerEnvironment({ code: 'Requested room', quantity: 20 });
-  await environments.loadEnvironments('instructor-b');
-  finishCreation({});
-  assert.equal((await creation).success, false);
-  assert.equal(environments.getMetaSnapshot().owner, 'instructor-b');
   for (const language of ['es', 'en', 'fr', 'de']) {
     const locale = load(`shared/i18n/locales/${language}.ts`, {
       '../notificationTemplates': { notificationTemplates: { es: {}, en: {}, fr: {}, de: {} } },
@@ -117,11 +90,11 @@ async function run() {
     assert.match(routeSource(`app/${role}/attendance/[id].tsx`), /attendance.fields.sessionPeriod/);
     assert.doesNotMatch(routeSource(`app/${role}/environments/[id].tsx`), /MOCK_FICHAS/);
   }
-  for (const file of ['features/attendance/types.ts', 'features/academic/types.ts', 'features/environments/types.ts', 'features/facial/types.ts', 'features/reports/types.ts']) {
+  for (const file of ['features/attendance/types.ts', 'features/academic/types.ts', 'features/facial/types.ts', 'features/reports/types.ts']) {
     assert.doesNotMatch(read(file), /export const (MOCK_|ATTENDANCE_EVENTS)/);
   }
   assert.doesNotMatch(read('shared/constants/routes.ts'), /SCHEDULES|\/schedules/);
   assert.doesNotMatch(read('shared/utils/permissionsHelper.ts'), /MANAGE_SCHEDULES/);
-  console.log('PASS: real attendance data, empty/error/retry states, stale-account isolation, real program names, environment API loading, pending unsupported mutations, translations and removed routes.');
+  console.log('PASS: real attendance data, empty/error/retry states, stale-account isolation, real program names, retired unsupported environment administration, translations and removed routes.');
 }
 run().catch(error => { console.error(error); process.exitCode = 1; });

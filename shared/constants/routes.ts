@@ -24,15 +24,6 @@ export const Routes = {
     USERS: "/admin/users",
   },
 
-  // Módulo 2: Gestión de Ambientes
-  ENVIRONMENTS: {
-    LIST: "/admin/environments",
-    REGISTER: "/admin/environments/register",
-    DETAIL: "/admin/environments/[id]",
-    EDIT: "/admin/environments/[id]/edit",
-    ASSIGN: "/admin/environments/assign",
-  },
-
   // Módulo 3: Gestión Académica
   ACADEMIC: {
     PROGRAMS: "/admin/academic",
