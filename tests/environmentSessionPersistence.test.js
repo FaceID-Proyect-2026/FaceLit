@@ -10,7 +10,9 @@ jest.mock('@/features/environments/environmentSessionApi', () => ({
 
 beforeEach(() => {
   jest.useFakeTimers();
-  jest.setSystemTime(new Date('2026-10-30T14:00:00-05:00'));
+  // Keep the clock and session fixture in the process-local timezone. The hook
+  // builds session times with Date.setHours, which also uses local time.
+  jest.setSystemTime(new Date(2026, 9, 30, 14, 0, 0, 0));
   sessionApi.fetchSessionInstructors.mockResolvedValue([{ idInstructor: 'teacher' }]);
   sessionApi.fetchChipsForSessionInstructor.mockResolvedValue([{ idChip: 'chip', chipCode: '3145555' }]);
   sessionApi.searchSessionEnvironments.mockResolvedValue([]);
@@ -37,6 +39,9 @@ test('saves the selected room, instructor, chip and times and returns the server
   expect(result).toEqual({ success: true, session });
   const payload = sessionApi.createEnvironmentSession.mock.calls[0][0];
   expect(payload).toMatchObject({ idEnvironment: 'room', idInstructorInCharge: 'teacher', idChip: 'chip', registrationMinutes: 10 });
+  expect(new Date(payload.exitTime).getHours()).toBe(16);
+  expect(new Date(payload.shutdownTime).getHours()).toBe(16);
+  expect(new Date(payload.shutdownTime).getMinutes()).toBe(10);
   expect(new Date(payload.exitTime) - new Date(payload.entryTime)).toBe(2 * 60 * 60 * 1000);
   expect(new Date(payload.shutdownTime) - new Date(payload.exitTime)).toBe(10 * 60 * 1000);
   expect(view.result.current.saving).toBe(false);
