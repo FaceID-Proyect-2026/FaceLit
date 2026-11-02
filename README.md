@@ -1,5 +1,7 @@
 # FaceLit frontend
 
+# Documentación : https://github.com/FaceID-Proyect-2026/facelit-docs
+
 FaceLit is the SENA academic attendance application for apprentices, instructors and coordinators. This repository contains its Expo Router web and mobile interface. Academic data, accounts, attendance sessions and notifications are provided by the backend; PostgreSQL migrations and facial processing belong to separate repositories.
 
 ## Architecture and repository structure
