@@ -70,10 +70,25 @@ test('registers an attendance event using the explicit timestamp and score', asy
 
 test('preserves challenge frames in a facial capture request', async () => {
   const payload = { idRecordEnvironment: 'qa-session', idDevice: 'qa-device', imageBase64: 'synthetic-placeholder',
-    imageFrames: ['synthetic-frame-1', 'synthetic-frame-2'], livenessChallenge: 'MOVE_UP', livenessChallenges: ['MOVE_UP'], origin: 'PC' };
+    imageFrames: ['synthetic-frame-1', 'synthetic-frame-2', 'synthetic-frame-3'], livenessChallenge: 'MOVE_UP', livenessChallenges: ['MOVE_UP'], origin: 'PC' };
   await registerFacialAttendanceFromImage(payload);
   expect(requests[0].url).toBe('/api/facial/events/from-image');
   expect(JSON.parse(requests[0].data)).toEqual(payload);
+});
+
+test.each([undefined, [], ['one'], ['one', 'two'], Array(19).fill('frame')])(
+  'rejects missing or out-of-range capture sequences before sending a request: %j', async imageFrames => {
+    await expect(registerFacialAttendanceFromImage({ imageBase64: 'single', imageFrames }))
+      .rejects.toThrow('entre 3 y 18 capturas');
+    expect(requests).toHaveLength(0);
+  },
+);
+
+test('accepts the maximum capture sequence without changing its order', async () => {
+  const imageFrames = Array.from({ length: 18 }, (_, index) => `frame-${index}`);
+  await registerFacialAttendanceFromImage({ idRecordEnvironment: 'session', idDevice: 'device',
+    imageBase64: imageFrames[0], imageFrames, origin: 'PC' });
+  expect(JSON.parse(requests[0].data).imageFrames).toEqual(imageFrames);
 });
 
 test('initializes absences using a session parameter', async () => {
