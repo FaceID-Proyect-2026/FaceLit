@@ -7,6 +7,7 @@ import React, {
   useEffect, ReactNode,
 } from 'react';
 import i18n from '@/shared/i18n/index';
+import { readPreference, writePreference } from '@/shared/services/preferenceStorage';
 
 // ── Tipos ─────────────────────────────────────
 export type Language = 'es' | 'en' | 'de' | 'fr';
@@ -24,12 +25,10 @@ const STORAGE_KEY = 'facelit-lang';
 
 // ── Helpers ───────────────────────────────────
 function getSavedLanguage(): Language {
-  try {
-    const saved = globalThis.localStorage?.getItem(STORAGE_KEY);
-    if (saved && LANGUAGES.includes(saved as Language)) {
-      return saved as Language;
-    }
-  } catch {}
+  const saved = readPreference(STORAGE_KEY);
+  if (saved && LANGUAGES.includes(saved as Language)) {
+    return saved as Language;
+  }
   return 'es';
 }
 
@@ -69,9 +68,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const changeLanguage = useCallback((lang: Language) => {
     setLanguage(lang);
     if (i18n.language !== lang) void i18n.changeLanguage(lang);
-    try {
-      globalThis.localStorage?.setItem(STORAGE_KEY, lang);
-    } catch {}
+    writePreference(STORAGE_KEY, lang);
   }, []);
 
   return (

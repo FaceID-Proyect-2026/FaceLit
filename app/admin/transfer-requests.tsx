@@ -10,7 +10,6 @@ import { TransferRequest } from '@/features/academic/types';
 import { useTransferRequests } from '@/features/academic/useTransferRequests';
 import { Colors } from '@/shared/constants/colors';
 import { FontSize, FontWeight } from '@/shared/constants/typography';
-import { useAuth } from '@/shared/contexts/AuthContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import { useAppDialog } from '@/shared/hooks/useAppDialog';
 import { Ionicons } from '@expo/vector-icons';
@@ -215,7 +214,6 @@ const rc = StyleSheet.create({
 export default function TransferRequestsScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
-  const { user } = useAuth();
   const { requests, pendingCount, approve, reject } = useTransferRequests();
   const { alert, DialogUI } = useAppDialog();
 

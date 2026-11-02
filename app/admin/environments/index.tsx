@@ -1,6 +1,5 @@
-import { Redirect } from 'expo-router';
+import EnvironmentAdminList from '@/features/environments/EnvironmentAdminList';
 
-// Environments are selected or created inside attendance session setup.
-export default function LegacyEnvironmentRoute() {
-  return <Redirect href="/admin" />;
+export default function AdminEnvironmentsRoute() {
+  return <EnvironmentAdminList />;
 }

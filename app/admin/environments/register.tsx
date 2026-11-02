@@ -1,6 +1,5 @@
-import { Redirect } from 'expo-router';
+import EnvironmentAdminForm from '@/features/environments/EnvironmentAdminForm';
 
-// Environments are selected or created inside attendance session setup.
-export default function LegacyEnvironmentRoute() {
-  return <Redirect href="/admin" />;
+export default function RegisterEnvironmentRoute() {
+  return <EnvironmentAdminForm mode="create" />;
 }

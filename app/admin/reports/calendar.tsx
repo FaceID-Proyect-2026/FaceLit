@@ -6,17 +6,14 @@ import { useAuth } from '@/shared/contexts/AuthContext';
 import { useAttendance } from '@/features/attendance/useAttendance';
 import type { AttendanceStatus } from '@/features/attendance/types';
 import { getFichasSnapshot, subscribe as subscribeAcademic } from '@/features/academic/academicStore';
-import { useSyncExternalStore } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useSyncExternalStore } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Modal, TextInput, useWindowDimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import * as DocumentPicker from 'expo-document-picker';
 import AppButton from '@/shared/components/ui/AppButton';
 import AppDialog from '@/shared/components/ui/AppDialog';
-import SelectField from '@/shared/components/ui/SelectField';
-import DateField from '@/shared/components/ui/DateField';
 
 interface DayRecord {
   id: string;
@@ -67,14 +64,14 @@ export default function CalendarReportScreen() {
   const [excuseDialogVisible, setExcuseDialogVisible] = useState(false);
   const [excuseMessage, setExcuseMessage] = useState('');
   const [excusePdf, setExcusePdf] = useState<string | null>(null);
-  const [submittingExcuse, setSubmittingExcuse] = useState(false);
+  const [, setSubmittingExcuse] = useState(false);
   const [excuses, setExcuses] = useState<Excuse[]>([]);
   const [selectedAbsenceRecord, setSelectedAbsenceRecord] = useState<DayRecord | null>(null);
 
   const userAttendance = useMemo(() => {
     if (!user) return [];
     return attendance.filter(r => r.userId === user.id);
-  }, [attendance, user?.id]);
+  }, [attendance, user]);
 
   const getDayStatus = useCallback((date: Date) => {
     const dateStr = date.toISOString().split('T')[0];

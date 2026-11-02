@@ -34,9 +34,9 @@ scripts/               Executable checks and development utilities
 README.md              Single maintained documentation entry
 ```
 
-Routes are centralized in [routes.ts](shared/constants/routes.ts). Backend HTTP calls use [api.js](shared/services/api.js), whose interceptor adds the stored JWT. Web token storage uses localStorage; native storage uses SecureStore. These are existing application behaviors, not a claim that every security finding has been closed.
+Routes are centralized in [routes.ts](shared/constants/routes.ts). Backend HTTP calls use [api.js](shared/services/api.js), whose interceptor adds the JWT. Web sessions keep the JWT in memory and require login again after reload or closing the tab; earlier browser token entries are removed. Native sessions use SecureStore. Memory storage reduces credential persistence; prevention of XSS remains necessary.
 
-Schedule management and schedule exceptions were removed from the project scope. Environment attendance sessions and their entry/exit times remain separate functionality. Unsupported environment mutations were left pending rather than backed by fabricated persistence; see the current environment API adapters and regression script for the supported operations. Historical design notes are not current feature contracts.
+Schedule management and schedule exceptions were removed from the project scope. Environment attendance sessions and their entry/exit times remain separate functionality. Coordinators manage the environment catalog through /api/admin/environments: list, create, edit, activate and deactivate. Deactivation preserves history and is blocked while active/future sessions exist. Instructor session preparation remains under /api/environment. Physical deletion and direct chip assignment are not offered by this catalog.
 
 ## Versions and prerequisites
 
@@ -69,10 +69,8 @@ On a physical device, localhost means the device itself. Address resolution and 
 | Variable in this branch | Purpose |
 | --- | --- |
 | `EXPO_PUBLIC_API_URL` | Public backend base URL |
-| `EXPO_PUBLIC_EMBEDDING_API_URL` | Legacy direct facial-service URL retained in this branch |
-| `EXPO_PUBLIC_EMBEDDING_API_KEY` | Legacy client-visible field; the example contains no private value |
 
-All `EXPO_PUBLIC_*` values are visible in delivered application code. Do not put a private service credential in them. The server-side facial gateway/security migration is a separate coordinated delivery; this README describes the checked-out code rather than silently claiming that migration is integrated.
+The client sends facial requests to FaceLit-Backend. It must not call the facial service directly or contain its service credential. All `EXPO_PUBLIC_*` values are visible in delivered application code; keep private credentials in server-side configuration.
 
 `.env` and environment-specific variants are ignored; `.env.example` remains versioned. Configure the deployment's required public variables in its private build settings because an ignored local file is not sent by Git. The project owner identified `https://srv2068863.hstgr.cloud` as the deployment target. That declaration is not proof that this branch or its final commit is already deployed there.
 
@@ -127,3 +125,12 @@ Verify the exact delivered commit and its required checks. In the target deploym
 All maintained explanatory documentation is consolidated in this README. Removed implementation notes and reports remain recoverable through Git history and the separately retained delivery archive. Runtime assets, tests, configuration examples and executable scripts remain in their functional locations.
 
 Related repositories: [backend](https://github.com/FaceID-Proyect-2026/FaceLit-Backend), [database](https://github.com/FaceID-Proyect-2026/FaceLit-DB), [facial service](https://github.com/FaceID-Proyect-2026/micro-facial).
+
+## HU-48 screen boundaries
+
+The login and notification route entries re-export screens in their features.
+LoginTransitionOverlay owns the recovery animation and cancels it on unmount;
+NotificationDetail renders metadata and forwards decisions to the existing
+notification hook. Style modules contain presentation rules. Shared capture
+types and brightness policy live in features/facial, with compatible re-exports
+from the registration hook. APIs, route URLs and capture timing stay intact.

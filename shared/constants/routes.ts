@@ -22,6 +22,8 @@ export const Routes = {
     PROFILE: "/profile",
     SETTINGS: "/profile/settings",
     USERS: "/admin/users",
+    ENVIRONMENTS: "/admin/environments",
+    ENVIRONMENT_REGISTER: "/admin/environments/register",
   },
 
   // Módulo 3: Gestión Académica

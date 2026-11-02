@@ -3,6 +3,7 @@
 //  Maneja el tema claro/oscuro de la app
 // ─────────────────────────────────────────────
 import { Colors } from '@/shared/constants/colors';
+import { readPreference, writePreference } from '@/shared/services/preferenceStorage';
 import React, {
     createContext,
     useCallback,
@@ -168,28 +169,22 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [isDark, setIsDark] = useState(true);
 
   useEffect(() => {
-    try {
-      const saved = globalThis.localStorage?.getItem(STORAGE_KEY);
-      if (saved === 'light') setIsDark(false);
-      if (saved === 'dark') setIsDark(true);
-    } catch { }
+    const saved = readPreference(STORAGE_KEY);
+    if (saved === 'light') setIsDark(false);
+    if (saved === 'dark') setIsDark(true);
   }, []);
 
   const toggleTheme = useCallback(() => {
     setIsDark(prev => {
       const next = !prev;
-      try {
-        globalThis.localStorage?.setItem(STORAGE_KEY, next ? 'dark' : 'light');
-      } catch { }
+      writePreference(STORAGE_KEY, next ? 'dark' : 'light');
       return next;
     });
   }, []);
 
   const setDarkMode = useCallback((value: boolean) => {
     setIsDark(value);
-    try {
-      globalThis.localStorage?.setItem(STORAGE_KEY, value ? 'dark' : 'light');
-    } catch { }
+    writePreference(STORAGE_KEY, value ? 'dark' : 'light');
   }, []);
 
   return (

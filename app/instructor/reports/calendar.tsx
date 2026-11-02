@@ -64,14 +64,14 @@ export default function CalendarReportScreen() {
   const [excuseDialogVisible, setExcuseDialogVisible] = useState(false);
   const [excuseMessage, setExcuseMessage] = useState('');
   const [excusePdf, setExcusePdf] = useState<string | null>(null);
-  const [submittingExcuse, setSubmittingExcuse] = useState(false);
+  const [, setSubmittingExcuse] = useState(false);
   const [excuses, setExcuses] = useState<Excuse[]>([]);
   const [selectedAbsenceRecord, setSelectedAbsenceRecord] = useState<DayRecord | null>(null);
 
   const userAttendance = useMemo(() => {
     if (!user) return [];
     return attendance.filter(r => r.userId === user.id);
-  }, [attendance, user?.id]);
+  }, [attendance, user]);
 
   const getDayStatus = useCallback((date: Date) => {
     const dateStr = date.toISOString().split('T')[0];

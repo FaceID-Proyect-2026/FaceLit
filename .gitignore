@@ -51,3 +51,6 @@ app-example
 # Generated automated test reports
 coverage/
 coverage-v8/
+
+# Local build and verification artifacts.
+.tmp/

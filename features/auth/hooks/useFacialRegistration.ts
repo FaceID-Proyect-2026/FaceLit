@@ -33,30 +33,14 @@ import { Platform } from 'react-native';
 export { LIVENESS_FRAME_COUNT, LIVENESS_CHALLENGES, buildLivenessSequence, replaceLivenessChallengeAtIndex } from '@/features/facial/livenessChallenges';
 export type { LivenessChallenge } from '@/features/facial/livenessChallenges';
 
-export type ScreenState = 'idle' | 'requesting' | 'confirmationRequired' | 'positioning' | 'ready' | 'captured';
-export type CaptureQuality = 'checking' | 'good' | 'lowLight';
+export type { ScreenState, CaptureQuality } from '@/features/facial/captureTypes';
+export { MIN_BRIGHTNESS_SCORE, getAverageBrightness } from '@/features/facial/captureQuality';
+import type { ScreenState, CaptureQuality } from '@/features/facial/captureTypes';
+import { MIN_BRIGHTNESS_SCORE } from '@/features/facial/captureQuality';
 
-const POSITIONING_DELAY_MS  = 1500; // tiempo simulado de "acércate más"
-export const MIN_BRIGHTNESS_SCORE = 60; // umbral de brillo (0–255)
-
+const POSITIONING_DELAY_MS = 1500;
 const ALREADY_REGISTERED_ERROR = 'facial.validation.alreadyRegistered';
 const DUPLICATE_FACE_ERROR_STATUS = 409;
-
-// ── Helper de negocio: brillo promedio de una imagen (canvas web) ──
-export function getAverageBrightness(canvas: HTMLCanvasElement): number {
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return 255;
-
-  const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  let total = 0;
-  const pixelCount = data.length / 4;
-
-  for (let i = 0; i < data.length; i += 4) {
-    // Luminancia perceptual aproximada
-    total += data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
-  }
-  return total / pixelCount;
-}
 
 interface FacialRegistrationOptions {
   onRegistrationSaved?: () => void;

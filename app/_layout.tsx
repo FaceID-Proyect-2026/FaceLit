@@ -13,18 +13,8 @@ import {
   subscribeRealtime,
 } from "@/shared/services/realtime";
 import type { RealtimeMessage } from "@/shared/services/realtime";
-const { AuthProvider, useAuth } = require("@/shared/contexts/AuthContext") as {
-  AuthProvider: React.ComponentType<React.PropsWithChildren>;
-  useAuth: () => {
-    isAuthenticated: boolean;
-    loading: boolean;
-    user?: { id?: string; role: string } | null;
-  };
-};
-const { ThemeProvider, useTheme } = require("@/shared/contexts/ThemeContext") as {
-  ThemeProvider: React.ComponentType<React.PropsWithChildren>;
-  useTheme: () => { theme: { background: string; statusBar: "light" | "dark" } };
-};
+import { AuthProvider, useAuth } from "@/shared/contexts/AuthContext";
+import { ThemeProvider, useTheme } from "@/shared/contexts/ThemeContext";
 import i18n from "@/shared/i18n/index";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -32,9 +22,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { I18nextProvider } from "react-i18next";
 import { AppState, LogBox, StyleSheet, View } from "react-native";
 
-const { I18nProvider } = require("@/shared/contexts/I18nContext") as {
-  I18nProvider: React.ComponentType<React.PropsWithChildren>;
-};
+import { I18nProvider } from "@/shared/contexts/I18nContext";
 
 LogBox.ignoreLogs([
   "Cannot connect to Expo CLI",

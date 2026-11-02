@@ -151,15 +151,16 @@ async function testExistingAuthServices(platform) {
   const registered = await users.createManagedUser(account);
   assert.equal(registered.userId, 'registered-user');
   await assert.rejects(users.createManagedUser(account), error => error.response.status === 409);
-  let auth = load('shared/services/authService.js', mocks, { localStorage });
+  const sessionCache = new Map();
+  const auth = load('shared/services/authService.js', mocks, { localStorage }, sessionCache);
   assert.equal((await auth.login(account.numberDocument, 'A1!TestPassword', true)).role, 'COORDINATOR');
-  // Recreate frontend modules as on a restart; only platform token storage survives.
-  auth = load('shared/services/authService.js', mocks, { localStorage });
-  const tokens = load('shared/services/tokenStorage.js', mocks, { localStorage });
+  const tokens = load('shared/services/tokenStorage.js', mocks, { localStorage }, sessionCache);
   assert.equal(await tokens.getToken(), 'simulated-session-token');
   assert.equal((await auth.getMyProfile()).idUser, registered.userId);
-  assert.equal(browserValues.has('token'), platform === 'web');
+  assert.equal(browserValues.has('token'), false);
   assert.equal(secureValues.has('token'), platform !== 'web');
+  const reloaded = load('shared/services/tokenStorage.js', mocks, { localStorage });
+  assert.equal(await reloaded.getToken(), platform === 'web' ? null : 'simulated-session-token');
   await auth.logout(); assert.equal(await tokens.getToken(), null);
   await assert.rejects(auth.login(account.numberDocument, 'incorrect', true), error => error.response.status === 401);
   assert.equal(await tokens.getToken(), null);

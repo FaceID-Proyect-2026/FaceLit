@@ -48,7 +48,7 @@ export default function VerifyIdentityScreen() {
       Animated.timing(cardAnim,  { toValue: 1, duration: 480, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
       Animated.timing(cardSlide, { toValue: 0, duration: 480, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
     ]).start();
-  }, []);
+  }, [cardAnim, cardSlide]);
 
   const {
     code, setCode,

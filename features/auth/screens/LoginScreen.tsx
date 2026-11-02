@@ -1,0 +1,320 @@
+import PrivacyNoticeModal from '@/features/auth/components/PrivacyNoticeModal';
+import { useLoginForm } from '@/features/auth/hooks/useLoginForm';
+import { Colors } from '@/shared/constants/colors';
+import { Routes } from '@/shared/constants/routes';
+import { useTheme } from '@/shared/contexts/ThemeContext';
+import { useAppDialog } from '@/shared/hooks/useAppDialog';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router, useRouter } from 'expo-router';
+import { useCallback, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import LoginTransitionOverlay from '@/features/auth/components/LoginTransitionOverlay';
+import { loginStyles as s } from '@/features/auth/styles/loginStyles';
+
+export default function LoginScreen() {
+  const { theme, isDark } = useTheme();
+  const { t } = useTranslation();
+  const { alert, DialogUI } = useAppDialog();
+  const routerInstance = useRouter();
+  const { form, errors, loading, alreadyAccepted, privacyStatusKnown, privacyChecking, setField, setDocumentField, handleSubmit } = useLoginForm();
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
+  const [transitioning, setTransitioning] = useState(false);
+  const passwordRef = useRef<TextInput>(null);
+
+  const handleForgotPassword = () => {
+    if (transitioning) return;
+    setTransitioning(true);
+  };
+
+  const handleTransitionDone = useCallback(() => {
+    router.push(Routes.AUTH.PASSWORD_RECOVERY as any);
+    // Pequeño delay para resetear el estado después de navegar
+    setTimeout(() => setTransitioning(false), 800);
+  }, []);
+  const handleAcceptPrivacy = () => {
+    setField('accepted', true);
+    setShowPrivacy(false);
+    alert(t('privacyNotice.acceptedTitle'), t('privacyNotice.acceptedResponsibility'), [
+      { text: t('common.ok') },
+    ]);
+  };
+  // ── Colores locales ───────────────────────────
+  const text = isDark ? Colors.dark.text : Colors.light.text;
+  const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
+  const cardBg = isDark ? Colors.dark.surface : Colors.light.surface;
+  const inputBg = isDark ? Colors.dark.inputBg : Colors.light.inputBg;
+  const inputBorder = isDark ? Colors.dark.inputBorder : Colors.light.inputBorder;
+  const cardBorder = isDark ? Colors.dark.border : Colors.light.border;
+  const forgotColor = isDark ? Colors.white : theme.primaryDark;
+
+  return (
+    <>
+      <LinearGradient
+        colors={isDark
+          ? ['#000000', '#06170F', '#0B2D17']
+          : ['#F7FFF4', '#E5F7DF', '#1E4C28']}
+        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+        style={s.gradient}
+      >
+        {/* Arcos decorativos */}
+        <View pointerEvents="none" style={[s.arcTop, { backgroundColor: isDark ? 'rgba(101,179,97,0.08)' : 'rgba(20,70,28,0.18)' }]} />
+        <View pointerEvents="none" style={[s.arcBottom, { backgroundColor: isDark ? 'rgba(101,179,97,0.22)' : 'rgba(101,179,97,0.28)' }]} />
+
+        {/* Círculos decorativos adicionales */}
+        <View pointerEvents="none" style={[s.deco1, { backgroundColor: isDark ? 'rgba(101,179,97,0.05)' : 'rgba(101,179,97,0.12)' }]} />
+        <View pointerEvents="none" style={[s.deco2, { backgroundColor: isDark ? 'rgba(101,179,97,0.04)' : 'rgba(101,179,97,0.08)' }]} />
+
+        <SafeAreaView style={s.safe}>
+          <KeyboardAvoidingView
+            style={s.kav}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            enabled={Platform.OS !== 'web'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 12 : 0}
+          >
+            <ScrollView
+              style={s.scrollView}
+              contentContainerStyle={s.scroll}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'none'}
+              automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+              removeClippedSubviews={false}
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={[
+                s.card,
+                { backgroundColor: cardBg, borderColor: cardBorder },
+              ]}>
+
+                {/* Volver */}
+                <TouchableOpacity
+                  onPress={() => routerInstance.push('/')}
+                  style={[s.backBtn, {
+                    borderColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)',
+                  }]}
+                >
+                  <Ionicons name="arrow-back" size={18} color={text} />
+                </TouchableOpacity>
+
+                {/* Ícono superior */}
+                <View style={s.logoWrap}>
+                  <View style={[s.logoCircle, { backgroundColor: theme.primary + '18', borderColor: theme.primary + '44' }]}>
+                    <Ionicons name="person-circle-outline" size={46} color={theme.primary} />
+                  </View>
+                </View>
+
+                {/* Título */}
+                <Text style={[s.title, { color: text }]}>{t('login.title')}</Text>
+                <Text style={[s.subtitle, { color: muted }]}>{t('login.subtitle')}</Text>
+
+                {/* Separador decorativo */}
+                <View style={[s.divider, { backgroundColor: theme.border }]} />
+
+                {/* ── Documento ── */}
+                <View style={s.fieldGroup}>
+                  <Text style={[s.label, { color: text }]}>{t('login.document')}</Text>
+                  <View style={[s.inputWrap, {
+                    backgroundColor: inputBg,
+                    borderColor: errors.document ? Colors.error : inputBorder,
+                  }]}>
+                    <Ionicons name="card-outline" size={18} color={muted} />
+                    <TextInput
+                      style={[s.input, { color: text }] as any}
+                      accessibilityLabel={t('login.document')}
+                      value={form.document}
+                      onChangeText={setDocumentField}
+                      placeholder={t('login.documentPlaceholder')}
+                      placeholderTextColor={isDark ? '#5A7258' : '#AAAAAA'}
+                      keyboardType={Platform.OS === 'web' ? 'default' : 'number-pad'}
+                      inputMode={Platform.OS === 'web' ? 'numeric' : undefined}
+                      autoCorrect={false}
+                      autoCapitalize="none"
+                      autoComplete="off"
+                      importantForAutofill="no"
+                      textContentType="none"
+                      returnKeyType="next"
+                      blurOnSubmit={false}
+                      maxLength={15}
+                      showSoftInputOnFocus
+                      onSubmitEditing={() => passwordRef.current?.focus()}
+                    />
+                  </View>
+                  {errors.document ? <Text style={s.errorText}>{errors.document}</Text> : null}
+                  {privacyChecking ? (
+                    <Text style={[s.helperText, { color: muted }]}>{t('login.checkingPrivacy')}</Text>
+                  ) : null}
+                </View>
+
+
+                {/* ── Contraseña ── */}
+                <View style={s.fieldGroup}>
+                  <Text style={[s.label, { color: text }]}>{t('login.password')}</Text>
+                  <View style={[s.inputWrap, {
+                    backgroundColor: inputBg,
+                    borderColor: errors.password ? Colors.error : inputBorder,
+                  }]}>
+                    <Ionicons name="lock-closed-outline" size={18} color={muted} />
+                    <TextInput
+                      accessibilityLabel={t('login.password')}
+                      ref={passwordRef}
+                      style={[s.input, { color: text }] as any}
+                      value={form.password}
+                      onChangeText={v => setField('password', v)}
+                      placeholder={t('login.passwordPlaceholder')}
+                      placeholderTextColor={isDark ? '#5A7258' : '#AAAAAA'}
+                      secureTextEntry={!showPassword}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      autoComplete="password"
+                      textContentType="password"
+                      returnKeyType="done"
+                      blurOnSubmit={false}
+                      onSubmitEditing={handleSubmit}
+                    />
+                    <TouchableOpacity
+                      onPress={() => setShowPassword(v => !v)}
+                      style={s.eyeBtn}
+                      accessibilityRole="button"
+                      accessibilityLabel={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                      accessibilityState={{ checked: showPassword }}
+                    >
+                      <Ionicons
+                        name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                        size={18} color={muted}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                  {errors.password ? <Text style={s.errorText}>{errors.password}</Text> : null}
+                </View>
+
+                {/* ── Política de privacidad ── */}
+                {privacyStatusKnown && !alreadyAccepted && !form.accepted && (
+                  <View style={[s.policyCard, {
+                    backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#F3F8F3',
+                    borderColor: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.07)',
+                  }]}>
+                    <TouchableOpacity
+                      onPress={() => setShowPrivacy(true)}
+                      activeOpacity={0.8}
+                      style={s.policyRow}
+                    >
+                      <View style={[s.checkbox, {
+                        borderColor: errors.policy
+                          ? Colors.error
+                          : inputBorder,
+                        backgroundColor: Colors.transparent,
+                      }]}>
+                        <Ionicons name="document-text-outline" size={14} color={errors.policy ? Colors.error : theme.primary} />
+                      </View>
+                      <Text style={s.policyTextWrap}>
+                        <Text style={[s.policyText, { color: text }]}>{t('login.policyOpenPrefix')}{' '}</Text>
+                        <Text style={[s.policyLink, { color: isDark ? theme.primaryLight : theme.primaryDark }]}>
+                          {t('login.policyLink')}
+                        </Text>
+                        <Text style={[s.policyText, { color: text }]}>{t('login.policyOpenSuffix')}</Text>
+                      </Text>
+                    </TouchableOpacity>
+                    {errors.policy
+                      ? <Text style={[s.errorText, { marginTop: 6, marginLeft: 30 }]}>{t('login.policyError')}</Text>
+                      : null}
+                  </View>
+                )}
+
+                {/* ── Errores generales ── */}
+                {errors.general ? (
+                  <View style={[s.blockedBanner, {
+                    backgroundColor: isDark ? 'rgba(217,32,39,0.12)' : '#FFF0F0',
+                    borderColor: Colors.error,
+                  }]}>
+                    <Ionicons name="cloud-offline-outline" size={16} color={Colors.error} />
+                    <Text style={[s.blockedText, { color: Colors.error }]}>{errors.general}</Text>
+                  </View>
+                ) : null}
+
+                {errors.blocked ? (
+                  <View style={[s.blockedBanner, {
+                    backgroundColor: isDark ? 'rgba(217,32,39,0.12)' : '#FFF0F0',
+                    borderColor: Colors.error,
+                  }]}>
+                    <Ionicons name="lock-closed" size={16} color={Colors.error} />
+                    <Text style={[s.blockedText, { color: Colors.error }]}>{errors.blocked}</Text>
+                  </View>
+                ) : null}
+
+                {/* ── Botón iniciar sesión ── */}
+                {/* ── Botón iniciar sesión ── */}
+                <TouchableOpacity
+                  onPress={handleSubmit}
+                  style={[s.loginBtn, (loading || privacyChecking) && s.loginBtnDisabled]}
+                  activeOpacity={0.85}
+                  disabled={loading || privacyChecking}
+                >
+                  <LinearGradient
+                    colors={['#72C96D', '#65B361', '#4FA14B']}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                    style={s.loginBtnGradient}
+                  >
+                    {loading || privacyChecking ? (
+                      <ActivityIndicator size="small" color={Colors.white} />
+                    ) : (
+                      <Ionicons name="log-in-outline" size={20} color={Colors.white} />
+                    )}
+                    <Text style={s.loginBtnText}>
+                      {loading ? t('login.loggingIn') ?? t('login.loginBtn') : privacyChecking ? t('login.checkingPrivacy') : t('login.loginBtn')}
+                    </Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+
+                <PrivacyNoticeModal
+                  visible={showPrivacy}
+                  onClose={() => setShowPrivacy(false)}
+                  onAccept={handleAcceptPrivacy}
+                  accepted={form.accepted}
+                />
+
+                {/* ── ¿Olvidaste tu contraseña? ── */}
+                <View style={s.links}>
+                  <TouchableOpacity
+                    onPress={handleForgotPassword}
+                    disabled={transitioning}
+                    activeOpacity={0.7}
+                    style={[s.forgotBtn, {
+                      backgroundColor: isDark ? Colors.transparent : theme.primary + '14',
+                      borderColor: isDark ? Colors.transparent : theme.primary + '33',
+                    }]}
+                  >
+                    <Ionicons name="help-circle-outline" size={15} color={forgotColor} />
+                    <Text style={[s.forgotText, { color: forgotColor }]}>
+                      {t('login.forgotPassword')}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+              </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
+      </LinearGradient>
+
+      {/* Overlay de transición animada */}
+      <LoginTransitionOverlay visible={transitioning} onDone={handleTransitionDone} />
+      {DialogUI}
+    </>
+  );
+}
+
+// ── Estilos ───────────────────────────────────

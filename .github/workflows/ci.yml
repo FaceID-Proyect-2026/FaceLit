@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: FaceID-Proyect-2026/FaceLit-Backend
-          ref: 626d25f962edb861f5b0d3964ce6e2953382cec4
+          ref: e8d990195996a4c72c4e33c1208ae88bd540e50d
           path: FaceLit-Backend
 
       - name: Setup Node.js

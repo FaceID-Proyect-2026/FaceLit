@@ -13,7 +13,6 @@ export default function ReportsDashboardScreen() {
   const { theme, isDark } = useTheme();
   const { t } = useTranslation();
   const text = isDark ? Colors.dark.text : Colors.light.text;
-  const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
   const cardBg = theme.surface;
   const border = theme.border;
   const bg = isDark ? Colors.dark.background : Colors.light.background;

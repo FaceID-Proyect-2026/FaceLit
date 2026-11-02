@@ -145,6 +145,13 @@ export default function AdminDashboard() {
       route: Routes.ACADEMIC.PROGRAMS,
       color: theme.success,
     },
+    ...(user?.role === 'COORDINATOR' ? [{
+      icon: 'business-outline',
+      label: t('sidebar.environments'),
+      description: t('environmentAdmin.listSubtitle'),
+      route: Routes.ADMIN.ENVIRONMENTS,
+      color: theme.info,
+    }] : []),
     {
       icon: 'checkmark-circle-outline',
       label: t('sidebar.attendance'),

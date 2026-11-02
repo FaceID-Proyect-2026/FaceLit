@@ -99,6 +99,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           },
         ]
       : []),
+    ...(user?.role === "COORDINATOR"
+      ? [{
+          icon: "business-outline",
+          label: t("sidebar.environments"),
+          route: Routes.ADMIN.ENVIRONMENTS,
+          module: "environments",
+        }]
+      : []),
     {
       icon: "school-outline",
       label: t("sidebar.academic"),

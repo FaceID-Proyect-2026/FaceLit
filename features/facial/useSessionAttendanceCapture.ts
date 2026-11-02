@@ -4,11 +4,8 @@ import {
   formatLivenessStep, buildChallengeFailureMessage, clampLivenessIndex,
 } from '@/features/facial/livenessChallenges';
 import type { LivenessChallenge } from '@/features/facial/livenessChallenges';
-import {
-  MIN_BRIGHTNESS_SCORE,
-  ScreenState,
-  CaptureQuality,
-} from '@/features/auth/hooks/useFacialRegistration';
+import { MIN_BRIGHTNESS_SCORE } from '@/features/facial/captureQuality';
+import type { ScreenState, CaptureQuality } from '@/features/facial/captureTypes';
 import { FacialSession } from '@/features/facial/types';
 import { registerFacialAttendanceFromImage } from '@/shared/services/facialAttendanceService';
 import { getFacialEmbeddingErrorMessage, validateFacialLiveness } from '@/shared/services/facialEmbeddingService';

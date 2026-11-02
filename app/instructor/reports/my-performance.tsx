@@ -34,7 +34,7 @@ export default function MyPerformanceScreen() {
   const userAttendance = useMemo(() => {
     if (!user) return [];
     return attendance.filter(r => r.userId === user.id).sort((a, b) => a.date.localeCompare(b.date));
-  }, [attendance, user?.id]);
+  }, [attendance, user]);
 
   const overallStats = useMemo(() => {
     const total = userAttendance.length;
@@ -65,7 +65,6 @@ export default function MyPerformanceScreen() {
     return Array.from(monthsMap.values()).sort((a, b) => a.month.localeCompare(b.month));
   }, [userAttendance]);
 
-  const maxMonthlyPercentage = useMemo(() => Math.max(...monthlyStats.map(m => m.percentage), 1), [monthlyStats]);
   const maxMonthlyTotal = useMemo(() => Math.max(...monthlyStats.map(m => m.totalClasses), 1), [monthlyStats]);
 
   const formatMonth = (monthStr: string) => {
