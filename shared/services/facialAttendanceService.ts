@@ -16,7 +16,7 @@ export interface FacialAttendanceCapturePayload {
   idRecordEnvironment: string;
   idDevice: string;
   imageBase64: string;
-  imageFrames?: string[];
+  imageFrames: string[];
   livenessChallenge?: string;
   livenessChallenges?: string[];
   origin: 'PC' | 'MOBILE';
@@ -99,12 +99,15 @@ export async function registerFacialAttendanceEvent(
 export async function registerFacialAttendanceFromImage(
   payload: FacialAttendanceCapturePayload,
 ): Promise<FacialEventResponse> {
+  if (!Array.isArray(payload.imageFrames) || payload.imageFrames.length < 3 || payload.imageFrames.length > 18) {
+    throw new Error('La validación de vida requiere entre 3 y 18 capturas.');
+  }
   const { data } = await api.post<FacialEventResponse>('/api/facial/events/from-image', {
     idRecordEnvironment: payload.idRecordEnvironment,
     idDevice: payload.idDevice,
     imageBase64: payload.imageBase64,
     eventType: payload.eventType,
-    imageFrames: payload.imageFrames ?? [payload.imageBase64],
+    imageFrames: payload.imageFrames,
     livenessChallenge: payload.livenessChallenge,
     livenessChallenges: payload.livenessChallenges ?? [],
     origin: payload.origin,
