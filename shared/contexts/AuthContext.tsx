@@ -138,6 +138,7 @@ interface AuthContextType {
 export interface LoginResult {
   success: boolean;
   firstAccessPasswordPrompt?: boolean;
+  mustChangeInitialPassword?: boolean;
   error?: string;
   /** true si la cuenta está bloqueada temporalmente (RNF-1.3) */
   locked?: boolean;
@@ -329,35 +330,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         userDocument: loggedUser.document,
         userRole: loggedUser.role,
       });
+      const mustChangeInitialPassword = data.mustChangeInitialPassword === true;
       redirectByRole(loggedUser.role);
-
-      if (data.firstAccessPasswordPrompt === true) {
+      if (mustChangeInitialPassword) {
         setTimeout(() => {
           alert(
             t('login.passwordPrompt.title'),
             t('login.passwordPrompt.message'),
-            [
-              {
-                text: t('login.passwordPrompt.cancel'),
-                style: 'cancel',
-                onPress: () => {
-                  alert(
-                    t('login.passwordPrompt.laterTitle'),
-                    t('login.passwordPrompt.laterMessage'),
-                    [{ text: t('login.passwordPrompt.understood') }],
-                  );
-                },
-              },
-              {
-                text: t('login.passwordPrompt.update'),
-                onPress: () => router.push(Routes.ADMIN.PROFILE as any),
-              },
-            ],
+            [{
+              text: t('login.passwordPrompt.update'),
+              onPress: () => router.replace(Routes.AUTH.PASSWORD_RECOVERY as any),
+            }],
+            { dismissible: false },
           );
         }, 450);
       }
 
-      return { success: true, firstAccessPasswordPrompt: data.firstAccessPasswordPrompt === true };
+      return {
+        success: true,
+        firstAccessPasswordPrompt: mustChangeInitialPassword,
+        mustChangeInitialPassword,
+      };
     } catch (err: any) {
       const status: number = err.response?.status ?? 0;
       const backendMessage: string = err.response?.data?.message ?? '';

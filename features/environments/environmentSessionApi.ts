@@ -64,9 +64,9 @@ export interface RecordEnvironmentResponse {
   active: boolean;
 }
 
-export async function searchSessionEnvironments(search: string) {
+export async function searchSessionEnvironments(search: string, includeInactive = false, idChip?: string) {
   const { data } = await api.get<EnvironmentOption[]>('/api/environment/environments', {
-    params: { search },
+    params: { search, includeInactive, idChip },
   });
   return data;
 }
@@ -77,6 +77,29 @@ export async function getOrCreateSessionEnvironment(environmentName: string, cap
     ...(capacity === undefined ? {} : { capacity }),
   });
   return data;
+}
+
+export async function updateEnvironment(environmentId: string, payload: { environmentName?: string; capacity?: number; state?: 'ACTIVE' | 'INACTIVE' }) {
+  const { data } = await api.patch<EnvironmentOption>(`/api/environment/environments/${environmentId}`, payload);
+  return data;
+}
+
+export async function deactivateEnvironment(environmentId: string) {
+  await api.delete(`/api/environment/environments/${environmentId}`);
+}
+
+export async function listEnvironmentAssignments(environmentId: string) {
+  const { data } = await api.get<Array<{ id: string; idChip: string; fichaCode: string; assignedAt?: string }>>(`/api/environment/environments/${environmentId}/fichas`);
+  return data;
+}
+
+export async function assignFichaToEnvironment(environmentId: string, idChip: string) {
+  const { data } = await api.post(`/api/environment/environments/${environmentId}/fichas`, { idChip });
+  return data;
+}
+
+export async function unassignFichaFromEnvironment(environmentId: string, idChip: string) {
+  await api.delete(`/api/environment/environments/${environmentId}/fichas/${idChip}`);
 }
 
 export async function fetchSessionInstructors() {

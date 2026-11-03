@@ -105,6 +105,16 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       route: Routes.ACADEMIC.PROGRAMS,
       module: "academic",
     },
+    ...(user?.role === "ADMINISTRATOR" || user?.role === "COORDINATOR"
+      ? [
+          {
+            icon: "business-outline",
+            label: t("sidebar.environments"),
+            route: "/admin/environments",
+            module: "environments",
+          },
+        ]
+      : []),
     {
       icon: "checkmark-circle-outline",
       label: t("sidebar.attendance"),

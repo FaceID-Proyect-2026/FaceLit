@@ -1,10 +1,10 @@
-import { act, renderHook } from '@testing-library/react-native';
+import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { useEnvironmentSession } from '@/features/environments/useEnvironmentSession';
 import * as sessionApi from '@/features/environments/environmentSessionApi';
 
 jest.mock('@/features/environments/environmentSessionApi', () => ({
   createEnvironmentSession: jest.fn(), fetchChipsForSessionInstructor: jest.fn(),
-  fetchSessionInstructors: jest.fn(), getOrCreateSessionEnvironment: jest.fn(),
+  fetchSessionInstructors: jest.fn(),
   searchSessionEnvironments: jest.fn(),
 }));
 
@@ -15,17 +15,18 @@ beforeEach(() => {
   jest.setSystemTime(new Date(2026, 9, 30, 14, 0, 0, 0));
   sessionApi.fetchSessionInstructors.mockResolvedValue([{ idInstructor: 'teacher' }]);
   sessionApi.fetchChipsForSessionInstructor.mockResolvedValue([{ idChip: 'chip', chipCode: '3145555' }]);
-  sessionApi.searchSessionEnvironments.mockResolvedValue([]);
-  sessionApi.getOrCreateSessionEnvironment.mockResolvedValue({ idEnvironment: 'room', environmentName: '209-02' });
+  sessionApi.searchSessionEnvironments.mockResolvedValue([{ idEnvironment: 'room', environmentName: '209-02' }]);
 });
 afterEach(() => { jest.clearAllTimers(); jest.useRealTimers(); });
 
 async function setup() {
   const view = await renderHook(() => useEnvironmentSession());
-  await act(async () => { view.result.current.setEnvironmentQuery('209-02'); });
-  await act(async () => { await view.result.current.createEnvironment(); });
   await act(async () => { view.result.current.setSelectedInstructorId('teacher'); });
   await act(async () => { view.result.current.setSelectedChipId('chip'); });
+  await waitFor(() => {
+    expect(view.result.current.environments).toHaveLength(1);
+  });
+  await act(async () => { view.result.current.selectEnvironment(view.result.current.environments[0]); });
   return view;
 }
 const settings = { registrationMinutes: 10, exitTime: '16:00', shutdownTime: '16:10' };

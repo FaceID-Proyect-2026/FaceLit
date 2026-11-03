@@ -1,4 +1,4 @@
-import { AppButton, InputField, SelectField } from '@/shared/components/ui';
+import { AppButton, SelectField } from '@/shared/components/ui';
 import { Colors } from '@/shared/constants/colors';
 import { Routes } from '@/shared/constants/routes';
 import { FontSize } from '@/shared/constants/typography';
@@ -23,13 +23,11 @@ export default function FacialSessionScreen() {
     setActiveSession,
     alert,
     DialogUI,
-    environmentQuery,
-    setEnvironmentQuery,
     environments,
+    environmentsLoading,
+    environmentsError,
     selectedEnvironment,
     selectEnvironment,
-    createEnvironment,
-    exactEnvironmentMatch,
     instructors,
     selectedInstructorId,
     setSelectedInstructorId,
@@ -72,22 +70,8 @@ if (Platform.OS !== "web") {
   ];
 
   const hasSettings = !!settings;
-  const canSave = !!selectedEnvironment && !!selectedInstructor && !!selectedChip && hasSettings && !saving && !chipsLoading && !chipsError;
+  const canSave = !!selectedEnvironment && !!selectedInstructor && !!selectedChip && hasSettings && !saving && !chipsLoading && !chipsError && !environmentsLoading && !environmentsError && environments.some(item => item.idEnvironment === selectedEnvironment?.idEnvironment);
   const handleContinueSession = () => router.replace(Routes.INSTRUCTOR.FACIAL_CAMERA as any);
-
-  const handleCreateEnvironment = async () => {
-    try {
-      const environment = await createEnvironment();
-      if (environment) {
-        void saveSectionDraft({
-          environmentId: environment.idEnvironment,
-          environmentName: environment.environmentName,
-        });
-      }
-    } catch {
-      alert(t("common.error"), t("facial.setup.validation.environmentCreateFailed"));
-    }
-  };
 
   const handleSelectEnvironment = (environment: { idEnvironment: string; environmentName: string }) => {
     selectEnvironment(environment);
@@ -95,13 +79,6 @@ if (Platform.OS !== "web") {
       environmentId: environment.idEnvironment,
       environmentName: environment.environmentName,
     });
-  };
-
-  const handleEnvironmentQueryChange = (value: string) => {
-    setEnvironmentQuery(value);
-    if (selectedEnvironment?.environmentName.trim().toLowerCase() !== value.trim().toLowerCase()) {
-      void saveSectionDraft({ environmentId: undefined, environmentName: value.trim() || undefined });
-    }
   };
 
   const handleSelectInstructor = (idInstructor: string) => {
@@ -112,7 +89,7 @@ if (Platform.OS !== "web") {
 
   const handleSelectChip = (idChip: string) => {
     setSelectedChipId(idChip);
-    void saveSectionDraft({ fichaId: idChip || undefined });
+    void saveSectionDraft({ fichaId: idChip || undefined, environmentId: undefined, environmentName: undefined });
   };
 
   const handleSave = async () => {
@@ -244,41 +221,6 @@ if (Platform.OS !== "web") {
             <Text style={[fs.cardTitle, { color: text }]}>{t("facial.setup.title")}</Text>
             <Text style={[fs.cardSubtitle, { color: muted }]}>{t("facial.setup.helper")}</Text>
 
-            <InputField
-              label={t("facial.setup.fields.environment")}
-              value={environmentQuery}
-              onChangeText={handleEnvironmentQueryChange}
-              placeholder={t("facial.setup.placeholders.environment")}
-            />
-
-            {environmentQuery.trim() ? (
-              <View style={[fs.optionsBox, { borderColor: border, backgroundColor: cardBg }]}>
-                {environments.map((environment) => (
-                  <TouchableOpacity
-                    key={environment.idEnvironment}
-                    onPress={() => handleSelectEnvironment(environment)}
-                    style={[
-                      fs.optionRow,
-                      selectedEnvironment?.idEnvironment === environment.idEnvironment && {
-                        backgroundColor: theme.primary + "18",
-                      },
-                    ]}
-                  >
-                    <Ionicons name="business-outline" size={16} color={theme.primary} />
-                    <Text style={[fs.optionText, { color: text }]}>{environment.environmentName}</Text>
-                  </TouchableOpacity>
-                ))}
-                {!exactEnvironmentMatch ? (
-                  <TouchableOpacity onPress={handleCreateEnvironment} style={fs.optionRow}>
-                    <Ionicons name="add-circle-outline" size={16} color={theme.primary} />
-                    <Text style={[fs.optionText, { color: theme.primary }]}>
-                      {t("facial.setup.createEnvironment", { name: environmentQuery.trim() })}
-                    </Text>
-                  </TouchableOpacity>
-                ) : null}
-              </View>
-            ) : null}
-
             <SelectField
               label={t("facial.setup.fields.instructor")}
               value={selectedInstructorId}
@@ -299,6 +241,20 @@ if (Platform.OS !== "web") {
               }
             />
 
+            <SelectField
+              label={t("facial.setup.fields.environment")}
+              value={environmentsLoading ? '' : selectedEnvironment?.idEnvironment ?? ''}
+              options={environmentsLoading ? [] : environments.map(environment => ({ value: environment.idEnvironment, label: environment.environmentName }))}
+              onSelect={id => {
+                const environment = environments.find(item => item.idEnvironment === id);
+                if (environment) handleSelectEnvironment(environment);
+              }}
+              placeholder={!selectedChipId ? 'Selecciona primero una ficha' : environmentsLoading ? t('common.loading') : 'Selecciona un ambiente'}
+              error={environmentsError ? 'No se pudieron cargar los ambientes de la ficha.' : undefined}
+            />
+            {selectedChipId && !environmentsLoading && !environmentsError && environments.length === 0 ? (
+              <Text style={{ color: muted }}>La ficha seleccionada no tiene ambientes activos asignados por el coordinador.</Text>
+            ) : null}
             {selectedInstructorId && !chipsLoading && (chipsError || chips.length === 0) ? (
               <View>
                 {!chipsError ? <Text style={{ color: muted }}>{t("facial.setup.noChips")}</Text> : null}
