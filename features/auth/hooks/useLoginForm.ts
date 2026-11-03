@@ -21,6 +21,7 @@ interface LoginForm {
   document: string;
   password: string;
   accepted: boolean;
+  declined: boolean;
 }
 
 interface LoginErrors {
@@ -33,7 +34,7 @@ interface LoginErrors {
   general:  string;
 }
 
-const initialForm: LoginForm   = { document: '', password: '', accepted: false };
+const initialForm: LoginForm   = { document: '', password: '', accepted: false, declined: false };
 const initialErrors: LoginErrors = { document: '', password: '', policy: '', blocked: '', general: '' };
 
 export function useLoginForm() {
@@ -66,7 +67,7 @@ export function useLoginForm() {
       privacyRequestRef.current += 1;
       setPrivacyStatusKnown(false);
       setAlreadyAccepted(false);
-      setForm(prev => ({ ...prev, accepted: false }));
+      setForm(prev => ({ ...prev, accepted: false, declined: false }));
     }
     setField('document', cleaned);
 
@@ -85,7 +86,7 @@ export function useLoginForm() {
     const requestId = ++privacyRequestRef.current;
     setPrivacyStatusKnown(false);
     setAlreadyAccepted(false);
-    setForm(prev => ({ ...prev, accepted: false }));
+    setForm(prev => ({ ...prev, accepted: false, declined: false }));
 
     if (!DOCUMENT_REGEX.test(document)) return undefined;
 
@@ -136,7 +137,7 @@ export function useLoginForm() {
     }
 
     // ── Política de privacidad (RF-1 V4 §3) ─────
-    if (!form.accepted && !privacyAcceptedPreviously) {
+    if (!form.accepted && !privacyAcceptedPreviously && !form.declined) {
       e.policy = t('login.errors.policyRequired');
     }
 
@@ -193,6 +194,11 @@ export function useLoginForm() {
       // ── Error de red/servidor — banner general, no error de campo ──
       if (result.networkError) {
         setErrors(prev => ({ ...prev, general: result.error || 'No se pudo conectar con el servidor.' }));
+        return;
+      }
+
+      if (result.privacyRejected) {
+        setErrors(prev => ({ ...prev, policy: t('login.errors.policyRequired') }));
         return;
       }
 
