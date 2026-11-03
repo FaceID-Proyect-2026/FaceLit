@@ -1,6 +1,7 @@
 import type { AttendanceMatrixResponse } from '@/shared/services/facialAttendanceService';
 import type { Ficha } from '@/features/academic/types';
 import type { AttendanceEvent } from './types';
+import { attendanceMinDate, todayBogota } from './utils/attendanceDates';
 
 export interface ResolvedAttendance extends AttendanceEvent {
   userName: string;
@@ -67,8 +68,9 @@ export function createAttendanceDataStore(fetchMatrix: FetchMatrix) {
     snapshot = { key, records: [], loading: !!owner && fichas.length > 0, error: false };
     emit();
     if (!owner || fichas.length === 0) { lastLoaded = Date.now(); pending = null; return Promise.resolve(); }
-    const dateTo = new Date().toISOString().slice(0, 10);
-    pending = Promise.all(fichas.map(ficha => fetchMatrix({ idChip: ficha.id, dateFrom: '1970-01-01', dateTo })))
+    const dateTo = todayBogota();
+    const dateFrom = attendanceMinDate(dateTo);
+    pending = Promise.all(fichas.map(ficha => fetchMatrix({ idChip: ficha.id, dateFrom, dateTo })))
       .then(matrices => {
         if (request === generation) {
           snapshot = { key, records: resolveAttendance(matrices, fichas), loading: false, error: false };

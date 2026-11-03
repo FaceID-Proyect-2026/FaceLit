@@ -7,6 +7,7 @@ import {
 import AppButton from '@/shared/components/ui/AppButton';
 import DateField from '@/shared/components/ui/DateField';
 import { Colors } from '@/shared/constants/colors';
+import { attendanceMinDate, todayBogota } from '@/features/attendance/utils/attendanceDates';
 import { Ionicons } from '@expo/vector-icons';
 import { Modal, Pressable, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { s } from '@/features/attendance/components/AttendanceByUserStyles';
@@ -135,6 +136,8 @@ return (
                 label={t('reports.filters.dateFrom')}
                 value={dateFrom}
                 onChange={setByUserDateFrom}
+                minDate={attendanceMinDate()}
+                maxDate={todayBogota()}
                 placeholder="YYYY-MM-DD"
                 containerStyle={s.noMargin}
               />
@@ -147,7 +150,8 @@ return (
                 label={t('reports.filters.dateTo')}
                 value={dateTo}
                 onChange={setByUserDateTo}
-                minDate={dateFrom || undefined}
+                minDate={dateFrom && dateFrom > attendanceMinDate() ? dateFrom : attendanceMinDate()}
+                maxDate={todayBogota()}
                 placeholder="YYYY-MM-DD"
                 containerStyle={s.noMargin}
               />

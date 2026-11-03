@@ -7,7 +7,7 @@ import {
   setByFichaProgram,
  getAttendanceUISnapshot, subscribeAttendanceUI } from '@/features/attendance/attendanceUIStore';
 import { getProgramDisplayName } from "@/features/academic/types";
-import { todayBogota } from "@/features/attendance/utils/attendanceDates";
+import { isAttendanceDateRangeAllowed, todayBogota } from "@/features/attendance/utils/attendanceDates";
 import { useAcademic } from "@/features/academic/useAcademic";
 
 import { type DayCell, type FichaDaySummary, type FichaTableRow } from "@/features/attendance/useAttendanceRF6";
@@ -187,7 +187,7 @@ export function useAttendanceByFicha({ directFichaOnly = false, allowedFichaIds 
     let cancelled = false;
 
     async function loadMatrix() {
-      if (!selectedFichaId || !dateFrom || !dateTo || dateFrom > dateTo) {
+      if (!selectedFichaId || !isAttendanceDateRangeAllowed(dateFrom, dateTo)) {
         setRealTableRows([]);
         setRealDates([]);
         setMatrixError(null);
