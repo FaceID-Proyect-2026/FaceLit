@@ -1678,6 +1678,7 @@ const fr = {
   },
   notifications: {
     title: "Notifications",
+    retentionNotice: "Les notifications sont automatiquement supprimées après 30 jours.",
     empty: "Aucune notification",
     emptyFiltered: "Aucune notification ne correspond à ce filtre.",
     pending: "En attente",

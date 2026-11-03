@@ -1795,6 +1795,7 @@ const es = {
   },
   notifications: {
     title: "Centro de Notificaciones",
+    retentionNotice: "Las notificaciones se eliminan automáticamente después de 30 días.",
     empty: "No tienes notificaciones",
     emptyFiltered: "No hay notificaciones que coincidan con este filtro.",
     pending: "Pendiente",
