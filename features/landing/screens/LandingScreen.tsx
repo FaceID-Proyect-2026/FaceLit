@@ -480,6 +480,30 @@ export default function LandingScreen() {
                   </View>
                 ))}
               </View>
+              {Platform.OS === 'web' && (
+                <a
+                  href="/facelit-guia-para-usuarios.pdf"
+                  download="FaceLit_Guia_para_Usuarios.pdf"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 10,
+                    marginTop: 18,
+                    padding: '14px 22px',
+                    borderRadius: 12,
+                    backgroundColor: '#27642d',
+                    color: '#fff',
+                    textDecoration: 'none',
+                    textAlign: 'center',
+                  }}
+                >
+                  <Ionicons name="download-outline" size={22} color="#fff" aria-hidden />
+                  <Text style={[contentStyles.contactDetailText, { color: '#fff', fontWeight: '700' }]}>
+                    {t('landingPage.downloadGuide')}
+                  </Text>
+                </a>
+              )}
               <Text style={contentStyles.editorialFooter}>{t('landingPage.footer')}</Text>
             </View>
           </View>
