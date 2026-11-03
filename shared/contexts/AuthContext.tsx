@@ -143,6 +143,8 @@ export interface LoginResult {
   locked?: boolean;
   /** Segundos restantes de bloqueo */
   lockRemainingSeconds?: number;
+  /** The user explicitly declined the basic-data privacy notice. */
+  privacyRejected?: boolean;
   /** true si el error es de red/servidor (no de credenciales) — la UI
    *  debe mostrarlo como banner general, no como error del campo password */
   networkError?: boolean;
@@ -359,6 +361,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (err: any) {
       const status: number = err.response?.status ?? 0;
       const backendMessage: string = err.response?.data?.message ?? '';
+      if (status === 401 && backendMessage.toLowerCase().includes('no aceptaste el aviso de privacidad')) {
+        return { success: false, privacyRejected: true, error: backendMessage };
+      }
       const isLockedByBackend =
         status === 401 &&
         (backendMessage.toLowerCase().includes('bloque') ||

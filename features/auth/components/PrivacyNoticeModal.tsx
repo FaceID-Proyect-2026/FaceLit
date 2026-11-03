@@ -14,10 +14,11 @@ interface Props {
     visible: boolean;
     onClose: () => void;
     onAccept: () => void;
+    onReject: () => void;
     accepted?: boolean;
 }
 
-export default function PrivacyNoticeModal({ visible, onClose, onAccept, accepted = false }: Props) {
+export default function PrivacyNoticeModal({ visible, onClose, onAccept, onReject, accepted = false }: Props) {
     const { t } = useTranslation();
     const { isDark } = useTheme();
 
@@ -26,18 +27,11 @@ export default function PrivacyNoticeModal({ visible, onClose, onAccept, accepte
     const muted = isDark ? Colors.dark.textMuted : Colors.light.textMuted;
     const linkColor = isDark ? Colors.primaryLight : Colors.primary;
 
-    const LIST_ITEMS = [
-        t('privacyNotice.item1'),
-        t('privacyNotice.item2'),
-        t('privacyNotice.item3'),
-        t('privacyNotice.item4'),
-    ];
-
     return (
         <Modal visible={visible} transparent animationType="fade" statusBarTranslucent onRequestClose={onClose}>
             <View style={s.overlay}>
                 <View style={[s.card, { backgroundColor: cardBg }]}>
-                    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scrollContent}>
+                    <ScrollView style={s.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={s.scrollContent}>
 
                         <TouchableOpacity style={s.closeBtn} onPress={onClose}>
                             <Ionicons name="close" size={22} color={textColor} />
@@ -46,32 +40,67 @@ export default function PrivacyNoticeModal({ visible, onClose, onAccept, accepte
                         <Text style={[s.title, { color: textColor }]}>{t('privacyNotice.title')}</Text>
                         <Text style={[s.subtitle, { color: muted }]}>{t('privacyNotice.subtitle')}</Text>
 
-                        <Text style={[s.body, { color: textColor }]}>{t('privacyNotice.body1')}</Text>
+                        <Text style={[s.brand, { color: Colors.primary }]}>FaceLit</Text>
+                        <Text style={[s.sectionTitle, { color: textColor }]}>{t('privacyNotice.whatIsTitle')}</Text>
+                        <Text style={[s.body, { color: textColor }]}>{t('privacyNotice.whatIs')}</Text>
 
-                        {LIST_ITEMS.map((item) => (
-                            <View key={item} style={s.listRow}>
+                        <Text style={[s.sectionTitle, { color: textColor }]}>{t('privacyNotice.dataTitle')}</Text>
+                        <Text style={[s.body, { color: textColor }]}>{t('privacyNotice.dataBody')}</Text>
+
+                        <Text style={[s.sectionTitle, { color: textColor }]}>{t('privacyNotice.visibilityTitle')}</Text>
+                        {(['coordinator', 'instructor', 'apprentice'] as const).map(role => (
+                            <View key={role} style={s.listRow}>
                                 <Text style={[s.bullet, { color: textColor }]}>•</Text>
-                                <Text style={[s.listItem, { color: textColor }]}>{item}</Text>
+                                <Text style={[s.listItem, { color: textColor }]}>
+                                    <Text style={s.bold}>{t(`privacyNotice.${role}Label`)} </Text>
+                                    {t(`privacyNotice.${role}Access`)}
+                                </Text>
                             </View>
                         ))}
 
-                        <Text style={s.warning}>{t('privacyNotice.warning')}</Text>
-
-                        <Text style={[s.body, { color: textColor }]}>{t('privacyNotice.body2')}</Text>
-                        <Text style={[s.body, { color: muted, fontSize: FontSize.sm }]}>
-                            {t('privacyNotice.articlesRef')}
+                        <Text style={[s.sectionTitle, { color: textColor }]}>{t('privacyNotice.facialTitle')}</Text>
+                        <Text style={[s.body, { color: textColor }]}>{t('privacyNotice.facialIntro')}</Text>
+                        <Text style={[s.body, { color: textColor }]}>
+                            <Text style={s.bold}>{t('privacyNotice.facialIfAcceptedLabel')} </Text>
+                            {t('privacyNotice.facialIfAccepted')}
                         </Text>
                         <Text style={[s.body, { color: textColor }]}>
-                            <Text style={s.bold}>{t('privacyNotice.moreInfo')}</Text>
+                            <Text style={s.bold}>{t('privacyNotice.facialIfDeclinedLabel')} </Text>
+                            {t('privacyNotice.facialIfDeclined')}
+                        </Text>
+
+                        <Text style={[s.sectionTitle, { color: textColor }]}>{t('privacyNotice.rightsTitle')}</Text>
+                        {(['view', 'correct', 'know'] as const).map(right => (
+                            <View key={right} style={s.listRow}>
+                                <Text style={[s.bullet, { color: textColor }]}>•</Text>
+                                <Text style={[s.listItem, { color: textColor }]}>
+                                    <Text style={s.bold}>{t(`privacyNotice.right${right}Label`)} </Text>
+                                    {t(`privacyNotice.right${right}`)}
+                                </Text>
+                            </View>
+                        ))}
+
+                        <Text style={[s.sectionTitle, { color: textColor }]}>{t('privacyNotice.minorsTitle')}</Text>
+                        <Text style={[s.body, { color: textColor }]}>{t('privacyNotice.minorsBody')}</Text>
+
+                        <Text style={[s.sectionTitle, { color: textColor }]}>{t('privacyNotice.responsibleTitle')}</Text>
+                        <Text style={[s.body, { color: textColor }]}>{t('privacyNotice.phone')}</Text>
+                        <Text style={[s.body, { color: textColor }]}>{t('privacyNotice.email')}</Text>
+                        <Text style={[s.body, { color: muted, fontSize: FontSize.sm }]}>
+                            {t('privacyNotice.lawSummary')}
+                        </Text>
+                        <Text style={[s.body, { color: textColor }]}>
+                            <Text style={s.bold}>{t('privacyNotice.lawLinkLabel')} </Text>
                             <Text style={[s.link, { color: linkColor }]} onPress={() => Linking.openURL(PRIVACY_URL)}>
                                 {PRIVACY_URL}
                             </Text>
                         </Text>
+                        <Text style={[s.consent, { color: textColor }]}>{t('privacyNotice.consentText')}</Text>
 
                     </ScrollView>
                     <View style={s.actions}>
-                        <TouchableOpacity style={[s.secondaryBtn, { borderColor: muted }]} onPress={onClose} activeOpacity={0.8}>
-                            <Text style={[s.secondaryText, { color: muted }]}>{t('common.close')}</Text>
+                        <TouchableOpacity style={[s.secondaryBtn, { borderColor: muted }]} onPress={onReject} activeOpacity={0.8}>
+                            <Text style={[s.secondaryText, { color: muted }]}>{t('privacyNotice.rejectButton')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[s.acceptBtn, accepted && s.acceptBtnDone]}
@@ -94,14 +123,17 @@ const s = StyleSheet.create({
     overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20, paddingVertical: 40 },
     card: { width: '100%', maxWidth: 700, maxHeight: '85%', borderRadius: 26, paddingHorizontal: 24, paddingVertical: 24 },
     scrollContent: { paddingBottom: 10 },
+    scrollView: { flexShrink: 1 },
     closeBtn: { alignSelf: 'flex-end', marginBottom: 8 },
     title: { fontSize: FontSize['2xl'], fontWeight: FontWeight.black, textAlign: 'center', marginBottom: 8 },
-    subtitle: { fontSize: FontSize.base, textAlign: 'center', marginBottom: 24 },
-    body: { fontSize: FontSize.base, lineHeight: 22, marginBottom: 14 },
+    subtitle: { fontSize: FontSize.base, textAlign: 'center', marginBottom: 20 },
+    brand: { fontSize: FontSize.lg, fontWeight: FontWeight.black, marginBottom: 4 },
+    sectionTitle: { fontSize: FontSize.base, fontWeight: FontWeight.bold, marginTop: 12, marginBottom: 4 },
+    body: { fontSize: FontSize.base, lineHeight: 22, marginBottom: 8 },
+    consent: { fontSize: FontSize.base, lineHeight: 22, marginTop: 8, marginBottom: 8, fontWeight: FontWeight.bold },
     listRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8, paddingLeft: 6 },
     bullet: { fontSize: FontSize.base, marginRight: 8, lineHeight: 22 },
     listItem: { flex: 1, fontSize: FontSize.base, lineHeight: 22 },
-    warning: { fontSize: FontSize.base, color: Colors.error, marginVertical: 12, lineHeight: 22, fontWeight: FontWeight.bold },
     bold: { fontWeight: FontWeight.bold },
     link: { fontSize: FontSize.base, fontWeight: FontWeight.bold, textDecorationLine: 'underline' },
     actions: { flexDirection: 'row', gap: 12, justifyContent: 'flex-end', paddingTop: 14, borderTopWidth: 1, borderTopColor: 'rgba(120,120,120,0.18)' },

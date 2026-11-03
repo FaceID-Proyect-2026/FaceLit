@@ -51,8 +51,17 @@ export default function LoginScreen() {
   }, []);
   const handleAcceptPrivacy = () => {
     setField('accepted', true);
+    setField('declined', false);
     setShowPrivacy(false);
     alert(t('privacyNotice.acceptedTitle'), t('privacyNotice.acceptedResponsibility'), [
+      { text: t('common.ok') },
+    ]);
+  };
+  const handleRejectPrivacy = () => {
+    setField('accepted', false);
+    setField('declined', true);
+    setShowPrivacy(false);
+    alert(t('privacyNotice.rejectedTitle'), t('privacyNotice.rejectedMessage'), [
       { text: t('common.ok') },
     ]);
   };
@@ -290,6 +299,7 @@ export default function LoginScreen() {
                   visible={showPrivacy}
                   onClose={() => setShowPrivacy(false)}
                   onAccept={handleAcceptPrivacy}
+                  onReject={handleRejectPrivacy}
                   accepted={form.accepted}
                 />
 
