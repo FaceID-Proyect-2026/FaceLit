@@ -8,7 +8,7 @@ const es = {
     "retry": "Reintentar",
     "empty": "No hay registros para mostrar.",
     "pending": "Esta operación está pendiente de una API. No se guardaron cambios.",
-    "environmentLimit": "La API actual permite consultar ambientes activos y crearlos con rol instructor. Las demás operaciones están pendientes.",
+    "environmentLimit": "La gestión de ambientes no está disponible temporalmente. Intenta de nuevo más tarde.",
     "assignmentsUnavailable": "La API actual no permite consultar ni modificar las asignaciones de ambientes."
   },
   landingPage: landingEs,

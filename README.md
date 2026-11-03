@@ -36,7 +36,7 @@ README.md              Single maintained documentation entry
 
 Routes are centralized in [routes.ts](shared/constants/routes.ts). Backend HTTP calls use [api.js](shared/services/api.js), whose interceptor adds the stored JWT. Web token storage uses localStorage; native storage uses SecureStore. These are existing application behaviors, not a claim that every security finding has been closed.
 
-Schedule management and schedule exceptions were removed from the project scope. Environment attendance sessions and their entry/exit times remain separate functionality. Unsupported environment mutations were left pending rather than backed by fabricated persistence; see the current environment API adapters and regression script for the supported operations. Historical design notes are not current feature contracts.
+Schedule management and schedule exceptions were removed from the project scope. Environment attendance sessions and their entry/exit times remain separate functionality. Coordinators can manage environments from the admin screen, including editing, deactivation/reactivation and ficha assignment; attendance sessions continue to use their dedicated API flow.
 
 ## Versions and prerequisites
 

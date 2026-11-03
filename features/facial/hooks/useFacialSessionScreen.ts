@@ -27,13 +27,15 @@ export function useFacialSessionScreen() {
   } = useFacialRegistry(user?.id);
   const { alert, DialogUI } = useAppDialog();
   const {
-    environmentQuery,
-    setEnvironmentQuery,
+
+
     environments,
+    environmentsLoading,
+    environmentsError,
     selectedEnvironment,
     selectEnvironment,
-    createEnvironment,
-    exactEnvironmentMatch,
+
+
     instructors,
     selectedInstructorId,
     setSelectedInstructorId,
@@ -211,13 +213,15 @@ export function useFacialSessionScreen() {
     setActiveSession,
     alert,
     DialogUI,
-    environmentQuery,
-    setEnvironmentQuery,
+
+
     environments,
+    environmentsLoading,
+    environmentsError,
     selectedEnvironment,
     selectEnvironment,
-    createEnvironment,
-    exactEnvironmentMatch,
+
+
     instructors,
     selectedInstructorId,
     setSelectedInstructorId,

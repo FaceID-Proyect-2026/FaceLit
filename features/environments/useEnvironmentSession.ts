@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   createEnvironmentSession,
   fetchChipsForSessionInstructor,
   fetchSessionInstructors,
-  getOrCreateSessionEnvironment,
   searchSessionEnvironments,
   EnvironmentOption,
   SessionChip,
@@ -31,7 +30,6 @@ function isTimeInFuture(time: string, baseDate = new Date()) {
 }
 
 export function useEnvironmentSession() {
-  const [environmentQuery, setEnvironmentQueryState] = useState('');
   const [environments, setEnvironments] = useState<EnvironmentOption[]>([]);
   const [selectedEnvironment, setSelectedEnvironment] = useState<EnvironmentOption | null>(null);
   const [instructors, setInstructors] = useState<SessionInstructor[]>([]);
@@ -55,19 +53,27 @@ export function useEnvironmentSession() {
     return () => { active = false; };
   }, []);
 
+  const [environmentsLoading, setEnvironmentsLoading] = useState(false);
+  const [environmentsError, setEnvironmentsError] = useState(false);
   useEffect(() => {
     let active = true;
-    const timeout = setTimeout(() => {
-      searchSessionEnvironments(environmentQuery)
-        .then(data => { if (active) setEnvironments(data); })
-        .catch(() => { if (active) setError('facial.setup.validation.loadFailed'); });
-    }, 300);
-    return () => {
-      active = false;
-      clearTimeout(timeout);
-    };
-  }, [environmentQuery]);
-
+    setEnvironments([]);
+    setEnvironmentsError(false);
+    setEnvironmentsLoading(!!selectedChipId);
+    if (!selectedChipId) {
+      setSelectedEnvironment(null);
+      return () => { active = false; };
+    }
+    searchSessionEnvironments('', false, selectedChipId)
+      .then(data => {
+        if (!active) return;
+        setEnvironments(data);
+        setSelectedEnvironment(current => data.find(item => item.idEnvironment === current?.idEnvironment) ?? null);
+      })
+      .catch(() => { if (active) { setEnvironmentsError(true); setSelectedEnvironment(null); } })
+      .finally(() => { if (active) setEnvironmentsLoading(false); });
+    return () => { active = false; };
+  }, [selectedChipId, chipsRevision]);
   useEffect(() => {
     let active = true;
     setSelectedChipId('');
@@ -84,26 +90,9 @@ export function useEnvironmentSession() {
 
   const reloadChips = useCallback(() => setChipsRevision(revision => revision + 1), []);
 
-  const exactEnvironmentMatch = useMemo(() => {
-    const query = environmentQuery.trim().toLowerCase();
-    if (!query) return false;
-    return environments.some(item => item.environmentName.trim().toLowerCase() === query);
-  }, [environmentQuery, environments]);
-
   const selectEnvironment = useCallback((environment: EnvironmentOption) => {
     setSelectedEnvironment(environment);
-    setEnvironmentQueryState(environment.environmentName);
   }, []);
-
-  const setEnvironmentQuery = useCallback((value: string) => {
-    setEnvironmentQueryState(value);
-    setSelectedEnvironment(current =>
-      current && current.environmentName.trim().toLowerCase() === value.trim().toLowerCase()
-        ? current
-        : null,
-    );
-  }, []);
-
   const setSelectedInstructorId = useCallback((id: string) => {
     if (id === selectedInstructorId) return;
     setSelectedInstructorIdState(id);
@@ -111,22 +100,13 @@ export function useEnvironmentSession() {
     setChips([]);
   }, [selectedInstructorId]);
 
-  const createEnvironment = useCallback(async () => {
-    const name = environmentQuery.trim();
-    if (!name) return null;
-    const environment = await getOrCreateSessionEnvironment(name);
-    setSelectedEnvironment(environment);
-    setEnvironmentQueryState(environment.environmentName);
-    setEnvironments(prev => [environment, ...prev.filter(item => item.idEnvironment !== environment.idEnvironment)]);
-    return environment;
-  }, [environmentQuery]);
-
   const saveSession = useCallback(async (settings: {
     registrationMinutes: number;
     exitTime: string;
     shutdownTime: string;
   }) => {
-    if (!selectedEnvironment || !selectedInstructorId || !selectedChipId) {
+    if (!selectedEnvironment || !selectedInstructorId || !selectedChipId || environmentsLoading || environmentsError
+        || !environments.some(item => item.idEnvironment === selectedEnvironment.idEnvironment)) {
       return { success: false as const, error: 'facial.setup.validation.allRequired' };
     }
     const now = new Date();
@@ -162,16 +142,18 @@ export function useEnvironmentSession() {
     } finally {
       setSaving(false);
     }
-  }, [selectedEnvironment, selectedInstructorId, selectedChipId]);
+  }, [selectedEnvironment, selectedInstructorId, selectedChipId, environments, environmentsLoading, environmentsError]);
 
   return {
-    environmentQuery,
-    setEnvironmentQuery,
+
+
     environments,
+    environmentsLoading,
+    environmentsError,
     selectedEnvironment,
     selectEnvironment,
-    createEnvironment,
-    exactEnvironmentMatch,
+
+
     instructors,
     selectedInstructorId,
     setSelectedInstructorId,

@@ -8,7 +8,7 @@ const en = {
     "retry": "Retry",
     "empty": "No records to display.",
     "pending": "This operation needs an API. No changes were saved.",
-    "environmentLimit": "The current API supports listing active environments and creating them as an instructor. Other operations are pending.",
+    "environmentLimit": "Environment management is temporarily unavailable. Try again later.",
     "assignmentsUnavailable": "The current API does not support reading or modifying environment assignments."
   },
   landingPage: landingEn,
