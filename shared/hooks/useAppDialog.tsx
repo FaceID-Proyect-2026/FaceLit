@@ -19,6 +19,7 @@ interface DialogState {
   title: string;
   message?: string;
   buttons: AppDialogButton[];
+  dismissible: boolean;
 }
 
 export function useAppDialog() {
@@ -26,8 +27,8 @@ export function useAppDialog() {
 
   const hide = useCallback(() => setState(null), []);
 
-  const alert = useCallback((title: string, message?: string, buttons?: AppDialogButton[]) => {
-    setState({ title, message, buttons: buttons && buttons.length > 0 ? buttons : [{ text: 'OK' }] });
+  const alert = useCallback((title: string, message?: string, buttons?: AppDialogButton[], options?: { dismissible?: boolean }) => {
+    setState({ title, message, buttons: buttons && buttons.length > 0 ? buttons : [{ text: 'OK' }], dismissible: options?.dismissible !== false });
   }, []);
 
   const handlePressButton = useCallback((button: AppDialogButton) => {
@@ -44,7 +45,8 @@ export function useAppDialog() {
       title={state.title}
       message={state.message}
       buttons={state.buttons}
-      onRequestClose={hide}
+      onRequestClose={state.dismissible ? hide : () => {}}
+      dismissible={state.dismissible}
       onPressButton={handlePressButton}
     />
   ) : null;

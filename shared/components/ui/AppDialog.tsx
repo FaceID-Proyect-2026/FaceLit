@@ -34,9 +34,10 @@ interface AppDialogProps {
   children?: ReactNode;
   onRequestClose: () => void;
   onPressButton: (button: AppDialogButton) => void;
+  dismissible?: boolean;
 }
 
-export default function AppDialog({ visible, title, message, buttons, children, onRequestClose, onPressButton }: AppDialogProps) {
+export default function AppDialog({ visible, title, message, buttons, children, onRequestClose, onPressButton, dismissible = true }: AppDialogProps) {
   const { theme, isDark } = useTheme();
 
   const text = isDark ? Colors.dark.text : Colors.light.text;
@@ -52,7 +53,7 @@ export default function AppDialog({ visible, title, message, buttons, children, 
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onRequestClose}>
-      <Pressable style={ad.overlay} onPress={onRequestClose}>
+      <Pressable style={ad.overlay} onPress={dismissible ? onRequestClose : undefined}>
         <Pressable style={[ad.card, { backgroundColor: cardBg, borderColor: border }]} onPress={() => {}}>
           <Text style={[ad.title, { color: text }]}>{title}</Text>
           {message ? <Text style={[ad.message, { color: muted }]}>{message}</Text> : null}
