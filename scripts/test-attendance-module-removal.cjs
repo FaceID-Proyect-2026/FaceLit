@@ -33,7 +33,12 @@ const matrix = {
   sessions: [],
 };
 async function run() {
-  const { resolveAttendance, createAttendanceDataStore } = load('features/attendance/attendanceData.ts');
+  const { resolveAttendance, createAttendanceDataStore } = load('features/attendance/attendanceData.ts', {
+    './utils/attendanceDates': {
+      attendanceMinDate: date => date,
+      todayBogota: () => '2026-10-24',
+    },
+  });
   const rows = resolveAttendance([matrix], fichas);
   assert.equal(rows.length, 1);
   assert.equal(rows[0].sessionStartTime, '09:00');
