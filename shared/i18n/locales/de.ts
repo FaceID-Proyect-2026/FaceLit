@@ -1625,6 +1625,7 @@ const de = {
   },
   notifications: {
     title: "Benachrichtigungen",
+    retentionNotice: "Benachrichtigungen werden nach 30 Tagen automatisch gelöscht.",
     empty: "Keine Benachrichtigungen",
     emptyFiltered: "Keine Benachrichtigungen entsprechen diesem Filter.",
     pending: "Ausstehend",

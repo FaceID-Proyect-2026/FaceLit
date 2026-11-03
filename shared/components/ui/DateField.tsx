@@ -21,6 +21,7 @@ interface DateFieldProps {
   error?: string;
   placeholder?: string;
   minDate?: string; // "AAAA-MM-DD"
+  maxDate?: string; // "AAAA-MM-DD"
   containerStyle?: ViewStyle;
 }
 
@@ -43,7 +44,7 @@ function toIsoDate(date: Date): string {
 }
 
 export default function DateField({
-  label, value, onChange, error, placeholder, minDate, containerStyle,
+  label, value, onChange, error, placeholder, minDate, maxDate, containerStyle,
 }: DateFieldProps) {
   const { theme, isDark } = useTheme();
   const [showPicker, setShowPicker] = useState(false);
@@ -62,6 +63,7 @@ export default function DateField({
             type="date"
             value={value || ''}
             min={minDate}
+            max={maxDate}
             style={{
               flex: 1,
               border: 'none',
@@ -98,6 +100,7 @@ export default function DateField({
           value={toDate(value)}
           mode="date"
           minimumDate={minDate ? toDate(minDate) : undefined}
+          maximumDate={maxDate ? toDate(maxDate) : undefined}
           display={Platform.OS === 'ios' ? 'inline' : 'default'}
           onValueChange={(_, date) => {
             setShowPicker(false);

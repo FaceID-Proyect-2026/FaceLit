@@ -6,6 +6,7 @@ import { fetchAttendanceMatrix } from '@/shared/services/facialAttendanceService
 import { exportReport, type ExportData, type ExportOptions } from '@/shared/utils/export';
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { useTranslation } from 'react-i18next';
+import { isAttendanceDateRangeAllowed } from '@/features/attendance/utils/attendanceDates';
 
 export function useAttendanceByUserScreen({ allowedFichaIds }: { allowedFichaIds?: string[] } = {}) {
   const { isDark, theme } = useTheme();
@@ -53,7 +54,7 @@ export function useAttendanceByUserScreen({ allowedFichaIds }: { allowedFichaIds
     let cancelled = false;
 
     async function loadLearnerMatrix() {
-      if (!selectedLearner || !selectedLearnerFichaId || !dateFrom || !dateTo || dateFrom > dateTo) {
+      if (!selectedLearner || !selectedLearnerFichaId || !isAttendanceDateRangeAllowed(dateFrom, dateTo)) {
         setRealCells([]);
         setMatrixError(null);
         return;

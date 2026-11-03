@@ -6,6 +6,7 @@ import { FontSize, FontWeight } from '@/shared/constants/typography';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useTheme } from '@/shared/contexts/ThemeContext';
 import DateField from '@/shared/components/ui/DateField';
+import { attendanceMinDate, isAttendanceDateRangeAllowed, todayBogota } from '@/features/attendance/utils/attendanceDates';
 import { fetchAttendanceMatrix } from '@/shared/services/facialAttendanceService';
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
@@ -68,7 +69,7 @@ export default function ApprenticeAttendanceScreen() {
         setLoading(false);
         return;
       }
-      if (!dateFrom || !dateTo || dateFrom > dateTo) {
+      if (!isAttendanceDateRangeAllowed(dateFrom, dateTo)) {
         setCells([]);
         setError(null);
         setLoading(false);
@@ -186,6 +187,8 @@ export default function ApprenticeAttendanceScreen() {
                 onChange={(value) => {
                   if (user?.id) setApprenticeDateFrom(user.id, value);
                 }}
+                minDate={attendanceMinDate()}
+                maxDate={todayBogota()}
                 placeholder="YYYY-MM-DD"
                 containerStyle={s.noMargin}
               />
@@ -198,7 +201,8 @@ export default function ApprenticeAttendanceScreen() {
                 label={t('reports.filters.dateTo')}
                 value={dateTo}
                 onChange={(value) => { if (user?.id) setApprenticeDateTo(user.id, value); }}
-                minDate={dateFrom || undefined}
+                minDate={dateFrom && dateFrom > attendanceMinDate() ? dateFrom : attendanceMinDate()}
+                maxDate={todayBogota()}
                 placeholder="YYYY-MM-DD"
                 containerStyle={s.noMargin}
               />

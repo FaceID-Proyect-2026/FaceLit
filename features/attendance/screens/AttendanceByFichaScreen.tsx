@@ -1,5 +1,5 @@
 import { getProgramDisplayName } from "@/features/academic/types";
-import { todayBogota } from "@/features/attendance/utils/attendanceDates";
+import { attendanceMinDate, todayBogota } from "@/features/attendance/utils/attendanceDates";
 import { SearchableSelect } from "@/shared/components/ui";
 import AppButton from "@/shared/components/ui/AppButton";
 import DateField from "@/shared/components/ui/DateField";
@@ -273,6 +273,8 @@ export default function AttendanceByFichaScreen(props: AttendanceByFichaOptions)
                   label={t("reports.filters.dateFrom")}
                   value={dateFrom}
                   onChange={setByFichaDateFrom}
+                  minDate={attendanceMinDate()}
+                  maxDate={todayBogota()}
                   placeholder="YYYY-MM-DD"
                   containerStyle={s.noMargin}
                 />
@@ -285,7 +287,8 @@ export default function AttendanceByFichaScreen(props: AttendanceByFichaOptions)
                   label={t("reports.filters.dateTo")}
                   value={dateTo}
                   onChange={setByFichaDateTo}
-                  minDate={dateFrom || undefined}
+                  minDate={dateFrom && dateFrom > attendanceMinDate() ? dateFrom : attendanceMinDate()}
+                  maxDate={todayBogota()}
                   placeholder="YYYY-MM-DD"
                   containerStyle={s.noMargin}
                 />

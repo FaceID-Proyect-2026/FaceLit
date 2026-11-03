@@ -329,6 +329,13 @@ export default function NotificationsScreen() {
         </View>
       </View>
 
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 16, marginTop: 12, padding: 12, borderRadius: 12, backgroundColor: Colors.info + '12' }}>
+        <Ionicons name="information-circle-outline" size={20} color={Colors.info} />
+        <Text style={{ flex: 1, color: text, fontSize: 13, lineHeight: 19 }}>
+          {t('notifications.retentionNotice')}
+        </Text>
+      </View>
+
       {/* Filtros de estado */}
       <ScrollView
         horizontal

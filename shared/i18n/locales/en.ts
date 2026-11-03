@@ -1717,6 +1717,7 @@ const en = {
   },
   notifications: {
     title: "Notification Center",
+    retentionNotice: "Notifications are automatically deleted after 30 days.",
     empty: "No notifications",
     emptyFiltered: "No notifications match this filter.",
     pending: "Pending",
